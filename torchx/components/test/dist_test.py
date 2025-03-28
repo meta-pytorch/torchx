@@ -40,6 +40,13 @@ class DDPTest(ComponentTestCase):
         for k, v in _TORCH_DEBUG_FLAGS.items():
             self.assertEqual(env[k], v)
 
+    def test_ddp_metadata(self) -> None:
+        metadata = {"key": "value"}
+        app = ddp(script="foo.py", metadata=metadata)
+        for k, v in metadata.items():
+            self.assertEqual(app.metadata[k], v)
+        self.assertEqual(len(metadata), len(app.metadata))
+
     def test_ddp_rdzv_backend_static(self) -> None:
         rdzv_conf = "join_timeout=600,close_timeout=600,timeout=600"
         app = ddp(script="foo.py", rdzv_backend="static", rdzv_conf=rdzv_conf)
@@ -54,6 +61,13 @@ class SpmdTest(ComponentTestCase):
         import torchx.components.dist as dist
 
         self.validate(dist, "ddp")
+
+    def test_spmd_metadata(self) -> None:
+        metadata = {"key": "value"}
+        app = spmd(script="foo.py", metadata=metadata)
+        for k, v in metadata.items():
+            self.assertEqual(app.metadata[k], v)
+        self.assertEqual(len(metadata), len(app.metadata))
 
     def test_spmd_call_by_module_or_script_no_name(self) -> None:
         appdef = spmd(script="foo/bar.py")
