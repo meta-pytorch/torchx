@@ -48,15 +48,12 @@ def get_scheduler_factories(
 
     The first scheduler in the dictionary is used as the default scheduler.
     """
-
-    if skip_defaults:
-        default_schedulers = {}
-    else:
-        default_schedulers: dict[str, SchedulerFactory] = {}
-        for scheduler, path in DEFAULT_SCHEDULER_MODULES.items():
-            default_schedulers[scheduler] = _defer_load_scheduler(path)
-
-    return load_group(group, default=default_schedulers)
+    schedulers = load_group(group, default={})
+    if not skip_defaults:
+        for name, path in DEFAULT_SCHEDULER_MODULES.items():
+            if name not in schedulers:
+                schedulers[name] = _defer_load_scheduler(path)
+    return schedulers
 
 
 def get_default_scheduler_name() -> str:
