@@ -12,6 +12,8 @@ used by components to define the apps which can then be launched via a TorchX
 scheduler or pipeline adapter.
 """
 import difflib
+
+import os
 from typing import Callable, Dict, Mapping, Optional
 
 from torchx.specs.api import (
@@ -63,8 +65,10 @@ AWS_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
 GENERIC_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
     "torchx.specs.named_resources_generic", "NAMED_RESOURCES", default={}
 )
-FB_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
-    "torchx.specs.fb.named_resources", "NAMED_RESOURCES", default={}
+CUSTOM_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
+    os.environ.get("TORCHX_CUSTOM_NAMED_RESOURCES", "torchx.specs.fb.named_resources"),
+    "NAMED_RESOURCES",
+    default={},
 )
 
 
@@ -75,7 +79,7 @@ def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
     for name, resource in {
         **GENERIC_NAMED_RESOURCES,
         **AWS_NAMED_RESOURCES,
-        **FB_NAMED_RESOURCES,
+        **CUSTOM_NAMED_RESOURCES,
         **resource_methods,
     }.items():
         materialized_resources[name] = resource
