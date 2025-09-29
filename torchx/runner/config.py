@@ -494,6 +494,8 @@ def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
 
     config = os.getenv(ENV_TORCHXCONFIG)
     if config is not None:
+        if not config:
+            return []
         configfile = Path(config)
         if not configfile.is_file():
             raise FileNotFoundError(
