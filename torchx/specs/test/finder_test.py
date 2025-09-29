@@ -213,7 +213,7 @@ class CustomComponentsFinderTest(unittest.TestCase):
             f"{current_file_path()}:_test_component_without_docstring", component.name
         )
         exprected_desc = """_test_component_without_docstring TIP: improve this help string by adding a docstring
-to your component (see: https://pytorch.org/torchx/latest/component_best_practices.html)"""
+to your component (see: https://meta-pytorch.org/torchx/latest/component_best_practices.html)"""
         self.assertEqual(exprected_desc, component.description)
         self.assertEqual("_test_component_without_docstring", component.fn_name)
         self.assertListEqual([], component.validation_errors)

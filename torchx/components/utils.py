@@ -154,7 +154,7 @@ def python(
 
     Note: (cpu, gpu, memMB) parameters are mutually exclusive with ``h`` (named resource) where
           ``h`` takes precedence if specified for setting resource requirements.
-          See `registering named resources <https://pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+          See `registering named resources <https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
 
     Args:
         args: arguments passed to the program in sys.argv[1:] (ignored with `--c`)

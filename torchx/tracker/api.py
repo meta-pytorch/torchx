@@ -191,7 +191,7 @@ def build_trackers(
         factory = entrypoint_factories.get(factory_name) or load_module(factory_name)
         if not factory:
             logger.warning(
-                f"No tracker factory `{factory_name}` found in entry_points or modules. See https://pytorch.org/torchx/main/tracker.html#module-torchx.tracker"
+                f"No tracker factory `{factory_name}` found in entry_points or modules. See https://meta-pytorch.org/torchx/main/tracker.html#module-torchx.tracker"
             )
             continue
         if config:

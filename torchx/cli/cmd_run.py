@@ -344,7 +344,7 @@ class CmdRun(SubCommand):
                 "Invalid scheduler configuration: %s\n"
                 "To configure scheduler options, either:\n"
                 "  1. Use the `-cfg` command-line argument, e.g., `-cfg key1=value1,key2=value2`\n"
-                "  2. Set up a `.torchxconfig` file. For more details, visit: https://pytorch.org/torchx/main/runner.config.html\n"
+                "  2. Set up a `.torchxconfig` file. For more details, visit: https://meta-pytorch.org/torchx/main/runner.config.html\n"
                 "Run `torchx runopts %s` to check all available configuration options for the "
                 "`%s` scheduler."
             )

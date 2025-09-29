@@ -485,7 +485,7 @@ class KubernetesScheduler(
     For installation instructions see: https://github.com/volcano-sh/volcano
 
     This has been confirmed to work with Volcano v1.3.0 and Kubernetes versions
-    v1.18-1.21. See https://github.com/pytorch/torchx/issues/120 which is
+    v1.18-1.21. See https://github.com/meta-pytorch/torchx/issues/120 which is
     tracking Volcano support for Kubernetes v1.22.
 
     .. note::

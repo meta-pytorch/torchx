@@ -10,7 +10,7 @@ about: Do you need support? We have resources.
 ### Please note that this issue tracker is not a help form and this issue will be closed.
 
 Before submitting, please ensure you have gone through our
-[documentation](https://pytorch.org/torchx).
+[documentation](https://meta-pytorch.org/torchx).
 
 
 ### Question

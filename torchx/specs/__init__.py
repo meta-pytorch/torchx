@@ -127,7 +127,7 @@ def resource(
 
     If ``h`` is specified then it is used to look up the
     resource specs from the list of registered named resources.
-    See `registering named resource <https://pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+    See `registering named resource <https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
 
     Otherwise a ``Resource`` object is created from the raw resource specs.
 

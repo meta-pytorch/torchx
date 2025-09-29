@@ -45,7 +45,7 @@ class CmdTracker(SubCommand):
         else:
             raise RuntimeError(
                 "No trackers configured."
-                " See: https://pytorch.org/torchx/latest/runtime/tracking.html"
+                " See: https://meta-pytorch.org/torchx/latest/runtime/tracking.html"
             )
 
     def add_list_job_arguments(self, subparser: argparse.ArgumentParser) -> None:

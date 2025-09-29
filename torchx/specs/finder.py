@@ -452,7 +452,7 @@ def get_component(
         raise ComponentNotFoundException(
             f"Component `{name}` not found. Please make sure it is one of the "
             "builtins: `torchx builtins`. Or registered via `[torchx.components]` "
-            "entry point (see: https://pytorch.org/torchx/latest/configure.html)"
+            "entry point (see: https://meta-pytorch.org/torchx/latest/configure.html)"
         )
 
     component = components[name]

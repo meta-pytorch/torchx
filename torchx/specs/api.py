@@ -826,7 +826,7 @@ class runopt:
 
         NOTE: dict parsing uses ":" as the kv separator (rather than the standard "=") because "=" is used
         at the top-level cfg to parse runopts (notice the plural) from the CLI. Originally torchx only supported
-        primitives and list[str] as CfgVal but dict[str,str] was added in https://github.com/pytorch/torchx/pull/855
+        primitives and list[str] as CfgVal but dict[str,str] was added in https://github.com/meta-pytorch/torchx/pull/855
         """
 
         if self.opt_type is None:

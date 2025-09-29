@@ -48,7 +48,7 @@ def local_rank() -> int:
                 " but the `LOCAL_RANK` environment variable is not set. Will trivially return 0 for local_rank.\n"
                 " It is recommended to use torchrun/torchx to run your script or set the `LOCAL_RANK` manually.\n"
                 " For additional details see:\n"
-                "  1) https://pytorch.org/torchx/latest/components/distributed.html\n"
+                "  1) https://meta-pytorch.org/torchx/latest/components/distributed.html\n"
                 "  2) https://pytorch.org/docs/stable/elastic/run.html\n"
                 "=============================================================================================="
             )

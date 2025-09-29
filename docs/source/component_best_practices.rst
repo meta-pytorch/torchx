@@ -144,4 +144,4 @@ You can setup integration tests with your components by either using the
 programmatic runner API or write a bash script to call the CLI.
 
 You can see both styles in use in the core
-`TorchX scheduler integration tests <https://github.com/pytorch/torchx/tree/main/.github/workflows>`__.
+`TorchX scheduler integration tests <https://github.com/meta-pytorch/torchx/tree/main/.github/workflows>`__.

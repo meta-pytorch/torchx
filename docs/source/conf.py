@@ -46,7 +46,7 @@ FBCODE = "fbcode" in os.getcwd()
 #
 needs_sphinx = "1.6"
 
-user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0 github.com/pytorch/torchx"
+user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0 github.com/meta-pytorch/torchx"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -333,12 +333,10 @@ else:
 
 if version in tags:
     notebook_version = version
-    code_url = (
-        f"https://github.com/pytorch/torchx/archive/refs/tags/{notebook_version}.tar.gz"
-    )
+    code_url = f"https://github.com/meta-pytorch/torchx/archive/refs/tags/{notebook_version}.tar.gz"
 else:
     notebook_version = "main"
-    code_url = f"https://github.com/pytorch/torchx/archive/refs/heads/{notebook_version}.tar.gz"
+    code_url = f"https://github.com/meta-pytorch/torchx/archive/refs/heads/{notebook_version}.tar.gz"
 
 first_notebook_cell = f"""
 !pip install torchx
