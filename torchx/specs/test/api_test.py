@@ -10,10 +10,13 @@
 import asyncio
 import concurrent
 import os
+import tempfile
 import time
 import unittest
 from dataclasses import asdict
+from pathlib import Path
 from typing import Dict, List, Mapping, Tuple, Union
+from unittest import mock
 from unittest.mock import MagicMock
 
 import torchx.specs.named_resources_aws as named_resources_aws
@@ -40,7 +43,35 @@ from torchx.specs.api import (
     RoleStatus,
     runopt,
     runopts,
+    TORCHX_HOME,
 )
+
+
+class TorchXHomeTest(unittest.TestCase):
+    # guard against TORCHX_HOME set outside the test
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_TORCHX_HOME_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            user_home = Path(tmpdir) / "sally"
+            with mock.patch("pathlib.Path.home", return_value=user_home):
+                torchx_home = TORCHX_HOME()
+                self.assertEqual(torchx_home, user_home / ".torchx")
+                self.assertTrue(torchx_home.exists())
+
+    def test_TORCHX_HOME_override(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            override_torchx_home = Path(tmpdir) / "test" / ".torchx"
+            with mock.patch.dict(
+                os.environ, {"TORCHX_HOME": str(override_torchx_home)}
+            ):
+                torchx_home = TORCHX_HOME()
+                conda_pack_out = TORCHX_HOME("conda-pack", "out")
+
+                self.assertEqual(override_torchx_home, torchx_home)
+                self.assertEqual(torchx_home / "conda-pack" / "out", conda_pack_out)
+
+                self.assertTrue(torchx_home.is_dir())
+                self.assertTrue(conda_pack_out.is_dir())
 
 
 class AppDryRunInfoTest(unittest.TestCase):
