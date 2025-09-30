@@ -11,6 +11,8 @@ import copy
 import inspect
 import json
 import logging as logger
+import os
+import pathlib
 import re
 import typing
 from dataclasses import asdict, dataclass, field
@@ -64,6 +66,32 @@ _EMBEDDED_ERROR_MESSAGE_RE: Pattern[str] = re.compile(r"(?P<msg>.+)\nException.*
 
 YELLOW_BOLD = "\033[1;33m"
 RESET = "\033[0m"
+
+
+def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
+    """
+    Path to the "dot-directory" for torchx.
+    Defaults to `~/.torchx` and is overridable via the `TORCHX_HOME` environment variable.
+
+    Usage:
+
+    .. doc-test::
+
+        from pathlib import Path
+        from torchx.specs import TORCHX_HOME
+
+        assert TORCHX_HOME() == Path.home() / ".torchx"
+        assert TORCHX_HOME("conda-pack-out") ==  Path.home() / ".torchx" / "conda-pack-out"
+    ```
+    """
+
+    default_dir = str(pathlib.Path.home() / ".torchx")
+    torchx_home = pathlib.Path(os.getenv("TORCHX_HOME", default_dir))
+
+    torchx_home = torchx_home / os.path.sep.join(subdir_paths)
+    torchx_home.mkdir(parents=True, exist_ok=True)
+
+    return torchx_home
 
 
 # ========================================
