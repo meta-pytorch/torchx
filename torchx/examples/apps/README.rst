@@ -16,7 +16,7 @@ Before executing examples, install TorchX and dependencies necessary to run exam
 
 ```
 $ pip install torchx
-$ git clone https://github.com/pytorch/torchx.git
+$ git clone https://github.com/meta-pytorch/torchx.git
 $ cd torchx/examples/apps
 $ TORCHX_VERSION=$(torchx --version | sed 's/torchx-//')
 $ git checkout v$TORCHX_VERSION

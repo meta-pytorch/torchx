@@ -281,7 +281,7 @@ class SpecsFileValidatorTest(unittest.TestCase):
     def test_validate_docstring_no_docs(self) -> None:
         func_desc, param_desc = get_fn_docstring(_test_without_docstring)
         expected_fn_desc = """_test_without_docstring TIP: improve this help string by adding a docstring
-to your component (see: https://pytorch.org/torchx/latest/component_best_practices.html)"""
+to your component (see: https://meta-pytorch.org/torchx/latest/component_best_practices.html)"""
         self.assertEqual(expected_fn_desc, func_desc)
         self.assertEqual(" ", param_desc["arg0"])
 

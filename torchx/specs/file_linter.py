@@ -75,7 +75,7 @@ def get_fn_docstring(fn: Callable[..., object]) -> Tuple[str, Dict[str, str]]:
             if the description
     """
     default_fn_desc = f"""{fn.__name__} TIP: improve this help string by adding a docstring
-to your component (see: https://pytorch.org/torchx/latest/component_best_practices.html)"""
+to your component (see: https://meta-pytorch.org/torchx/latest/component_best_practices.html)"""
     args_description = _get_default_arguments_descriptions(fn)
     func_description = inspect.getdoc(fn)
     if not func_description:
