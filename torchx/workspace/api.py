@@ -275,7 +275,6 @@ def walk_workspace(
     walk_workspace walks the filesystem path and applies the ignore rules
     specified via ``ignore_name``.
     This follows the rules for ``.dockerignore``.
-    https://docs.docker.com/engine/reference/builder/#dockerignore-file
     """
     ignore_patterns = []
     ignore_path = posixpath.join(path, ignore_name)

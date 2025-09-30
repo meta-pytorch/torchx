@@ -16,7 +16,7 @@ the equvalent resource in mem, cpu and gpu numbers.
 
 .. note::
     These resource definitions may change in future. It is expected for each user to
-    manage their own resources. Follow https://pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources
+    manage their own resources. Follow https://meta-pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources
     to set up named resources.
 
 Usage:
@@ -47,7 +47,7 @@ NEURON_DEVICE = "aws.amazon.com/neurondevice"
 MEM_TAX = 0.96
 
 # determines instance type for non-honogeneous CEs
-# see https://github.com/pytorch/torchx/issues/780
+# see https://github.com/meta-pytorch/torchx/issues/780
 K8S_ITYPE = "node.kubernetes.io/instance-type"
 GiB: int = int(1024 * MEM_TAX)
 

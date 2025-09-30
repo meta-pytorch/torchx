@@ -181,7 +181,7 @@ To validate that you've defined your component correctly you can either:
 
 1. (easiest) Dryrun your component's ``--help`` with the cli: ``torchx run --dryrun ~/component.py:train --help``
 2. Use the component :ref:`linter<specs:Component Linter>`
-   (see `dist_test.py <https://github.com/pytorch/torchx/blob/main/torchx/components/test/dist_test.py>`_ as an example)
+   (see `dist_test.py <https://github.com/meta-pytorch/torchx/blob/main/torchx/components/test/dist_test.py>`_ as an example)
 
 
 Running as a Job

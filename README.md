@@ -1,7 +1,7 @@
 [![PyPI](https://img.shields.io/pypi/v/torchx)](https://pypi.org/project/torchx/)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/pytorch/torchx/blob/main/LICENSE)
-![Tests](https://github.com/pytorch/torchx/actions/workflows/python-unittests.yaml/badge.svg)
-![Lint](https://github.com/pytorch/torchx/actions/workflows/lint.yaml/badge.svg)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/meta-pytorch/torchx/blob/main/LICENSE)
+![Tests](https://github.com/meta-pytorch/torchx/actions/workflows/python-unittests.yaml/badge.svg)
+![Lint](https://github.com/meta-pytorch/torchx/actions/workflows/lint.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/pytorch/torchx/branch/main/graph/badge.svg?token=ceHHIm0hXy)](https://codecov.io/gh/pytorch/torchx)
 
 
@@ -20,16 +20,16 @@ TorchX currently supports:
 * Docker
 * Local
 
-Need a scheduler not listed? [Let us know!](https://github.com/pytorch/torchx/issues?q=is%3Aopen+is%3Aissue+label%3Ascheduler-request)
+Need a scheduler not listed? [Let us know!](https://github.com/meta-pytorch/torchx/issues?q=is%3Aopen+is%3Aissue+label%3Ascheduler-request)
 
 ## Quickstart
 
-See the [quickstart guide](https://pytorch.org/torchx/latest/quickstart.html).
+See the [quickstart guide](https://meta-pytorch.org/torchx/latest/quickstart.html).
 
 ## Documentation
 
-* [Stable Documentation](https://pytorch.org/torchx/latest/)
-* [Nightly Documentation](https://pytorch.org/torchx/main/)
+* [Stable Documentation](https://meta-pytorch.org/torchx/latest/)
+* [Nightly Documentation](https://meta-pytorch.org/torchx/main/)
 
 ## Requirements
 
@@ -71,22 +71,22 @@ pip install torchx-nightly[dev]
 
 ```bash
 # install torchx sdk and CLI from source
-$ pip install -e git+https://github.com/pytorch/torchx.git#egg=torchx
+$ pip install -e git+https://github.com/meta-pytorch/torchx.git#egg=torchx
 
 # install extra dependencies
-$ pip install -e git+https://github.com/pytorch/torchx.git#egg=torchx[dev]
+$ pip install -e git+https://github.com/meta-pytorch/torchx.git#egg=torchx[dev]
 ```
 
 ### Docker
 
 TorchX provides a docker container for using as as part of a TorchX role.
 
-See: https://github.com/pytorch/torchx/pkgs/container/torchx
+See: https://github.com/meta-pytorch/torchx/pkgs/container/torchx
 
 ## Contributing
 
-We welcome PRs! See the [CONTRIBUTING](https://github.com/pytorch/torchx/blob/main/CONTRIBUTING.md) file.
+We welcome PRs! See the [CONTRIBUTING](https://github.com/meta-pytorch/torchx/blob/main/CONTRIBUTING.md) file.
 
 ## License
 
-TorchX is BSD licensed, as found in the [LICENSE](https://github.com/pytorch/torchx/blob/main/LICENSE) file.
+TorchX is BSD licensed, as found in the [LICENSE](https://github.com/meta-pytorch/torchx/blob/main/LICENSE) file.

@@ -29,7 +29,7 @@ $ pip install "torchx[dev]"
 ```
 <!-- #endmd -->
 
-See the [README](https://github.com/pytorch/torchx) for more
+See the [README](https://github.com/meta-pytorch/torchx) for more
 information on installation.
 
 ```sh
@@ -164,7 +164,7 @@ partition=torchx
 
 TorchX supports a large number of schedulers.
 Don't see yours?
-[Request it!](https://github.com/pytorch/torchx/issues/new?assignees=&labels=&template=feature-request.md)
+[Request it!](https://github.com/meta-pytorch/torchx/issues/new?assignees=&labels=&template=feature-request.md)
 
 Remote schedulers operate the exact same way the local schedulers do. The same
 run command for local works out of the box on remote.

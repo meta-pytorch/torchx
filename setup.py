@@ -61,7 +61,7 @@ if __name__ == "__main__":
         description="TorchX SDK and Components",
         long_description=readme,
         long_description_content_type="text/markdown",
-        url="https://github.com/pytorch/torchx",
+        url="https://github.com/meta-pytorch/torchx",
         license="BSD-3",
         keywords=["pytorch", "machine learning"],
         python_requires=">=3.7",
