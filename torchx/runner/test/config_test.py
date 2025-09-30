@@ -275,6 +275,12 @@ class ConfigTest(TestWithTmpDir):
             ),
         )
 
+    def test_no_config(self) -> None:
+        config_dir = self.tmpdir
+        with patch.dict(os.environ, {ENV_TORCHXCONFIG: str("")}):
+            configs = find_configs(dirs=[str(config_dir)])
+            self.assertEqual([], configs)
+
     def test_find_configs(self) -> None:
         config_dir = self.tmpdir
         cwd_dir = config_dir / "cwd"
