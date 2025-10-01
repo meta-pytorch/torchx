@@ -489,6 +489,7 @@
     <span class="n">RoleStatus</span><span class="p">,</span>
     <span class="n">runopt</span><span class="p">,</span>
     <span class="n">runopts</span><span class="p">,</span>
+    <span class="n">TORCHX_HOME</span><span class="p">,</span>
     <span class="n">UnknownAppException</span><span class="p">,</span>
     <span class="n">UnknownSchedulerException</span><span class="p">,</span>
     <span class="n">VolumeMount</span><span class="p">,</span>
@@ -500,6 +501,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_attr</span>
 
 <span class="n">GiB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>
+
 
 <span class="n">ResourceFactory</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Resource</span><span class="p">]</span>
 
@@ -575,7 +577,7 @@
 
 <span class="sd">    If ``h`` is specified then it is used to look up the</span>
 <span class="sd">    resource specs from the list of registered named resources.</span>
-<span class="sd">    See `registering named resource &lt;https://pytorch.org/torchx/latest/advanced.html#registering-named-resources&gt;`_.</span>
+<span class="sd">    See `registering named resource &lt;https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources&gt;`_.</span>
 
 <span class="sd">    Otherwise a ``Resource`` object is created from the raw resource specs.</span>
 

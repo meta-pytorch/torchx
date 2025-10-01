@@ -1,4 +1,4 @@
-:github_url: https://github.com/pytorch/torchx
+:github_url: https://github.com/meta-pytorch/torchx
 
 TorchX
 ==================

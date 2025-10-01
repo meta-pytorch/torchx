@@ -623,7 +623,7 @@ Note that the (cpu, gpu, memMB) is mutually exclusive with <code class="docutils
 taking predecence if specified.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">h</span></code> is specified then it is used to look up the
 resource specs from the list of registered named resources.
-See <a class="reference external" href="https://pytorch.org/torchx/latest/advanced.html#registering-named-resources">registering named resource</a>.</p>
+See <a class="reference external" href="https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources">registering named resource</a>.</p>
 <p>Otherwise a <code class="docutils literal notranslate"><span class="pre">Resource</span></code> object is created from the raw resource specs.</p>
 <p>Example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># returns Resource(cpu=1)</span>
@@ -676,7 +676,7 @@ the equvalent resource in mem, cpu and gpu numbers.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>These resource definitions may change in future. It is expected for each user to
-manage their own resources. Follow <a class="reference external" href="https://pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources">https://pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources</a>
+manage their own resources. Follow <a class="reference external" href="https://meta-pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources">https://meta-pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources</a>
 to set up named resources.</p>
 </div>
 <p>Usage:</p>

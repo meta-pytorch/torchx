@@ -461,6 +461,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">logger</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
@@ -514,6 +516,32 @@
 
 <span class="n">YELLOW_BOLD</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;33m&quot;</span>
 <span class="n">RESET</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[0m&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">TORCHX_HOME</span><span class="p">(</span><span class="o">*</span><span class="n">subdir_paths</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Path to the &quot;dot-directory&quot; for torchx.</span>
+<span class="sd">    Defaults to `~/.torchx` and is overridable via the `TORCHX_HOME` environment variable.</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    .. doc-test::</span>
+
+<span class="sd">        from pathlib import Path</span>
+<span class="sd">        from torchx.specs import TORCHX_HOME</span>
+
+<span class="sd">        assert TORCHX_HOME() == Path.home() / &quot;.torchx&quot;</span>
+<span class="sd">        assert TORCHX_HOME(&quot;conda-pack-out&quot;) ==  Path.home() / &quot;.torchx&quot; / &quot;conda-pack-out&quot;</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;.torchx&quot;</span><span class="p">)</span>
+    <span class="n">torchx_home</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;TORCHX_HOME&quot;</span><span class="p">,</span> <span class="n">default_dir</span><span class="p">))</span>
+
+    <span class="n">torchx_home</span> <span class="o">=</span> <span class="n">torchx_home</span> <span class="o">/</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subdir_paths</span><span class="p">)</span>
+    <span class="n">torchx_home</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">torchx_home</span>
 
 
 <span class="c1"># ========================================</span>
@@ -1276,7 +1304,7 @@
 
 <span class="sd">        NOTE: dict parsing uses &quot;:&quot; as the kv separator (rather than the standard &quot;=&quot;) because &quot;=&quot; is used</span>
 <span class="sd">        at the top-level cfg to parse runopts (notice the plural) from the CLI. Originally torchx only supported</span>
-<span class="sd">        primitives and list[str] as CfgVal but dict[str,str] was added in https://github.com/pytorch/torchx/pull/855</span>
+<span class="sd">        primitives and list[str] as CfgVal but dict[str,str] was added in https://github.com/meta-pytorch/torchx/pull/855</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
