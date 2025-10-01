@@ -547,8 +547,14 @@ JobID|JobName|Partition|Account|AllocCPUS|State|ExitCode
 
     @patch("subprocess.run")
     def test_list_squeue(self, run: MagicMock) -> None:
+        # First job is patched with a string-type job state
         run.return_value.stdout = b"""{
   "jobs": [
+    {
+        "job_id": 1233,
+        "name": "bar",
+        "job_state": "FAILED"
+    },
     {
         "job_id": 1234,
         "name": "foo",
@@ -588,6 +594,7 @@ JobID|JobName|Partition|Account|AllocCPUS|State|ExitCode
 }"""
         scheduler = create_scheduler("foo")
         expected_apps = [
+            ListAppResponse(app_id="1233", state=AppState.FAILED, name="bar"),
             ListAppResponse(app_id="1234", state=AppState.FAILED, name="foo"),
             ListAppResponse(app_id="1235", state=AppState.FAILED, name="foo"),
             ListAppResponse(app_id="1236", state=AppState.RUNNING, name="foo-0"),
@@ -1128,3 +1135,30 @@ source sbatch.sh
 
             assert result is not None
             assert result.roles_statuses[0].replicas[0].hostname == "compute-node-123"
+
+    def test_describe_squeue_handles_string_state(self) -> None:
+        """Test that describe handles job state as string (i.e. for SLURM <= 23.02)."""
+
+        # Mock legacy slurm response with job_state as a string
+        mock_job_data = {
+            "jobs": [
+                {
+                    "name": "test-job-0",
+                    "job_state": "TIMEOUT",
+                    "job_resources": {"nodes": "compute-node-123"},
+                    "command": "/bin/echo",
+                    "current_working_directory": "/tmp",
+                }
+            ]
+        }
+
+        with patch("subprocess.check_output") as mock_subprocess:
+            mock_subprocess.return_value = json.dumps(mock_job_data)
+
+            scheduler = SlurmScheduler("test")
+            result = scheduler._describe_squeue("123")
+
+            assert result is not None
+            assert result.app_id == "123"
+            # should have a valid parsed state
+            assert result.state == AppState.FAILED
