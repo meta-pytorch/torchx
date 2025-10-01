@@ -542,11 +542,44 @@
 
 <span class="n">ENV_TORCHX_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_ROLE_NAME&quot;</span>
 
+<span class="n">ENV_TORCHX_IMAGE</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_IMAGE&quot;</span>
+
 <span class="n">DEFAULT_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;node&quot;</span>
 
 <span class="n">TAG_TORCHX_VER</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/version&quot;</span>
 <span class="n">TAG_TORCHX_APPNAME</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/app-name&quot;</span>
 <span class="n">TAG_TORCHX_USER</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/user&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_ulimits</span><span class="p">(</span><span class="n">ulimits_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse ulimit string in format: name:softLimit:hardLimit</span>
+<span class="sd">    Multiple ulimits separated by commas.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ulimits_list</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">ulimits</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ulimit_str</span> <span class="ow">in</span> <span class="n">ulimits_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ulimit_str</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">continue</span>
+
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">ulimit_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;ulimit must be in format name:softLimit:hardLimit, got: </span><span class="si">{</span><span class="n">ulimit_str</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">name</span><span class="p">,</span> <span class="n">soft_limit</span><span class="p">,</span> <span class="n">hard_limit</span> <span class="o">=</span> <span class="n">parts</span>
+        <span class="n">ulimits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;softLimit&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">soft_limit</span><span class="p">)</span> <span class="k">if</span> <span class="n">soft_limit</span> <span class="o">!=</span> <span class="s2">&quot;-1&quot;</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;hardLimit&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">hard_limit</span><span class="p">)</span> <span class="k">if</span> <span class="n">hard_limit</span> <span class="o">!=</span> <span class="s2">&quot;-1&quot;</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ulimits</span>
 
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -627,7 +660,8 @@
     <span class="n">privileged</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">job_role_arn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">execution_role_arn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+    <span class="n">ulimits</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
     <span class="n">role</span><span class="o">.</span><span class="n">mounts</span> <span class="o">+=</span> <span class="n">get_device_mounts</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">devices</span><span class="p">)</span>
 
     <span class="n">mount_points</span> <span class="o">=</span> <span class="p">[]</span>
@@ -689,6 +723,7 @@
         <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span>
         <span class="s2">&quot;privileged&quot;</span><span class="p">:</span> <span class="n">privileged</span><span class="p">,</span>
         <span class="s2">&quot;resourceRequirements&quot;</span><span class="p">:</span> <span class="n">resource_requirements_from_resource</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">resource</span><span class="p">),</span>
+        <span class="o">**</span><span class="p">({</span><span class="s2">&quot;ulimits&quot;</span><span class="p">:</span> <span class="n">ulimits</span><span class="p">}</span> <span class="k">if</span> <span class="n">ulimits</span> <span class="k">else</span> <span class="p">{}),</span>
         <span class="s2">&quot;linuxParameters&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="c1"># To support PyTorch dataloaders we need to set /dev/shm to larger</span>
             <span class="c1"># than the 64M default.</span>
@@ -811,6 +846,7 @@
     <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">job_role_arn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">execution_role_arn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">ulimits</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
 
 
 <div class="viewcode-block" id="AWSBatchScheduler"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AWSBatchScheduler</span><span class="p">(</span>
@@ -956,6 +992,7 @@
             <span class="n">role</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
             <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_ROLE_IDX</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role_idx</span><span class="p">)</span>
             <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_IMAGE</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
 
             <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">_role_to_node_properties</span><span class="p">(</span>
@@ -964,6 +1001,7 @@
                     <span class="n">privileged</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;privileged&quot;</span><span class="p">],</span>
                     <span class="n">job_role_arn</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_role_arn&quot;</span><span class="p">),</span>
                     <span class="n">execution_role_arn</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;execution_role_arn&quot;</span><span class="p">),</span>
+                    <span class="n">ulimits</span><span class="o">=</span><span class="n">parse_ulimits</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ulimits&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]),</span>
                 <span class="p">)</span>
             <span class="p">)</span>
             <span class="n">node_idx</span> <span class="o">+=</span> <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span>
@@ -1048,6 +1086,11 @@
             <span class="s2">&quot;execution_role_arn&quot;</span><span class="p">,</span>
             <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;ulimits&quot;</span><span class="p">,</span>
+            <span class="n">type_</span><span class="o">=</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">opts</span>
 
