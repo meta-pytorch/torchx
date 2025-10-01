@@ -542,8 +542,6 @@
 
 <span class="n">ENV_TORCHX_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_ROLE_NAME&quot;</span>
 
-<span class="n">ENV_TORCHX_IMAGE</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_IMAGE&quot;</span>
-
 <span class="n">DEFAULT_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;node&quot;</span>
 
 <span class="n">TAG_TORCHX_VER</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/version&quot;</span>
@@ -992,7 +990,6 @@
             <span class="n">role</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
             <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_ROLE_IDX</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role_idx</span><span class="p">)</span>
             <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_IMAGE</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
 
             <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">_role_to_node_properties</span><span class="p">(</span>
