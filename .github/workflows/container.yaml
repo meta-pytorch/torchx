@@ -32,8 +32,8 @@ jobs:
         run: |
           set -eux
           torchx/runtime/container/build.sh
-          docker tag torchx "ghcr.io/pytorch/torchx:$VERSION"
+          docker tag torchx "ghcr.io/meta-pytorch/torchx:$VERSION"
       - name: Push containers
         run: |
           set -eux
-          docker push "ghcr.io/pytorch/torchx:$VERSION"
+          docker push "ghcr.io/meta-pytorch/torchx:$VERSION"
