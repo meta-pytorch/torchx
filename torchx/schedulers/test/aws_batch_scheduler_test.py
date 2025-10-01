@@ -22,6 +22,7 @@ from torchx.schedulers.aws_batch_scheduler import (
     AWSBatchOpts,
     AWSBatchScheduler,
     create_scheduler,
+    ENV_TORCHX_IMAGE,
     ENV_TORCHX_ROLE_NAME,
     parse_ulimits,
     resource_from_resource_requirements,
@@ -253,6 +254,10 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                                     {"name": "FOO", "value": "bar"},
                                     {"name": "TORCHX_ROLE_IDX", "value": "0"},
                                     {"name": "TORCHX_ROLE_NAME", "value": "trainer"},
+                                    {
+                                        "name": "TORCHX_IMAGE",
+                                        "value": "pytorch/torchx:latest",
+                                    },
                                 ],
                                 "privileged": False,
                                 "resourceRequirements": [
@@ -494,7 +499,11 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                                             {
                                                 "name": ENV_TORCHX_ROLE_NAME,
                                                 "value": "echo",
-                                            }
+                                            },
+                                            {
+                                                "name": ENV_TORCHX_IMAGE,
+                                                "value": "pytorch/torchx:latest",
+                                            },
                                         ],
                                     },
                                 }

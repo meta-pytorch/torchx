@@ -399,6 +399,7 @@ def app_to_resource(
             replica_role = values.apply(role)
             if role_idx == 0 and replica_id == 0:
                 replica_role.env["TORCHX_RANK0_HOST"] = "localhost"
+            replica_role.env["TORCHX_IMAGE"] = replica_role.image
 
             pod = role_to_pod(name, replica_role, service_account)
             pod.metadata.labels.update(

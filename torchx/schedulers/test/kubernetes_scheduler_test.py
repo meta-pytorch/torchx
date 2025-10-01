@@ -320,6 +320,8 @@ spec:
                 fieldPath: bar
           - name: TORCHX_RANK0_HOST
             value: localhost
+          - name: TORCHX_IMAGE
+            value: pytorch/torchx:latest
           image: pytorch/torchx:latest
           name: trainerfoo-0
           ports:
@@ -520,6 +522,9 @@ spec:
         self.assertIn("TORCHX_RANK0_HOST", container0.command)
         self.assertIn(
             V1EnvVar(name="TORCHX_RANK0_HOST", value="localhost"), container0.env
+        )
+        self.assertIn(
+            V1EnvVar(name="TORCHX_IMAGE", value="pytorch/torchx:latest"), container0.env
         )
         container1 = tasks[1]["template"].spec.containers[0]
         self.assertIn("VC_TRAINERFOO_0_HOSTS", container1.command)

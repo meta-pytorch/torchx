@@ -92,6 +92,8 @@ ENV_TORCHX_ROLE_IDX = "TORCHX_ROLE_IDX"
 
 ENV_TORCHX_ROLE_NAME = "TORCHX_ROLE_NAME"
 
+ENV_TORCHX_IMAGE = "TORCHX_IMAGE"
+
 DEFAULT_ROLE_NAME = "node"
 
 TAG_TORCHX_VER = "torchx.pytorch.org/version"
@@ -540,6 +542,7 @@ class AWSBatchScheduler(
             role = values.apply(role)
             role.env[ENV_TORCHX_ROLE_IDX] = str(role_idx)
             role.env[ENV_TORCHX_ROLE_NAME] = str(role.name)
+            role.env[ENV_TORCHX_IMAGE] = role.image
 
             nodes.append(
                 _role_to_node_properties(

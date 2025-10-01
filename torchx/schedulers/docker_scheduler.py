@@ -84,6 +84,8 @@ LABEL_APP_ID: str = "torchx.pytorch.org/app-id"
 LABEL_ROLE_NAME: str = "torchx.pytorch.org/role-name"
 LABEL_REPLICA_ID: str = "torchx.pytorch.org/replica-id"
 
+ENV_TORCHX_IMAGE: str = "TORCHX_IMAGE"
+
 NETWORK = "torchx"
 
 
@@ -279,6 +281,7 @@ class DockerScheduler(
 
                 # configure distributed host envs
                 env["TORCHX_RANK0_HOST"] = rank0_name
+                env[ENV_TORCHX_IMAGE] = replica_role.image
 
                 c = DockerContainer(
                     image=replica_role.image,
