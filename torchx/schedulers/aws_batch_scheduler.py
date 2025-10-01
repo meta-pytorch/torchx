@@ -99,6 +99,37 @@ TAG_TORCHX_APPNAME = "torchx.pytorch.org/app-name"
 TAG_TORCHX_USER = "torchx.pytorch.org/user"
 
 
+def parse_ulimits(ulimits_list: list[str]) -> List[Dict[str, Any]]:
+    """
+    Parse ulimit string in format: name:softLimit:hardLimit
+    Multiple ulimits separated by commas.
+    """
+    if not ulimits_list:
+        return []
+
+    ulimits = []
+    for ulimit_str in ulimits_list:
+        if not ulimit_str.strip():
+            continue
+
+        parts = ulimit_str.strip().split(":")
+        if len(parts) != 3:
+            raise ValueError(
+                f"ulimit must be in format name:softLimit:hardLimit, got: {ulimit_str}"
+            )
+
+        name, soft_limit, hard_limit = parts
+        ulimits.append(
+            {
+                "name": name,
+                "softLimit": int(soft_limit) if soft_limit != "-1" else -1,
+                "hardLimit": int(hard_limit) if hard_limit != "-1" else -1,
+            }
+        )
+
+    return ulimits
+
+
 if TYPE_CHECKING:
     from docker import DockerClient
 
@@ -177,7 +208,8 @@ def _role_to_node_properties(
     privileged: bool = False,
     job_role_arn: Optional[str] = None,
     execution_role_arn: Optional[str] = None,
-) -> Dict[str, object]:
+    ulimits: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
     role.mounts += get_device_mounts(role.resource.devices)
 
     mount_points = []
@@ -239,6 +271,7 @@ def _role_to_node_properties(
         "environment": [{"name": k, "value": v} for k, v in role.env.items()],
         "privileged": privileged,
         "resourceRequirements": resource_requirements_from_resource(role.resource),
+        **({"ulimits": ulimits} if ulimits else {}),
         "linuxParameters": {
             # To support PyTorch dataloaders we need to set /dev/shm to larger
             # than the 64M default.
@@ -361,6 +394,7 @@ class AWSBatchOpts(TypedDict, total=False):
     priority: int
     job_role_arn: Optional[str]
     execution_role_arn: Optional[str]
+    ulimits: Optional[list[str]]
 
 
 class AWSBatchScheduler(
@@ -514,6 +548,7 @@ class AWSBatchScheduler(
                     privileged=cfg["privileged"],
                     job_role_arn=cfg.get("job_role_arn"),
                     execution_role_arn=cfg.get("execution_role_arn"),
+                    ulimits=parse_ulimits(cfg.get("ulimits") or []),
                 )
             )
             node_idx += role.num_replicas
@@ -598,6 +633,11 @@ class AWSBatchScheduler(
             "execution_role_arn",
             type_=str,
             help="The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.",
+        )
+        opts.add(
+            "ulimits",
+            type_=List[str],
+            help="Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)",
         )
         return opts
 
