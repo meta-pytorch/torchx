@@ -73,6 +73,15 @@ def appstate_from_slurm_state(slurm_state: str) -> AppState:
     return SLURM_STATES.get(slurm_state, AppState.UNKNOWN)
 
 
+def get_appstate_from_job(job: dict[str, object]) -> AppState:
+    # Prior to slurm-23.11, job_state was a string and not a list
+    job_state = job.get("job_state", None)
+    if isinstance(job_state, list):
+        return appstate_from_slurm_state(job_state[0])
+    else:
+        return appstate_from_slurm_state(str(job_state))
+
+
 def version() -> Tuple[int, int]:
     """
     Uses ``sinfo --version`` to get the slurm version. If the command fails, it
@@ -666,7 +675,7 @@ class SlurmScheduler(
 
             entrypoint = job["command"]
             image = job["current_working_directory"]
-            state = appstate_from_slurm_state(job["job_state"][0])
+            state = get_appstate_from_job(job)
 
             job_resources = job["job_resources"]
 
@@ -881,7 +890,7 @@ class SlurmScheduler(
             out.append(
                 ListAppResponse(
                     app_id=str(job["job_id"]),
-                    state=SLURM_STATES[job["job_state"][0]],
+                    state=get_appstate_from_job(job),
                     name=job["name"],
                 )
             )
