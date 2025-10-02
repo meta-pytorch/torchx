@@ -523,6 +523,15 @@
     <span class="k">return</span> <span class="n">SLURM_STATES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">slurm_state</span><span class="p">,</span> <span class="n">AppState</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">get_appstate_from_job</span><span class="p">(</span><span class="n">job</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AppState</span><span class="p">:</span>
+    <span class="c1"># Prior to slurm-23.11, job_state was a string and not a list</span>
+    <span class="n">job_state</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_state&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">job_state</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">appstate_from_slurm_state</span><span class="p">(</span><span class="n">job_state</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">appstate_from_slurm_state</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">job_state</span><span class="p">))</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">version</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Uses ``sinfo --version`` to get the slurm version. If the command fails, it</span>
@@ -1116,7 +1125,7 @@
 
             <span class="n">entrypoint</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span>
             <span class="n">image</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;current_working_directory&quot;</span><span class="p">]</span>
-            <span class="n">state</span> <span class="o">=</span> <span class="n">appstate_from_slurm_state</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;job_state&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">get_appstate_from_job</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
 
             <span class="n">job_resources</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;job_resources&quot;</span><span class="p">]</span>
 
@@ -1331,7 +1340,7 @@
             <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">ListAppResponse</span><span class="p">(</span>
                     <span class="n">app_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;job_id&quot;</span><span class="p">]),</span>
-                    <span class="n">state</span><span class="o">=</span><span class="n">SLURM_STATES</span><span class="p">[</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;job_state&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]],</span>
+                    <span class="n">state</span><span class="o">=</span><span class="n">get_appstate_from_job</span><span class="p">(</span><span class="n">job</span><span class="p">),</span>
                     <span class="n">name</span><span class="o">=</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
                 <span class="p">)</span>
             <span class="p">)</span>
