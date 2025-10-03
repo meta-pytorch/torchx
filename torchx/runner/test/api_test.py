@@ -20,16 +20,18 @@ from torchx.schedulers.local_scheduler import (
     create_scheduler,
     LocalDirectoryImageProvider,
 )
-from torchx.specs import AppDryRunInfo, CfgVal
-from torchx.specs.api import (
+from torchx.specs import (
     AppDef,
+    AppDryRunInfo,
     AppHandle,
     AppState,
+    CfgVal,
     parse_app_handle,
     Resource,
     Role,
     runopts,
     UnknownAppException,
+    Workspace,
 )
 from torchx.specs.finder import ComponentNotFoundException
 from torchx.test.fixtures import TestWithTmpDir
@@ -400,6 +402,16 @@ class RunnerTest(TestWithTmpDir):
             ) -> None:
                 if self.build_new_img:
                     role.image = f"{role.image}_new"
+                    role.env["SRC_WORKSPACE"] = workspace
+
+        def create_role(image: str, workspace: str | None = None) -> Role:
+            return Role(
+                name="noop",
+                image=image,
+                resource=resource.SMALL,
+                entrypoint="/bin/true",
+                workspace=Workspace.from_str(workspace),
+            )
 
         with Runner(
             name=SESSION_NAME,
@@ -413,31 +425,69 @@ class RunnerTest(TestWithTmpDir):
         ) as runner:
             app = AppDef(
                 "ignored",
+                roles=[create_role(image="foo"), create_role(image="bar")],
+            )
+            roles = runner.dryrun(
+                app, "no-build-img", workspace="//workspace"
+            ).request.roles
+            self.assertEqual("foo", roles[0].image)
+            self.assertEqual("bar", roles[1].image)
+
+            roles = runner.dryrun(
+                app, "builds-img", workspace="//workspace"
+            ).request.roles
+
+            # workspace is attached to role[0] when role[0].workspace is `None`
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("bar", roles[1].image)
+
+            # now run with role[0] having workspace attribute defined
+            app = AppDef(
+                "ignored",
                 roles=[
-                    Role(
-                        name="sleep",
-                        image="foo",
-                        resource=resource.SMALL,
-                        entrypoint="sleep",
-                        args=["1"],
-                    ),
-                    Role(
-                        name="sleep",
-                        image="bar",
-                        resource=resource.SMALL,
-                        entrypoint="sleep",
-                        args=["1"],
-                    ),
+                    create_role(image="foo", workspace="//should_be_overriden"),
+                    create_role(image="bar"),
                 ],
             )
-            dryruninfo = runner.dryrun(app, "no-build-img", workspace="//workspace")
-            self.assertEqual("foo", dryruninfo.request.roles[0].image)
-            self.assertEqual("bar", dryruninfo.request.roles[1].image)
+            roles = runner.dryrun(
+                app, "builds-img", workspace="//workspace"
+            ).request.roles
+            # workspace argument should override role[0].workspace attribute
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("//workspace", roles[0].env["SRC_WORKSPACE"])
+            self.assertEqual("bar", roles[1].image)
 
-            dryruninfo = runner.dryrun(app, "builds-img", workspace="//workspace")
-            # workspace is attached to role[0] by default
-            self.assertEqual("foo_new", dryruninfo.request.roles[0].image)
-            self.assertEqual("bar", dryruninfo.request.roles[1].image)
+            # now run with both role[0] and role[1] having workspace attr
+            app = AppDef(
+                "ignored",
+                roles=[
+                    create_role(image="foo", workspace="//foo"),
+                    create_role(image="bar", workspace="//bar"),
+                ],
+            )
+            roles = runner.dryrun(
+                app, "builds-img", workspace="//workspace"
+            ).request.roles
+
+            # workspace argument should override role[0].workspace attribute
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("//workspace", roles[0].env["SRC_WORKSPACE"])
+            self.assertEqual("bar_new", roles[1].image)
+            self.assertEqual("//bar", roles[1].env["SRC_WORKSPACE"])
+
+            # now run with both role[0] and role[1] having workspace attr but no workspace arg
+            app = AppDef(
+                "ignored",
+                roles=[
+                    create_role(image="foo", workspace="//foo"),
+                    create_role(image="bar", workspace="//bar"),
+                ],
+            )
+            roles = runner.dryrun(app, "builds-img", workspace=None).request.roles
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("//foo", roles[0].env["SRC_WORKSPACE"])
+            self.assertEqual("bar_new", roles[1].image)
+            self.assertEqual("//bar", roles[1].env["SRC_WORKSPACE"])
 
     def test_describe(self, _) -> None:
         with self.get_runner() as runner:
