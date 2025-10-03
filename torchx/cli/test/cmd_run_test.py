@@ -393,11 +393,16 @@ component = custom.echo
 
     def test_verify_no_extra_args_stdin_with_boolean_flags(self) -> None:
         """Test that boolean flags conflict with stdin."""
-        boolean_flags = ["--dryrun", "--wait", "--log", "--tee_logs"]
+        boolean_flags = ["--wait", "--log", "--tee_logs"]
         for flag in boolean_flags:
             args = self.parser.parse_args(["--stdin", flag])
             with self.assertRaises(SystemExit):
                 self.cmd_run.verify_no_extra_args(args)
+
+    def test_verify_no_extra_args_stdin_dryrun_pass(self) -> None:
+        """Test that dryrun is allowed."""
+        args = self.parser.parse_args(["--stdin", "--dryrun"])
+        self.cmd_run.verify_no_extra_args(args)
 
     def test_verify_no_extra_args_stdin_with_value_args(self) -> None:
         """Test that arguments with values conflict with stdin."""

@@ -379,12 +379,16 @@ class CmdRun(SubCommand):
         if not args.stdin:
             return None
         if self._stdin_data_json is None:
-            self._stdin_data_json = self.torchx_json_from_stdin()
+            self._stdin_data_json = self.torchx_json_from_stdin(args)
         return self._stdin_data_json
 
-    def torchx_json_from_stdin(self) -> Dict[str, Any]:
+    def torchx_json_from_stdin(
+        self, args: Optional[argparse.Namespace] = None
+    ) -> Dict[str, Any]:
         try:
             stdin_data_json = json.load(sys.stdin)
+            if args and args.dryrun:
+                stdin_data_json["dryrun"] = True
             if not isinstance(stdin_data_json, dict):
                 logger.error(
                     "Invalid JSON input for `torchx run` command. Expected a dictionary."
@@ -412,6 +416,8 @@ class CmdRun(SubCommand):
             if action.dest == "stdin":  # Skip stdin itself
                 continue
             if action.dest == "help":  # Skip help
+                continue
+            if action.dest == "dryrun":  # Skip dryrun
                 continue
 
             current_value = getattr(args, action.dest, None)
