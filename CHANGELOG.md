@@ -75,7 +75,7 @@
 
 ## torchx-0.5.0
 
-* Milestone: https://github.com/pytorch/torchx/milestone/7
+* Milestone: https://github.com/meta-pytorch/torchx/milestone/7
 
 * `torchx.schedulers`
   * Kubernetes MCAD Scheduler (Prototype)
@@ -116,7 +116,7 @@
 
 ## torchx-0.4.0
 
-* Milestone: https://github.com/pytorch/torchx/milestone/6
+* Milestone: https://github.com/meta-pytorch/torchx/milestone/6
 
 * `torchx.schedulers`
   * GCP Batch (Prototype)
@@ -142,7 +142,7 @@
 
 ## torchx-0.3.0
 
-* Milestone: https://github.com/pytorch/torchx/milestone/5
+* Milestone: https://github.com/meta-pytorch/torchx/milestone/5
 
 * `torchx.schedulers`
   * List API (Prototype)
@@ -189,7 +189,7 @@
 
 ## torchx-0.2.0
 
-* Milestone: https://github.com/pytorch/torchx/milestone/4
+* Milestone: https://github.com/meta-pytorch/torchx/milestone/4
 
 * `torchx.schedulers`
     * DeviceMounts
@@ -245,7 +245,7 @@
 
 ## torchx-0.1.2
 
-Milestone: https://github.com/pytorch/torchx/milestones/3
+Milestone: https://github.com/meta-pytorch/torchx/milestones/3
 
 * PyTorch 1.11 Support
 * Python 3.10 Support
@@ -285,7 +285,7 @@ Milestone: https://github.com/pytorch/torchx/milestones/3
     * Ax runner now lives in the Ax repo https://github.com/facebook/Ax/commit/8e2e68f21155e918996bda0b7d97b5b9ef4e0cba
 * `torchx.cli`
   * `.torchxconfig`
-    * You can now specify component argument defaults `.torchxconfig` https://github.com/pytorch/torchx/commit/c37cfd7846d5a0cb527dd19c8c95e881858f8f0a
+    * You can now specify component argument defaults `.torchxconfig` https://github.com/meta-pytorch/torchx/commit/c37cfd7846d5a0cb527dd19c8c95e881858f8f0a
     * `~/.torchxconfig` can now be used to set user level defaults. #378
     * `--workspace` can be configured #397
   * Color change and bug fixes #419
@@ -301,7 +301,7 @@ Milestone: https://github.com/pytorch/torchx/milestones/3
 
 ## torchx-0.1.1
 
-* Milestone: https://github.com/pytorch/torchx/milestone/2
+* Milestone: https://github.com/meta-pytorch/torchx/milestone/2
 
 * `torchx.schedulers`
   * #287, #286 - Implement `local_docker` scheduler using docker client lib

@@ -44,12 +44,12 @@ from typing import (
     Optional,
     Tuple,
     TYPE_CHECKING,
+    TypedDict,
 )
 
 import torchx
 import yaml
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
@@ -60,6 +60,7 @@ from torchx.schedulers.api import (
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     BindMount,
     CfgVal,
@@ -75,7 +76,6 @@ from torchx.specs.api import (
 )
 from torchx.util.strings import normalize_str
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
-from typing_extensions import TypedDict
 
 
 if TYPE_CHECKING:
@@ -399,6 +399,7 @@ def app_to_resource(
             replica_role = values.apply(role)
             if role_idx == 0 and replica_id == 0:
                 replica_role.env["TORCHX_RANK0_HOST"] = "localhost"
+            replica_role.env["TORCHX_IMAGE"] = replica_role.image
 
             pod = role_to_pod(name, replica_role, service_account)
             pod.metadata.labels.update(
@@ -485,7 +486,7 @@ class KubernetesScheduler(
     For installation instructions see: https://github.com/volcano-sh/volcano
 
     This has been confirmed to work with Volcano v1.3.0 and Kubernetes versions
-    v1.18-1.21. See https://github.com/pytorch/torchx/issues/120 which is
+    v1.18-1.21. See https://github.com/meta-pytorch/torchx/issues/120 which is
     tracking Volcano support for Kubernetes v1.22.
 
     .. note::

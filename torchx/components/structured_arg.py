@@ -30,8 +30,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from pyre_extensions import none_throws
-
 from torchx import specs
 
 
@@ -148,7 +146,8 @@ class StructuredNameArgument:
             if m:  # use the last module name
                 run_name = m.rpartition(".")[2]
             else:  # use script name w/ no extension
-                run_name = Path(none_throws(script)).stem
+                assert script, "`script` can't be `None` here due checks above"
+                run_name = Path(script).stem
         return StructuredNameArgument(
             experiment_name or default_experiment_name, run_name
         )

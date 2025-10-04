@@ -19,7 +19,7 @@ function setLinks(colabLink, notebookLink, githubLink) {
 
 const version = $(".version").text().trim().split(" ")[0].substr(1);
 const colabBase = "https://colab.research.google.com/github/pytorch/torchx/blob/gh-pages/" + version
-const githubBase = "https://github.com/pytorch/torchx/blob/main/"
+const githubBase = "https://github.com/meta-pytorch/torchx/blob/main/"
 
 var downloadNote = $(".sphx-glr-download-link-note.admonition.note");
 var isNBSphinx = $(".nbinput");

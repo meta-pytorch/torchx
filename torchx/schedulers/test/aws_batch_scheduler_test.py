@@ -22,7 +22,9 @@ from torchx.schedulers.aws_batch_scheduler import (
     AWSBatchOpts,
     AWSBatchScheduler,
     create_scheduler,
+    ENV_TORCHX_IMAGE,
     ENV_TORCHX_ROLE_NAME,
+    parse_ulimits,
     resource_from_resource_requirements,
     resource_requirements_from_resource,
     to_millis_since_epoch,
@@ -195,7 +197,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
             node_groups[0]["container"]["instanceType"],
         )
 
-    def test_submit_dryrun_no_instance_type_singlenode(self) -> None:
+    def test_submit_dryrun_instance_type_singlenode(self) -> None:
         cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=1, resource=resource)
@@ -203,7 +205,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
-        self.assertTrue("instanceType" not in node_groups[0]["container"])
+        self.assertTrue("instanceType" in node_groups[0]["container"])
 
     def test_submit_dryrun_no_instance_type_non_aws(self) -> None:
         cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
@@ -252,6 +254,10 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                                     {"name": "FOO", "value": "bar"},
                                     {"name": "TORCHX_ROLE_IDX", "value": "0"},
                                     {"name": "TORCHX_ROLE_NAME", "value": "trainer"},
+                                    {
+                                        "name": "TORCHX_IMAGE",
+                                        "value": "pytorch/torchx:latest",
+                                    },
                                 ],
                                 "privileged": False,
                                 "resourceRequirements": [
@@ -311,7 +317,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
         props = _role_to_node_properties(role, 0)
         self.assertEqual(
-            # pyre-fixme[16]: `object` has no attribute `__getitem__`.
             props["container"]["volumes"],
             [
                 {
@@ -350,7 +355,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
         props = _role_to_node_properties(role, 0)
         self.assertEqual(
-            # pyre-fixme[16]: `object` has no attribute `__getitem__`.
             props["container"]["linuxParameters"]["devices"],
             [
                 {
@@ -375,7 +379,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
         props = _role_to_node_properties(role, 0)
         self.assertEqual(
-            # pyre-fixme[16]: `object` has no attribute `__getitem__`.
             props["container"]["linuxParameters"]["devices"],
             [
                 {
@@ -395,6 +398,46 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                 },
             ],
         )
+
+    def test_role_to_node_properties_ulimits(self) -> None:
+        role = specs.Role(
+            name="test",
+            image="test:latest",
+            entrypoint="test",
+            args=["test"],
+            resource=specs.Resource(cpu=1, memMB=1000, gpu=0),
+        )
+        ulimits = [
+            {"name": "nofile", "softLimit": 65536, "hardLimit": 65536},
+            {"name": "memlock", "softLimit": -1, "hardLimit": -1},
+        ]
+        props = _role_to_node_properties(role, 0, ulimits=ulimits)
+        self.assertEqual(
+            props["container"]["ulimits"],
+            ulimits,
+        )
+
+    def test_parse_ulimits(self) -> None:
+        # Test single ulimit
+        result = parse_ulimits(["nofile:65536:65536"])
+        expected = [{"name": "nofile", "softLimit": 65536, "hardLimit": 65536}]
+        self.assertEqual(result, expected)
+
+        # Test multiple ulimits
+        result = parse_ulimits(["nofile:65536:65536", "memlock:-1:-1"])
+        expected = [
+            {"name": "nofile", "softLimit": 65536, "hardLimit": 65536},
+            {"name": "memlock", "softLimit": -1, "hardLimit": -1},
+        ]
+        self.assertEqual(result, expected)
+
+        # Test empty list
+        result = parse_ulimits([])
+        self.assertEqual(result, [])
+
+        # Test invalid format
+        with self.assertRaises(ValueError):
+            parse_ulimits(["invalid"])
 
     def _mock_scheduler_running_job(self) -> AWSBatchScheduler:
         scheduler = AWSBatchScheduler(
@@ -456,7 +499,11 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                                             {
                                                 "name": ENV_TORCHX_ROLE_NAME,
                                                 "value": "echo",
-                                            }
+                                            },
+                                            {
+                                                "name": ENV_TORCHX_IMAGE,
+                                                "value": "pytorch/torchx:latest",
+                                            },
                                         ],
                                     },
                                 }

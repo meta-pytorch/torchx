@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -12,6 +11,8 @@ import copy
 import inspect
 import json
 import logging as logger
+import os
+import pathlib
 import re
 import typing
 from dataclasses import asdict, dataclass, field
@@ -67,6 +68,32 @@ YELLOW_BOLD = "\033[1;33m"
 RESET = "\033[0m"
 
 
+def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
+    """
+    Path to the "dot-directory" for torchx.
+    Defaults to `~/.torchx` and is overridable via the `TORCHX_HOME` environment variable.
+
+    Usage:
+
+    .. doc-test::
+
+        from pathlib import Path
+        from torchx.specs import TORCHX_HOME
+
+        assert TORCHX_HOME() == Path.home() / ".torchx"
+        assert TORCHX_HOME("conda-pack-out") ==  Path.home() / ".torchx" / "conda-pack-out"
+    ```
+    """
+
+    default_dir = str(pathlib.Path.home() / ".torchx")
+    torchx_home = pathlib.Path(os.getenv("TORCHX_HOME", default_dir))
+
+    torchx_home = torchx_home / os.path.sep.join(subdir_paths)
+    torchx_home.mkdir(parents=True, exist_ok=True)
+
+    return torchx_home
+
+
 # ========================================
 # ==== Distributed AppDef API =======
 # ========================================
@@ -83,6 +110,8 @@ class Resource:
         memMB: MB of ram
         capabilities: additional hardware specs (interpreted by scheduler)
         devices: a list of named devices with their quantities
+        tags: metadata tags for the resource (not interpreted by schedulers)
+          used to add non-functional information about resources (e.g. whether it is an alias of another resource)
 
     Note: you should prefer to use named_resources instead of specifying the raw
     resource requirement directly.
@@ -93,6 +122,7 @@ class Resource:
     memMB: int
     capabilities: Dict[str, Any] = field(default_factory=dict)
     devices: Dict[str, int] = field(default_factory=dict)
+    tags: Dict[str, object] = field(default_factory=dict)
 
     @staticmethod
     def copy(original: "Resource", **capabilities: Any) -> "Resource":
@@ -101,6 +131,7 @@ class Resource:
         are present in the original resource and as parameter, the one from parameter
         will be used.
         """
+
         res_capabilities = dict(original.capabilities)
         res_capabilities.update(capabilities)
         return Resource(
@@ -789,6 +820,60 @@ class runopt:
     is_required: bool
     help: str
 
+    @property
+    def is_type_list_of_str(self) -> bool:
+        """
+        Checks if the option type is a list of strings.
+
+        Returns:
+            bool: True if the option type is either List[str] or list[str], False otherwise.
+        """
+        return self.opt_type in (List[str], list[str])
+
+    @property
+    def is_type_dict_of_str(self) -> bool:
+        """
+        Checks if the option type is a dict of string keys to string values.
+
+        Returns:
+            bool: True if the option type is either Dict[str, str] or dict[str, str], False otherwise.
+        """
+        return self.opt_type in (Dict[str, str], dict[str, str])
+
+    def cast_to_type(self, value: str) -> CfgVal:
+        """Casts the given `value` (in its string representation) to the type of this run option.
+        Below are the cast rules for each option type and value literal:
+
+        1. opt_type=str, value="foo" -> "foo"
+        1. opt_type=bool, value="True"/"False" -> True/False
+        1. opt_type=int, value="1" -> 1
+        1. opt_type=float, value="1.1" -> 1.1
+        1. opt_type=list[str]/List[str], value="a,b,c" or value="a;b;c" -> ["a", "b", "c"]
+        1. opt_type=dict[str,str]/Dict[str,str],
+           value="key1:val1,key2:val2" or value="key1:val1;key2:val2" -> {"key1": "val1", "key2": "val2"}
+
+        NOTE: dict parsing uses ":" as the kv separator (rather than the standard "=") because "=" is used
+        at the top-level cfg to parse runopts (notice the plural) from the CLI. Originally torchx only supported
+        primitives and list[str] as CfgVal but dict[str,str] was added in https://github.com/meta-pytorch/torchx/pull/855
+        """
+
+        if self.opt_type is None:
+            raise ValueError("runopt's opt_type cannot be `None`")
+        elif self.opt_type == bool:
+            return value.lower() == "true"
+        elif self.opt_type in (List[str], list[str]):
+            # lists may be ; or , delimited
+            # also deal with trailing "," by removing empty strings
+            return [v for v in value.replace(";", ",").split(",") if v]
+        elif self.opt_type in (Dict[str, str], dict[str, str]):
+            return {
+                s.split(":", 1)[0]: s.split(":", 1)[1]
+                for s in value.replace(";", ",").split(",")
+            }
+        else:
+            assert self.opt_type in (str, int, float)
+            return self.opt_type(value)
+
 
 class runopts:
     """
@@ -948,27 +1033,11 @@ class runopts:
 
         """
 
-        def _cast_to_type(value: str, opt_type: Type[CfgVal]) -> CfgVal:
-            if opt_type == bool:
-                return value.lower() == "true"
-            elif opt_type == List[str]:
-                # lists may be ; or , delimited
-                # also deal with trailing "," by removing empty strings
-                return [v for v in value.replace(";", ",").split(",") if v]
-            elif opt_type == Dict[str, str]:
-                return {
-                    s.split(":", 1)[0]: s.split(":", 1)[1]
-                    for s in value.replace(";", ",").split(",")
-                }
-            else:
-                # pyre-ignore[19, 6] type won't be dict here as we handled it above
-                return opt_type(value)
-
         cfg: Dict[str, CfgVal] = {}
         for key, val in to_dict(cfg_str).items():
-            runopt_ = self.get(key)
-            if runopt_:
-                cfg[key] = _cast_to_type(val, runopt_.opt_type)
+            opt = self.get(key)
+            if opt:
+                cfg[key] = opt.cast_to_type(val)
             else:
                 logger.warning(
                     f"{YELLOW_BOLD}Unknown run option passed to scheduler: {key}={val}{RESET}"
@@ -982,16 +1051,16 @@ class runopts:
         cfg: Dict[str, CfgVal] = {}
         cfg_dict = json.loads(json_repr)
         for key, val in cfg_dict.items():
-            runopt_ = self.get(key)
-            if runopt_:
+            opt = self.get(key)
+            if opt:
                 # Optional runopt cfg values default their value to None,
                 # but use `_type` to specify their type when provided.
                 # Make sure not to treat None's as lists/dictionaries
                 if val is None:
                     cfg[key] = val
-                elif runopt_.opt_type == List[str]:
+                elif opt.is_type_list_of_str:
                     cfg[key] = [str(v) for v in val]
-                elif runopt_.opt_type == Dict[str, str]:
+                elif opt.is_type_dict_of_str:
                     cfg[key] = {str(k): str(v) for k, v in val.items()}
                 else:
                     cfg[key] = val

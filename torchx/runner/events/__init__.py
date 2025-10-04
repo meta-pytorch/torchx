@@ -33,8 +33,9 @@ from torchx.util.session import get_session_id_or_create_new
 
 from .api import SourceType, TorchxEvent  # noqa F401
 
-# pyre-fixme[9]: _events_logger is a global variable
-_events_logger: logging.Logger = None
+_events_logger: Optional[logging.Logger] = None
+
+log: logging.Logger = logging.getLogger(__name__)
 
 
 def _get_or_create_logger(destination: str = "null") -> logging.Logger:
@@ -51,19 +52,28 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
             a new logger if None provided.
     """
     global _events_logger
+
     if _events_logger:
         return _events_logger
-    logging_handler = get_logging_handler(destination)
-    logging_handler.setLevel(logging.DEBUG)
-    _events_logger = logging.getLogger(f"torchx-events-{destination}")
-    # Do not propagate message to the root logger
-    _events_logger.propagate = False
-    _events_logger.addHandler(logging_handler)
-    return _events_logger
+    else:
+        logging_handler = get_logging_handler(destination)
+        logging_handler.setLevel(logging.DEBUG)
+        _events_logger = logging.getLogger(f"torchx-events-{destination}")
+        # Do not propagate message to the root logger
+        _events_logger.propagate = False
+        _events_logger.addHandler(logging_handler)
+
+        assert _events_logger  # make type-checker happy
+        return _events_logger
 
 
 def record(event: TorchxEvent, destination: str = "null") -> None:
-    _get_or_create_logger(destination).info(event.serialize())
+    try:
+        serialized_event = event.serialize()
+    except Exception:
+        log.exception("failed to serialize event, will not record event")
+    else:
+        _get_or_create_logger(destination).info(serialized_event)
 
 
 class log_event:

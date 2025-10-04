@@ -7,16 +7,17 @@
 # pyre-strict
 
 import argparse
+import json
 import logging
 import os
 import sys
 import threading
 from collections import Counter
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, field, fields, MISSING as DATACLASS_MISSING
 from itertools import groupby
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import torchx.specs as specs
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig_run
@@ -25,6 +26,7 @@ from torchx.cli.cmd_log import get_logs
 from torchx.runner import config, get_runner, Runner
 from torchx.runner.config import load_sections
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
+from torchx.specs import CfgVal
 from torchx.specs.finder import (
     _Component,
     ComponentNotFoundException,
@@ -34,14 +36,86 @@ from torchx.specs.finder import (
 )
 from torchx.util.log_tee_helpers import tee_logs
 from torchx.util.types import none_throws
+from torchx.workspace import Workspace
 
 
 MISSING_COMPONENT_ERROR_MSG = (
     "missing component name, either provide it from the CLI or in .torchxconfig"
 )
 
+LOCAL_SCHEDULER_WARNING_MSG = (
+    "`local` scheduler is deprecated and will be"
+    " removed in the near future,"
+    " please use other variants of the local scheduler"
+    " (e.g. `local_cwd`)"
+)
 
 logger: logging.Logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TorchXRunArgs:
+    component_name: str
+    scheduler: str
+    scheduler_args: Dict[str, Any]
+    scheduler_cfg: Dict[str, CfgVal] = field(default_factory=dict)
+    dryrun: bool = False
+    wait: bool = False
+    log: bool = False
+    workspace: str = ""
+    parent_run_id: Optional[str] = None
+    tee_logs: bool = False
+    component_args: Dict[str, Any] = field(default_factory=dict)
+    component_args_str: List[str] = field(default_factory=list)
+
+
+def torchx_run_args_from_json(json_data: Dict[str, Any]) -> TorchXRunArgs:
+    all_fields = [f.name for f in fields(TorchXRunArgs)]
+    required_fields = {
+        f.name
+        for f in fields(TorchXRunArgs)
+        if f.default is DATACLASS_MISSING and f.default_factory is DATACLASS_MISSING
+    }
+    missing_fields = required_fields - json_data.keys()
+    if missing_fields:
+        raise ValueError(
+            f"The following required fields are missing: {', '.join(missing_fields)}"
+        )
+
+    # Fail if there are fields that aren't part of the run command
+    filtered_json_data = {k: v for k, v in json_data.items() if k in all_fields}
+    extra_fields = set(json_data.keys()) - set(all_fields)
+    if extra_fields:
+        raise ValueError(
+            f"The following fields are not part of the run command: {', '.join(extra_fields)}.",
+            "Please check your JSON and try launching again.",
+        )
+
+    torchx_args = TorchXRunArgs(**filtered_json_data)
+    if torchx_args.workspace == "":
+        torchx_args.workspace = f"{Path.cwd()}"
+    return torchx_args
+
+
+def torchx_run_args_from_argparse(
+    args: argparse.Namespace,
+    component_name: str,
+    component_args: List[str],
+    scheduler_cfg: Dict[str, CfgVal],
+) -> TorchXRunArgs:
+    return TorchXRunArgs(
+        component_name=component_name,
+        scheduler=args.scheduler,
+        scheduler_args={},
+        scheduler_cfg=scheduler_cfg,
+        dryrun=args.dryrun,
+        wait=args.wait,
+        log=args.log,
+        workspace=args.workspace,
+        parent_run_id=args.parent_run_id,
+        tee_logs=args.tee_logs,
+        component_args_str=component_args,
+    )
 
 
 def _parse_component_name_and_args(
@@ -133,6 +207,7 @@ class CmdBuiltins(SubCommand):
 class CmdRun(SubCommand):
     def __init__(self) -> None:
         self._subparser: Optional[argparse.ArgumentParser] = None
+        self._stdin_data_json: Optional[Dict[str, Any]] = None
 
     def add_arguments(self, subparser: argparse.ArgumentParser) -> None:
         scheduler_names = get_scheduler_factories().keys()
@@ -176,7 +251,7 @@ class CmdRun(SubCommand):
         subparser.add_argument(
             "--workspace",
             "--buck-target",
-            default=f"file://{Path.cwd()}",
+            default=f"{Path.cwd()}",
             action=torchxconfig_run,
             help="local workspace to build/patch (buck-target of main binary if using buck)",
         )
@@ -194,35 +269,36 @@ class CmdRun(SubCommand):
             help="Add additional prefix to log lines to indicate which replica is printing the log",
         )
         subparser.add_argument(
+            "--stdin",
+            action="store_true",
+            default=False,
+            help="Read JSON input from stdin to parse into torchx run args and run the component.",
+        )
+        subparser.add_argument(
             "component_name_and_args",
             nargs=argparse.REMAINDER,
         )
 
-    def _run(self, runner: Runner, args: argparse.Namespace) -> None:
+    def _run_inner(self, runner: Runner, args: TorchXRunArgs) -> None:
         if args.scheduler == "local":
-            logger.warning(
-                "`local` scheduler is deprecated and will be"
-                " removed in the near future,"
-                " please use other variants of the local scheduler"
-                " (e.g. `local_cwd`)"
-            )
+            logger.warning(LOCAL_SCHEDULER_WARNING_MSG)
 
-        scheduler_opts = runner.scheduler_run_opts(args.scheduler)
-        cfg = scheduler_opts.cfg_from_str(args.scheduler_args)
-        config.apply(scheduler=args.scheduler, cfg=cfg)
-
-        component, component_args = _parse_component_name_and_args(
-            args.component_name_and_args,
-            none_throws(self._subparser),
+        config.apply(scheduler=args.scheduler, cfg=args.scheduler_cfg)
+        component_args = (
+            args.component_args_str
+            if args.component_args_str != []
+            else args.component_args
         )
         try:
+            workspace = Workspace.from_str(args.workspace) if args.workspace else None
+
             if args.dryrun:
                 dryrun_info = runner.dryrun_component(
-                    component,
+                    args.component_name,
                     component_args,
                     args.scheduler,
-                    workspace=args.workspace,
-                    cfg=cfg,
+                    workspace=workspace,
+                    cfg=args.scheduler_cfg,
                     parent_run_id=args.parent_run_id,
                 )
                 print(
@@ -233,11 +309,11 @@ class CmdRun(SubCommand):
                 print("\n=== SCHEDULER REQUEST ===\n" f"{dryrun_info}")
             else:
                 app_handle = runner.run_component(
-                    component,
+                    args.component_name,
                     component_args,
                     args.scheduler,
                     workspace=args.workspace,
-                    cfg=cfg,
+                    cfg=args.scheduler_cfg,
                     parent_run_id=args.parent_run_id,
                 )
                 # DO NOT delete this line. It is used by slurm tests to retrieve the app id
@@ -258,18 +334,117 @@ class CmdRun(SubCommand):
                         )
 
         except (ComponentValidationException, ComponentNotFoundException) as e:
-            error_msg = f"\nFailed to run component `{component}` got errors: \n {e}"
+            error_msg = (
+                f"\nFailed to run component `{args.component_name}` got errors: \n {e}"
+            )
             logger.error(error_msg)
             sys.exit(1)
         except specs.InvalidRunConfigException as e:
             error_msg = (
-                f"Scheduler arg is incorrect or missing required option: `{e.cfg_key}`\n"
-                f"Run `torchx runopts` to check configuration for `{args.scheduler}` scheduler\n"
-                f"Use `-cfg` to specify run cfg as `key1=value1,key2=value2` pair\n"
-                "of setup `.torchxconfig` file, see: https://pytorch.org/torchx/main/experimental/runner.config.html"
+                "Invalid scheduler configuration: %s\n"
+                "To configure scheduler options, either:\n"
+                "  1. Use the `-cfg` command-line argument, e.g., `-cfg key1=value1,key2=value2`\n"
+                "  2. Set up a `.torchxconfig` file. For more details, visit: https://meta-pytorch.org/torchx/main/runner.config.html\n"
+                "Run `torchx runopts %s` to check all available configuration options for the "
+                "`%s` scheduler."
             )
-            logger.error(error_msg)
+            print(error_msg % (e, args.scheduler, args.scheduler), file=sys.stderr)
             sys.exit(1)
+
+    def _run_from_cli_args(self, runner: Runner, args: argparse.Namespace) -> None:
+        scheduler_opts = runner.scheduler_run_opts(args.scheduler)
+        cfg = scheduler_opts.cfg_from_str(args.scheduler_args)
+
+        component, component_args = _parse_component_name_and_args(
+            args.component_name_and_args,
+            none_throws(self._subparser),
+        )
+        torchx_run_args = torchx_run_args_from_argparse(
+            args, component, component_args, cfg
+        )
+        self._run_inner(runner, torchx_run_args)
+
+    def _run_from_stdin_args(self, runner: Runner, stdin_data: Dict[str, Any]) -> None:
+        torchx_run_args = torchx_run_args_from_json(stdin_data)
+        scheduler_opts = runner.scheduler_run_opts(torchx_run_args.scheduler)
+        cfg = scheduler_opts.cfg_from_json_repr(
+            json.dumps(torchx_run_args.scheduler_args)
+        )
+        torchx_run_args.scheduler_cfg = cfg
+        self._run_inner(runner, torchx_run_args)
+
+    def _get_torchx_stdin_args(
+        self, args: argparse.Namespace
+    ) -> Optional[Dict[str, Any]]:
+        if not args.stdin:
+            return None
+        if self._stdin_data_json is None:
+            self._stdin_data_json = self.torchx_json_from_stdin(args)
+        return self._stdin_data_json
+
+    def torchx_json_from_stdin(
+        self, args: Optional[argparse.Namespace] = None
+    ) -> Dict[str, Any]:
+        try:
+            stdin_data_json = json.load(sys.stdin)
+            if args and args.dryrun:
+                stdin_data_json["dryrun"] = True
+            if not isinstance(stdin_data_json, dict):
+                logger.error(
+                    "Invalid JSON input for `torchx run` command. Expected a dictionary."
+                )
+                sys.exit(1)
+            return stdin_data_json
+        except (json.JSONDecodeError, EOFError):
+            logger.error(
+                "Unable to parse JSON input for `torchx run` command, please make sure it's a valid JSON input."
+            )
+            sys.exit(1)
+
+    def verify_no_extra_args(self, args: argparse.Namespace) -> None:
+        """
+        Verifies that only --stdin was provided when using stdin mode.
+        """
+        if not args.stdin:
+            return
+
+        subparser = none_throws(self._subparser)
+        conflicting_args = []
+
+        # Check each argument against its default value
+        for action in subparser._actions:
+            if action.dest == "stdin":  # Skip stdin itself
+                continue
+            if action.dest == "help":  # Skip help
+                continue
+            if action.dest == "dryrun":  # Skip dryrun
+                continue
+
+            current_value = getattr(args, action.dest, None)
+            default_value = action.default
+
+            # For arguments that differ from default
+            if current_value != default_value:
+                # Handle special cases where non-default doesn't mean explicitly set
+                if action.dest == "component_name_and_args" and current_value == []:
+                    continue  # Empty list is still default
+                print(f"*********\n {default_value} = {current_value}")
+                conflicting_args.append(f"--{action.dest.replace('_', '-')}")
+
+        if conflicting_args:
+            subparser.error(
+                f"Cannot specify {', '.join(conflicting_args)} when using --stdin. "
+                "All configuration should be provided in JSON input."
+            )
+
+    def _run(self, runner: Runner, args: argparse.Namespace) -> None:
+        self.verify_no_extra_args(args)
+        if args.stdin:
+            stdin_data_json = self._get_torchx_stdin_args(args)
+            if stdin_data_json is not None:
+                self._run_from_stdin_args(runner, stdin_data_json)
+        else:
+            self._run_from_cli_args(runner, args)
 
     def run(self, args: argparse.Namespace) -> None:
         os.environ["TORCHX_CONTEXT_NAME"] = os.getenv("TORCHX_CONTEXT_NAME", "cli_run")

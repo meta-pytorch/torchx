@@ -7,7 +7,7 @@
 
 #
 # Builds docs from the checkedout HEAD
-# and pushes the artifacts to gh-pages branch in github.com/pytorch/torchx
+# and pushes the artifacts to gh-pages branch in github.com/meta-pytorch/torchx
 #
 # 1. sphinx generated docs are copied to <repo-root>/<version>
 # 2. if a release tag is found on HEAD then redirects are copied to <repo-root>/latest
@@ -21,8 +21,8 @@
 #           |- main (redirects to the most recent ver in trunk, including release)
 #           |- latest (redirects to the most recent release)
 # If the most recent  release is 0.1.0 and main is at 0.1.1rc1 then,
-# https://pytorch.org/torchx/main -> https://pytorch.org/torchx/0.1.1rc1
-# https://pytorch.org/torchx/latest -> https://pytorch.org/torchx/0.1.0
+# https://meta-pytorch.org/torchx/main -> https://meta-pytorch.org/torchx/0.1.1rc1
+# https://meta-pytorch.org/torchx/latest -> https://meta-pytorch.org/torchx/0.1.0
 #
 # Redirects are done via Jekyll redirect-from  plugin. See:
 #   sources/scripts/create_redirect_md.py

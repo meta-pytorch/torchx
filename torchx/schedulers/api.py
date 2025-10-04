@@ -12,11 +12,10 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Generic, Iterable, List, Optional, TypeVar
+from typing import Generic, Iterable, List, Optional, TypeVar, Union
 
 from torchx.specs import (
     AppDef,
-    AppDryRunInfo,
     AppState,
     NONE,
     NULL_RESOURCE,
@@ -24,7 +23,7 @@ from torchx.specs import (
     RoleStatus,
     runopts,
 )
-from torchx.workspace.api import WorkspaceMixin
+from torchx.workspace.api import Workspace, WorkspaceMixin
 
 
 DAYS_IN_2_WEEKS = 14
@@ -132,7 +131,7 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         self,
         app: A,
         cfg: T,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
     ) -> str:
         """
         Submits the application to be run by the scheduler.
@@ -145,10 +144,9 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
-            sched = self
-            assert isinstance(sched, WorkspaceMixin)
-            role = app.roles[0]
-            sched.build_workspace_and_update_role(role, workspace, resolved_cfg)
+            assert isinstance(self, WorkspaceMixin)
+            self.build_workspace_and_update_role2(app.roles[0], workspace, resolved_cfg)
+
         # pyre-fixme: submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self.submit_dryrun(app, resolved_cfg)
         return self.schedule(dryrun_info)
@@ -357,13 +355,14 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
 
         Raises error if application is not compatible with scheduler
         """
-        if isinstance(app, AppDef):
-            for role in app.roles:
-                if role.resource == NULL_RESOURCE:
-                    raise ValueError(
-                        f"No resource for role: {role.image}."
-                        f" Did you forget to attach resource to the role"
-                    )
+        if not isinstance(app, AppDef):
+            return
+
+        for role in app.roles:
+            if role.resource == NULL_RESOURCE:
+                raise ValueError(
+                    f"No resource for role: {role.image}. Did you forget to attach resource to the role"
+                )
 
 
 def filter_regex(regex: str, data: Iterable[str]) -> Iterable[str]:

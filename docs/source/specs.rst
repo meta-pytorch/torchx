@@ -90,17 +90,17 @@ Component Linter
 .. autoclass:: LinterMessage
    :members:
 
-.. autoclass:: TorchFunctionVisitor
+.. autoclass:: ComponentFnVisitor
    :members:
 
 .. autoclass:: TorchXArgumentHelpFormatter
    :members:
 
-.. autoclass:: TorchxFunctionArgsValidator
+.. autoclass:: ArgTypeValidator
    :members:
 
-.. autoclass:: TorchxFunctionValidator
+.. autoclass:: ComponentFunctionValidator
    :members:
 
-.. autoclass:: TorchxReturnValidator
+.. autoclass:: ReturnTypeValidator
    :members:

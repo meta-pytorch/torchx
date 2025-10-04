@@ -27,6 +27,7 @@ from torchx.schedulers import get_scheduler_factories, Scheduler
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Stream
 from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts
 from torchx.test.fixtures import TestWithTmpDir
+from torchx.workspace import Workspace
 
 
 class TestScheduler(Scheduler):
@@ -95,21 +96,33 @@ class TestScheduler(Scheduler):
         )
         opts.add(
             "l",
-            type_=List[str],
+            type_=list[str],
             default=["a", "b", "c"],
             help="a list option",
         )
         opts.add(
-            "l_none",
+            "l_typing",
             type_=List[str],
+            default=["a", "b", "c"],
+            help="a typing.List option",
+        )
+        opts.add(
+            "l_none",
+            type_=list[str],
             default=None,
             help="a None list option",
         )
         opts.add(
             "d",
-            type_=Dict[str, str],
+            type_=dict[str, str],
             default={"foo": "bar"},
             help="a dict option",
+        )
+        opts.add(
+            "d_typing",
+            type_=Dict[str, str],
+            default={"foo": "bar"},
+            help="a typing.Dict option",
         )
         opts.add(
             "d_none",
@@ -151,6 +164,10 @@ _MY_CONFIG = """#
 [test]
 s = my_default
 i = 100
+l = abc;def
+l_typing = ghi;jkl
+d = a:b,c:d
+d_typing = e:f,g:h
 """
 
 _MY_CONFIG2 = """#
@@ -257,6 +274,12 @@ class ConfigTest(TestWithTmpDir):
                 dirs=dirs,
             ),
         )
+
+    def test_no_config(self) -> None:
+        config_dir = self.tmpdir
+        with patch.dict(os.environ, {ENV_TORCHXCONFIG: str("")}):
+            configs = find_configs(dirs=[str(config_dir)])
+            self.assertEqual([], configs)
 
     def test_find_configs(self) -> None:
         config_dir = self.tmpdir
@@ -387,6 +410,10 @@ image = foobar_custom
         self.assertEqual("runtime_value", cfg.get("s"))
         self.assertEqual(100, cfg.get("i"))
         self.assertEqual(1.2, cfg.get("f"))
+        self.assertEqual({"a": "b", "c": "d"}, cfg.get("d"))
+        self.assertEqual({"e": "f", "g": "h"}, cfg.get("d_typing"))
+        self.assertEqual(["abc", "def"], cfg.get("l"))
+        self.assertEqual(["ghi", "jkl"], cfg.get("l_typing"))
 
     def test_dump_invalid_scheduler(self) -> None:
         with self.assertRaises(ValueError):
@@ -460,7 +487,7 @@ image = foobar_custom
 
         # all runopts in the TestScheduler have defaults, just check against those
         for opt_name, opt in TestScheduler("test").run_opts():
-            self.assertEqual(cfg.get(opt_name), opt.default)
+            self.assertEqual(opt.default, cfg.get(opt_name))
 
     def test_dump_and_load_all_registered_schedulers(self) -> None:
         # dump all the runopts for all registered schedulers
@@ -486,3 +513,31 @@ image = foobar_custom
                     opt_name in cfg,
                     f"missing {opt_name} in {sched} run opts with cfg {cfg}",
                 )
+
+    def test_get_workspace_config(self) -> None:
+        configdir = self.tmpdir
+        self.write(
+            str(configdir / ".torchxconfig"),
+            """#
+[cli:run]
+workspace =
+    /home/foo/third-party/verl: verl
+    /home/foo/bar/scripts/.torchxconfig: verl/.torchxconfig
+    /home/foo/baz:
+""",
+        )
+
+        workspace_config = get_config(
+            prefix="cli", name="run", key="workspace", dirs=[str(configdir)]
+        )
+        self.assertIsNotNone(workspace_config)
+
+        workspace = Workspace.from_str(workspace_config)
+        self.assertDictEqual(
+            {
+                "/home/foo/third-party/verl": "verl",
+                "/home/foo/bar/scripts/.torchxconfig": "verl/.torchxconfig",
+                "/home/foo/baz": "",
+            },
+            workspace.projects,
+        )

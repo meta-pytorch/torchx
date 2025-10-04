@@ -29,7 +29,7 @@ $ pip install "torchx[dev]"
 ```
 <!-- #endmd -->
 
-See the [README](https://github.com/pytorch/torchx) for more
+See the [README](https://github.com/meta-pytorch/torchx) for more
 information on installation.
 
 ```sh
@@ -164,7 +164,7 @@ partition=torchx
 
 TorchX supports a large number of schedulers.
 Don't see yours?
-[Request it!](https://github.com/pytorch/torchx/issues/new?assignees=&labels=&template=feature-request.md)
+[Request it!](https://github.com/meta-pytorch/torchx/issues/new?assignees=&labels=&template=feature-request.md)
 
 Remote schedulers operate the exact same way the local schedulers do. The same
 run command for local works out of the box on remote.
@@ -174,7 +174,6 @@ run command for local works out of the box on remote.
 $ torchx run --scheduler slurm dist.ddp -j 2x2 --script dist_app.py
 $ torchx run --scheduler kubernetes dist.ddp -j 2x2 --script dist_app.py
 $ torchx run --scheduler aws_batch dist.ddp -j 2x2 --script dist_app.py
-$ torchx run --scheduler ray dist.ddp -j 2x2 --script dist_app.py
 ```
 <!-- #endmd -->
 
@@ -236,5 +235,4 @@ The `slurm` and `local_cwd` use the current environment so you can use `pip` and
 1. Checkout other features of the [torchx CLI](cli.rst)
 2. Take a look at the [list of schedulers](schedulers.rst) supported by the runner
 3. Browse through the collection of [builtin components](components/overview.rst)
-4. See which [ML pipeline platforms](pipelines.rst) you can run components on
 5. See a [training app example](examples_apps/index.rst)

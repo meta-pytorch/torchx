@@ -10,13 +10,13 @@ Generates ``versions.html`` listing out the available doc versions
 similar to: https://raw.githubusercontent.com/pytorch/pytorch.github.io/site/docs/versions.html
 
 This list of versions is displayed on the top LHS dropdown of
-https://pytorch.org/torchx.
+https://meta-pytorch.org/torchx.
 
 Usage (also see ``doc_push.sh``):
 
 ::
  # NOTE: YOU HAVE TO RUN THE SCRIPT FROM THE ROOT of gh-pages branch checkout
- git clone -b gh-pages --single-branch https://github.com/pytorch/torchx.git /tmp/torchx-gh-pages
+ git clone -b gh-pages --single-branch https://github.com/meta-pytorch/torchx.git /tmp/torchx-gh-pages
  cd /tmp/torchx-gh-pages
  $torchx_repo_root/docs/versions_html.py`
 """
@@ -114,7 +114,7 @@ def versions_list(versions: List[str]) -> List[str]:
 
 
 def gen_versions_html() -> None:
-    # cwd is expected to be https://github.com/pytorch/torchx/tree/gh-pages
+    # cwd is expected to be https://github.com/meta-pytorch/torchx/tree/gh-pages
     # most top level subdirs are versioned docs
     print(f"Generating {VERSIONS_HTML}")
 

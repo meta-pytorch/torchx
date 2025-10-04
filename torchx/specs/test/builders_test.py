@@ -18,6 +18,8 @@ from torchx.specs.api import AppDef, Resource, Role
 from torchx.specs.builders import (
     _create_args_parser,
     BindMount,
+    component_args_from_str,
+    ComponentArgs,
     DeviceMount,
     make_app_handle,
     materialize_appdef,
@@ -91,6 +93,7 @@ def example_test_complex_fn(
     nnodes: int = 4,
     first_arg: Optional[str] = None,
     nested_arg: Optional[Dict[str, List[str]]] = None,
+    env: dict[str, str] | None = None,
     *roles_args: str,
 ) -> AppDef:
     """Creates complex application, testing all possible complex types
@@ -125,6 +128,7 @@ def example_test_complex_fn(
             args=args,
             resource=Resource(cpu=cpus, gpu=gpus, memMB=1),
             num_replicas=nnodes,
+            env=env or {},
         )
         roles.append(role)
     return AppDef(app_name, roles)
@@ -191,6 +195,7 @@ class AppDefLoadTest(unittest.TestCase):
             4,
             None,
             None,
+            None,
             *role_args,
         )
 
@@ -218,6 +223,7 @@ class AppDefLoadTest(unittest.TestCase):
             8,
             "first_arg",
             None,
+            {"FOO": "BAR", "HELLO": "WORLD"},
             *role_args,
         )
 
@@ -238,6 +244,8 @@ class AppDefLoadTest(unittest.TestCase):
             "8",
             "--first_arg",
             "first_arg",
+            "--env",
+            "FOO=BAR,HELLO=WORLD",
             "--",
             *role_args,
         ]
@@ -254,6 +262,7 @@ class AppDefLoadTest(unittest.TestCase):
             8,
             "first_arg",
             defaults,
+            None,
             *role_args,
         )
 
@@ -280,6 +289,36 @@ class AppDefLoadTest(unittest.TestCase):
             "--",
             *role_args,
         ], defaults
+
+    def test_component_args_from_str(self) -> None:
+        component_fn_args = [
+            "--foo",
+            "fooval",
+            "--bar",
+            "barval",
+            "arg1",
+            "arg2",
+        ]
+        parsed_args: ComponentArgs = component_args_from_str(
+            example_var_args, component_fn_args
+        )
+        self.assertEqual(parsed_args.positional_args, {"foo": "fooval"})
+        self.assertEqual(parsed_args.var_args, ["arg1", "arg2"])
+        self.assertEqual(parsed_args.kwargs, {"bar": "barval"})
+
+    def test_component_args_from_str_equals_separated(self) -> None:
+        component_fn_args = [
+            "--foo=fooval",
+            "--bar=barval",
+            "arg1",
+            "arg2",
+        ]
+        parsed_args: ComponentArgs = component_args_from_str(
+            example_var_args, component_fn_args
+        )
+        self.assertEqual(parsed_args.positional_args, {"foo": "fooval"})
+        self.assertEqual(parsed_args.var_args, ["arg1", "arg2"])
+        self.assertEqual(parsed_args.kwargs, {"bar": "barval"})
 
     def test_load_from_fn_empty(self) -> None:
         actual_app = materialize_appdef(example_empty_fn, [])

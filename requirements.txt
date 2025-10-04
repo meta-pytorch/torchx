@@ -1,10 +1,6 @@
-pyre-extensions
 docstring-parser>=0.8.1
-importlib-metadata
 pyyaml
 docker
 filelock
 fsspec>=2023.10.0
-# To resolve confliciting dependencies for urllib3: https://github.com/pytorch/torchx/actions/runs/3484190429/jobs/5828784263#step:4:552
-urllib3<1.27,>=1.21.1
 tabulate

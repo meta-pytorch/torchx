@@ -73,7 +73,7 @@ CLI Usage
 
 #. In addition, it is possible to specify a different config other than .torchxconfig to
    load at runtime. Requirements are that the config path is specified by enviornment
-   variable TORCHX_CONFIG. It also disables hierarchy loading configs from multiple
+   variable TORCHXCONFIG. It also disables hierarchy loading configs from multiple
    directories as the cases otherwise.
 
 #. User level .torchxconfig
@@ -278,14 +278,14 @@ def dump(
                     continue
 
                 # serialize list elements with `;` delimiter (consistent with torchx cli)
-                if opt.opt_type == List[str]:
+                if opt.is_type_list_of_str:
                     # deal with empty or None default lists
                     if opt.default:
                         # pyre-ignore[6] opt.default type checked already as List[str]
                         val = ";".join(opt.default)
                     else:
                         val = _NONE
-                elif opt.opt_type == Dict[str, str]:
+                elif opt.is_type_dict_of_str:
                     # deal with empty or None default lists
                     if opt.default:
                         # pyre-ignore[16] opt.default type checked already as Dict[str, str]
@@ -494,6 +494,8 @@ def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
 
     config = os.getenv(ENV_TORCHXCONFIG)
     if config is not None:
+        if not config:
+            return []
         configfile = Path(config)
         if not configfile.is_file():
             raise FileNotFoundError(
@@ -536,26 +538,26 @@ def load(scheduler: str, f: TextIO, cfg: Dict[str, CfgVal]) -> None:
                 # this also handles empty or None lists
                 cfg[name] = None
             else:
-                runopt = runopts.get(name)
+                opt = runopts.get(name)
 
-                if runopt is None:
+                if opt is None:
                     log.warning(
                         f"`{name} = {value}` was declared in the [{section}] section "
                         f" of the config file but is not a runopt of `{scheduler}` scheduler."
                         f" Remove the entry from the config file to no longer see this warning"
                     )
                 else:
-                    if runopt.opt_type is bool:
+                    if opt.opt_type is bool:
                         # need to handle bool specially since str -> bool is based on
                         # str emptiness not value (e.g. bool("False") == True)
                         cfg[name] = config.getboolean(section, name)
-                    elif runopt.opt_type is List[str]:
+                    elif opt.is_type_list_of_str:
                         cfg[name] = value.split(";")
-                    elif runopt.opt_type is Dict[str, str]:
+                    elif opt.is_type_dict_of_str:
                         cfg[name] = {
                             s.split(":", 1)[0]: s.split(":", 1)[1]
                             for s in value.replace(",", ";").split(";")
                         }
                     else:
                         # pyre-ignore[29]
-                        cfg[name] = runopt.opt_type(value)
+                        cfg[name] = opt.opt_type(value)

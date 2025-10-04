@@ -40,10 +40,10 @@ from typing import (
     Protocol,
     TextIO,
     Tuple,
+    TypedDict,
 )
 
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
@@ -53,10 +53,10 @@ from torchx.schedulers.api import (
 )
 from torchx.schedulers.ids import make_unique
 from torchx.schedulers.streams import Tee
+from torchx.specs import AppDryRunInfo
 from torchx.specs.api import AppDef, AppState, is_terminal, macros, NONE, Role, runopts
 
 from torchx.util.types import none_throws
-from typing_extensions import TypedDict
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -1159,6 +1159,7 @@ class LogIterator:
             self._check_finished()  # check to see if app has finished running
 
             if os.path.isfile(self._log_file):
+                time.sleep(0.1)  # fix timing issue
                 self._log_fp = open(
                     self._log_file,
                     mode="rt",

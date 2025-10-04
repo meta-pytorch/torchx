@@ -4,19 +4,27 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
+# pyre-unsafe
 
 import argparse
 import inspect
 import os
 from argparse import Namespace
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Union
 
 from torchx.specs.api import BindMount, MountType, VolumeMount
 from torchx.specs.file_linter import get_fn_docstring, TorchXArgumentHelpFormatter
 from torchx.util.types import decode, decode_optional, get_argparse_param_type, is_bool
 
 from .api import AppDef, DeviceMount
+
+
+class ComponentArgs(NamedTuple):
+    """Parsed component function arguments"""
+
+    positional_args: dict[str, Any]
+    var_args: list[str]
+    kwargs: dict[str, Any]
 
 
 def _create_args_parser(
@@ -31,7 +39,7 @@ def _create_args_parser(
 
 
 def _create_args_parser_from_parameters(
-    cmpnt_fn: Callable[..., Any],  # pyre-ignore[2]
+    cmpnt_fn: Callable[..., AppDef],
     parameters: Mapping[str, inspect.Parameter],
     cmpnt_defaults: Optional[Dict[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
@@ -112,7 +120,7 @@ def _merge_config_values_with_args(
 
 
 def parse_args(
-    cmpnt_fn: Callable[..., Any],  # pyre-ignore[2]
+    cmpnt_fn: Callable[..., AppDef],
     cmpnt_args: List[str],
     cmpnt_defaults: Optional[Dict[str, Any]] = None,
     config: Optional[Dict[str, Any]] = None,
@@ -140,8 +148,97 @@ def parse_args(
     return parsed_args
 
 
+def component_args_from_str(
+    cmpnt_fn: Callable[..., AppDef],
+    cmpnt_args: list[str],
+    cmpnt_args_defaults: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+) -> ComponentArgs:
+    """
+    Parses and decodes command-line arguments for a component function.
+
+    This function takes a component function and its arguments, parses them using argparse,
+    and decodes the arguments into their expected types based on the function's signature.
+    It separates positional arguments, variable positional arguments (*args), and keyword-only arguments.
+
+    Args:
+        cmpnt_fn: The component function whose arguments are to be parsed and decoded.
+        cmpnt_args: List of command-line arguments to be parsed. Supports both space separated and '=' separated arguments.
+        cmpnt_args_defaults: Optional dictionary of default values for the component function's parameters.
+        config: Optional dictionary containing additional configuration values.
+
+    Returns:
+        ComponentArgs representing the input args to a component function containing:
+            - positional_args: Dictionary of positional and positional-or-keyword arguments.
+            - var_args: List of variable positional arguments (*args).
+            - kwargs: Dictionary of keyword-only arguments.
+
+        Usage:
+
+        .. doctest::
+            from torchx.specs.api import AppDef
+            from torchx.specs.builders import component_args_from_str
+
+            def example_component_fn(foo: str, *args: str, bar: str = "asdf") -> AppDef:
+                return AppDef(name="example")
+
+            # Supports space separated arguments
+            args = ["--foo", "fooval", "--bar", "barval", "arg1", "arg2"]
+            parsed_args = component_args_from_str(example_component_fn, args)
+
+            assert parsed_args.positional_args == {"foo": "fooval"}
+            assert parsed_args.var_args == ["arg1", "arg2"]
+            assert parsed_args.kwargs == {"bar": "barval"}
+
+            # Supports '=' separated arguments
+            args = ["--foo=fooval", "--bar=barval", "arg1", "arg2"]
+            parsed_args = component_args_from_str(example_component_fn, args)
+
+            assert parsed_args.positional_args == {"foo": "fooval"}
+            assert parsed_args.var_args == ["arg1", "arg2"]
+            assert parsed_args.kwargs == {"bar": "barval"}
+
+
+    """
+    parsed_args: Namespace = parse_args(
+        cmpnt_fn, cmpnt_args, cmpnt_args_defaults, config
+    )
+
+    positional_args = {}
+    var_args = []
+    kwargs = {}
+
+    parameters = inspect.signature(cmpnt_fn).parameters
+    for param_name, parameter in parameters.items():
+        arg_value = getattr(parsed_args, param_name)
+        parameter_type = parameter.annotation
+        parameter_type = decode_optional(parameter_type)
+        if (
+            parameter_type != arg_value.__class__
+            and parameter.kind != inspect.Parameter.VAR_POSITIONAL
+        ):
+            arg_value = decode(arg_value, parameter_type)
+        if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
+            var_args = arg_value
+        elif parameter.kind == inspect.Parameter.KEYWORD_ONLY:
+            kwargs[param_name] = arg_value
+        elif parameter.kind == inspect.Parameter.VAR_KEYWORD:
+            raise TypeError(
+                f"component fn param `{param_name}` is a '**kwargs' which is not supported; consider changing the "
+                f"type to a dict or explicitly declare the params"
+            )
+        else:
+            # POSITIONAL or POSITIONAL_OR_KEYWORD
+            positional_args[param_name] = arg_value
+
+    if len(var_args) > 0 and var_args[0] == "--":
+        var_args = var_args[1:]
+
+    return ComponentArgs(positional_args, var_args, kwargs)
+
+
 def materialize_appdef(
-    cmpnt_fn: Callable[..., Any],  # pyre-ignore[2]
+    cmpnt_fn: Callable[..., AppDef],
     cmpnt_args: List[str],
     cmpnt_defaults: Optional[Dict[str, Any]] = None,
     config: Optional[Dict[str, Any]] = None,
@@ -174,30 +271,14 @@ def materialize_appdef(
         An application spec
     """
 
-    function_args = []
-    var_arg = []
-    kwargs = {}
+    component_args: ComponentArgs = component_args_from_str(
+        cmpnt_fn, cmpnt_args, cmpnt_defaults, config
+    )
+    positional_arg_values = list(component_args.positional_args.values())
+    appdef = cmpnt_fn(
+        *positional_arg_values, *component_args.var_args, **component_args.kwargs
+    )
 
-    parsed_args = parse_args(cmpnt_fn, cmpnt_args, cmpnt_defaults, config)
-
-    parameters = inspect.signature(cmpnt_fn).parameters
-    for param_name, parameter in parameters.items():
-        arg_value = getattr(parsed_args, param_name)
-        parameter_type = parameter.annotation
-        parameter_type = decode_optional(parameter_type)
-        arg_value = decode(arg_value, parameter_type)
-        if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-            var_arg = arg_value
-        elif parameter.kind == inspect.Parameter.KEYWORD_ONLY:
-            kwargs[param_name] = arg_value
-        elif parameter.kind == inspect.Parameter.VAR_KEYWORD:
-            raise TypeError("**kwargs are not supported for component definitions")
-        else:
-            function_args.append(arg_value)
-    if len(var_arg) > 0 and var_arg[0] == "--":
-        var_arg = var_arg[1:]
-
-    appdef = cmpnt_fn(*function_args, *var_arg, **kwargs)
     if not isinstance(appdef, AppDef):
         raise TypeError(
             f"Expected a component that returns `AppDef`, but got `{type(appdef)}`"

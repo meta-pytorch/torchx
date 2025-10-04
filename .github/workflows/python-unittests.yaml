@@ -10,7 +10,7 @@ jobs:
   unittest:
     strategy:
       matrix:
-        python-version: [3.9, "3.10", 3.11, 3.12]
+        python-version: ["3.10", 3.11, 3.12]
         platform: [linux.24_04.4x]
         include:
           - python-version: 3.12

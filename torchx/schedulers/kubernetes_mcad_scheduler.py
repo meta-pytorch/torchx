@@ -17,8 +17,8 @@ Prerequisites
 
 TorchX Kubernetes_MCAD scheduler depends on AppWrapper + MCAD.
 
-Install MCAD: 
-See deploying Multi-Cluster-Application-Dispatcher guide 
+Install MCAD:
+See deploying Multi-Cluster-Application-Dispatcher guide
 https://github.com/project-codeflare/multi-cluster-app-dispatcher/blob/main/doc/deploy/deployment.md
 
 This implementation requires MCAD v1.34.1 or higher.
@@ -46,12 +46,12 @@ from typing import (
     Optional,
     Tuple,
     TYPE_CHECKING,
+    TypedDict,
 )
 
 import torchx
 import yaml
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
@@ -62,6 +62,7 @@ from torchx.schedulers.api import (
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     BindMount,
     CfgVal,
@@ -78,7 +79,6 @@ from torchx.specs.api import (
 )
 
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
-from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from docker import DockerClient
@@ -600,7 +600,7 @@ def app_to_resource(
 
     """
     Create Service:
-    The selector will have the key 'appwrapper.workload.codeflare.dev', and the value will be 
+    The selector will have the key 'appwrapper.workload.codeflare.dev', and the value will be
     the appwrapper name
     """
 
@@ -797,7 +797,8 @@ class KubernetesMCADOpts(TypedDict, total=False):
 
 
 class KubernetesMCADScheduler(
-    DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts, AppDef, AppDryRunInfo]
+    DockerWorkspaceMixin,
+    Scheduler[KubernetesMCADOpts, AppDef, AppDryRunInfo[KubernetesMCADJob]],
 ):
     """
     KubernetesMCADScheduler is a TorchX scheduling interface to Kubernetes.
@@ -994,7 +995,7 @@ class KubernetesMCADScheduler(
         if image_secret is not None and service_account is not None:
             msg = """Service Account and Image Secret names are both provided.
  Depending on the Service Account configuration, an ImagePullSecret may be defined in your Service Account.
- If this is the case, check service account and image secret configurations to understand the expected behavior for 
+ If this is the case, check service account and image secret configurations to understand the expected behavior for
  patched image push access."""
             warnings.warn(msg)
         namespace = cfg.get("namespace")

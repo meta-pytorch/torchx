@@ -29,7 +29,7 @@ class TorchxEvent:
         scheduler: Scheduler that is used to execute request
         api: Api name
         app_id: Unique id that is set by the underlying scheduler
-        image: Image/container bundle that is used to execute request.
+        app_image: Image/container bundle that is used to execute request.
         app_metadata: metadata to the app (treatment of metadata is scheduler dependent)
         runcfg: Run config that was used to schedule app.
         source: Type of source the event is generated.

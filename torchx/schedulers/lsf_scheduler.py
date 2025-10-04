@@ -29,11 +29,10 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, TypedDict
 
 import torchx
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
@@ -45,6 +44,7 @@ from torchx.schedulers.ids import make_unique
 from torchx.schedulers.local_scheduler import LogIterator
 from torchx.specs import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     BindMount,
     DeviceMount,
@@ -57,7 +57,6 @@ from torchx.specs import (
     VolumeMount,
 )
 from torchx.util import shlex
-from typing_extensions import TypedDict
 
 JOB_STATE: Dict[str, AppState] = {
     "DONE": AppState.SUCCEEDED,

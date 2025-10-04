@@ -19,7 +19,7 @@ from torchx import schedulers, specs
 
 # @manual=//torchx/schedulers:kubernetes_mcad_scheduler
 from torchx.schedulers import kubernetes_mcad_scheduler
-from torchx.schedulers.api import AppDryRunInfo, DescribeAppResponse, ListAppResponse
+from torchx.schedulers.api import DescribeAppResponse, ListAppResponse
 from torchx.schedulers.docker_scheduler import has_docker
 from torchx.schedulers.kubernetes_mcad_scheduler import (
     app_to_resource,
@@ -38,7 +38,7 @@ from torchx.schedulers.kubernetes_mcad_scheduler import (
     mcad_svc,
     role_to_pod,
 )
-from torchx.specs import AppState, Resource, Role
+from torchx.specs import AppDryRunInfo, AppState, Resource, Role
 
 SKIP_DOCKER: bool = not has_docker()
 

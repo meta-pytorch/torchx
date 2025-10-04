@@ -29,8 +29,8 @@ def get_nightly_version():
 
 
 if __name__ == "__main__":
-    if sys.version_info < (3, 8):
-        sys.exit("python >= 3.8 required for torchx-sdk")
+    if sys.version_info < (3, 10):
+        sys.exit("python >= 3.10 required for torchx")
 
     name = "torchx"
     NAME_ARG = "--override-name"
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         description="TorchX SDK and Components",
         long_description=readme,
         long_description_content_type="text/markdown",
-        url="https://github.com/pytorch/torchx",
+        url="https://github.com/meta-pytorch/torchx",
         license="BSD-3",
         keywords=["pytorch", "machine learning"],
         python_requires=">=3.7",
@@ -82,14 +82,7 @@ if __name__ == "__main__":
         },
         extras_require={
             "aws_batch": ["boto3"],
-            "gcp_batch": [
-                "google-cloud-batch>=0.5.0",
-                "google-cloud-logging>=3.0.0",
-                "google-cloud-runtimeconfig>=0.33.2",
-            ],
-            "kfp": ["kfp==1.6.2"],
             "kubernetes": ["kubernetes>=11"],
-            "ray": ["ray>=1.12.1"],
             "dev": dev_reqs,
         },
         # PyPI package information.

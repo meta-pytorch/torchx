@@ -37,7 +37,7 @@ Steps to reproduce the behavior:
 
 ## Environment
 
-<!-- Please run and include the output from https://github.com/pytorch/torchx/blob/main/scripts/collect_env.py. -->
+<!-- Please run and include the output from https://github.com/meta-pytorch/torchx/blob/main/scripts/collect_env.py. -->
 
  - torchx version (e.g. 0.1.0rc1):
  - Python version:

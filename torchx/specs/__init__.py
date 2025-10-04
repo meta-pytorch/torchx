@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -42,6 +41,7 @@ from torchx.specs.api import (
     RoleStatus,
     runopt,
     runopts,
+    TORCHX_HOME,
     UnknownAppException,
     UnknownSchedulerException,
     VolumeMount,
@@ -52,17 +52,23 @@ from torchx.util.entrypoints import load_group
 
 from torchx.util.modules import import_attr
 
-AWS_NAMED_RESOURCES: Mapping[str, Callable[[], Resource]] = import_attr(
+GiB: int = 1024
+
+
+ResourceFactory = Callable[[], Resource]
+
+AWS_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
     "torchx.specs.named_resources_aws", "NAMED_RESOURCES", default={}
 )
-GENERIC_NAMED_RESOURCES: Mapping[str, Callable[[], Resource]] = import_attr(
+GENERIC_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
     "torchx.specs.named_resources_generic", "NAMED_RESOURCES", default={}
 )
 CONFIG_NAMED_RESOURCES: Mapping[str, Callable[[], Resource]] = import_attr(
     "torchx.specs.named_resources_config", "NAMED_RESOURCES", default={}
 )
-
-GiB: int = 1024
+FB_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
+    "torchx.specs.fb.named_resources", "NAMED_RESOURCES", default={}
+)
 
 
 def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
@@ -73,6 +79,7 @@ def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
         **GENERIC_NAMED_RESOURCES,
         **AWS_NAMED_RESOURCES,
         **CONFIG_NAMED_RESOURCES,
+        **FB_NAMED_RESOURCES,
         **resource_methods,
     }.items():
         materialized_resources[name] = resource
@@ -126,7 +133,7 @@ def resource(
 
     If ``h`` is specified then it is used to look up the
     resource specs from the list of registered named resources.
-    See `registering named resource <https://pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+    See `registering named resource <https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
 
     Otherwise a ``Resource`` object is created from the raw resource specs.
 
@@ -229,5 +236,8 @@ __all__ = [
     "make_app_handle",
     "materialize_appdef",
     "parse_mounts",
+    "torchx_run_args_from_argparse",
+    "torchx_run_args_from_json",
+    "TorchXRunArgs",
     "ALL",
 ]

@@ -8,9 +8,8 @@
 
 import inspect
 import unittest
-from typing import cast, Dict, List, Optional, Union
+from typing import cast, Optional, Union
 
-import typing_inspect
 from torchx.util.types import (
     decode,
     decode_from_string,
@@ -26,25 +25,25 @@ from torchx.util.types import (
 
 def _test_complex_args(
     arg1: int,
-    arg2: Optional[List[str]],
+    arg2: Optional[list[str]],
     arg3: Union[float, int],
 ) -> int:
     return 42
 
 
-def _test_dict(arg1: Dict[int, float]) -> int:
+def _test_dict(arg1: dict[int, float]) -> int:
     return 42
 
 
-def _test_nested_object(arg1: Dict[str, List[str]]) -> int:
+def _test_nested_object(arg1: dict[str, list[str]]) -> int:
     return 42
 
 
-def _test_list(arg1: List[float]) -> int:
+def _test_list(arg1: list[float]) -> int:
     return 42
 
 
-def _test_complex_list(arg1: List[List[float]]) -> int:
+def _test_complex_list(arg1: list[list[float]]) -> int:
     return 42
 
 
@@ -59,24 +58,21 @@ class TypesTest(unittest.TestCase):
         arg1_parameter = parameters["arg1"]
         arg1_type = decode_optional(arg1_parameter.annotation)
         self.assertTrue(arg1_type is int)
-
-        arg2_parameter = parameters["arg2"]
         arg2_type = decode_optional(parameters["arg2"].annotation)
-        self.assertTrue(typing_inspect.get_origin(arg2_type) is list)
-
+        self.assertTrue(getattr(arg2_type, "__origin__", None) is list)
         arg3_parameter = parameters["arg3"]
         arg3_type = decode_optional(arg3_parameter.annotation)
-        self.assertTrue(typing_inspect.get_origin(arg3_type) is Union)
+        self.assertTrue(
+            hasattr(arg3_type, "__origin__") and arg3_type.__origin__ is Union
+        )
 
     def test_is_primitive(self) -> None:
         parameters = inspect.signature(_test_complex_args).parameters
 
         arg1_parameter = parameters["arg1"]
-        arg1_type = decode_optional(arg1_parameter.annotation)
         self.assertTrue(is_primitive(arg1_parameter.annotation))
 
         arg2_parameter = parameters["arg2"]
-        arg2_type = decode_optional(parameters["arg2"].annotation)
         self.assertFalse(is_primitive(arg2_parameter.annotation))
 
     def test_is_bool(self) -> None:
@@ -89,7 +85,7 @@ class TypesTest(unittest.TestCase):
         encoded_value = "1=1.0,2=42.1,3=10"
 
         value = decode_from_string(encoded_value, parameters["arg1"].annotation)
-        value = cast(Dict[int, float], value)
+        value = cast(dict[int, float], value)
         self.assertEqual(3, len(value))
         self.assertEqual(float(1.0), value[1])
         self.assertEqual(float(42.1), value[2])
@@ -101,7 +97,7 @@ class TypesTest(unittest.TestCase):
         encoded_value = "1.0,42.2,3.9"
 
         value = decode_from_string(encoded_value, parameters["arg1"].annotation)
-        value = cast(List[float], value)
+        value = cast(list[float], value)
         self.assertEqual(3, len(value))
         self.assertEqual(float(1.0), value[0])
         self.assertEqual(float(42.2), value[1])
@@ -217,8 +213,8 @@ class TypesTest(unittest.TestCase):
             f: float,
             s: str,
             b: bool,
-            l: List[str],
-            m: Dict[str, str],
+            l: list[str],
+            m: dict[str, str],
             o: Optional[int],
         ) -> None:
             # component has to return an AppDef

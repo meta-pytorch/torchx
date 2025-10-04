@@ -32,7 +32,7 @@ python --version
 pip install "$REMOTE_WHEEL"
 pip install numpy
 pip install tabulate
-pip install torch==1.10.2+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
+pip install torch
 
 PARTITION="$(sinfo --format=%R --noheader | head -n 1)"
 

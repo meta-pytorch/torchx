@@ -8,16 +8,16 @@
 
 import unittest
 from configparser import ConfigParser
-from types import ModuleType
-from typing import List
-from unittest.mock import MagicMock, patch
 
-from importlib_metadata import EntryPoint, EntryPoints
+from importlib.metadata import EntryPoint
+from types import ModuleType
+
+from unittest.mock import MagicMock, patch
 
 from torchx.util.entrypoints import load, load_group
 
 
-def EntryPoint_from_config(config: ConfigParser) -> List[EntryPoint]:
+def EntryPoint_from_config(config: ConfigParser) -> list[EntryPoint]:
     # from stdlib, Copyright (c) Python Authors
     return [
         EntryPoint(name, value, group)
@@ -26,7 +26,7 @@ def EntryPoint_from_config(config: ConfigParser) -> List[EntryPoint]:
     ]
 
 
-def EntryPoint_from_text(text: str) -> List[EntryPoint]:
+def EntryPoint_from_text(text: str) -> list[EntryPoint]:
     # from stdlib, Copyright (c) Python Authors
     config = ConfigParser(delimiters="=")
     config.read_string(text)
@@ -66,13 +66,25 @@ _EP_GRP_IGN_MOD_TXT: str = """
 [ep.grp.missing.mod.test]
 baz = torchx.util.test.entrypoints_test.missing_module
 """
-_ENTRY_POINTS: EntryPoints = EntryPoints(
+
+_EPS: list[EntryPoint] = (
     EntryPoint_from_text(_EP_TXT)
     + EntryPoint_from_text(_EP_GRP_TXT)
     + EntryPoint_from_text(_EP_GRP_IGN_ATTR_TXT)
     + EntryPoint_from_text(_EP_GRP_MOD_TXT)
     + EntryPoint_from_text(_EP_GRP_IGN_MOD_TXT)
 )
+
+try:
+    from importlib.metadata import EntryPoints
+except ImportError:
+    # python<=3.9
+    _ENTRY_POINTS: dict[str, list[EntryPoint]] = {}
+    for ep in _EPS:
+        _ENTRY_POINTS.setdefault(ep.group, []).append(ep)
+else:
+    # python>=3.10
+    _ENTRY_POINTS: EntryPoints = EntryPoints(_EPS)
 
 _METADATA_EPS: str = "torchx.util.entrypoints.metadata.entry_points"
 

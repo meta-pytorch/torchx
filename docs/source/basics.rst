@@ -14,8 +14,7 @@ The top level modules in TorchX are:
 4. :mod:`torchx.cli`: CLI tool
 5. :mod:`torchx.runner`: given an app spec, submits the app as a job on a scheduler
 6. :mod:`torchx.schedulers`: backend job schedulers that the runner supports
-7. :mod:`torchx.pipelines`: adapters that convert the given app spec to a "stage" in an ML pipeline platform
-8. :mod:`torchx.runtime`: util and abstraction libraries you can use in authoring apps (not app spec)
+7. :mod:`torchx.runtime`: util and abstraction libraries you can use in authoring apps (not app spec)
 
 Below is a UML diagram
 
@@ -32,8 +31,7 @@ the actual application. In scheduler lingo, this is a ``JobDefinition`` and a
 similar concept in Kubernetes is the ``spec.yaml``. To disambiguate between the
 application binary (logic) and the spec, we typically refer to a TorchX
 ``AppDef`` as an "app spec" or ``specs.AppDef``. It
-is the common interface understood by ``torchx.runner``
-and ``torchx.pipelines`` allowing you to run your app as a standalone job
+is the common interface understood by ``torchx.runner`` allowing you to run your app as a standalone job
 or as a stage in an ML pipeline.
 
 Below is a simple example of an ``specs.AppDef`` that echos "hello world"
@@ -119,10 +117,6 @@ can be achieved through python function composition rather than object compositi
 However **we do not recommend component composition** for maintainability
 purposes.
 
-**PROTIP 2:** To define dependencies between components, use a pipelining DSL.
-See :ref:`basics:Pipeline Adapters` section below to understand how TorchX components
-are used in the context of pipelines.
-
 Before authoring your own component, browse through the library of
 :ref:`Components` that are included with TorchX
 to see if one fits your needs.
@@ -141,34 +135,11 @@ There are two ways to access runners in TorchX:
 See :ref:`Schedulers` for a list of schedulers that the runner can
 launch apps to.
 
-Pipeline Adapters
-~~~~~~~~~~~~~~~~~~~~~~
-While runners launch components as standalone jobs, ``torchx.pipelines``
-makes it possible to plug components into an ML pipeline/workflow. For a
-specific target pipeline platform (e.g. kubeflow pipelines), TorchX
-defines an adapter that converts a TorchX app spec to whatever the
-"stage" representation is in the target platform. For instance,
-``torchx.pipelines.kfp`` adapter for kubeflow pipelines converts an
-app spec to a ``kfp.ContainerOp`` (or more accurately, a kfp "component spec" yaml).
-
-
-In most cases an app spec would map to a "stage" (or node) in a pipeline.
-However advanced components, especially those that have a mini control flow
-of its own (e.g. HPO), may map to a "sub-pipeline" or an "inline-pipeline".
-The exact semantics of how these advanced components map to the pipeline
-is dependent on the target pipeline platform. For example, if the
-pipeline DSL allows dynamically adding stages to a pipeline from an upstream
-stage, then TorchX may take advantage of such feature to "inline" the
-sub-pipeline to the main pipeline. TorchX generally tries its best to adapt
-app specs to the **most canonical** representation in the target pipeline platform.
-
-See :ref:`Pipelines` for a list of supported pipeline platforms.
-
 Runtime
 ~~~~~~~~
 .. important:: ``torchx.runtime`` is by no means is a requirement to use TorchX.
                If your infrastructure is fixed and you don't need your application
-               to be portable across different types of schedulers and pipelines,
+               to be portable across different types of schedulers,
                you can skip this section.
 
 Your application (not the app spec, but the actual app binary) has **ZERO** dependencies

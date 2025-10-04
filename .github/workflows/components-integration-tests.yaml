@@ -24,8 +24,6 @@ jobs:
             platform: ubuntu-latest
           - scheduler: "local_docker"
             platform: linux.24_04.4x
-          - scheduler: "ray"
-            platform: ubuntu-latest
       fail-fast: false
     runs-on: ${{ matrix.platform }}
     permissions:
@@ -60,13 +58,6 @@ jobs:
           set -eux
           pip install -r dev-requirements.txt
           pip install -e .[kubernetes]
-
-      - name: Start Ray
-        if: ${{ matrix.scheduler == 'ray' }}
-        run: |
-          ray start --head
-          sleep 5 # wait till the node joins so that `status` command displays the head node info
-          ray status
 
       - name: Start Kubernetes
         if: ${{ matrix.scheduler == 'kubernetes' }}

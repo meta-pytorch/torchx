@@ -25,6 +25,7 @@ from typing import (
     OrderedDict,
     Tuple,
     TYPE_CHECKING,
+    TypedDict,
     TypeVar,
 )
 
@@ -34,16 +35,14 @@ import yaml
 from sagemaker.pytorch import PyTorch
 from torchx.components.structured_arg import StructuredNameArgument
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     ListAppResponse,
     Scheduler,
     Stream,
 )
 from torchx.schedulers.ids import make_unique
-from torchx.specs.api import AppDef, AppState, CfgVal, runopts
+from torchx.specs.api import AppDef, AppDryRunInfo, AppState, CfgVal, runopts
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
-from typing_extensions import TypedDict
 
 
 if TYPE_CHECKING:

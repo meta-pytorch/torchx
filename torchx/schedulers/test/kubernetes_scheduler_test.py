@@ -19,7 +19,7 @@ from torchx import schedulers, specs
 
 # @manual=//torchx/schedulers:kubernetes_scheduler
 from torchx.schedulers import kubernetes_scheduler
-from torchx.schedulers.api import AppDryRunInfo, DescribeAppResponse, ListAppResponse
+from torchx.schedulers.api import DescribeAppResponse, ListAppResponse
 from torchx.schedulers.docker_scheduler import has_docker
 from torchx.schedulers.kubernetes_scheduler import (
     app_to_resource,
@@ -31,7 +31,7 @@ from torchx.schedulers.kubernetes_scheduler import (
     PLACEHOLDER_FIELD_PATH,
     role_to_pod,
 )
-from torchx.specs import AppState
+from torchx.specs import AppDryRunInfo, AppState
 
 SKIP_DOCKER: bool = not has_docker()
 
@@ -320,6 +320,8 @@ spec:
                 fieldPath: bar
           - name: TORCHX_RANK0_HOST
             value: localhost
+          - name: TORCHX_IMAGE
+            value: pytorch/torchx:latest
           image: pytorch/torchx:latest
           name: trainerfoo-0
           ports:
@@ -520,6 +522,9 @@ spec:
         self.assertIn("TORCHX_RANK0_HOST", container0.command)
         self.assertIn(
             V1EnvVar(name="TORCHX_RANK0_HOST", value="localhost"), container0.env
+        )
+        self.assertIn(
+            V1EnvVar(name="TORCHX_IMAGE", value="pytorch/torchx:latest"), container0.env
         )
         container1 = tasks[1]["template"].spec.containers[0]
         self.assertIn("VC_TRAINERFOO_0_HOSTS", container1.command)

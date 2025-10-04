@@ -13,12 +13,11 @@ import re
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING, TypedDict, Union
 
 import torchx
 import yaml
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
@@ -30,6 +29,7 @@ from torchx.schedulers.devices import get_device_mounts
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     BindMount,
     DeviceMount,
@@ -42,7 +42,6 @@ from torchx.specs.api import (
     VolumeMount,
 )
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
-from typing_extensions import TypedDict
 
 
 if TYPE_CHECKING:
@@ -84,6 +83,8 @@ LABEL_VERSION: str = DockerWorkspaceMixin.LABEL_VERSION
 LABEL_APP_ID: str = "torchx.pytorch.org/app-id"
 LABEL_ROLE_NAME: str = "torchx.pytorch.org/role-name"
 LABEL_REPLICA_ID: str = "torchx.pytorch.org/replica-id"
+
+ENV_TORCHX_IMAGE: str = "TORCHX_IMAGE"
 
 NETWORK = "torchx"
 
@@ -280,6 +281,7 @@ class DockerScheduler(
 
                 # configure distributed host envs
                 env["TORCHX_RANK0_HOST"] = rank0_name
+                env[ENV_TORCHX_IMAGE] = replica_role.image
 
                 c = DockerContainer(
                     image=replica_role.image,

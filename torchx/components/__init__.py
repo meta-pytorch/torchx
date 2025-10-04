@@ -181,7 +181,7 @@ To validate that you've defined your component correctly you can either:
 
 1. (easiest) Dryrun your component's ``--help`` with the cli: ``torchx run --dryrun ~/component.py:train --help``
 2. Use the component :ref:`linter<specs:Component Linter>`
-   (see `dist_test.py <https://github.com/pytorch/torchx/blob/main/torchx/components/test/dist_test.py>`_ as an example)
+   (see `dist_test.py <https://github.com/meta-pytorch/torchx/blob/main/torchx/components/test/dist_test.py>`_ as an example)
 
 
 Running as a Job
@@ -297,13 +297,6 @@ imagine the component is defined as:
    * ``*args=["--flag", "arg1"]``: ``torchx run comp.py:f --i 1 --flag arg1 ``
    * ``*args=["--help"]``: ``torchx run comp.py:f -- --help``
    * ``*args=["--i", "2"]``: ``torchx run comp.py:f --i 1 -- --i 2``
-
-Run in a Pipeline
---------------------------------
-
-The :ref:`torchx.pipelines<pipelines:torchx.pipelines>` define adapters that
-convert a torchx component into the object that represents a pipeline "stage" in the
-target pipeline platform (see :ref:`Pipelines` for a list of supported pipeline orchestrators).
 
 Additional Resources
 -----------------------

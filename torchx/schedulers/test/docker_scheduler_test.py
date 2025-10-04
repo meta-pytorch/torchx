@@ -100,6 +100,7 @@ class DockerSchedulerTest(unittest.TestCase):
                         "environment": {
                             "FOO": "bar",
                             "TORCHX_RANK0_HOST": "app_name_42-trainer-0",
+                            "TORCHX_IMAGE": "pytorch/torchx:latest",
                         },
                         "labels": {
                             "torchx.pytorch.org/app-id": "app_name_42",
@@ -190,6 +191,7 @@ class DockerSchedulerTest(unittest.TestCase):
                 "FOO_1": "f1",
                 "BAR_1": "b1",
                 "TORCHX_RANK0_HOST": "app_name_42-trainer-0",
+                "TORCHX_IMAGE": "pytorch/torchx:latest",
             },
         )
 
@@ -205,6 +207,7 @@ class DockerSchedulerTest(unittest.TestCase):
                 "FOO": "bar",
                 "FOO_1": "BAR_1",
                 "TORCHX_RANK0_HOST": "app_name_42-trainer-0",
+                "TORCHX_IMAGE": "pytorch/torchx:latest",
             },
         )
 

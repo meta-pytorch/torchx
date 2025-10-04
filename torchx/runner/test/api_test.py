@@ -28,6 +28,7 @@ from torchx.specs.api import (
     parse_app_handle,
     Resource,
     Role,
+    runopts,
     UnknownAppException,
 )
 from torchx.specs.finder import ComponentNotFoundException
@@ -701,3 +702,36 @@ class RunnerTest(TestWithTmpDir):
     def test_get_default_runner(self, _) -> None:
         runner = get_runner()
         self.assertEqual("torchx", runner._name)
+
+    def test_cfg_from_str(self, _) -> None:
+        scheduler_mock = MagicMock()
+        opts = runopts()
+        opts.add("foo", type_=str, default="", help="")
+        opts.add("test_key", type_=str, default="", help="")
+        opts.add("default_time", type_=int, default=0, help="")
+        opts.add("enable", type_=bool, default=True, help="")
+        opts.add("disable", type_=bool, default=True, help="")
+        opts.add("complex_list", type_=List[str], default=[], help="")
+        scheduler_mock.run_opts.return_value = opts
+
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+        ) as runner:
+            self.assertDictEqual(
+                {
+                    "foo": "bar",
+                    "test_key": "test_value",
+                    "default_time": 42,
+                    "enable": True,
+                    "disable": False,
+                    "complex_list": ["v1", "v2", "v3"],
+                },
+                runner.cfg_from_str(
+                    "local_dir",
+                    "foo=bar",
+                    "test_key=test_value",
+                    "default_time=42",
+                    "enable=True,disable=False,complex_list=v1;v2;v3",
+                ),
+            )

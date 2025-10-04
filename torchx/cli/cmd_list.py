@@ -33,8 +33,7 @@ class CmdList(SubCommand):
             type=str,
             default=get_default_scheduler_name(),
             choices=list(scheduler_names),
-            help=f"Name of the scheduler to use. One of: [{','.join(scheduler_names)}]."
-            " For listing app handles for ray scheduler, RAY_ADDRESS env variable should be set.",
+            help=f"Name of the scheduler to use. One of: [{','.join(scheduler_names)}].",
         )
 
     def run(self, args: argparse.Namespace) -> None:

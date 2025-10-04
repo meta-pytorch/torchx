@@ -32,7 +32,7 @@ implementation.
 
 Example usage
 -------------
-Sample `code <https://github.com/pytorch/torchx/blob/main/torchx/examples/apps/tracker/main.py>`__ using tracker API.
+Sample `code <https://github.com/meta-pytorch/torchx/blob/main/torchx/examples/apps/tracker/main.py>`__ using tracker API.
 
 
 Tracker Setup
@@ -111,7 +111,7 @@ Use :py:meth:`~torchx.tracker.app_run_from_env`:
 Reference :py:class:`~torchx.tracker.api.TrackerBase` implementation
 --------------------------------------------------------------------
 :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker` provides reference implementation of a tracker backend.
-GitHub example `directory <https://github.com/pytorch/torchx/blob/main/torchx/examples/apps/tracker/>`__ provides example on how to
+GitHub example `directory <https://github.com/meta-pytorch/torchx/blob/main/torchx/examples/apps/tracker/>`__ provides example on how to
 configure and use it in user application.
 
 

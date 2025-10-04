@@ -14,7 +14,19 @@ import time
 import warnings
 from datetime import datetime
 from types import TracebackType
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    TYPE_CHECKING,
+    TypeVar,
+    Union,
+)
 
 from torchx.runner.events import log_event
 from torchx.schedulers import get_scheduler_factories, SchedulerFactory
@@ -42,8 +54,10 @@ from torchx.tracker.api import (
 from torchx.util.session import get_session_id_or_create_new, TORCHX_INTERNAL_SESSION_ID
 
 from torchx.util.types import none_throws
-from torchx.workspace.api import PkgInfo, WorkspaceBuilder, WorkspaceMixin
-from typing_extensions import Self
+from torchx.workspace.api import Workspace, WorkspaceMixin
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 from .config import get_config, get_configs
 
@@ -116,12 +130,12 @@ class Runner:
     def _get_scheduler_params_from_env(self) -> Dict[str, str]:
         scheduler_params = {}
         for key, value in os.environ.items():
-            lower_case_key = key.lower()
-            if lower_case_key.startswith("torchx_"):
-                scheduler_params[lower_case_key.strip("torchx_")] = value
+            key = key.lower()
+            if key.startswith("torchx_"):
+                scheduler_params[key.removeprefix("torchx_")] = value
         return scheduler_params
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "Self":
         return self
 
     def __exit__(
@@ -151,25 +165,13 @@ class Runner:
         for scheduler in self._scheduler_instances.values():
             scheduler.close()
 
-    def build_standalone_workspace(
-        self,
-        workspace_builder: WorkspaceBuilder[S, T],
-        sync: bool = True,
-    ) -> PkgInfo[S]:
-        """
-        Build a standalone workspace for the given role.
-        This method is used to build a workspace for a role independent of the scheduler and
-        also enables asynchronous workspace building using the Role overrides.
-        """
-        return workspace_builder.build_workspace(sync)
-
     def run_component(
         self,
         component: str,
-        component_args: List[str],
+        component_args: Union[list[str], dict[str, Any]],
         scheduler: str,
         cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
         parent_run_id: Optional[str] = None,
     ) -> AppHandle:
         """
@@ -204,7 +206,7 @@ class Runner:
             ComponentNotFoundException: if the ``component_path`` is failed to resolve.
         """
 
-        with log_event("run_component", workspace=workspace) as ctx:
+        with log_event("run_component") as ctx:
             dryrun_info = self.dryrun_component(
                 component,
                 component_args,
@@ -215,7 +217,8 @@ class Runner:
             )
             handle = self.schedule(dryrun_info)
             app = none_throws(dryrun_info._app)
-            ctx._torchx_event.workspace = workspace
+
+            ctx._torchx_event.workspace = str(workspace)
             ctx._torchx_event.scheduler = none_throws(dryrun_info._scheduler)
             ctx._torchx_event.app_image = app.roles[0].image
             ctx._torchx_event.app_id = parse_app_handle(handle)[2]
@@ -225,10 +228,10 @@ class Runner:
     def dryrun_component(
         self,
         component: str,
-        component_args: List[str],
+        component_args: Union[list[str], dict[str, Any]],
         scheduler: str,
         cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
         parent_run_id: Optional[str] = None,
     ) -> AppDryRunInfo:
         """
@@ -236,10 +239,13 @@ class Runner:
         component, but just returns what "would" have run.
         """
         component_def = get_component(component)
+        args_from_cli = component_args if isinstance(component_args, list) else []
+        args_from_json = component_args if isinstance(component_args, dict) else {}
         app = materialize_appdef(
             component_def.fn,
-            component_args,
+            args_from_cli,
             self._component_defaults.get(component, None),
+            args_from_json,
         )
         return self.dryrun(
             app,
@@ -254,7 +260,7 @@ class Runner:
         app: AppDef,
         scheduler: str,
         cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
         parent_run_id: Optional[str] = None,
     ) -> AppHandle:
         """
@@ -267,9 +273,7 @@ class Runner:
             An application handle that is used to call other action APIs on the app.
         """
 
-        with log_event(
-            api="run", runcfg=json.dumps(cfg) if cfg else None, workspace=workspace
-        ) as ctx:
+        with log_event(api="run") as ctx:
             dryrun_info = self.dryrun(
                 app,
                 scheduler,
@@ -278,10 +282,15 @@ class Runner:
                 parent_run_id=parent_run_id,
             )
             handle = self.schedule(dryrun_info)
-            ctx._torchx_event.scheduler = none_throws(dryrun_info._scheduler)
-            ctx._torchx_event.app_image = none_throws(dryrun_info._app).roles[0].image
-            ctx._torchx_event.app_id = parse_app_handle(handle)[2]
-            ctx._torchx_event.app_metadata = app.metadata
+
+            event = ctx._torchx_event
+            event.scheduler = scheduler
+            event.runcfg = json.dumps(cfg) if cfg else None
+            event.workspace = str(workspace)
+            event.app_id = parse_app_handle(handle)[2]
+            event.app_image = none_throws(dryrun_info._app).roles[0].image
+            event.app_metadata = app.metadata
+
             return handle
 
     def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
@@ -315,21 +324,22 @@ class Runner:
 
         """
         scheduler = none_throws(dryrun_info._scheduler)
-        app_image = none_throws(dryrun_info._app).roles[0].image
         cfg = dryrun_info._cfg
-        with log_event(
-            "schedule",
-            scheduler,
-            app_image=app_image,
-            runcfg=json.dumps(cfg) if cfg else None,
-        ) as ctx:
+        with log_event("schedule") as ctx:
             sched = self._scheduler(scheduler)
             app_id = sched.schedule(dryrun_info)
             app_handle = make_app_handle(scheduler, self._name, app_id)
+
             app = none_throws(dryrun_info._app)
             self._apps[app_handle] = app
-            _, _, app_id = parse_app_handle(app_handle)
-            ctx._torchx_event.app_id = app_id
+
+            event = ctx._torchx_event
+            event.scheduler = scheduler
+            event.runcfg = json.dumps(cfg) if cfg else None
+            event.app_id = app_id
+            event.app_image = none_throws(dryrun_info._app).roles[0].image
+            event.app_metadata = app.metadata
+
             return app_handle
 
     def name(self) -> str:
@@ -340,7 +350,7 @@ class Runner:
         app: AppDef,
         scheduler: str,
         cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
         parent_run_id: Optional[str] = None,
     ) -> AppDryRunInfo:
         """
@@ -409,17 +419,12 @@ class Runner:
             "dryrun",
             scheduler,
             runcfg=json.dumps(cfg) if cfg else None,
-            workspace=workspace,
+            workspace=str(workspace),
         ):
             sched = self._scheduler(scheduler)
             resolved_cfg = sched.run_opts().resolve(cfg)
 
-            # early validation before build workspace
-            with log_event(
-                "pre_build_validate",
-                scheduler,
-            ):
-                sched._pre_build_validate(app, scheduler, resolved_cfg)
+            sched._pre_build_validate(app, scheduler, resolved_cfg)
 
             if workspace and isinstance(sched, WorkspaceMixin):
                 role = app.roles[0]
@@ -429,13 +434,7 @@ class Runner:
                 logger.info(
                     'To disable workspaces pass: --workspace="" from CLI or workspace=None programmatically.'
                 )
-                with log_event(
-                    "build_workspace_and_update_role",
-                    scheduler,
-                ) as ctx:
-                    sched.build_workspace_and_update_role(role, workspace, resolved_cfg)
-                    ctx._torchx_event.app_image = role.image
-                    ctx._torchx_event.workspace = workspace
+                sched.build_workspace_and_update_role2(role, workspace, resolved_cfg)
 
                 if old_img != role.image:
                     logger.info(
@@ -448,11 +447,7 @@ class Runner:
                         " Either a patch was built or no changes to workspace was detected."
                     )
 
-            with log_event(
-                "validate",
-                scheduler,
-            ):
-                sched._validate(app, scheduler, resolved_cfg)
+            sched._validate(app, scheduler, resolved_cfg)
             dryrun_info = sched.submit_dryrun(app, resolved_cfg)
             dryrun_info._scheduler = scheduler
             return dryrun_info
@@ -472,6 +467,27 @@ class Runner:
             The ``runopts`` for the specified scheduler type.
         """
         return self._scheduler(scheduler).run_opts()
+
+    def cfg_from_str(self, scheduler: str, *cfg_literal: str) -> Mapping[str, CfgVal]:
+        """
+        Convenience function around the scheduler's ``runopts.cfg_from_str()`` method.
+
+        Usage:
+
+        .. doctest::
+
+            from torchx.runner import get_runner
+
+            runner = get_runner()
+            cfg = runner.cfg_from_str("local_cwd", "log_dir=/tmp/foobar", "prepend_cwd=True")
+            assert cfg == {"log_dir": "/tmp/foobar", "prepend_cwd": True, "auto_set_cuda_visible_devices": False}
+        """
+
+        opts = self._scheduler(scheduler).run_opts()
+        cfg = {}
+        for cfg_str in cfg_literal:
+            cfg.update(opts.cfg_from_str(cfg_str))
+        return cfg
 
     def scheduler_backends(self) -> List[str]:
         """

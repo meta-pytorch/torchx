@@ -39,11 +39,6 @@ lintrunner init
 lintrunner -a
 ```
 
-## Integration Tests
-
-See the [KFP integration test](scripts/kfpint.py) file for more details on setup
-and running them.
-
 ## License
 By contributing to TorchX, you agree that your contributions will be licensed
 under the LICENSE file in the root directory of this source tree.

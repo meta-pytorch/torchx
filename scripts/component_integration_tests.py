@@ -65,7 +65,6 @@ def main() -> None:
         "local_docker",
         "aws_batch",
         "lsf",
-        "gcp_batch",
     ):
         build = build_and_push_image(args.container_repo)
         torchx_image = build.torchx_image
@@ -119,23 +118,6 @@ def main() -> None:
             "cfg": {
                 "queue": "torchx",
             },
-        },
-        "gcp_batch": {
-            "providers": [
-                component_provider,
-            ],
-            "image": torchx_image,
-            "cfg": {},
-        },
-        "ray": {
-            "providers": [
-                component_provider,
-            ],
-            "image": torchx_image,
-            "cfg": {
-                "requirements": "",
-            },
-            "workspace": f"file://{os.getcwd()}",
         },
         "lsf": {
             "providers": [

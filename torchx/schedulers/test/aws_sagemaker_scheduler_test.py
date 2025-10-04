@@ -1,3 +1,9 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 import threading
 import unittest
 from collections import OrderedDict
@@ -7,8 +13,6 @@ from typing import Any, Dict, Generator, Iterable, Optional
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
-from torchx.schedulers.api import AppDryRunInfo
-
 from torchx.schedulers.aws_sagemaker_scheduler import (
     _local_session,
     AWSSageMakerJob,
@@ -17,7 +21,7 @@ from torchx.schedulers.aws_sagemaker_scheduler import (
     create_scheduler,
     JOB_STATE,
 )
-from torchx.specs.api import runopts
+from torchx.specs.api import AppDryRunInfo, runopts
 
 ENV_TORCHX_ROLE_NAME = "TORCHX_ROLE_NAME"
 MODULE = "torchx.schedulers.aws_sagemaker_scheduler"
