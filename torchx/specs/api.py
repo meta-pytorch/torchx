@@ -819,6 +819,7 @@ class runopt:
     opt_type: Type[CfgVal]
     is_required: bool
     help: str
+    creator: Optional[Callable[[CfgVal], CfgVal]] = None
 
     @property
     def is_type_list_of_str(self) -> bool:
@@ -964,13 +965,26 @@ class runopts:
                 )
 
             # check type (None matches all types)
-            if val is not None and not runopts.is_type(val, runopt.opt_type):
-                raise InvalidRunConfigException(
-                    f"Run option: {cfg_key}, must be of type: {get_type_name(runopt.opt_type)},"
-                    f" but was: {val} ({type(val).__name__})",
-                    cfg_key,
-                    cfg,
-                )
+            if val is not None:
+                if (
+                    not runopts.is_type(val, runopt.opt_type)
+                    and runopt.creator is not None
+                ):
+                    try:
+                        val = runopt.creator(val)
+                    except Exception as e:
+                        raise InvalidRunConfigException(
+                            f"Run option failed with error: {e}",
+                            cfg_key,
+                            cfg,
+                        )
+                if not runopts.is_type(val, runopt.opt_type):
+                    raise InvalidRunConfigException(
+                        f"Run option: {cfg_key}, must be of type: {get_type_name(runopt.opt_type)},"
+                        f" but was: {val} ({type(val).__name__})",
+                        cfg_key,
+                        cfg,
+                    )
 
             # not required and not set, set to default
             if val is None:
@@ -1073,6 +1087,7 @@ class runopts:
         help: str,
         default: CfgVal = None,
         required: bool = False,
+        creator: Optional[Callable[[CfgVal], CfgVal]] = None,
     ) -> None:
         """
         Adds the ``config`` option with the given help string and ``default``
@@ -1090,7 +1105,7 @@ class runopts:
                     f" Given: {default} ({type(default).__name__})"
                 )
 
-        self._opts[cfg_key] = runopt(default, type_, required, help)
+        self._opts[cfg_key] = runopt(default, type_, required, help, creator)
 
     def update(self, other: "runopts") -> None:
         self._opts.update(other._opts)

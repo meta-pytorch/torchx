@@ -10,6 +10,7 @@
 
 import unittest
 from datetime import datetime
+from enum import Enum
 from typing import Iterable, List, Mapping, Optional, TypeVar, Union
 from unittest.mock import MagicMock, patch
 
@@ -37,6 +38,16 @@ from torchx.workspace.api import WorkspaceMixin
 T = TypeVar("T")
 A = TypeVar("A")
 D = TypeVar("D")
+
+
+class EnumConfig(str, Enum):
+    option1 = "option1"
+    option2 = "option2"
+
+
+class IntEnumConfig(int, Enum):
+    option1 = 1
+    option2 = 2
 
 
 class SchedulerTest(unittest.TestCase):
@@ -81,6 +92,21 @@ class SchedulerTest(unittest.TestCase):
         def _run_opts(self) -> runopts:
             opts = runopts()
             opts.add("foo", type_=str, required=True, help="required option")
+            opts.add(
+                "bar",
+                type_=EnumConfig,
+                required=True,
+                help=f"Test Enum Config {[m.name for m in EnumConfig]}",
+                creator=lambda x: EnumConfig(x),
+            ),
+            opts.add(
+                "ienum",
+                type_=IntEnumConfig,
+                required=False,
+                help=f"Test Enum Config {[m.name for m in IntEnumConfig]}",
+                creator=lambda x: IntEnumConfig(x),
+            ),
+
             return opts
 
         def resolve_resource(self, resource: Union[str, Resource]) -> Resource:
@@ -95,12 +121,16 @@ class SchedulerTest(unittest.TestCase):
         scheduler_mock = SchedulerTest.MockScheduler("test_session")
         app_mock = MagicMock()
 
+        empty_cfg = {}
         with self.assertRaises(InvalidRunConfigException):
-            empty_cfg = {}
             scheduler_mock.submit(app_mock, empty_cfg)
 
+        bad_type_cfg = {"foo": 100}
         with self.assertRaises(InvalidRunConfigException):
-            bad_type_cfg = {"foo": 100}
+            scheduler_mock.submit(app_mock, bad_type_cfg)
+
+        bad_type_cfg = {"foo": "here", "bar": "temp"}
+        with self.assertRaises(InvalidRunConfigException):
             scheduler_mock.submit(app_mock, bad_type_cfg)
 
     def test_submit_workspace(self) -> None:
@@ -113,7 +143,7 @@ class SchedulerTest(unittest.TestCase):
 
         scheduler_mock = SchedulerTest.MockScheduler("test_session")
 
-        cfg = {"foo": "asdf"}
+        cfg = {"foo": "asdf", "bar": EnumConfig["option1"], "ienum": 1}
         scheduler_mock.submit(app, cfg, workspace="some_workspace")
         self.assertEqual(app.roles[0].image, "some_workspace")
 
@@ -156,7 +186,7 @@ class SchedulerTest(unittest.TestCase):
         app_mock = AppDef(name="test")
         app_mock.roles = [MagicMock()]
 
-        cfg = {"foo": "bar"}
+        cfg = {"foo": "bar", "bar": "option2"}
         scheduler_mock.submit_dryrun(app_mock, cfg)
         role_mock = app_mock.roles[0]
         role_mock.pre_proc.assert_called_once()
