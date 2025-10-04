@@ -182,6 +182,7 @@ class DistributedTestCase(TestWithTmpDir):
 
         See class docstring for usage example.
         """
+        # pyre-fixme[28]: Unexpected keyword argument `log_dir`.
         config = LaunchConfig(
             min_nodes=1,
             max_nodes=1,
