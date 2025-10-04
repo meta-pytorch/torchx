@@ -63,6 +63,9 @@ AWS_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
 GENERIC_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
     "torchx.specs.named_resources_generic", "NAMED_RESOURCES", default={}
 )
+CONFIG_NAMED_RESOURCES: Mapping[str, Callable[[], Resource]] = import_attr(
+    "torchx.specs.named_resources_config", "NAMED_RESOURCES", default={}
+)
 FB_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
     "torchx.specs.fb.named_resources", "NAMED_RESOURCES", default={}
 )
@@ -75,6 +78,7 @@ def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
     for name, resource in {
         **GENERIC_NAMED_RESOURCES,
         **AWS_NAMED_RESOURCES,
+        **CONFIG_NAMED_RESOURCES,
         **FB_NAMED_RESOURCES,
         **resource_methods,
     }.items():

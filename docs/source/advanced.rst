@@ -77,8 +77,39 @@ Registering Named Resources
 
 A Named Resource is a set of predefined resource specs that are given a
 string name. This is particularly useful
-when your cluster has a fixed set of instance types. For instance if your
-deep learning training kubernetes cluster on AWS is
+when your cluster has a fixed set of instance types. 
+
+TorchX supports two ways to define named resources:
+
+1. **Configuration-based**: Define resources in ``.torchxconfig`` files (recommended for most users)
+2. **Entry point-based**: Register resources via Python entry points (for package authors)
+
+Configuration-Based Named Resources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For most users, the easiest way to define custom named resources is through configuration files.
+
+Create a ``.torchxconfig`` file in your project directory:
+
+.. code-block:: ini
+
+   [named_resources]
+   dynamic = {"cpu": 100, "gpu": 8, "memMB": 819200, "devices": {"vpc.amazonaws.com/efa": 1}}
+   my_custom = {"cpu": 32, "gpu": 4, "memMB": 131072}
+
+You can also use the ``TORCHXCONFIG`` environment variable to specify a custom config file path.
+
+Usage example:
+
+.. code-block:: python
+
+   from torchx.specs import resource
+   my_resource = resource(h="dynamic")  # Uses your config-defined resource
+
+Entry Point-Based Named Resources
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For instance if your deep learning training kubernetes cluster on AWS is
 comprised only of p3.16xlarge (64 vcpu, 8 gpu, 488GB), then you may want to
 enumerate t-shirt sized resource specs for the containers as:
 
