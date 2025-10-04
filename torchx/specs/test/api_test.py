@@ -19,8 +19,7 @@ from typing import Dict, List, Mapping, Tuple, Union
 from unittest import mock
 from unittest.mock import MagicMock
 
-import torchx.specs.named_resources_aws as named_resources_aws
-from torchx.specs import named_resources, resource
+from torchx.specs import named_resources, named_resources_aws, resource
 from torchx.specs.api import (
     _TERMINAL_STATES,
     AppDef,
@@ -44,6 +43,7 @@ from torchx.specs.api import (
     runopt,
     runopts,
     TORCHX_HOME,
+    Workspace,
 )
 
 
@@ -72,6 +72,81 @@ class TorchXHomeTest(unittest.TestCase):
 
                 self.assertTrue(torchx_home.is_dir())
                 self.assertTrue(conda_pack_out.is_dir())
+
+
+class WorkspaceTest(unittest.TestCase):
+
+    def test_bool(self) -> None:
+        self.assertFalse(Workspace(projects={}))
+        self.assertFalse(Workspace.from_str(""))
+
+        self.assertTrue(Workspace(projects={"/home/foo/bar": ""}))
+        self.assertTrue(Workspace.from_str("/home/foo/bar"))
+
+    def test_to_string_single_project_workspace(self) -> None:
+        self.assertEqual(
+            "/home/foo/bar",
+            str(Workspace(projects={"/home/foo/bar": ""})),
+        )
+
+    def test_to_string_multi_project_workspace(self) -> None:
+        workspace = Workspace(
+            projects={
+                "/home/foo/workspace/myproj": "",
+                "/home/foo/github/torch": "torch",
+            }
+        )
+
+        self.assertEqual(
+            "/home/foo/workspace/myproj;/home/foo/github/torch:torch",
+            str(workspace),
+        )
+
+    def test_is_unmapped_single_project_workspace(self) -> None:
+        self.assertTrue(
+            Workspace(projects={"/home/foo/bar": ""}).is_unmapped_single_project()
+        )
+
+        self.assertFalse(
+            Workspace(projects={"/home/foo/bar": "baz"}).is_unmapped_single_project()
+        )
+
+        self.assertFalse(
+            Workspace(
+                projects={"/home/foo/bar": "", "/home/foo/torch": ""}
+            ).is_unmapped_single_project()
+        )
+
+        self.assertFalse(
+            Workspace(
+                projects={"/home/foo/bar": "", "/home/foo/torch": "pytorch"}
+            ).is_unmapped_single_project()
+        )
+
+    def test_from_str_single_project(self) -> None:
+        self.assertDictEqual(
+            {"/home/foo/bar": ""},
+            Workspace.from_str("/home/foo/bar").projects,
+        )
+
+        self.assertDictEqual(
+            {"/home/foo/bar": "baz"},
+            Workspace.from_str("/home/foo/bar: baz").projects,
+        )
+
+    def test_from_str_multi_project(self) -> None:
+        self.assertDictEqual(
+            {
+                "/home/foo/bar": "",
+                "/home/foo/third-party/verl": "verl",
+            },
+            Workspace.from_str(
+                """#
+/home/foo/bar:
+/home/foo/third-party/verl: verl
+"""
+            ).projects,
+        )
 
 
 class AppDryRunInfoTest(unittest.TestCase):

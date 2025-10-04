@@ -351,6 +351,78 @@ class DeviceMount:
 
 
 @dataclass
+class Workspace:
+    """
+    Specifies a local "workspace" (a set of directories). Workspaces are ad-hoc built
+    into an (usually ephemeral) image. This effectively mirrors the local code changes
+    at job submission time.
+
+    For example:
+
+      1. ``projects={"~/github/torch": "torch"}`` copies ``~/github/torch/**`` into ``$REMOTE_WORKSPACE_ROOT/torch/**``
+      2. ``projects={"~/github/torch": ""}`` copies ``~/github/torch/**`` into ``$REMOTE_WORKSPACE_ROOT/**``
+
+    The exact location of ``$REMOTE_WORKSPACE_ROOT`` is implementation dependent and varies between
+    different implementations of :py:class:`~torchx.workspace.api.WorkspaceMixin`.
+    Check the scheduler documentation for details on which workspace it supports.
+
+    Note: ``projects`` maps the location of the local project to a sub-directory in the remote workspace root directory.
+    Typically the local project location is a directory path (e.g. ``/home/foo/github/torch``).
+
+
+    Attributes:
+        projects: mapping of local project to the sub-dir in the remote workspace dir.
+    """
+
+    projects: dict[str, str]
+
+    def __bool__(self) -> bool:
+        """False if no projects mapping. Lets us use workspace object in an if-statement"""
+        return bool(self.projects)
+
+    def is_unmapped_single_project(self) -> bool:
+        """
+        Returns ``True`` if this workspace only has 1 project
+        and its target mapping is an empty string.
+        """
+        return len(self.projects) == 1 and not next(iter(self.projects.values()))
+
+    @staticmethod
+    def from_str(workspace: str | None) -> "Workspace":
+        import yaml
+
+        if not workspace:
+            return Workspace({})
+
+        projects = yaml.safe_load(workspace)
+        if isinstance(projects, str):  # single project workspace
+            projects = {projects: ""}
+        else:  # multi-project workspace
+            # Replace None mappings with "" (empty string)
+            projects = {k: ("" if v is None else v) for k, v in projects.items()}
+
+        return Workspace(projects)
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the Workspace by concatenating
+        the project mappings using ';' as a delimiter and ':' between key and value.
+        If the single-project workspace with no target mapping, then simply
+        returns the src (local project dir)
+
+        NOTE: meant to be used for logging purposes not serde.
+          Therefore not symmetric with :py:func:`Workspace.from_str`.
+
+        """
+        if self.is_unmapped_single_project():
+            return next(iter(self.projects))
+        else:
+            return ";".join(
+                k if not v else f"{k}:{v}" for k, v in self.projects.items()
+            )
+
+
+@dataclass
 class Role:
     """
     A set of nodes that perform a specific duty within the ``AppDef``.
@@ -402,6 +474,10 @@ class Role:
             metadata: Free form information that is associated with the role, for example
                 scheduler specific data. The key should follow the pattern: ``$scheduler.$key``
             mounts: a list of mounts on the machine
+            workspace: local project directories to be mirrored on the remote job.
+              NOTE: The workspace argument provided to the :py:class:`~torchx.runner.api.Runner` APIs
+              only takes effect on ``appdef.role[0]`` and overrides this attribute.
+
     """
 
     name: str
@@ -417,9 +493,10 @@ class Role:
     resource: Resource = field(default_factory=_null_resource)
     port_map: Dict[str, int] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    mounts: List[Union[BindMount, VolumeMount, DeviceMount]] = field(
-        default_factory=list
-    )
+    mounts: List[BindMount | VolumeMount | DeviceMount] = field(default_factory=list)
+    workspace: Workspace | None = None
+
+    # DEPRECATED DO NOT SET, WILL BE REMOVED SOON
     overrides: Dict[str, Any] = field(default_factory=dict)
 
     # pyre-ignore
