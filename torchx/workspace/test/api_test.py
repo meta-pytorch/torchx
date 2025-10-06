@@ -34,70 +34,15 @@ class TestWorkspace(WorkspaceMixin[None]):
 
 class WorkspaceTest(TestWithTmpDir):
 
-    def test_to_string_single_project_workspace(self) -> None:
-        self.assertEqual(
-            "/home/foo/bar",
-            str(Workspace(projects={"/home/foo/bar": ""})),
-        )
+    def build_workspace_and_update_role(
+        self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
+    ) -> None:
+        role.image = "bar"
+        role.metadata["workspace"] = workspace
 
-    def test_to_string_multi_project_workspace(self) -> None:
-        workspace = Workspace(
-            projects={
-                "/home/foo/workspace/myproj": "",
-                "/home/foo/github/torch": "torch",
-            }
-        )
-
-        self.assertEqual(
-            "/home/foo/workspace/myproj;/home/foo/github/torch:torch",
-            str(workspace),
-        )
-
-    def test_is_unmapped_single_project_workspace(self) -> None:
-        self.assertTrue(
-            Workspace(projects={"/home/foo/bar": ""}).is_unmapped_single_project()
-        )
-
-        self.assertFalse(
-            Workspace(projects={"/home/foo/bar": "baz"}).is_unmapped_single_project()
-        )
-
-        self.assertFalse(
-            Workspace(
-                projects={"/home/foo/bar": "", "/home/foo/torch": ""}
-            ).is_unmapped_single_project()
-        )
-
-        self.assertFalse(
-            Workspace(
-                projects={"/home/foo/bar": "", "/home/foo/torch": "pytorch"}
-            ).is_unmapped_single_project()
-        )
-
-    def test_from_str_single_project(self) -> None:
-        self.assertDictEqual(
-            {"/home/foo/bar": ""},
-            Workspace.from_str("/home/foo/bar").projects,
-        )
-
-        self.assertDictEqual(
-            {"/home/foo/bar": "baz"},
-            Workspace.from_str("/home/foo/bar: baz").projects,
-        )
-
-    def test_from_str_multi_project(self) -> None:
-        self.assertDictEqual(
-            {
-                "/home/foo/bar": "",
-                "/home/foo/third-party/verl": "verl",
-            },
-            Workspace.from_str(
-                """#
-/home/foo/bar:
-/home/foo/third-party/verl: verl
-"""
-            ).projects,
-        )
+        if not workspace.startswith("//"):
+            # to validate the merged workspace dir copy its content to the tmpdir
+            shutil.copytree(workspace, self.tmpdir)
 
     def test_build_and_update_role2_str_workspace(self) -> None:
         proj = self.tmpdir / "github" / "torch"
