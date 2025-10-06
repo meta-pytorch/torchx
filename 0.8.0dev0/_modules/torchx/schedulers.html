@@ -497,15 +497,14 @@
 <span class="sd">    The first scheduler in the dictionary is used as the default scheduler.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">default_schedulers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SchedulerFactory</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">DEFAULT_SCHEDULER_MODULES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">default_schedulers</span><span class="p">[</span><span class="n">scheduler</span><span class="p">]</span> <span class="o">=</span> <span class="n">_defer_load_scheduler</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">skip_defaults</span><span class="p">:</span>
+        <span class="n">default_schedulers</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">default_schedulers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SchedulerFactory</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">DEFAULT_SCHEDULER_MODULES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">default_schedulers</span><span class="p">[</span><span class="n">scheduler</span><span class="p">]</span> <span class="o">=</span> <span class="n">_defer_load_scheduler</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">load_group</span><span class="p">(</span>
-        <span class="n">group</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="n">default_schedulers</span><span class="p">,</span>
-        <span class="n">skip_defaults</span><span class="o">=</span><span class="n">skip_defaults</span><span class="p">,</span>
-    <span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">load_group</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default_schedulers</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_default_scheduler_name"><a class="viewcode-back" href="../../schedulers.html#torchx.schedulers.get_default_scheduler_name">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_default_scheduler_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
