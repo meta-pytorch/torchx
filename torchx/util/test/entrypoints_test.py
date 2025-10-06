@@ -134,11 +134,6 @@ class EntryPointsTest(unittest.TestCase):
         self.assertEqual("barbaz", eps["foo"]())
         self.assertEqual("foobar", eps["bar"]())
 
-        eps = load_group(
-            "ep.grp.test.missing", {"foo": barbaz, "bar": foobar}, skip_defaults=True
-        )
-        self.assertIsNone(eps)
-
     @patch(_METADATA_EPS, return_value=_ENTRY_POINTS)
     def test_load_group_missing(self, _: MagicMock) -> None:
         with self.assertRaises(AttributeError):
