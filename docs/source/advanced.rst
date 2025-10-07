@@ -153,6 +153,33 @@ resource can then be used in the following manner:
 
   test_app("gpu_x2")
 
+Alternatively, you can define custom named resources in a Python module and point
+to it using the ``TORCHX_CUSTOM_NAMED_RESOURCES`` environment variable:
+
+.. code-block:: python
+
+   # my_resources.py
+   from torchx.specs import Resource
+
+   def gpu_x8_efa() -> Resource:
+       return Resource(cpu=100, gpu=8, memMB=819200, devices={"vpc.amazonaws.com/efa": 1})
+
+   def cpu_x32() -> Resource:
+       return Resource(cpu=32, gpu=0, memMB=131072)
+
+   NAMED_RESOURCES = {
+       "gpu_x8_efa": gpu_x8_efa,
+       "cpu_x32": cpu_x32,
+   }
+
+Then set the environment variable:
+
+.. code-block:: bash
+
+   export TORCHX_CUSTOM_NAMED_RESOURCES=my_resources
+
+This allows you to use your custom resources without creating a package with entry points.
+
 
 Registering Custom Components
 -------------------------------
