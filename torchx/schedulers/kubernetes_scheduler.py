@@ -471,6 +471,7 @@ class KubernetesOpts(TypedDict, total=False):
     image_repo: Optional[str]
     service_account: Optional[str]
     priority_class: Optional[str]
+    in_cluster: Optional[bool]
 
 
 class KubernetesScheduler(
@@ -581,10 +582,16 @@ class KubernetesScheduler(
         c = self._client
         if c is None:
             configuration = client.Configuration()
-            try:
-                config.load_kube_config(client_configuration=configuration)
-            except config.ConfigException as e:
-                warnings.warn(f"failed to load kube config: {e}")
+            if self._in_cluster:
+                try:
+                    config.load_incluster_config(client_configuration=configuration)
+                except config.ConfigException as e:
+                    warnings.warn(f"failed to load incluster config: {e}")
+            else:   
+                try:
+                    config.load_kube_config(client_configuration=configuration)
+                except config.ConfigException as e:
+                    warnings.warn(f"failed to load kube config: {e}")
 
             c = self._client = client.ApiClient(configuration)
 
@@ -614,6 +621,12 @@ class KubernetesScheduler(
         cfg = dryrun_info._cfg
         assert cfg is not None, f"{dryrun_info} missing cfg"
         namespace = cfg.get("namespace") or "default"
+        
+        in_cluster = cfg.get("in_cluster") or False
+        if not isinstance(in_cluster, bool):
+            raise TypeError(f"config value 'in_cluster' must be a bool, got {in_cluster}")
+
+        self._in_cluster = in_cluster
 
         images_to_push = dryrun_info.request.images_to_push
         self.push_images(images_to_push)
@@ -702,6 +715,11 @@ class KubernetesScheduler(
             "priority_class",
             type_=str,
             help="The name of the PriorityClass to set on the job specs",
+        )
+        opts.add(
+            "in_cluster",
+            type_=bool,
+            help="Type of run to use local cluster if KUBECONFIG not provided"
         )
         return opts
 
