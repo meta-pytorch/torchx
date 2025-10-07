@@ -540,6 +540,7 @@
     <span class="n">h</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu.small&quot;</span><span class="p">,</span>
     <span class="n">j</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1x1&quot;</span><span class="p">,</span>
     <span class="n">env</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">mounts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -579,6 +580,7 @@
 <span class="sd">        h: the type of host to run on (e.g. aws_p4d.24xlarge). Must be one of the registered named resources</span>
 <span class="sd">        j: {nnodes}x{nproc_per_node}. For GPU hosts omitting nproc_per_node will infer it from the GPU count on the host</span>
 <span class="sd">        env: environment variables to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)</span>
+<span class="sd">        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)</span>
 <span class="sd">        max_retries: the number of scheduler retries allowed</span>
 <span class="sd">        mounts: (for docker based runs only) mounts to mount into the worker environment/container</span>
 <span class="sd">                (ex. type=&lt;bind/volume&gt;,src=/host,dst=/job[,readonly]).</span>
@@ -598,6 +600,7 @@
         <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span>
         <span class="n">j</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">StructuredJArgument</span><span class="o">.</span><span class="n">parse_from</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">j</span><span class="p">)),</span>
         <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
         <span class="n">max_retries</span><span class="o">=</span><span class="n">max_retries</span><span class="p">,</span>
         <span class="n">mounts</span><span class="o">=</span><span class="n">mounts</span><span class="p">,</span>
         <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span>
@@ -616,6 +619,7 @@
     <span class="n">memMB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
     <span class="n">j</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1x2&quot;</span><span class="p">,</span>
     <span class="n">env</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">rdzv_port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">29500</span><span class="p">,</span>
     <span class="n">rdzv_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;c10d&quot;</span><span class="p">,</span>
@@ -649,6 +653,7 @@
 <span class="sd">        h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)</span>
 <span class="sd">        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts, nproc_per_node must not exceed num gpus</span>
 <span class="sd">        env: environment varibles to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)</span>
+<span class="sd">        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)</span>
 <span class="sd">        max_retries: the number of scheduler retries allowed</span>
 <span class="sd">        rdzv_port: the port on rank0&#39;s host to use for hosting the c10d store used for rendezvous.</span>
 <span class="sd">                   Only takes effect when running multi-node. When running single node, this parameter</span>
@@ -685,8 +690,8 @@
         <span class="c1"># use $$ in the prefix to escape the &#39;$&#39; literal (rather than a string Template substitution argument)</span>
         <span class="n">rdzv_endpoint</span> <span class="o">=</span> <span class="n">_noquote</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$$</span><span class="se">{{</span><span class="si">{</span><span class="n">macros</span><span class="o">.</span><span class="n">rank0_env</span><span class="si">}</span><span class="s2">:=localhost</span><span class="se">}}</span><span class="s2">:</span><span class="si">{</span><span class="n">rdzv_port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">env</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">env</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
 
     <span class="n">argname</span> <span class="o">=</span> <span class="n">StructuredNameArgument</span><span class="o">.</span><span class="n">parse_from</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
@@ -747,6 +752,7 @@
                 <span class="n">mounts</span><span class="o">=</span><span class="n">specs</span><span class="o">.</span><span class="n">parse_mounts</span><span class="p">(</span><span class="n">mounts</span><span class="p">)</span> <span class="k">if</span> <span class="n">mounts</span> <span class="k">else</span> <span class="p">[],</span>
             <span class="p">)</span>
         <span class="p">],</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
