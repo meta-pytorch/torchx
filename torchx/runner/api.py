@@ -426,26 +426,42 @@ class Runner:
 
             sched._pre_build_validate(app, scheduler, resolved_cfg)
 
-            if workspace and isinstance(sched, WorkspaceMixin):
-                role = app.roles[0]
-                old_img = role.image
+            if isinstance(sched, WorkspaceMixin):
+                for i, role in enumerate(app.roles):
+                    role_workspace = role.workspace
 
-                logger.info(f"Checking for changes in workspace `{workspace}`...")
-                logger.info(
-                    'To disable workspaces pass: --workspace="" from CLI or workspace=None programmatically.'
-                )
-                sched.build_workspace_and_update_role2(role, workspace, resolved_cfg)
+                    if i == 0 and workspace:
+                        # NOTE: torchx originally took workspace as a runner arg and only applied the workspace to role[0]
+                        #   later, torchx added support for the workspace attr in Role
+                        #   for BC, give precedence to the workspace argument over the workspace attr for role[0]
+                        if role_workspace:
+                            logger.info(
+                                f"Using workspace={workspace} over role[{i}].workspace={role_workspace} for role[{i}]={role.name}."
+                                " To use the role's workspace attr pass: --workspace='' from CLI or workspace=None programmatically."  # noqa: B950
+                            )
+                        role_workspace = workspace
 
-                if old_img != role.image:
-                    logger.info(
-                        f"Built new image `{role.image}` based on original image `{old_img}`"
-                        f" and changes in workspace `{workspace}` for role[0]={role.name}."
-                    )
-                else:
-                    logger.info(
-                        f"Reusing original image `{old_img}` for role[0]={role.name}."
-                        " Either a patch was built or no changes to workspace was detected."
-                    )
+                    if role_workspace:
+                        old_img = role.image
+                        logger.info(
+                            f"Checking for changes in workspace `{role_workspace}` for role[{i}]={role.name}..."
+                        )
+                        # TODO kiuk@ once we deprecate the `workspace` argument in runner APIs we can simplify the signature of
+                        #   build_workspace_and_update_role2() to just taking the role and resolved_cfg
+                        sched.build_workspace_and_update_role2(
+                            role, role_workspace, resolved_cfg
+                        )
+
+                        if old_img != role.image:
+                            logger.info(
+                                f"Built new image `{role.image}` based on original image `{old_img}`"
+                                f" and changes in workspace `{role_workspace}` for role[{i}]={role.name}."
+                            )
+                        else:
+                            logger.info(
+                                f"Reusing original image `{old_img}` for role[{i}]={role.name}."
+                                " Either a patch was built or no changes to workspace was detected."
+                            )
 
             sched._validate(app, scheduler, resolved_cfg)
             dryrun_info = sched.submit_dryrun(app, resolved_cfg)

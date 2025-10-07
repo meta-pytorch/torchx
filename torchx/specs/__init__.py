@@ -45,6 +45,7 @@ from torchx.specs.api import (
     UnknownAppException,
     UnknownSchedulerException,
     VolumeMount,
+    Workspace,
 )
 from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
 
@@ -236,4 +237,6 @@ __all__ = [
     "torchx_run_args_from_json",
     "TorchXRunArgs",
     "ALL",
+    "TORCHX_HOME",
+    "Workspace",
 ]
