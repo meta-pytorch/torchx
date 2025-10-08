@@ -295,11 +295,31 @@ class RetryPolicy(str, Enum):
     APPLICATION = "APPLICATION"
     ROLE = "ROLE"
 
+    @staticmethod
+    def from_str(s: str) -> "RetryPolicy":
+        """
+        Returns the retry policy for the given string.
+        """
+        try:
+            return RetryPolicy[s]
+        except KeyError as e:
+            raise ValueError(f"Invalid retry policy: {s}") from e
+
 
 class MountType(str, Enum):
     BIND = "bind"
     VOLUME = "volume"
     DEVICE = "device"
+
+    @staticmethod
+    def from_str(s: str) -> "MountType":
+        """
+        Returns the mount type for the given string.
+        """
+        try:
+            return MountType[s]
+        except KeyError as e:
+            raise ValueError(f"Invalid mount type: {s}") from e
 
 
 @dataclass
@@ -588,6 +608,16 @@ class AppState(int, Enum):
 
     def __repr__(self) -> str:
         return f"{self.name} ({self.value})"
+
+    @staticmethod
+    def from_str(s: str) -> "AppState":
+        """
+        Returns the app state for the given string.
+        """
+        try:
+            return AppState[s]
+        except KeyError as e:
+            raise ValueError(f"Invalid app state: {s}") from e
 
 
 _TERMINAL_STATES: List[AppState] = [

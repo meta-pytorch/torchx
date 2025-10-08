@@ -33,6 +33,7 @@ from torchx.specs.api import (
     macros,
     MalformedAppHandleException,
     MISSING,
+    MountType,
     NULL_RESOURCE,
     parse_app_handle,
     ReplicaStatus,
@@ -161,6 +162,20 @@ class AppDryRunInfoTest(unittest.TestCase):
 
 
 class AppDefStatusTest(unittest.TestCase):
+
+    def test_app_state_from_str(self) -> None:
+        self.assertEqual(AppState.UNSUBMITTED, AppState.from_str("UNSUBMITTED"))
+        self.assertEqual(AppState.SUBMITTED, AppState.from_str("SUBMITTED"))
+        self.assertEqual(AppState.PENDING, AppState.from_str("PENDING"))
+        self.assertEqual(AppState.RUNNING, AppState.from_str("RUNNING"))
+        self.assertEqual(AppState.SUCCEEDED, AppState.from_str("SUCCEEDED"))
+        self.assertEqual(AppState.FAILED, AppState.from_str("FAILED"))
+        self.assertEqual(AppState.CANCELLED, AppState.from_str("CANCELLED"))
+        self.assertEqual(AppState.UNKNOWN, AppState.from_str("UNKNOWN"))
+
+        with self.assertRaises(ValueError):
+            AppState.from_str("INVALID_STATE")
+
     def test_is_terminal(self) -> None:
         for s in AppState:
             is_terminal = AppStatus(state=s).is_terminal()
@@ -420,6 +435,26 @@ class RoleBuilderTest(unittest.TestCase):
                 RetryPolicy.ROLE,
             },
         )
+
+    def test_retry_policy_from_str(self) -> None:
+        # Test valid retry policy strings
+        self.assertEqual(RetryPolicy.APPLICATION, RetryPolicy.from_str("APPLICATION"))
+        self.assertEqual(RetryPolicy.REPLICA, RetryPolicy.from_str("REPLICA"))
+        self.assertEqual(RetryPolicy.ROLE, RetryPolicy.from_str("ROLE"))
+
+        # Test invalid retry policy string
+        with self.assertRaises(ValueError):
+            RetryPolicy.from_str("INVALID_POLICY")
+
+    def test_mount_type_from_str(self) -> None:
+        # Test valid mount type strings
+        self.assertEqual(MountType.BIND, MountType.from_str("BIND"))
+        self.assertEqual(MountType.VOLUME, MountType.from_str("VOLUME"))
+        self.assertEqual(MountType.DEVICE, MountType.from_str("DEVICE"))
+
+        # Test invalid mount type string
+        with self.assertRaises(ValueError):
+            MountType.from_str("INVALID_MOUNT_TYPE")
 
     def test_override_role(self) -> None:
         default = Role(
