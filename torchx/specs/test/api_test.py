@@ -13,6 +13,7 @@ import os
 import tempfile
 import time
 import unittest
+import warnings
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Mapping, Tuple, Union
@@ -577,6 +578,89 @@ class RunConfigTest(unittest.TestCase):
 
         # this print is intentional (demonstrates the intended usecase)
         print(opts)
+
+    def test_runopts_add_with_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.alias("jobPriority")],
+            type_=str,
+            help="priority for the job",
+        )
+        self.assertEqual(1, len(opts._opts))
+        self.assertIsNotNone(opts.get("job_priority"))
+        self.assertIsNotNone(opts.get("jobPriority"))
+
+    def test_runopts_resolve_with_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.alias("jobPriority")],
+            type_=str,
+            help="priority for the job",
+        )
+        opts.resolve({"job_priority": "high"})
+        opts.resolve({"jobPriority": "low"})
+        with self.assertRaises(InvalidRunConfigException):
+            opts.resolve({"job_priority": "high", "jobPriority": "low"})
+
+    def test_runopts_resolve_with_none_valued_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.alias("jobPriority")],
+            type_=str,
+            help="priority for the job",
+        )
+        opts.add(
+            ["modelTypeName", runopt.alias("model_type_name")],
+            type_=Union[str, None],
+            help="ML Hub Model Type to attribute resource utilization for job",
+        )
+        resolved_opts = opts.resolve({"model_type_name": None, "jobPriority": "low"})
+        self.assertEqual(resolved_opts.get("model_type_name"), None)
+        self.assertEqual(resolved_opts.get("jobPriority"), "low")
+        self.assertEqual(resolved_opts, {"model_type_name": None, "jobPriority": "low"})
+
+        with self.assertRaises(InvalidRunConfigException):
+            opts.resolve({"model_type_name": None, "modelTypeName": "low"})
+
+    def test_runopts_add_with_deprecated_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            [runopt.deprecated("jobPriority"), "job_priority"],
+            type_=str,
+            help="run as user",
+        )
+        opts.resolve({"job_priority": "high"})
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            opts.resolve({"jobPriority": "high"})
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertEqual(
+                str(w[0].message),
+                "Run option: jobPriority, is deprecated. Please use job_priority instead",
+            )
+
+    def test_runopt_auto_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.AutoAlias.camelCase],
+            type_=str,
+            help="run as user",
+        )
+        opts.add(
+            [
+                "model_type_name",
+                runopt.AutoAlias.camelCase | runopt.AutoAlias.SNAKE_CASE,
+            ],
+            type_=str,
+            help="run as user",
+        )
+        self.assertEqual(2, len(opts._opts))
+        self.assertIsNotNone(opts.get("job_priority"))
+        self.assertIsNotNone(opts.get("jobPriority"))
+        self.assertIsNotNone(opts.get("model_type_name"))
+        self.assertIsNotNone(opts.get("modelTypeName"))
+        self.assertIsNotNone(opts.get("MODEL_TYPE_NAME"))
 
     def get_runopts(self) -> runopts:
         opts = runopts()
