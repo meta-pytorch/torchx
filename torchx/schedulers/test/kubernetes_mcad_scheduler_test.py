@@ -706,7 +706,6 @@ spec:
                 name="echo",
                 image="echoImage",
                 min_replicas=None,
-                base_image=None,
                 args=[
                     "bash",
                     "-c",
@@ -862,7 +861,6 @@ spec:
                 name="echo",
                 image="",
                 min_replicas=None,
-                base_image=None,
                 args=[],
                 env={},
                 num_replicas=1,
@@ -926,7 +924,6 @@ spec:
                 name="echo",
                 image="",
                 min_replicas=None,
-                base_image=None,
                 args=[],
                 env={},
                 num_replicas=1,
@@ -978,7 +975,6 @@ spec:
                 name="echo",
                 image="echoImage",
                 min_replicas=None,
-                base_image=None,
                 args=[
                     "bash",
                     "-c",
@@ -1045,7 +1041,6 @@ spec:
                 name="echo",
                 image="echoImage",
                 min_replicas=None,
-                base_image=None,
                 args=[
                     "bash",
                     "-c",
@@ -1112,7 +1107,6 @@ spec:
                 name="echo",
                 image="echoImage",
                 min_replicas=None,
-                base_image=None,
                 args=[
                     "bash",
                     "-c",
@@ -1179,7 +1173,6 @@ spec:
                 name="echo",
                 image="echoImage",
                 min_replicas=None,
-                base_image=None,
                 args=[
                     "bash",
                     "-c",
@@ -1246,7 +1239,6 @@ spec:
                 name="echo",
                 image="echoImage",
                 min_replicas=None,
-                base_image=None,
                 args=[
                     "bash",
                     "-c",
