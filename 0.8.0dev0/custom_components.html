@@ -501,25 +501,25 @@ torchx<span class="w"> </span>run<span class="w"> </span>utils.echo<span class="
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-torchx 2025-10-07 02:53:46 INFO     Tracker configurations: {}
-torchx 2025-10-07 02:53:46 INFO     Checking for changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=echo...
-torchx 2025-10-07 02:53:46 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
-torchx 2025-10-07 02:56:34 INFO     Building workspace docker image (this may take a while)...
-torchx 2025-10-07 02:56:34 INFO     Step 1/4 : ARG IMAGE
-torchx 2025-10-07 02:56:34 INFO     Step 2/4 : FROM $IMAGE
-torchx 2025-10-07 02:56:34 INFO      ---&gt; da9ca21e8d49
-torchx 2025-10-07 02:56:34 INFO     Step 3/4 : COPY . .
-torchx 2025-10-07 02:56:41 INFO      ---&gt; 0ad193419b0d
-torchx 2025-10-07 02:56:41 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
-torchx 2025-10-07 02:56:41 INFO      ---&gt; Running in e2c1f8fc3aa7
-torchx 2025-10-07 02:56:47 INFO      ---&gt; Removed intermediate container e2c1f8fc3aa7
-torchx 2025-10-07 02:56:47 INFO      ---&gt; e810ab0f8317
-torchx 2025-10-07 02:56:47 INFO     [Warning] One or more build-args [WORKSPACE] were not consumed
-torchx 2025-10-07 02:56:47 INFO     Successfully built e810ab0f8317
-torchx 2025-10-07 02:56:47 INFO     Built new image `sha256:e810ab0f83175f38d03e179b80a7e21eee6c08316df8676fe9a4c4cb86d98886` based on original image `ghcr.io/pytorch/torchx:0.8.0dev0` and changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=echo.
-torchx 2025-10-07 02:56:47 INFO     Waiting for the app to finish...
-torchx 2025-10-07 02:56:47 INFO     Job finished: SUCCEEDED
+torchx 2025-10-11 06:43:32 INFO     Tracker configurations: {}
+torchx 2025-10-11 06:43:32 INFO     Checking for changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=echo...
+torchx 2025-10-11 06:43:32 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
+torchx 2025-10-11 06:46:02 INFO     Building workspace docker image (this may take a while)...
+torchx 2025-10-11 06:46:02 INFO     Step 1/4 : ARG IMAGE
+torchx 2025-10-11 06:46:02 INFO     Step 2/4 : FROM $IMAGE
+torchx 2025-10-11 06:46:02 INFO      ---&gt; da9ca21e8d49
+torchx 2025-10-11 06:46:02 INFO     Step 3/4 : COPY . .
+torchx 2025-10-11 06:46:08 INFO      ---&gt; c23783f044c0
+torchx 2025-10-11 06:46:08 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
+torchx 2025-10-11 06:46:08 INFO      ---&gt; Running in fdff40e1b290
+torchx 2025-10-11 06:46:14 INFO      ---&gt; Removed intermediate container fdff40e1b290
+torchx 2025-10-11 06:46:14 INFO      ---&gt; f452f59fbc8b
+torchx 2025-10-11 06:46:14 INFO     [Warning] One or more build-args [WORKSPACE] were not consumed
+torchx 2025-10-11 06:46:14 INFO     Successfully built f452f59fbc8b
+torchx 2025-10-11 06:46:14 INFO     Built new image `sha256:f452f59fbc8b72212807717a301abb3c6113fd1dd1fa34b26de2f57d35f60bf5` based on original image `ghcr.io/pytorch/torchx:0.8.0dev0` and changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=echo.
+torchx 2025-10-11 06:46:14 INFO     Waiting for the app to finish...
 echo/0 Hello :)
+torchx 2025-10-11 06:46:15 INFO     Job finished: SUCCEEDED
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -527,7 +527,7 @@ echo/0 Hello :)
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-local_docker://torchx/echo-wnn95wgpjkfbnc
+local_docker://torchx/echo-t3z6z7kjgwb2mc
 </pre></div></div>
 </div>
 </section>
@@ -623,12 +623,12 @@ torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class=
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-torchx 2025-10-07 02:56:47 INFO     Tracker configurations: {}
-torchx 2025-10-07 02:56:47 INFO     Log directory not set in scheduler cfg. Creating a temporary log dir that will be deleted on exit. To preserve log directory set the `log_dir` cfg option
-torchx 2025-10-07 02:56:47 INFO     Log directory is: /tmp/torchx_qg7d1jt0
-torchx 2025-10-07 02:56:47 INFO     Waiting for the app to finish...
+torchx 2025-10-11 06:46:16 INFO     Tracker configurations: {}
+torchx 2025-10-11 06:46:16 INFO     Log directory not set in scheduler cfg. Creating a temporary log dir that will be deleted on exit. To preserve log directory set the `log_dir` cfg option
+torchx 2025-10-11 06:46:16 INFO     Log directory is: /tmp/torchx_rd3msobe
+torchx 2025-10-11 06:46:16 INFO     Waiting for the app to finish...
 greeter/0 Hello, your name!
-torchx 2025-10-07 02:56:48 INFO     Job finished: SUCCEEDED
+torchx 2025-10-11 06:46:17 INFO     Job finished: SUCCEEDED
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -636,7 +636,7 @@ torchx 2025-10-07 02:56:48 INFO     Job finished: SUCCEEDED
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-local_cwd://torchx/hello_world-hx74sp04s6k40
+local_cwd://torchx/hello_world-wfvqjfv4bftn6c
 </pre></div></div>
 </div>
 <p>If we want to run in other environments, we can build a Docker container so we can run our component in Docker enabled environments such as Kubernetes or via the local Docker scheduler.</p>
@@ -684,7 +684,7 @@ docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </
 #1 DONE 0.0s
 
 #2 [internal] load metadata for ghcr.io/pytorch/torchx:0.1.0rc1
-#2 DONE 0.8s
+#2 DONE 0.7s
 
 #3 [internal] load .dockerignore
 #3 transferring context: 2B done
@@ -696,127 +696,122 @@ docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </
 
 #5 [1/2] FROM ghcr.io/pytorch/torchx:0.1.0rc1@sha256:a738949601d82e7f100fa1efeb8dde0c35ce44c66726cf38596f96d78dcd7ad3
 #5 resolve ghcr.io/pytorch/torchx:0.1.0rc1@sha256:a738949601d82e7f100fa1efeb8dde0c35ce44c66726cf38596f96d78dcd7ad3 done
-#5 sha256:3dbec59e804974689ff0739216fb012d3e1cd6694632cd3a85b74b572266ec5c 7.21kB / 7.21kB done
-#5 sha256:d2e110be24e168b42c1a2ddbc4a476a217b73cccdba69cdcb212b812a88f5726 0B / 857B 0.1s
 #5 sha256:889a7173dcfeb409f9d88054a97ab2445f5a799a823f719a5573365ee3662b6f 0B / 189B 0.1s
+#5 sha256:3dbec59e804974689ff0739216fb012d3e1cd6694632cd3a85b74b572266ec5c 7.21kB / 7.21kB done
 #5 sha256:a738949601d82e7f100fa1efeb8dde0c35ce44c66726cf38596f96d78dcd7ad3 3.25kB / 3.25kB done
 #5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 0B / 26.70MB 0.1s
-#5 sha256:d2e110be24e168b42c1a2ddbc4a476a217b73cccdba69cdcb212b812a88f5726 857B / 857B 0.3s done
-#5 sha256:889a7173dcfeb409f9d88054a97ab2445f5a799a823f719a5573365ee3662b6f 189B / 189B 0.3s done
-#5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 16.78MB / 26.70MB 0.4s
-#5 sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 0B / 9.94MB 0.4s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 0B / 2.00GB 0.4s
-#5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 20.98MB / 26.70MB 0.5s
-#5 sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 2.10MB / 9.94MB 0.5s
+#5 sha256:d2e110be24e168b42c1a2ddbc4a476a217b73cccdba69cdcb212b812a88f5726 0B / 857B 0.1s
+#5 sha256:889a7173dcfeb409f9d88054a97ab2445f5a799a823f719a5573365ee3662b6f 189B / 189B 0.2s done
+#5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 8.39MB / 26.70MB 0.3s
+#5 sha256:d2e110be24e168b42c1a2ddbc4a476a217b73cccdba69cdcb212b812a88f5726 857B / 857B 0.2s done
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 0B / 2.00GB 0.3s
+#5 sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 0B / 9.94MB 0.3s
+#5 sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 4.19MB / 9.94MB 0.5s
+#5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 19.92MB / 26.70MB 0.6s
 #5 extracting sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca
-#5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 26.70MB / 26.70MB 0.6s done
-#5 sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 9.94MB / 9.94MB 0.6s done
-#5 sha256:eccbe17c44e1b27c836dddc42f204bde06f73568b50833556b50324146bd43aa 0B / 132B 0.6s
-#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 0B / 21.46MB 0.6s
-#5 sha256:eccbe17c44e1b27c836dddc42f204bde06f73568b50833556b50324146bd43aa 132B / 132B 0.7s done
+#5 sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 26.70MB / 26.70MB 0.7s done
+#5 sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 9.94MB / 9.94MB 0.7s done
+#5 sha256:eccbe17c44e1b27c836dddc42f204bde06f73568b50833556b50324146bd43aa 0B / 132B 0.7s
+#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 0B / 21.46MB 0.7s
+#5 sha256:eccbe17c44e1b27c836dddc42f204bde06f73568b50833556b50324146bd43aa 132B / 132B 0.8s done
 #5 sha256:06b5edd6bf524455a7c5a54cb27ced3ecc540414ecf38c24c80ba4368ebc77de 0B / 257B 0.8s
-#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 7.34MB / 21.46MB 0.9s
+#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 4.19MB / 21.46MB 0.9s
 #5 sha256:06b5edd6bf524455a7c5a54cb27ced3ecc540414ecf38c24c80ba4368ebc77de 257B / 257B 0.9s done
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 0B / 1.71GB 0.9s
-#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 13.63MB / 21.46MB 1.0s
-#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 21.46MB / 21.46MB 1.1s done
-#5 sha256:c0ad16d9fa05dbf708784e8aa10d69153465bae391345020be52cbe0a1701932 0B / 92B 1.2s
-#5 sha256:c0ad16d9fa05dbf708784e8aa10d69153465bae391345020be52cbe0a1701932 92B / 92B 1.3s done
-#5 sha256:30587ba7fd6bcbd1c883125d84517055b2d7f2d35a13faedbc8b15f94b900cc2 0B / 352B 1.3s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 0B / 1.71GB 1.0s
+#5 sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 21.46MB / 21.46MB 1.3s done
+#5 sha256:c0ad16d9fa05dbf708784e8aa10d69153465bae391345020be52cbe0a1701932 0B / 92B 1.3s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 110.10MB / 2.00GB 1.4s
+#5 sha256:c0ad16d9fa05dbf708784e8aa10d69153465bae391345020be52cbe0a1701932 92B / 92B 1.4s done
+#5 sha256:30587ba7fd6bcbd1c883125d84517055b2d7f2d35a13faedbc8b15f94b900cc2 0B / 352B 1.4s
 #5 extracting sha256:4bbfd2c87b7524455f144a03bf387c88b6d4200e5e0df9139a9d5e79110f89ca 1.0s done
-#5 sha256:30587ba7fd6bcbd1c883125d84517055b2d7f2d35a13faedbc8b15f94b900cc2 352B / 352B 1.4s done
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 0B / 341.29MB 1.5s
+#5 sha256:30587ba7fd6bcbd1c883125d84517055b2d7f2d35a13faedbc8b15f94b900cc2 352B / 352B 1.5s done
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 0B / 341.29MB 1.6s
 #5 extracting sha256:d2e110be24e168b42c1a2ddbc4a476a217b73cccdba69cdcb212b812a88f5726
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 85.98MB / 1.71GB 1.8s
 #5 extracting sha256:d2e110be24e168b42c1a2ddbc4a476a217b73cccdba69cdcb212b812a88f5726 done
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 100.66MB / 2.00GB 1.9s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 20.97MB / 341.29MB 1.9s
 #5 extracting sha256:889a7173dcfeb409f9d88054a97ab2445f5a799a823f719a5573365ee3662b6f done
-#5 extracting sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 41.94MB / 341.29MB 2.2s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 97.52MB / 1.71GB 2.4s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 63.23MB / 341.29MB 2.5s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 84.93MB / 341.29MB 2.8s
-#5 extracting sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 0.7s done
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 105.91MB / 341.29MB 3.1s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 210.76MB / 2.00GB 3.3s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 126.88MB / 341.29MB 3.4s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 191.89MB / 1.71GB 3.6s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 155.19MB / 341.29MB 3.8s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 177.21MB / 341.29MB 4.1s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 198.18MB / 341.29MB 4.4s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 320.86MB / 2.00GB 4.7s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 219.15MB / 341.29MB 4.7s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 292.55MB / 1.71GB 4.9s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 241.17MB / 341.29MB 5.0s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 269.48MB / 341.29MB 5.4s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 290.46MB / 341.29MB 5.7s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 311.43MB / 341.29MB 6.0s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 428.87MB / 2.00GB 6.1s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 385.88MB / 1.71GB 6.1s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 333.45MB / 341.29MB 6.3s
-#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 341.29MB / 341.29MB 6.7s done
-#5 sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800 0B / 563.38kB 6.7s
-#5 sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800 563.38kB / 563.38kB 6.9s done
-#5 sha256:88d87059c913e67971846680d4032b75f96f599f8a67062f668fed6471fc2968 0B / 556.96kB 6.9s
-#5 sha256:88d87059c913e67971846680d4032b75f96f599f8a67062f668fed6471fc2968 556.96kB / 556.96kB 7.0s done
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 529.53MB / 2.00GB 7.4s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 486.54MB / 1.71GB 7.4s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 572.52MB / 1.71GB 8.5s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 633.34MB / 2.00GB 8.7s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 673.19MB / 1.71GB 9.8s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 741.34MB / 2.00GB 10.1s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 759.17MB / 1.71GB 10.9s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 851.44MB / 2.00GB 11.5s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 851.44MB / 1.71GB 12.1s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 954.20MB / 2.00GB 12.8s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 937.61MB / 1.71GB 13.2s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.07GB / 2.00GB 14.5s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.03GB / 1.71GB 14.6s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.11GB / 1.71GB 15.7s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.18GB / 2.00GB 15.9s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.20GB / 1.71GB 16.9s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.29GB / 2.00GB 17.3s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.29GB / 1.71GB 18.0s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.40GB / 2.00GB 18.6s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.38GB / 1.71GB 19.2s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.51GB / 2.00GB 20.0s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.48GB / 1.71GB 20.4s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.61GB / 2.00GB 21.3s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.57GB / 1.71GB 21.6s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.72GB / 2.00GB 22.7s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.66GB / 1.71GB 22.8s
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.84GB / 2.00GB 24.1s
-#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.71GB / 1.71GB 24.7s done
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.94GB / 2.00GB 25.6s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 31.46MB / 341.29MB 2.0s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 216.01MB / 2.00GB 2.3s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 56.62MB / 341.29MB 2.3s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 76.55MB / 341.29MB 2.5s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 187.70MB / 1.71GB 2.7s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 116.39MB / 341.29MB 2.9s
+#5 extracting sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 0.1s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 322.96MB / 2.00GB 3.1s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 143.65MB / 341.29MB 3.1s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 170.92MB / 341.29MB 3.3s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 276.82MB / 1.71GB 3.4s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 199.23MB / 341.29MB 3.5s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 240.12MB / 341.29MB 3.8s
+#5 extracting sha256:6009a622672af862e3a3979ffd58a348f95208a4bc3b6f6cea2efda4e8390203 0.8s done
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 428.96MB / 2.00GB 4.0s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 268.44MB / 341.29MB 4.0s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 373.29MB / 1.71GB 4.2s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 295.70MB / 341.29MB 4.2s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 331.41MB / 341.29MB 4.5s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 538.97MB / 2.00GB 4.9s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 483.39MB / 1.71GB 5.1s
+#5 sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 341.29MB / 341.29MB 4.9s done
+#5 sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800 563.38kB / 563.38kB 5.1s
+#5 sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800 563.38kB / 563.38kB 5.5s done
+#5 sha256:88d87059c913e67971846680d4032b75f96f599f8a67062f668fed6471fc2968 0B / 556.96kB 5.6s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 656.41MB / 2.00GB 5.8s
+#5 sha256:88d87059c913e67971846680d4032b75f96f599f8a67062f668fed6471fc2968 556.96kB / 556.96kB 5.6s done
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 591.40MB / 1.71GB 6.0s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 769.65MB / 2.00GB 6.7s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 687.87MB / 1.71GB 6.8s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 881.85MB / 2.00GB 7.6s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 784.33MB / 1.71GB 7.6s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 879.76MB / 1.71GB 8.4s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 994.05MB / 2.00GB 8.5s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 987.76MB / 1.71GB 9.3s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.10GB / 2.00GB 9.4s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.09GB / 1.71GB 10.1s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.22GB / 2.00GB 10.3s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.18GB / 1.71GB 10.9s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.32GB / 2.00GB 11.1s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.28GB / 1.71GB 11.7s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.43GB / 2.00GB 12.0s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.37GB / 1.71GB 12.5s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.54GB / 2.00GB 12.9s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.47GB / 1.71GB 13.3s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.65GB / 2.00GB 13.8s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.58GB / 1.71GB 14.2s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.76GB / 2.00GB 14.7s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.69GB / 1.71GB 15.1s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 1.89GB / 2.00GB 15.7s
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 2.00GB / 2.00GB 16.6s
+#5 sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 1.71GB / 1.71GB 16.5s done
+#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 2.00GB / 2.00GB 18.5s done
 #5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907
-#5 sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 2.00GB / 2.00GB 28.3s done
-#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 5.1s
-#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 10.2s
-#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 15.2s
-#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 20.3s
-#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 25.4s
-#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 28.2s done
+#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 5.0s
+#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 10.0s
+#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 15.1s
+#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 20.1s
+#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 25.2s
+#5 extracting sha256:143f801954310499daa44a8499a49797d2f282b5d56be601557ebe6cbf796907 28.6s done
 #5 extracting sha256:eccbe17c44e1b27c836dddc42f204bde06f73568b50833556b50324146bd43aa
 #5 extracting sha256:eccbe17c44e1b27c836dddc42f204bde06f73568b50833556b50324146bd43aa done
 #5 extracting sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 0.1s
-#5 extracting sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 0.8s done
+#5 extracting sha256:d4c7af0d4fa735e6727a24afcea4022492c7f29ac85e31ddf3d385bfbf704f71 0.7s done
+#5 extracting sha256:06b5edd6bf524455a7c5a54cb27ced3ecc540414ecf38c24c80ba4368ebc77de
 #5 extracting sha256:06b5edd6bf524455a7c5a54cb27ced3ecc540414ecf38c24c80ba4368ebc77de done
 #5 extracting sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6
-#5 extracting sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 5.0s
+#5 extracting sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 5.1s
 #5 extracting sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 10.1s
-#5 extracting sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 13.1s done
+#5 extracting sha256:f18d016c4ccc1c57c9e34cb119e1e1966287b08aa9b4d52a38b30815a56574b6 13.0s done
 #5 extracting sha256:c0ad16d9fa05dbf708784e8aa10d69153465bae391345020be52cbe0a1701932
 #5 extracting sha256:c0ad16d9fa05dbf708784e8aa10d69153465bae391345020be52cbe0a1701932 done
 #5 extracting sha256:30587ba7fd6bcbd1c883125d84517055b2d7f2d35a13faedbc8b15f94b900cc2 done
-#5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 0.1s
-#5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 5.3s
+#5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233
+#5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 5.1s
 #5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 10.3s
-#5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 14.0s done
+#5 extracting sha256:909695be1d5003de345714eec2ca3020a48dd8f407fe918cbd47a8db73d7a233 13.9s done
 #5 extracting sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800
-#5 extracting sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800 0.0s done
+#5 extracting sha256:f119a6d0a466a041afbcb08344ff624b5c5ac5f68b93d33af4827529ea1a6800 0.1s done
 #5 extracting sha256:88d87059c913e67971846680d4032b75f96f599f8a67062f668fed6471fc2968
 #5 extracting sha256:88d87059c913e67971846680d4032b75f96f599f8a67062f668fed6471fc2968 0.0s done
-#5 DONE 93.4s
+#5 DONE 83.8s
 
 #6 [2/2] ADD my_app.py .
 #6 DONE 0.0s
@@ -824,7 +819,7 @@ docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </
 #7 exporting to image
 #7 exporting layers
 #7 exporting layers 4.4s done
-#7 writing image sha256:e504cb56494d07155365edebf96e674d3d437c7f5815ea0932ffc547ba156702 done
+#7 writing image sha256:2f8d476766b44762661ee71a624e1ce3ab3521e807c62e1fd1a9756d80e37e82 done
 #7 naming to docker.io/library/my_app:latest done
 #7 DONE 4.4s
 </pre></div></div>
@@ -844,26 +839,26 @@ torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class=
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-torchx 2025-10-07 02:58:32 INFO     Tracker configurations: {}
-torchx 2025-10-07 02:58:32 INFO     Checking for changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=greeter...
-torchx 2025-10-07 02:58:32 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
-torchx 2025-10-07 02:58:33 WARNING  failed to pull image my_app:latest, falling back to local: 404 Client Error for http+docker://localhost/v1.48/images/create?tag=latest&amp;fromImage=my_app: Not Found (&#34;pull access denied for my_app, repository does not exist or may require &#39;docker login&#39;: denied: requested access to the resource is denied&#34;)
-torchx 2025-10-07 02:58:33 INFO     Building workspace docker image (this may take a while)...
-torchx 2025-10-07 02:58:33 INFO     Step 1/4 : ARG IMAGE
-torchx 2025-10-07 02:58:33 INFO     Step 2/4 : FROM $IMAGE
-torchx 2025-10-07 02:58:33 INFO      ---&gt; e504cb56494d
-torchx 2025-10-07 02:58:33 INFO     Step 3/4 : COPY . .
-torchx 2025-10-07 02:58:37 INFO      ---&gt; af1adc1639a8
-torchx 2025-10-07 02:58:37 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
-torchx 2025-10-07 02:58:37 INFO      ---&gt; Running in 35cf6e93f433
-torchx 2025-10-07 02:58:41 INFO      ---&gt; Removed intermediate container 35cf6e93f433
-torchx 2025-10-07 02:58:41 INFO      ---&gt; 87b1f6a1b403
-torchx 2025-10-07 02:58:41 INFO     [Warning] One or more build-args [WORKSPACE] were not consumed
-torchx 2025-10-07 02:58:41 INFO     Successfully built 87b1f6a1b403
-torchx 2025-10-07 02:58:41 INFO     Built new image `sha256:87b1f6a1b40358eb186d5274c001a8d47bcc5a734efb790b6e29ee67a016f4f6` based on original image `my_app:latest` and changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=greeter.
-torchx 2025-10-07 02:58:42 INFO     Waiting for the app to finish...
+torchx 2025-10-11 06:47:47 INFO     Tracker configurations: {}
+torchx 2025-10-11 06:47:47 INFO     Checking for changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=greeter...
+torchx 2025-10-11 06:47:47 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
+torchx 2025-10-11 06:47:48 WARNING  failed to pull image my_app:latest, falling back to local: 404 Client Error for http+docker://localhost/v1.48/images/create?tag=latest&amp;fromImage=my_app: Not Found (&#34;pull access denied for my_app, repository does not exist or may require &#39;docker login&#39;: denied: requested access to the resource is denied&#34;)
+torchx 2025-10-11 06:47:48 INFO     Building workspace docker image (this may take a while)...
+torchx 2025-10-11 06:47:48 INFO     Step 1/4 : ARG IMAGE
+torchx 2025-10-11 06:47:48 INFO     Step 2/4 : FROM $IMAGE
+torchx 2025-10-11 06:47:48 INFO      ---&gt; 2f8d476766b4
+torchx 2025-10-11 06:47:48 INFO     Step 3/4 : COPY . .
+torchx 2025-10-11 06:47:52 INFO      ---&gt; 61f96143cf6d
+torchx 2025-10-11 06:47:52 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
+torchx 2025-10-11 06:47:52 INFO      ---&gt; Running in bb07e692a7c7
+torchx 2025-10-11 06:47:56 INFO      ---&gt; Removed intermediate container bb07e692a7c7
+torchx 2025-10-11 06:47:56 INFO      ---&gt; f6b3975102b8
+torchx 2025-10-11 06:47:56 INFO     [Warning] One or more build-args [WORKSPACE] were not consumed
+torchx 2025-10-11 06:47:56 INFO     Successfully built f6b3975102b8
+torchx 2025-10-11 06:47:56 INFO     Built new image `sha256:f6b3975102b8ebb31ca725734795386ecd084dbb0bd821f6bc922352d59058a1` based on original image `my_app:latest` and changes in workspace `/home/runner/work/torchx/torchx/docs/source` for role[0]=greeter.
+torchx 2025-10-11 06:47:57 INFO     Waiting for the app to finish...
 greeter/0 Hello, your name!
-torchx 2025-10-07 02:58:43 INFO     Job finished: SUCCEEDED
+torchx 2025-10-11 06:47:58 INFO     Job finished: SUCCEEDED
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -871,7 +866,7 @@ torchx 2025-10-07 02:58:43 INFO     Job finished: SUCCEEDED
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-local_docker://torchx/hello_world-r57n29n79ncvqd
+local_docker://torchx/hello_world-d65fww6501bqrc
 </pre></div></div>
 </div>
 <p>If you have a Kubernetes cluster you can use the <a class="reference internal" href="schedulers/kubernetes.html"><span class="doc">Kubernetes scheduler</span></a> to launch this on the cluster instead.</p>
