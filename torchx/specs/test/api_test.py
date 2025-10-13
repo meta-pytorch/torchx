@@ -578,6 +578,49 @@ class RunConfigTest(unittest.TestCase):
         # this print is intentional (demonstrates the intended usecase)
         print(opts)
 
+    def test_runopts_add_with_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.alias("jobPriority")],
+            type_=str,
+            help="priority for the job",
+        )
+        self.assertEqual(1, len(opts._opts))
+        self.assertIsNotNone(opts.get("job_priority"))
+        self.assertIsNotNone(opts.get("jobPriority"))
+
+    def test_runopts_resolve_with_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.alias("jobPriority")],
+            type_=str,
+            help="priority for the job",
+        )
+        opts.resolve({"job_priority": "high"})
+        opts.resolve({"jobPriority": "low"})
+        with self.assertRaises(InvalidRunConfigException):
+            opts.resolve({"job_priority": "high", "jobPriority": "low"})
+
+    def test_runopts_resolve_with_none_valued_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.alias("jobPriority")],
+            type_=str,
+            help="priority for the job",
+        )
+        opts.add(
+            ["modelTypeName", runopt.alias("model_type_name")],
+            type_=Union[str, None],
+            help="ML Hub Model Type to attribute resource utilization for job",
+        )
+        resolved_opts = opts.resolve({"model_type_name": None, "jobPriority": "low"})
+        self.assertEqual(resolved_opts.get("model_type_name"), None)
+        self.assertEqual(resolved_opts.get("jobPriority"), "low")
+        self.assertEqual(resolved_opts, {"model_type_name": None, "jobPriority": "low"})
+
+        with self.assertRaises(InvalidRunConfigException):
+            opts.resolve({"model_type_name": None, "modelTypeName": "low"})
+
     def get_runopts(self) -> runopts:
         opts = runopts()
         opts.add("run_as", type_=str, help="run as user", required=True)
