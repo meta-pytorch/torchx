@@ -570,6 +570,16 @@
     <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">aws_p5e_48xlarge</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span>
+        <span class="n">cpu</span><span class="o">=</span><span class="mi">192</span><span class="p">,</span>
+        <span class="n">gpu</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+        <span class="n">memMB</span><span class="o">=</span><span class="mi">2048</span> <span class="o">*</span> <span class="n">GiB</span><span class="p">,</span>
+        <span class="n">capabilities</span><span class="o">=</span><span class="p">{</span><span class="n">K8S_ITYPE</span><span class="p">:</span> <span class="s2">&quot;p5e.48xlarge&quot;</span><span class="p">},</span>
+        <span class="n">devices</span><span class="o">=</span><span class="p">{</span><span class="n">EFA_DEVICE</span><span class="p">:</span> <span class="mi">32</span><span class="p">},</span>
+    <span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">aws_p5en_48xlarge</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span>
         <span class="n">cpu</span><span class="o">=</span><span class="mi">192</span><span class="p">,</span>
@@ -869,6 +879,7 @@
     <span class="s2">&quot;aws_p4d.24xlarge&quot;</span><span class="p">:</span> <span class="n">aws_p4d_24xlarge</span><span class="p">,</span>
     <span class="s2">&quot;aws_p4de.24xlarge&quot;</span><span class="p">:</span> <span class="n">aws_p4de_24xlarge</span><span class="p">,</span>
     <span class="s2">&quot;aws_p5.48xlarge&quot;</span><span class="p">:</span> <span class="n">aws_p5_48xlarge</span><span class="p">,</span>
+    <span class="s2">&quot;aws_p5e.48xlarge&quot;</span><span class="p">:</span> <span class="n">aws_p5e_48xlarge</span><span class="p">,</span>
     <span class="s2">&quot;aws_p5en.48xlarge&quot;</span><span class="p">:</span> <span class="n">aws_p5en_48xlarge</span><span class="p">,</span>
     <span class="s2">&quot;aws_g4dn.xlarge&quot;</span><span class="p">:</span> <span class="n">aws_g4dn_xlarge</span><span class="p">,</span>
     <span class="s2">&quot;aws_g4dn.2xlarge&quot;</span><span class="p">:</span> <span class="n">aws_g4dn_2xlarge</span><span class="p">,</span>
