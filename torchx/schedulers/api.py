@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -22,8 +21,9 @@ from torchx.specs import (
     Role,
     RoleStatus,
     runopts,
+    Workspace,
 )
-from torchx.workspace.api import Workspace, WorkspaceMixin
+from torchx.workspace import WorkspaceMixin
 
 
 DAYS_IN_2_WEEKS = 14

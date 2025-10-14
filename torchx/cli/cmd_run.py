@@ -26,7 +26,7 @@ from torchx.cli.cmd_log import get_logs
 from torchx.runner import config, get_runner, Runner
 from torchx.runner.config import load_sections
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
-from torchx.specs import CfgVal
+from torchx.specs import CfgVal, Workspace
 from torchx.specs.finder import (
     _Component,
     ComponentNotFoundException,
@@ -36,7 +36,6 @@ from torchx.specs.finder import (
 )
 from torchx.util.log_tee_helpers import tee_logs
 from torchx.util.types import none_throws
-from torchx.workspace import Workspace
 
 
 MISSING_COMPONENT_ERROR_MSG = (
