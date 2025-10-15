@@ -5,22 +5,11 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
-import re
 import sys
 from datetime import date
 
+from base_version_gen import BASE_VERSION
 from setuptools import find_packages, setup
-
-
-def get_version():
-    # get version string from version.py
-    # TODO: ideally the version.py should be generated when setup is run
-    version_file = os.path.join(os.path.dirname(__file__), "torchx/version.py")
-    version_regex = r"__version__ = ['\"]([^'\"]*)['\"]"
-    with open(version_file, "r") as f:
-        version = re.search(version_regex, f.read(), re.M).group(1)
-        return version
 
 
 def get_nightly_version():
@@ -49,7 +38,7 @@ if __name__ == "__main__":
     with open("dev-requirements.txt") as f:
         dev_reqs = f.read()
 
-    version = get_nightly_version() if is_nightly else get_version()
+    version = get_nightly_version() if is_nightly else BASE_VERSION
     print(f"-- {name} building version: {version}")
 
     setup(
