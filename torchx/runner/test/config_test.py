@@ -25,9 +25,8 @@ from torchx.runner.config import (
 )
 from torchx.schedulers import get_scheduler_factories, Scheduler
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Stream
-from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts
+from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts, Workspace
 from torchx.test.fixtures import TestWithTmpDir
-from torchx.workspace import Workspace
 
 
 class TestScheduler(Scheduler):

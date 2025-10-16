@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
@@ -43,6 +42,7 @@ from torchx.specs import (
     parse_app_handle,
     runopts,
     UnknownAppException,
+    Workspace,
 )
 from torchx.specs.finder import get_component
 from torchx.tracker.api import (
@@ -54,7 +54,7 @@ from torchx.tracker.api import (
 from torchx.util.session import get_session_id_or_create_new, TORCHX_INTERNAL_SESSION_ID
 
 from torchx.util.types import none_throws
-from torchx.workspace.api import Workspace, WorkspaceMixin
+from torchx.workspace import WorkspaceMixin
 
 if TYPE_CHECKING:
     from typing_extensions import Self

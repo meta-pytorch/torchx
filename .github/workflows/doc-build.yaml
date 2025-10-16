@@ -85,12 +85,6 @@ jobs:
           set -eux
           sudo apt-get install -y pandoc
           pip install -r docs/requirements.txt
-      - name: Start Airflow
-        run: |
-          # start airflow in background
-          airflow standalone &
-          # wait 5 seconds for airflow to start
-          sleep 5
       - name: Build
         run: |
           set -ex
