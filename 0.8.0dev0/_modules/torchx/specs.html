@@ -460,6 +460,8 @@
 <span class="sd">scheduler or pipeline adapter.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">difflib</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -512,8 +514,10 @@
 <span class="n">GENERIC_NAMED_RESOURCES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
     <span class="s2">&quot;torchx.specs.named_resources_generic&quot;</span><span class="p">,</span> <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{}</span>
 <span class="p">)</span>
-<span class="n">FB_NAMED_RESOURCES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
-    <span class="s2">&quot;torchx.specs.fb.named_resources&quot;</span><span class="p">,</span> <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{}</span>
+<span class="n">CUSTOM_NAMED_RESOURCES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TORCHX_CUSTOM_NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="s2">&quot;torchx.specs.fb.named_resources&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
 <span class="p">)</span>
 
 
@@ -524,7 +528,7 @@
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">resource</span> <span class="ow">in</span> <span class="p">{</span>
         <span class="o">**</span><span class="n">GENERIC_NAMED_RESOURCES</span><span class="p">,</span>
         <span class="o">**</span><span class="n">AWS_NAMED_RESOURCES</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">FB_NAMED_RESOURCES</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">CUSTOM_NAMED_RESOURCES</span><span class="p">,</span>
         <span class="o">**</span><span class="n">resource_methods</span><span class="p">,</span>
     <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">materialized_resources</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">resource</span>

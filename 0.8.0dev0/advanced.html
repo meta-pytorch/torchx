@@ -557,6 +557,28 @@ resource can then be used in the following manner:</p>
 <span class="n">test_app</span><span class="p">(</span><span class="s2">&quot;gpu_x2&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Alternatively, you can define custom named resources in a Python module and point
+to it using the <code class="docutils literal notranslate"><span class="pre">TORCHX_CUSTOM_NAMED_RESOURCES</span></code> environment variable:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_resources.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gpu_x8_efa</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">819200</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;vpc.amazonaws.com/efa&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cpu_x32</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">131072</span><span class="p">)</span>
+
+<span class="n">NAMED_RESOURCES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gpu_x8_efa&quot;</span><span class="p">:</span> <span class="n">gpu_x8_efa</span><span class="p">,</span>
+    <span class="s2">&quot;cpu_x32&quot;</span><span class="p">:</span> <span class="n">cpu_x32</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Then set the environment variable:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">TORCHX_CUSTOM_NAMED_RESOURCES</span><span class="o">=</span>my_resources
+</pre></div>
+</div>
+<p>This allows you to use your custom resources without creating a package with entry points.</p>
 </section>
 <section id="registering-custom-components">
 <h2>Registering Custom Components<a class="headerlink" href="#registering-custom-components" title="Permalink to this heading">¶</a></h2>
