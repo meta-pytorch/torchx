@@ -13,6 +13,7 @@ import os
 import tempfile
 import time
 import unittest
+import warnings
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Mapping, Tuple, Union
@@ -620,6 +621,32 @@ class RunConfigTest(unittest.TestCase):
 
         with self.assertRaises(InvalidRunConfigException):
             opts.resolve({"model_type_name": None, "modelTypeName": "low"})
+
+    def test_runopts_add_with_deprecated_aliases(self) -> None:
+        opts = runopts()
+        with warnings.catch_warnings(record=True) as w:
+            opts.add(
+                [runopt.deprecated("jobPriority"), "job_priority"],
+                type_=str,
+                help="run as user",
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertEqual(
+                str(w[0].message),
+                "The main name of the run option should be the head of the list.",
+            )
+
+        opts.resolve({"job_priority": "high"})
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            opts.resolve({"jobPriority": "high"})
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertEqual(
+                str(w[0].message),
+                "Run option `jobPriority` is deprecated, use `job_priority` instead",
+            )
 
     def get_runopts(self) -> runopts:
         opts = runopts()
