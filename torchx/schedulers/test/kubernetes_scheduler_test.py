@@ -726,6 +726,7 @@ spec:
                 "image_repo",
                 "service_account",
                 "priority_class",
+                "pod",
             },
         )
 
@@ -928,6 +929,116 @@ spec:
             for task in resource["spec"]["tasks"]  # pyre-ignore[16]
         ]
         self.assertEqual(min_available, [1, 1, 0])
+
+    def test_load_pod_overlay_dict(self) -> None:
+        from torchx.schedulers.kubernetes_scheduler import _load_pod_overlay
+
+        overlay = {"spec": {"nodeSelector": {"gpu": "true"}}}
+        result = _load_pod_overlay(overlay)
+        self.assertEqual(result, overlay)
+
+    def test_load_pod_overlay_file(self) -> None:
+        import tempfile
+
+        from torchx.schedulers.kubernetes_scheduler import _load_pod_overlay
+
+        overlay = {"spec": {"nodeSelector": {"gpu": "true"}}}
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            import yaml
+
+            yaml.dump(overlay, f)
+            result = _load_pod_overlay(f.name)
+        self.assertEqual(result, overlay)
+
+    def test_load_pod_overlay_invalid(self) -> None:
+        from torchx.schedulers.kubernetes_scheduler import _load_pod_overlay
+
+        with self.assertRaises(ValueError):
+            _load_pod_overlay(123)  # type: ignore[arg-type]
+
+    def test_apply_pod_overlay(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="test", image="test:latest")],
+                node_selector={"existing": "label"},
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {
+            "spec": {
+                "nodeSelector": {"gpu": "true"},
+                "tolerations": [{"key": "nvidia.com/gpu", "operator": "Exists"}],
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(pod.spec.node_selector, {"existing": "label", "gpu": "true"})
+        self.assertEqual(len(pod.spec.tolerations), 1)
+        self.assertEqual(pod.spec.tolerations[0].key, "nvidia.com/gpu")
+
+    def test_apply_pod_overlay_new_fields(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        # Pod without nodeSelector or tolerations
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="test", image="test:latest")]),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        # Overlay adds fields not present in original
+        overlay = {
+            "spec": {
+                "nodeSelector": {"gpu": "true"},
+                "tolerations": [{"key": "nvidia.com/gpu", "operator": "Exists"}],
+                "affinity": {
+                    "nodeAffinity": {
+                        "requiredDuringSchedulingIgnoredDuringExecution": {
+                            "nodeSelectorTerms": [
+                                {
+                                    "matchExpressions": [
+                                        {
+                                            "key": "gpu",
+                                            "operator": "In",
+                                            "values": ["true"],
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(pod.spec.node_selector, {"gpu": "true"})
+        self.assertEqual(len(pod.spec.tolerations), 1)
+        self.assertIsNotNone(pod.spec.affinity)
+        self.assertIsNotNone(pod.spec.affinity.node_affinity)
+
+    def test_submit_dryrun_with_pod_overlay(self) -> None:
+        scheduler = create_scheduler("test")
+        app = _test_app()
+        cfg = KubernetesOpts(
+            {"queue": "testqueue", "pod": {"spec": {"nodeSelector": {"gpu": "true"}}}}
+        )
+
+        info = scheduler.submit_dryrun(app, cfg)
+        resource = info.request.resource
+
+        # Check that overlay was applied to all pods
+        tasks = resource["spec"]["tasks"]  # pyre-ignore[16]
+        for task in tasks:
+            pod = task["template"]
+            self.assertIn("gpu", pod.spec.node_selector)
+            self.assertEqual(pod.spec.node_selector["gpu"], "true")
 
 
 class KubernetesSchedulerNoImportTest(unittest.TestCase):
