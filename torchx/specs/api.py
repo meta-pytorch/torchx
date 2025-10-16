@@ -18,7 +18,7 @@ import typing
 import warnings
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import Enum, IntEnum
 from json import JSONDecodeError
 from string import Template
 from typing import (
@@ -892,6 +892,30 @@ class runopt:
     Represents the metadata about the specific run option
     """
 
+    class AutoAlias(IntEnum):
+        snake_case = 0x1
+        SNAKE_CASE = 0x2
+        camelCase = 0x4
+
+        @staticmethod
+        def convert_to_camel_case(alias: str) -> str:
+            words = re.split(r"[_\-\s]+|(?<=[a-z])(?=[A-Z])", alias)
+            words = [w for w in words if w]  # Remove empty strings
+            if not words:
+                return ""
+            return words[0].lower() + "".join(w.capitalize() for w in words[1:])
+
+        @staticmethod
+        def convert_to_snake_case(alias: str) -> str:
+            alias = re.sub(r"[-\s]+", "_", alias)
+            alias = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", alias)
+            alias = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", alias)
+            return alias.lower()
+
+        @staticmethod
+        def convert_to_const_case(alias: str) -> str:
+            return runopt.AutoAlias.convert_to_snake_case(alias).upper()
+
     class alias(str):
         pass
 
@@ -902,8 +926,8 @@ class runopt:
     opt_type: Type[CfgVal]
     is_required: bool
     help: str
-    aliases: list[alias] | None = None
-    deprecated_aliases: list[deprecated] | None = None
+    aliases: set[alias] | None = None
+    deprecated_aliases: set[deprecated] | None = None
 
     @property
     def is_type_list_of_str(self) -> bool:
@@ -1189,15 +1213,28 @@ class runopts:
                     cfg[key] = val
         return cfg
 
+    def _generate_aliases(
+        self, auto_alias: int, aliases: set[str]
+    ) -> set[runopt.alias]:
+        generated_aliases = set()
+        for alias in aliases:
+            if auto_alias & runopt.AutoAlias.camelCase:
+                generated_aliases.add(runopt.AutoAlias.convert_to_camel_case(alias))
+            if auto_alias & runopt.AutoAlias.snake_case:
+                generated_aliases.add(runopt.AutoAlias.convert_to_snake_case(alias))
+            if auto_alias & runopt.AutoAlias.SNAKE_CASE:
+                generated_aliases.add(runopt.AutoAlias.convert_to_const_case(alias))
+        return generated_aliases
+
     def _get_primary_key_and_aliases(
         self,
-        cfg_key: list[str] | str,
-    ) -> tuple[str, list[runopt.alias], list[runopt.deprecated]]:
+        cfg_key: list[str | int] | str,
+    ) -> tuple[str, set[runopt.alias], set[runopt.deprecated]]:
         """
         Returns the primary key and aliases for the given cfg_key.
         """
         if isinstance(cfg_key, str):
-            return cfg_key, [], []
+            return cfg_key, set(), set()
 
         if len(cfg_key) == 0:
             raise ValueError("cfg_key must be a non-empty list")
@@ -1211,13 +1248,16 @@ class runopts:
                 stacklevel=2,
             )
         primary_key = None
-        aliases = list[runopt.alias]()
-        deprecated_aliases = list[runopt.deprecated]()
+        auto_alias = 0x0
+        aliases = set[runopt.alias]()
+        deprecated_aliases = set[runopt.deprecated]()
         for name in cfg_key:
             if isinstance(name, runopt.alias):
-                aliases.append(name)
+                aliases.add(name)
             elif isinstance(name, runopt.deprecated):
-                deprecated_aliases.append(name)
+                deprecated_aliases.add(name)
+            elif isinstance(name, int):
+                auto_alias = auto_alias | name
             else:
                 if primary_key is not None:
                     raise ValueError(
@@ -1228,11 +1268,17 @@ class runopts:
             raise ValueError(
                 "Missing cfg_key. Please provide one other than the aliases."
             )
+        if auto_alias != 0x0:
+            aliases_to_generate_for = aliases | {primary_key}
+            additional_aliases = self._generate_aliases(
+                auto_alias, aliases_to_generate_for
+            )
+            aliases.update(additional_aliases)
         return primary_key, aliases, deprecated_aliases
 
     def add(
         self,
-        cfg_key: str | list[str],
+        cfg_key: str | list[str | int],
         type_: Type[CfgVal],
         help: str,
         default: CfgVal = None,
