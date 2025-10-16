@@ -648,6 +648,28 @@ class RunConfigTest(unittest.TestCase):
                 "Run option `jobPriority` is deprecated, use `job_priority` instead",
             )
 
+    def test_runopt_auto_aliases(self) -> None:
+        opts = runopts()
+        opts.add(
+            ["job_priority", runopt.AutoAlias.camelCase],
+            type_=str,
+            help="run as user",
+        )
+        opts.add(
+            [
+                "model_type_name",
+                runopt.AutoAlias.camelCase | runopt.AutoAlias.SNAKE_CASE,
+            ],
+            type_=str,
+            help="run as user",
+        )
+        self.assertEqual(2, len(opts._opts))
+        self.assertIsNotNone(opts.get("job_priority"))
+        self.assertIsNotNone(opts.get("jobPriority"))
+        self.assertIsNotNone(opts.get("model_type_name"))
+        self.assertIsNotNone(opts.get("modelTypeName"))
+        self.assertIsNotNone(opts.get("MODEL_TYPE_NAME"))
+
     def get_runopts(self) -> runopts:
         opts = runopts()
         opts.add("run_as", type_=str, help="run as user", required=True)
