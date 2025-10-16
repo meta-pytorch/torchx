@@ -19,11 +19,11 @@ pytorch-lightning==2.5.0
 tensorboard==2.14.0
 sagemaker==2.230.0
 torch-model-archiver>=0.4.2
-torch>=2.7.0
+torch
 torchmetrics==1.6.3
 torchserve>=0.10.0
-torchtext==0.18.0
-torchvision==0.23.0
+torchtext
+torchvision
 typing-extensions
 ts==0.5.1
 wheel
