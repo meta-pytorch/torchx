@@ -27,6 +27,50 @@ Install Volcano:
 See the
 `Volcano Quickstart <https://github.com/volcano-sh/volcano>`_
 for more information.
+
+Pod Overlay
+===========
+
+You can overlay arbitrary Kubernetes PodSpec fields on generated pods using the ``pod``
+scheduler argument.
+
+The overlay can be provided as a dict or YAML file path:
+
+.. code:: bash
+
+    # Inline dict
+    torchx run --scheduler kubernetes \\
+      --scheduler_args 'pod={"spec":{"nodeSelector":{"gpu":"true"}}}' \\
+      my_component.py
+
+    # From YAML file
+    torchx run --scheduler kubernetes \\
+      --scheduler_args pod=pod_overlay.yaml \\
+      my_component.py
+
+Example ``pod_overlay.yaml``:
+
+.. code:: yaml
+
+    spec:
+      nodeSelector:
+        node.kubernetes.io/instance-type: p4d.24xlarge
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values: [trainer]
+              topologyKey: kubernetes.io/hostname
+
+The overlay is deep-merged with the generated pod spec, preserving existing fields
+and adding or overriding specified ones.
 """
 
 import json
@@ -45,6 +89,7 @@ from typing import (
     Tuple,
     TYPE_CHECKING,
     TypedDict,
+    Union,
 )
 
 import torchx
@@ -96,6 +141,42 @@ logger: logging.Logger = logging.getLogger(__name__)
 # https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
 RESERVED_MILLICPU = 100
 RESERVED_MEMMB = 1024
+
+
+def _load_pod_overlay(pod: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """Load pod overlay from dict or YAML file path."""
+    if isinstance(pod, str):
+        try:
+            with open(pod) as f:
+                return yaml.safe_load(f) or {}
+        except Exception as e:
+            raise ValueError(f"Failed to load pod overlay from file {pod}: {e}") from e
+    elif isinstance(pod, dict):
+        return pod
+    else:
+        raise ValueError(f"pod must be a dict or file path string, got {type(pod)}")
+
+
+def _apply_pod_overlay(pod: "V1Pod", overlay: Dict[str, Any]) -> None:
+    """Apply overlay dict to V1Pod object, merging nested fields."""
+    from kubernetes import client
+
+    api = client.ApiClient()
+    pod_dict = api.sanitize_for_serialization(pod)
+
+    def deep_merge(base: Dict[str, Any], overlay: Dict[str, Any]) -> None:
+        for key, value in overlay.items():
+            if isinstance(value, dict) and key in base and isinstance(base[key], dict):
+                deep_merge(base[key], value)
+            else:
+                base[key] = value
+
+    deep_merge(pod_dict, overlay)
+
+    merged_pod = api._ApiClient__deserialize(pod_dict, "V1Pod")
+    pod.spec = merged_pod.spec
+    pod.metadata = merged_pod.metadata
+
 
 RETRY_POLICIES: Mapping[str, Iterable[Mapping[str, str]]] = {
     RetryPolicy.REPLICA: [],
@@ -369,6 +450,7 @@ def app_to_resource(
     queue: str,
     service_account: Optional[str],
     priority_class: Optional[str] = None,
+    pod_overlay: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, object]:
     """
     app_to_resource creates a volcano job kubernetes resource definition from
@@ -402,6 +484,8 @@ def app_to_resource(
             replica_role.env["TORCHX_IMAGE"] = replica_role.image
 
             pod = role_to_pod(name, replica_role, service_account)
+            if pod_overlay:
+                _apply_pod_overlay(pod, pod_overlay)
             pod.metadata.labels.update(
                 pod_labels(
                     app=app,
@@ -471,6 +555,7 @@ class KubernetesOpts(TypedDict, total=False):
     image_repo: Optional[str]
     service_account: Optional[str]
     priority_class: Optional[str]
+    pod: Union[str, Dict[str, Any]]
 
 
 class KubernetesScheduler(
@@ -636,7 +721,7 @@ class KubernetesScheduler(
             else:
                 raise
 
-        return f'{namespace}:{resp["metadata"]["name"]}'
+        return f"{namespace}:{resp['metadata']['name']}"
 
     def _submit_dryrun(
         self, app: AppDef, cfg: KubernetesOpts
@@ -658,7 +743,12 @@ class KubernetesScheduler(
             priority_class, str
         ), "priority_class must be a str"
 
-        resource = app_to_resource(app, queue, service_account, priority_class)
+        pod = cfg.get("pod")
+        pod_overlay = _load_pod_overlay(pod) if pod else None
+
+        resource = app_to_resource(
+            app, queue, service_account, priority_class, pod_overlay
+        )
         req = KubernetesJob(
             resource=resource,
             images_to_push=images_to_push,
@@ -702,6 +792,11 @@ class KubernetesScheduler(
             "priority_class",
             type_=str,
             help="The name of the PriorityClass to set on the job specs",
+        )
+        opts.add(
+            "pod",
+            type_=Union[str, dict],
+            help="Pod overlay as dict or YAML file path to merge with generated pod specs",
         )
         return opts
 
