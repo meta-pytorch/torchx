@@ -131,7 +131,7 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         self,
         app: A,
         cfg: T,
-        workspace: Optional[Union[Workspace, str]] = None,
+        workspace: str | Workspace | None = None,
     ) -> str:
         """
         Submits the application to be run by the scheduler.
@@ -145,7 +145,12 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
             assert isinstance(self, WorkspaceMixin)
-            self.build_workspace_and_update_role2(app.roles[0], workspace, resolved_cfg)
+
+            if isinstance(workspace, str):
+                workspace = Workspace.from_str(workspace)
+
+            app.roles[0].workspace = workspace
+            self.build_workspaces(app.roles, resolved_cfg)
 
         # pyre-fixme: submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self.submit_dryrun(app, resolved_cfg)

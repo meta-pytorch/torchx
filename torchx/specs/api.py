@@ -14,6 +14,7 @@ import logging as logger
 import os
 import pathlib
 import re
+import shutil
 import typing
 import warnings
 from dataclasses import asdict, dataclass, field
@@ -381,12 +382,55 @@ class Workspace:
         """False if no projects mapping. Lets us use workspace object in an if-statement"""
         return bool(self.projects)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Workspace):
+            return False
+        return self.projects == other.projects
+
+    def __hash__(self) -> int:
+        # makes it possible to use Workspace as the key in the workspace build cache
+        # see WorkspaceMixin.caching_build_workspace_and_update_role
+        return hash(frozenset(self.projects.items()))
+
     def is_unmapped_single_project(self) -> bool:
         """
         Returns ``True`` if this workspace only has 1 project
         and its target mapping is an empty string.
         """
         return len(self.projects) == 1 and not next(iter(self.projects.values()))
+
+    def merge_into(self, outdir: str | pathlib.Path) -> None:
+        """
+        Copies each project dir of this workspace into the specified ``outdir``.
+        Each project dir is copied into ``{outdir}/{target}`` where ``target`` is
+        the target mapping of the project dir.
+
+        For example:
+
+        .. code-block:: python
+            from os.path import expanduser
+
+            workspace = Workspace(
+                projects={
+                    expanduser("~/workspace/torch"): "torch",
+                    expanduser("~/workspace/my_project": "")
+                }
+            )
+            workspace.merge_into(expanduser("~/tmp"))
+
+        Copies:
+
+            * ``~/workspace/torch/**`` into ``~/tmp/torch/**``
+            * ``~/workspace/my_project/**`` into ``~/tmp/**``
+
+        """
+
+        for src, dst in self.projects.items():
+            dst_path = pathlib.Path(outdir) / dst
+            if pathlib.Path(src).is_file():
+                shutil.copy2(src, dst_path)
+            else:  # src is dir
+                shutil.copytree(src, dst_path, dirs_exist_ok=True)
 
     @staticmethod
     def from_str(workspace: str | None) -> "Workspace":

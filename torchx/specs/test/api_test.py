@@ -46,6 +46,7 @@ from torchx.specs.api import (
     TORCHX_HOME,
     Workspace,
 )
+from torchx.test.fixtures import TestWithTmpDir
 
 
 class TorchXHomeTest(unittest.TestCase):
@@ -75,7 +76,7 @@ class TorchXHomeTest(unittest.TestCase):
                 self.assertTrue(conda_pack_out.is_dir())
 
 
-class WorkspaceTest(unittest.TestCase):
+class WorkspaceTest(TestWithTmpDir):
 
     def test_bool(self) -> None:
         self.assertFalse(Workspace(projects={}))
@@ -148,6 +149,28 @@ class WorkspaceTest(unittest.TestCase):
 """
             ).projects,
         )
+
+    def test_merge(self) -> None:
+        self.touch("workspace/myproj/README.md")
+        self.touch("workspace/myproj/bin/cli")
+
+        self.touch("workspace/torch/setup.py")
+        self.touch("workspace/torch/torch/__init__.py")
+
+        w = Workspace(
+            projects={
+                str(self.tmpdir / "workspace/myproj"): "",
+                str(self.tmpdir / "workspace/torch"): "torch",
+            }
+        )
+
+        outdir = self.tmpdir / "out"
+        w.merge_into(outdir)
+
+        self.assertTrue((outdir / "README.md").is_file())
+        self.assertTrue((outdir / "bin/cli").is_file())
+        self.assertTrue((outdir / "torch/setup.py").is_file())
+        self.assertTrue((outdir / "torch/torch/__init__.py").is_file())
 
 
 class AppDryRunInfoTest(unittest.TestCase):
