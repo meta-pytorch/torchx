@@ -456,25 +456,16 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">fnmatch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">posixpath</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Any</span><span class="p">,</span>
-    <span class="n">Dict</span><span class="p">,</span>
-    <span class="n">Generic</span><span class="p">,</span>
-    <span class="n">Iterable</span><span class="p">,</span>
-    <span class="n">Mapping</span><span class="p">,</span>
-    <span class="n">Tuple</span><span class="p">,</span>
-    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
-    <span class="n">TypeVar</span><span class="p">,</span>
-    <span class="n">Union</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">runopts</span><span class="p">,</span> <span class="n">Workspace</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">fsspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractFileSystem</span>
@@ -561,52 +552,82 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">runopts</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="WorkspaceMixin.build_workspace_and_update_role2"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role2">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role2</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkspaceMixin.build_workspaces"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspaces">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspaces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Role</span><span class="p">],</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: this method MUTATES the passed roles!</span>
+
+<span class="sd">        Builds the workspaces (if any) for each role and updates the role to reflect the built workspace.</span>
+<span class="sd">        Typically ``role.image`` is updated with the newly built image that reflects the local workspace.</span>
+<span class="sd">        Some workspace implementations may add extra environment variables to make it easier for other</span>
+<span class="sd">        parts of the program to access the workspace. For example a ``WORKSPACE_DIR`` env var may be added</span>
+<span class="sd">        to ``role.env`` that scripts can use to refert to the workspace directory in the container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">role</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">roles</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span><span class="p">:</span>
+                <span class="n">old_img</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">caching_build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">build_cache</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">old_img</span> <span class="o">!=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;role[</span><span class="si">%d</span><span class="s2">]=</span><span class="si">%s</span><span class="s2"> updated with new image to include workspace changes&quot;</span><span class="p">,</span>
+                        <span class="n">i</span><span class="p">,</span>
+                        <span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkspaceMixin.caching_build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">caching_build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
-        <span class="n">workspace</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Workspace</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
+        <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Same as :py:meth:`build_workspace_and_update_role` but operates</span>
-<span class="sd">        on :py:class:`Workspace` (supports multi-project workspaces)</span>
-<span class="sd">        as well as ``str`` (for backwards compatibility).</span>
+<span class="sd">        Same as :py:meth:`build_workspace_and_update_role` but takes</span>
+<span class="sd">        a ``build_cache`` that can be used to cache pointers to build artifacts</span>
+<span class="sd">        between building workspace for each role.</span>
 
-<span class="sd">        If ``workspace`` is a ``str`` this method simply calls</span>
+<span class="sd">        This is useful when an appdef has multiple roles where the image and workspace</span>
+<span class="sd">        of the roles are the same but other attributes such as entrypoint or args are different.</span>
+
+<span class="sd">        NOTE: ``build_cache``&#39;s lifetime is within :py:meth:`build_workspace_and_update_roles`</span>
+<span class="sd">        NOTE: the workspace implementation decides what to cache</span>
+
+<span class="sd">        Workspace subclasses should prefer implementing this method over</span>
 <span class="sd">        :py:meth:`build_workspace_and_update_role`.</span>
 
-<span class="sd">        If ``workspace`` is :py:class:`Workspace` then the default</span>
-<span class="sd">        impl copies all the projects into a tmp directory and passes the tmp dir to</span>
-<span class="sd">        :py:meth:`build_workspace_and_update_role`</span>
+<span class="sd">        The default implementation of this method simply calls the (deprecated) non-caching</span>
+<span class="sd">        :py:meth:`build_workspace_and_update_role` and deals with multi-dir workspaces by</span>
+<span class="sd">        merging them into a single tmpdir before passing it down.</span>
 
-<span class="sd">        Subclasses can override this method to customize multi-project</span>
-<span class="sd">        workspace building logic.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="n">Workspace</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">workspace</span><span class="o">.</span><span class="n">is_unmapped_single_project</span><span class="p">():</span>
-                <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;torchx_workspace_&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outdir</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="ow">in</span> <span class="n">workspace</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                        <span class="n">dst_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span> <span class="o">/</span> <span class="n">dst</span>
-                        <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
-                            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># src is dir</span>
-                            <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">,</span> <span class="n">dirs_exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-                    <span class="bp">self</span><span class="o">.</span><span class="n">build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
-                    <span class="k">return</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># single project workspace with no target mapping (treat like a str workspace)</span>
-                <span class="n">workspace</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">workspace</span><span class="p">)</span>
+        <span class="n">workspace</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">workspace</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">workspace</span><span class="p">:</span>
+            <span class="k">return</span>
 
-<div class="viewcode-block" id="WorkspaceMixin.build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">workspace</span><span class="o">.</span><span class="n">is_unmapped_single_project</span><span class="p">():</span>
+            <span class="c1"># single-dir workspace with no target map; no need to copy to a tmp dir</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">workspace</span><span class="p">),</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># multi-dirs or single-dir with a target map;</span>
+            <span class="c1"># copy all dirs to a tmp dir and treat the tmp dir as a single-dir workspace</span>
+            <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;torchx_workspace_&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outdir</span><span class="p">:</span>
+                <span class="n">workspace</span><span class="o">.</span><span class="n">merge_into</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkspaceMixin.build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
         <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. note:: DEPRECATED: Workspace subclasses should implement</span>
+<span class="sd">                  :py:meth:`caching_build_workspace_and_update_role` over this method.</span>
+
 <span class="sd">        Builds the specified ``workspace`` with respect to ``img``</span>
 <span class="sd">        and updates the ``role`` to reflect the built workspace artifacts.</span>
 <span class="sd">        In the simplest case, this method builds a new image and updates</span>
@@ -615,7 +636,7 @@
 
 <span class="sd">        Note: this method mutates the passed ``role``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;implement `caching_build_workspace_and_update_role`&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkspaceMixin.dryrun_push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.dryrun_push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

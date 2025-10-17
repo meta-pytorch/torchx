@@ -875,41 +875,25 @@
             <span class="n">sched</span><span class="o">.</span><span class="n">_pre_build_validate</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sched</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">role</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">):</span>
-                    <span class="n">role_workspace</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span>
-
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">workspace</span><span class="p">:</span>
-                        <span class="c1"># NOTE: torchx originally took workspace as a runner arg and only applied the workspace to role[0]</span>
-                        <span class="c1">#   later, torchx added support for the workspace attr in Role</span>
-                        <span class="c1">#   for BC, give precedence to the workspace argument over the workspace attr for role[0]</span>
-                        <span class="k">if</span> <span class="n">role_workspace</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;Using workspace=</span><span class="si">{</span><span class="n">workspace</span><span class="si">}</span><span class="s2"> over role[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">].workspace=</span><span class="si">{</span><span class="n">role_workspace</span><span class="si">}</span><span class="s2"> for role[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]=</span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
-                                <span class="s2">&quot; To use the role&#39;s workspace attr pass: --workspace=&#39;&#39; from CLI or workspace=None programmatically.&quot;</span>  <span class="c1"># noqa: B950</span>
-                            <span class="p">)</span>
-                        <span class="n">role_workspace</span> <span class="o">=</span> <span class="n">workspace</span>
-
-                    <span class="k">if</span> <span class="n">role_workspace</span><span class="p">:</span>
-                        <span class="n">old_img</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
+                <span class="k">if</span> <span class="n">workspace</span><span class="p">:</span>
+                    <span class="c1"># NOTE: torchx originally took workspace as a runner arg and only applied the workspace to role[0]</span>
+                    <span class="c1"># later, torchx added support for the workspace attr in Role</span>
+                    <span class="c1"># for BC, give precedence to the workspace argument over the workspace attr for role[0]</span>
+                    <span class="k">if</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">workspace</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Checking for changes in workspace `</span><span class="si">{</span><span class="n">role_workspace</span><span class="si">}</span><span class="s2">` for role[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]=</span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...&quot;</span>
+                            <span class="s2">&quot;Overriding role[</span><span class="si">%d</span><span class="s2">] (</span><span class="si">%s</span><span class="s2">) workspace to `</span><span class="si">%s</span><span class="s2">`&quot;</span>
+                            <span class="s2">&quot;To use the role&#39;s workspace attr pass: --workspace=&#39;&#39; from CLI or workspace=None programmatically.&quot;</span><span class="p">,</span>
+                            <span class="mi">0</span><span class="p">,</span>
+                            <span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="nb">str</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">workspace</span><span class="p">),</span>
                         <span class="p">)</span>
-                        <span class="c1"># TODO kiuk@ once we deprecate the `workspace` argument in runner APIs we can simplify the signature of</span>
-                        <span class="c1">#   build_workspace_and_update_role2() to just taking the role and resolved_cfg</span>
-                        <span class="n">sched</span><span class="o">.</span><span class="n">build_workspace_and_update_role2</span><span class="p">(</span>
-                            <span class="n">role</span><span class="p">,</span> <span class="n">role_workspace</span><span class="p">,</span> <span class="n">resolved_cfg</span>
-                        <span class="p">)</span>
+                    <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">workspace</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">Workspace</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">workspace</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                        <span class="k">else</span> <span class="n">workspace</span>
+                    <span class="p">)</span>
 
-                        <span class="k">if</span> <span class="n">old_img</span> <span class="o">!=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;Built new image `</span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="si">}</span><span class="s2">` based on original image `</span><span class="si">{</span><span class="n">old_img</span><span class="si">}</span><span class="s2">`&quot;</span>
-                                <span class="sa">f</span><span class="s2">&quot; and changes in workspace `</span><span class="si">{</span><span class="n">role_workspace</span><span class="si">}</span><span class="s2">` for role[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]=</span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
-                            <span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;Reusing original image `</span><span class="si">{</span><span class="n">old_img</span><span class="si">}</span><span class="s2">` for role[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]=</span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
-                                <span class="s2">&quot; Either a patch was built or no changes to workspace was detected.&quot;</span>
-                            <span class="p">)</span>
+                <span class="n">sched</span><span class="o">.</span><span class="n">build_workspaces</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
 
             <span class="n">sched</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
             <span class="n">dryrun_info</span> <span class="o">=</span> <span class="n">sched</span><span class="o">.</span><span class="n">submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
