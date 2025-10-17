@@ -706,16 +706,29 @@ class KubernetesScheduler(
         return opts
 
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+        from kubernetes.client.rest import ApiException
+
         namespace, name = app_id.split(":")
         roles = {}
         roles_statuses = {}
-        resp = self._custom_objects_api().get_namespaced_custom_object_status(
-            group="batch.volcano.sh",
-            version="v1alpha1",
-            namespace=namespace,
-            plural="jobs",
-            name=name,
-        )
+        try:
+            resp = self._custom_objects_api().get_namespaced_custom_object_status(
+                group="batch.volcano.sh",
+                version="v1alpha1",
+                namespace=namespace,
+                plural="jobs",
+                name=name,
+            )
+        except Exception as e:
+            return DescribeAppResponse(
+                app_id=app_id,
+                state=AppState.UNKNOWN,
+                msg=(
+                    f"{e.reason}: {e.body}"
+                    if hasattr(e, "body") and e.body
+                    else str(getattr(e, "reason", e))
+                ),
+            )
         status = resp.get("status")
         if status:
             state_str = status["state"]["phase"]
