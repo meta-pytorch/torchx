@@ -8,25 +8,16 @@
 
 import abc
 import fnmatch
+import logging
 import posixpath
-import shutil
 import tempfile
 import warnings
 from dataclasses import dataclass
-from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterable,
-    Mapping,
-    Tuple,
-    TYPE_CHECKING,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Generic, Iterable, Mapping, Tuple, TYPE_CHECKING, TypeVar
 
 from torchx.specs import AppDef, CfgVal, Role, runopts, Workspace
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -113,45 +104,72 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         """
         return runopts()
 
-    def build_workspace_and_update_role2(
+    def build_workspaces(self, roles: list[Role], cfg: Mapping[str, CfgVal]) -> None:
+        """
+        NOTE: this method MUTATES the passed roles!
+
+        Builds the workspaces (if any) for each role and updates the role to reflect the built workspace.
+        Typically ``role.image`` is updated with the newly built image that reflects the local workspace.
+        Some workspace implementations may add extra environment variables to make it easier for other
+        parts of the program to access the workspace. For example a ``WORKSPACE_DIR`` env var may be added
+        to ``role.env`` that scripts can use to refert to the workspace directory in the container.
+        """
+
+        build_cache: dict[object, object] = {}
+
+        for i, role in enumerate(roles):
+            if role.workspace:
+                old_img = role.image
+                self.caching_build_workspace_and_update_role(role, cfg, build_cache)
+
+                if old_img != role.image:
+                    logger.info(
+                        "role[%d]=%s updated with new image to include workspace changes",
+                        i,
+                        role.name,
+                    )
+
+    def caching_build_workspace_and_update_role(
         self,
         role: Role,
-        workspace: Union[Workspace, str],
         cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
     ) -> None:
         """
-        Same as :py:meth:`build_workspace_and_update_role` but operates
-        on :py:class:`Workspace` (supports multi-project workspaces)
-        as well as ``str`` (for backwards compatibility).
+        Same as :py:meth:`build_workspace_and_update_role` but takes
+        a ``build_cache`` that can be used to cache pointers to build artifacts
+        between building workspace for each role.
 
-        If ``workspace`` is a ``str`` this method simply calls
+        This is useful when an appdef has multiple roles where the image and workspace
+        of the roles are the same but other attributes such as entrypoint or args are different.
+
+        NOTE: ``build_cache``'s lifetime is within :py:meth:`build_workspace_and_update_roles`
+        NOTE: the workspace implementation decides what to cache
+
+        Workspace subclasses should prefer implementing this method over
         :py:meth:`build_workspace_and_update_role`.
 
-        If ``workspace`` is :py:class:`Workspace` then the default
-        impl copies all the projects into a tmp directory and passes the tmp dir to
-        :py:meth:`build_workspace_and_update_role`
+        The default implementation of this method simply calls the (deprecated) non-caching
+        :py:meth:`build_workspace_and_update_role` and deals with multi-dir workspaces by
+        merging them into a single tmpdir before passing it down.
 
-        Subclasses can override this method to customize multi-project
-        workspace building logic.
         """
-        if isinstance(workspace, Workspace):
-            if not workspace.is_unmapped_single_project():
-                with tempfile.TemporaryDirectory(suffix="torchx_workspace_") as outdir:
-                    for src, dst in workspace.projects.items():
-                        dst_path = Path(outdir) / dst
-                        if Path(src).is_file():
-                            shutil.copy2(src, dst_path)
-                        else:  # src is dir
-                            shutil.copytree(src, dst_path, dirs_exist_ok=True)
 
-                    self.build_workspace_and_update_role(role, outdir, cfg)
-                    return
-            else:  # single project workspace with no target mapping (treat like a str workspace)
-                workspace = str(workspace)
+        workspace = role.workspace
 
-        self.build_workspace_and_update_role(role, workspace, cfg)
+        if not workspace:
+            return
 
-    @abc.abstractmethod
+        if workspace.is_unmapped_single_project():
+            # single-dir workspace with no target map; no need to copy to a tmp dir
+            self.build_workspace_and_update_role(role, str(workspace), cfg)
+        else:
+            # multi-dirs or single-dir with a target map;
+            # copy all dirs to a tmp dir and treat the tmp dir as a single-dir workspace
+            with tempfile.TemporaryDirectory(suffix="torchx_workspace_") as outdir:
+                workspace.merge_into(outdir)
+                self.build_workspace_and_update_role(role, outdir, cfg)
+
     def build_workspace_and_update_role(
         self,
         role: Role,
@@ -159,6 +177,9 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         cfg: Mapping[str, CfgVal],
     ) -> None:
         """
+        .. note:: DEPRECATED: Workspace subclasses should implement
+                  :py:meth:`caching_build_workspace_and_update_role` over this method.
+
         Builds the specified ``workspace`` with respect to ``img``
         and updates the ``role`` to reflect the built workspace artifacts.
         In the simplest case, this method builds a new image and updates
@@ -167,7 +188,7 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
 
         Note: this method mutates the passed ``role``.
         """
-        ...
+        raise NotImplementedError("implement `caching_build_workspace_and_update_role`")
 
     def dryrun_push_images(self, app: AppDef, cfg: Mapping[str, CfgVal]) -> T:
         """

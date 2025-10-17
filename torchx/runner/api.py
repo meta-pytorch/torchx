@@ -427,41 +427,25 @@ class Runner:
             sched._pre_build_validate(app, scheduler, resolved_cfg)
 
             if isinstance(sched, WorkspaceMixin):
-                for i, role in enumerate(app.roles):
-                    role_workspace = role.workspace
-
-                    if i == 0 and workspace:
-                        # NOTE: torchx originally took workspace as a runner arg and only applied the workspace to role[0]
-                        #   later, torchx added support for the workspace attr in Role
-                        #   for BC, give precedence to the workspace argument over the workspace attr for role[0]
-                        if role_workspace:
-                            logger.info(
-                                f"Using workspace={workspace} over role[{i}].workspace={role_workspace} for role[{i}]={role.name}."
-                                " To use the role's workspace attr pass: --workspace='' from CLI or workspace=None programmatically."  # noqa: B950
-                            )
-                        role_workspace = workspace
-
-                    if role_workspace:
-                        old_img = role.image
+                if workspace:
+                    # NOTE: torchx originally took workspace as a runner arg and only applied the workspace to role[0]
+                    # later, torchx added support for the workspace attr in Role
+                    # for BC, give precedence to the workspace argument over the workspace attr for role[0]
+                    if app.roles[0].workspace:
                         logger.info(
-                            f"Checking for changes in workspace `{role_workspace}` for role[{i}]={role.name}..."
+                            "Overriding role[%d] (%s) workspace to `%s`"
+                            "To use the role's workspace attr pass: --workspace='' from CLI or workspace=None programmatically.",
+                            0,
+                            role.name,
+                            str(app.roles[0].workspace),
                         )
-                        # TODO kiuk@ once we deprecate the `workspace` argument in runner APIs we can simplify the signature of
-                        #   build_workspace_and_update_role2() to just taking the role and resolved_cfg
-                        sched.build_workspace_and_update_role2(
-                            role, role_workspace, resolved_cfg
-                        )
+                    app.roles[0].workspace = (
+                        Workspace.from_str(workspace)
+                        if isinstance(workspace, str)
+                        else workspace
+                    )
 
-                        if old_img != role.image:
-                            logger.info(
-                                f"Built new image `{role.image}` based on original image `{old_img}`"
-                                f" and changes in workspace `{role_workspace}` for role[{i}]={role.name}."
-                            )
-                        else:
-                            logger.info(
-                                f"Reusing original image `{old_img}` for role[{i}]={role.name}."
-                                " Either a patch was built or no changes to workspace was detected."
-                            )
+                sched.build_workspaces(app.roles, resolved_cfg)
 
             sched._validate(app, scheduler, resolved_cfg)
             dryrun_info = sched.submit_dryrun(app, resolved_cfg)
