@@ -369,7 +369,7 @@ def app_to_resource(
     queue: str,
     service_account: Optional[str],
     priority_class: Optional[str] = None,
-) -> Dict[str, object]:
+) -> Dict[str, Any]:
     """
     app_to_resource creates a volcano job kubernetes resource definition from
     the provided AppDef. The resource definition can be used to launch the
@@ -444,7 +444,7 @@ does NOT support retries correctly. More info: https://github.com/volcano-sh/vol
     if priority_class is not None:
         job_spec["priorityClassName"] = priority_class
 
-    resource: Dict[str, object] = {
+    resource: Dict[str, Any] = {
         "apiVersion": "batch.volcano.sh/v1alpha1",
         "kind": "Job",
         "metadata": {"name": f"{unique_app_id}"},
@@ -456,7 +456,7 @@ does NOT support retries correctly. More info: https://github.com/volcano-sh/vol
 @dataclass
 class KubernetesJob:
     images_to_push: Dict[str, Tuple[str, str]]
-    resource: Dict[str, object]
+    resource: Dict[str, Any]
 
     def __str__(self) -> str:
         return yaml.dump(sanitize_for_serialization(self.resource))
@@ -471,6 +471,7 @@ class KubernetesOpts(TypedDict, total=False):
     image_repo: Optional[str]
     service_account: Optional[str]
     priority_class: Optional[str]
+    validate_spec: Optional[bool]
 
 
 class KubernetesScheduler(
@@ -659,6 +660,36 @@ class KubernetesScheduler(
         ), "priority_class must be a str"
 
         resource = app_to_resource(app, queue, service_account, priority_class)
+
+        if cfg.get("validate_spec"):
+            try:
+                self._custom_objects_api().create_namespaced_custom_object(
+                    group="batch.volcano.sh",
+                    version="v1alpha1",
+                    namespace=cfg.get("namespace") or "default",
+                    plural="jobs",
+                    body=resource,
+                    dry_run="All",
+                )
+            except Exception as e:
+                from kubernetes.client.rest import ApiException
+
+                if isinstance(e, ApiException):
+                    raise ValueError(f"Invalid job spec: {e.reason}") from e
+                raise
+
+            job_name = resource["metadata"]["name"]
+            for task in resource["spec"]["tasks"]:
+                task_name = task["name"]
+                replicas = task.get("replicas", 1)
+                max_index = replicas - 1
+                pod_name = f"{job_name}-{task_name}-{max_index}"
+                if len(pod_name) > 63:
+                    raise ValueError(
+                        f"Pod name '{pod_name}' ({len(pod_name)} chars) exceeds 63 character limit. "
+                        f"Shorten app.name or role names"
+                    )
+
         req = KubernetesJob(
             resource=resource,
             images_to_push=images_to_push,
@@ -702,6 +733,12 @@ class KubernetesScheduler(
             "priority_class",
             type_=str,
             help="The name of the PriorityClass to set on the job specs",
+        )
+        opts.add(
+            "validate_spec",
+            type_=bool,
+            help="Validate job spec using Kubernetes API dry-run before submission",
+            default=True,
         )
         return opts
 
