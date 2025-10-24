@@ -714,6 +714,32 @@ spec:
             ),
         )
 
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
+    def test_describe_api_exception_404(
+        self, get_namespaced_custom_object_status: MagicMock
+    ) -> None:
+        from kubernetes.client.rest import ApiException
+
+        api_exc = ApiException(status=404, reason="Not Found")
+        get_namespaced_custom_object_status.side_effect = api_exc
+        app_id = "testnamespace:testid"
+        scheduler = create_scheduler("test")
+        info = scheduler.describe(app_id)
+        self.assertIsNone(info)
+
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
+    def test_describe_api_exception_other(
+        self, get_namespaced_custom_object_status: MagicMock
+    ) -> None:
+        from kubernetes.client.rest import ApiException
+
+        api_exc = ApiException(status=500, reason="Internal Server Error")
+        get_namespaced_custom_object_status.side_effect = api_exc
+        app_id = "testnamespace:testid"
+        scheduler = create_scheduler("test")
+        with self.assertRaises(ApiException):
+            scheduler.describe(app_id)
+
     def test_runopts(self) -> None:
         scheduler = kubernetes_scheduler.create_scheduler("foo")
         runopts = scheduler.run_opts()
