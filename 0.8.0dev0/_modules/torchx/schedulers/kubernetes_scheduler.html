@@ -477,6 +477,76 @@
 <span class="sd">See the</span>
 <span class="sd">`Volcano Quickstart &lt;https://github.com/volcano-sh/volcano&gt;`_</span>
 <span class="sd">for more information.</span>
+
+<span class="sd">Pod Overlay</span>
+<span class="sd">===========</span>
+
+<span class="sd">You can overlay arbitrary Kubernetes Pod fields on generated pods by setting</span>
+<span class="sd">the ``kubernetes`` metadata on your role. The value can be:</span>
+
+<span class="sd">- A dict with the overlay structure</span>
+<span class="sd">- A resource URI pointing to a YAML file (e.g. ``file://``, ``s3://``, ``gs://``)</span>
+
+<span class="sd">Merge semantics:</span>
+<span class="sd">- **dict**: recursive merge (upsert)</span>
+<span class="sd">- **list**: append by default, replace if tuple (Python) or ``!!python/tuple`` tag (YAML)</span>
+<span class="sd">- **primitives**: replace</span>
+
+<span class="sd">.. code:: python</span>
+
+<span class="sd">    from torchx.specs import Role</span>
+
+<span class="sd">    # Dict overlay - lists append, tuples replace</span>
+<span class="sd">    role = Role(</span>
+<span class="sd">        name=&quot;trainer&quot;,</span>
+<span class="sd">        image=&quot;my-image:latest&quot;,</span>
+<span class="sd">        entrypoint=&quot;train.py&quot;,</span>
+<span class="sd">        metadata={</span>
+<span class="sd">            &quot;kubernetes&quot;: {</span>
+<span class="sd">                &quot;spec&quot;: {</span>
+<span class="sd">                    &quot;nodeSelector&quot;: {&quot;gpu&quot;: &quot;true&quot;},</span>
+<span class="sd">                    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;nvidia.com/gpu&quot;, &quot;operator&quot;: &quot;Exists&quot;}],  # appends</span>
+<span class="sd">                    &quot;volumes&quot;: ({&quot;name&quot;: &quot;my-volume&quot;, &quot;emptyDir&quot;: {}},)  # replaces</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+<span class="sd">    )</span>
+
+<span class="sd">    # File URI overlay</span>
+<span class="sd">    role = Role(</span>
+<span class="sd">        name=&quot;trainer&quot;,</span>
+<span class="sd">        image=&quot;my-image:latest&quot;,</span>
+<span class="sd">        entrypoint=&quot;train.py&quot;,</span>
+<span class="sd">        metadata={</span>
+<span class="sd">            &quot;kubernetes&quot;: &quot;file:///path/to/pod_overlay.yaml&quot;</span>
+<span class="sd">        }</span>
+<span class="sd">    )</span>
+
+<span class="sd">CLI usage with builtin components:</span>
+
+<span class="sd">.. code:: bash</span>
+
+<span class="sd">    $ torchx run --scheduler kubernetes dist.ddp \\</span>
+<span class="sd">        --metadata kubernetes=file:///path/to/pod_overlay.yaml \\</span>
+<span class="sd">        --script train.py</span>
+
+<span class="sd">Example ``pod_overlay.yaml``:</span>
+
+<span class="sd">.. code:: yaml</span>
+
+<span class="sd">    spec:</span>
+<span class="sd">      nodeSelector:</span>
+<span class="sd">        node.kubernetes.io/instance-type: p4d.24xlarge</span>
+<span class="sd">      tolerations:</span>
+<span class="sd">        - key: nvidia.com/gpu</span>
+<span class="sd">          operator: Exists</span>
+<span class="sd">          effect: NoSchedule</span>
+<span class="sd">      volumes: !!python/tuple</span>
+<span class="sd">        - name: my-volume</span>
+<span class="sd">          emptyDir: {}</span>
+
+<span class="sd">The overlay is deep-merged with the generated pod, preserving existing fields</span>
+<span class="sd">and adding or overriding specified ones.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -495,6 +565,7 @@
     <span class="n">Tuple</span><span class="p">,</span>
     <span class="n">TYPE_CHECKING</span><span class="p">,</span>
     <span class="n">TypedDict</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
@@ -546,6 +617,40 @@
 <span class="c1"># https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/</span>
 <span class="n">RESERVED_MILLICPU</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">RESERVED_MEMMB</span> <span class="o">=</span> <span class="mi">1024</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_pod_overlay</span><span class="p">(</span><span class="n">pod</span><span class="p">:</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="n">overlay</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply overlay dict to V1Pod object, merging nested fields.</span>
+
+<span class="sd">    Merge semantics:</span>
+<span class="sd">    - dict: upsert (recursive merge)</span>
+<span class="sd">    - list: append by default, replace if tuple</span>
+<span class="sd">    - primitives: replace</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes</span><span class="w"> </span><span class="kn">import</span> <span class="n">client</span>
+
+    <span class="n">api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ApiClient</span><span class="p">()</span>
+    <span class="n">pod_dict</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">sanitize_for_serialization</span><span class="p">(</span><span class="n">pod</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">overlay</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="n">deep_merge</span><span class="p">(</span><span class="n">pod_dict</span><span class="p">,</span> <span class="n">overlay</span><span class="p">)</span>
+
+    <span class="n">merged_pod</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">_ApiClient__deserialize</span><span class="p">(</span><span class="n">pod_dict</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">)</span>
+    <span class="n">pod</span><span class="o">.</span><span class="n">spec</span> <span class="o">=</span> <span class="n">merged_pod</span><span class="o">.</span><span class="n">spec</span>
+    <span class="n">pod</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">merged_pod</span><span class="o">.</span><span class="n">metadata</span>
+
 
 <span class="n">RETRY_POLICIES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="n">RetryPolicy</span><span class="o">.</span><span class="n">REPLICA</span><span class="p">:</span> <span class="p">[],</span>
@@ -852,6 +957,17 @@
             <span class="n">replica_role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;TORCHX_IMAGE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">replica_role</span><span class="o">.</span><span class="n">image</span>
 
             <span class="n">pod</span> <span class="o">=</span> <span class="n">role_to_pod</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">replica_role</span><span class="p">,</span> <span class="n">service_account</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">k8s_metadata</span> <span class="o">:=</span> <span class="n">role</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
+
+                    <span class="k">with</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">k8s_metadata</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">unsafe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;metadata[&#39;kubernetes&#39;] must be a dict or resource URI, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">_apply_pod_overlay</span><span class="p">(</span><span class="n">pod</span><span class="p">,</span> <span class="n">k8s_metadata</span><span class="p">)</span>
             <span class="n">pod</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
                 <span class="n">pod_labels</span><span class="p">(</span>
                     <span class="n">app</span><span class="o">=</span><span class="n">app</span><span class="p">,</span>
@@ -1087,7 +1203,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span>
 
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">resp</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">resp</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">KubernetesOpts</span>

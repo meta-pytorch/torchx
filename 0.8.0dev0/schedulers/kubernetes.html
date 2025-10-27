@@ -466,6 +466,69 @@ upgrade you’ll need to completely remove all non-Job Volcano resources and rec
 <a class="reference external" href="https://github.com/volcano-sh/volcano">Volcano Quickstart</a>
 for more information.</p>
 </section>
+<section id="pod-overlay">
+<h2>Pod Overlay<a class="headerlink" href="#pod-overlay" title="Permalink to this heading">¶</a></h2>
+<p>You can overlay arbitrary Kubernetes Pod fields on generated pods by setting
+the <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code> metadata on your role. The value can be:</p>
+<ul class="simple">
+<li><p>A dict with the overlay structure</p></li>
+<li><p>A resource URI pointing to a YAML file (e.g. <code class="docutils literal notranslate"><span class="pre">file://</span></code>, <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, <code class="docutils literal notranslate"><span class="pre">gs://</span></code>)</p></li>
+</ul>
+<p>Merge semantics:
+- <strong>dict</strong>: recursive merge (upsert)
+- <strong>list</strong>: append by default, replace if tuple (Python) or <code class="docutils literal notranslate"><span class="pre">!!python/tuple</span></code> tag (YAML)
+- <strong>primitives</strong>: replace</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
+
+<span class="c1"># Dict overlay - lists append, tuples replace</span>
+<span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
+    <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my-image:latest&quot;</span><span class="p">,</span>
+    <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;kubernetes&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;nodeSelector&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;gpu&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;tolerations&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;nvidia.com/gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;operator&quot;</span><span class="p">:</span> <span class="s2">&quot;Exists&quot;</span><span class="p">}],</span>  <span class="c1"># appends</span>
+                <span class="s2">&quot;volumes&quot;</span><span class="p">:</span> <span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;my-volume&quot;</span><span class="p">,</span> <span class="s2">&quot;emptyDir&quot;</span><span class="p">:</span> <span class="p">{}},)</span>  <span class="c1"># replaces</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># File URI overlay</span>
+<span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
+    <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my-image:latest&quot;</span><span class="p">,</span>
+    <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;kubernetes&quot;</span><span class="p">:</span> <span class="s2">&quot;file:///path/to/pod_overlay.yaml&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>CLI usage with builtin components:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.ddp<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--metadata<span class="w"> </span><span class="nv">kubernetes</span><span class="o">=</span>file:///path/to/pod_overlay.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--script<span class="w"> </span>train.py
+</pre></div>
+</div>
+<p>Example <code class="docutils literal notranslate"><span class="pre">pod_overlay.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">nodeSelector</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">node.kubernetes.io/instance-type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">p4d.24xlarge</span>
+<span class="w">  </span><span class="nt">tolerations</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nvidia.com/gpu</span>
+<span class="w">      </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Exists</span>
+<span class="w">      </span><span class="nt">effect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NoSchedule</span>
+<span class="w">  </span><span class="nt">volumes</span><span class="p">:</span><span class="w"> </span><span class="kt">!!python/tuple</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-volume</span>
+<span class="w">      </span><span class="nt">emptyDir</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+</pre></div>
+</div>
+<p>The overlay is deep-merged with the generated pod, preserving existing fields
+and adding or overriding specified ones.</p>
+</section>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.kubernetes_scheduler.KubernetesScheduler">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.kubernetes_scheduler.</span></span><span class="sig-name descname"><span class="pre">KubernetesScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">ApiClient</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">DockerClient</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchx/schedulers/kubernetes_scheduler.html#KubernetesScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler" title="Permalink to this definition">¶</a></dt>
@@ -773,6 +836,7 @@ count is set to the minimum of the max_retries of the roles.</p>
               <ul>
 <li><a class="reference internal" href="#">Kubernetes</a><ul>
 <li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#pod-overlay">Pod Overlay</a></li>
 <li><a class="reference internal" href="#reference">Reference</a></li>
 </ul>
 </li>
