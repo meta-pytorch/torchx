@@ -14,10 +14,9 @@ from setuptools import find_packages, setup
 
 
 def get_version():
-    # get version string from version.py
-    # TODO: ideally the version.py should be generated when setup is run
-    version_file = os.path.join(os.path.dirname(__file__), "torchx/version.py")
-    version_regex = r"__version__ = ['\"]([^'\"]*)['\"]"
+    # get version string from _version.py
+    version_file = os.path.join(os.path.dirname(__file__), "torchx/_version.py")
+    version_regex = r"BASE_VERSION = ['\"]([^'\"]*)['\"]"
     with open(version_file, "r") as f:
         version = re.search(version_regex, f.read(), re.M).group(1)
         return version
