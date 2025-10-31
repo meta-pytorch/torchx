@@ -101,6 +101,7 @@ and adding or overriding specified ones.
 
 import json
 import logging
+import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
@@ -984,13 +985,34 @@ def create_scheduler(
 def pod_labels(
     app: AppDef, role_idx: int, role: Role, replica_id: int, app_id: str
 ) -> Dict[str, str]:
+
+    def clean(label_value: str) -> str:
+        # cleans the provided `label_value` to make it compliant
+        # to pod label specs as described in
+        # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+        #
+        # Valid label value:
+        # must be 63 characters or less (can be empty),
+        # unless empty, must begin and end with an alphanumeric character ([a-z0-9A-Z]),
+        # could contain dashes (-), underscores (_), dots (.), and alphanumerics between.
+
+        # Replace invalid characters (allow: alphanum, -, _, .) with "."
+        label_value = re.sub(r"[^A-Za-z0-9\-_.]", ".", label_value)
+        # Replace leading non-alphanumeric with "."
+        label_value = re.sub(r"^[^A-Za-z0-9]+", ".", label_value)
+        # Replace trailing non-alphanumeric with "."
+        label_value = re.sub(r"[^A-Za-z0-9]+$", ".", label_value)
+
+        # Trim to 63 characters
+        return label_value[:63]
+
     return {
-        LABEL_VERSION: torchx.__version__,
-        LABEL_APP_NAME: app.name,
+        LABEL_VERSION: clean(torchx.__version__),
+        LABEL_APP_NAME: clean(app.name),
         LABEL_ROLE_INDEX: str(role_idx),
-        LABEL_ROLE_NAME: role.name,
+        LABEL_ROLE_NAME: clean(role.name),
         LABEL_REPLICA_ID: str(replica_id),
-        LABEL_KUBE_APP_NAME: app.name,
+        LABEL_KUBE_APP_NAME: clean(app.name),
         LABEL_ORGANIZATION: "torchx.pytorch.org",
-        LABEL_UNIQUE_NAME: app_id,
+        LABEL_UNIQUE_NAME: clean(app_id),
     }
