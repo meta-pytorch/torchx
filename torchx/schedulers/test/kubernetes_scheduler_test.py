@@ -21,17 +21,27 @@ from torchx import schedulers, specs
 from torchx.schedulers import kubernetes_scheduler
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse
 from torchx.schedulers.docker_scheduler import has_docker
+from torchx.schedulers.ids import make_unique
 from torchx.schedulers.kubernetes_scheduler import (
     app_to_resource,
     create_scheduler,
     KubernetesJob,
     KubernetesOpts,
     KubernetesScheduler,
+    LABEL_APP_NAME,
     LABEL_INSTANCE_TYPE,
+    LABEL_KUBE_APP_NAME,
+    LABEL_ORGANIZATION,
+    LABEL_REPLICA_ID,
+    LABEL_ROLE_INDEX,
+    LABEL_ROLE_NAME,
+    LABEL_UNIQUE_NAME,
+    LABEL_VERSION,
     PLACEHOLDER_FIELD_PATH,
     role_to_pod,
 )
 from torchx.specs import AppDryRunInfo, AppState
+from torchx.util.strings import normalize_str
 
 SKIP_DOCKER: bool = not has_docker()
 
@@ -311,7 +321,7 @@ spec:
           torchx.pytorch.org/replica-id: '0'
           torchx.pytorch.org/role-index: '0'
           torchx.pytorch.org/role-name: trainer_foo
-          torchx.pytorch.org/version: {torchx.__version__}
+          torchx.pytorch.org/version: {torchx.__version__.replace("+", ".")}
       spec:
         containers:
         - command:
@@ -1308,6 +1318,43 @@ spec:
 
         self.assertIn("Pod name", str(ctx.exception))
         self.assertIn("exceeds 63 character limit", str(ctx.exception))
+
+    def test_pod_label(self) -> None:
+        _UNUSED = "__UNUSED__"
+
+        app = specs.AppDef(
+            name="foo+bar",
+            roles=[specs.Role(name="a/b", image=_UNUSED)],
+        )
+        app_id = normalize_str(make_unique(app.name))
+        labels = kubernetes_scheduler.pod_labels(
+            app=app,
+            role_idx=0,
+            role=app.roles[0],
+            replica_id=1,
+            app_id=app_id,
+        )
+
+        self.assertDictEqual(
+            labels,
+            {
+                # torchx version complies with PEP-440
+                # while typically it is 0.x.x or 0.x.xdev0
+                # there could be org specific builds that are of the form
+                # 0.x.xdev0+org_name (e.g. 0.8.0dev0+fb)
+                # "+" is not a valid pod label char
+                # we expect that the version str would've been "cleaned"
+                # to replace invalid chars with "." (a valid char)
+                LABEL_VERSION: torchx.__version__.replace("+", "."),
+                LABEL_APP_NAME: "foo.bar",
+                LABEL_ROLE_INDEX: "0",
+                LABEL_ROLE_NAME: "a.b",
+                LABEL_REPLICA_ID: "1",
+                LABEL_KUBE_APP_NAME: "foo.bar",
+                LABEL_ORGANIZATION: "torchx.pytorch.org",
+                LABEL_UNIQUE_NAME: app_id,
+            },
+        )
 
 
 class KubernetesSchedulerNoImportTest(unittest.TestCase):
