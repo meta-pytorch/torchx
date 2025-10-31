@@ -800,11 +800,26 @@ spec:
             },
         )
 
-    @patch("kubernetes.client.CustomObjectsApi.delete_namespaced_custom_object")
-    def test_cancel_existing(self, delete_namespaced_custom_object: MagicMock) -> None:
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object")
+    @patch("kubernetes.client.CustomObjectsApi.replace_namespaced_custom_object_status")
+    def test_cancel_existing(
+        self,
+        replace_namespaced_custom_object_status: MagicMock,
+        get_namespaced_custom_object: MagicMock,
+    ) -> None:
         scheduler = create_scheduler("test")
+        get_namespaced_custom_object.return_value = {
+            "status": {"state": {"phase": "Running"}}
+        }
         scheduler._cancel_existing("testnamespace:testjob")
-        call = delete_namespaced_custom_object.call_args
+        get_namespaced_custom_object.assert_called_once_with(
+            group="batch.volcano.sh",
+            version="v1alpha1",
+            namespace="testnamespace",
+            plural="jobs",
+            name="testjob",
+        )
+        call = replace_namespaced_custom_object_status.call_args
         args, kwargs = call
         self.assertEqual(
             kwargs,
@@ -814,7 +829,24 @@ spec:
                 "namespace": "testnamespace",
                 "plural": "jobs",
                 "name": "testjob",
+                "body": {"status": {"state": {"phase": "Aborted"}}},
             },
+        )
+
+    @patch("kubernetes.client.CustomObjectsApi.delete_namespaced_custom_object")
+    @patch("torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.exists")
+    def test_delete(
+        self, exists: MagicMock, delete_namespaced_custom_object: MagicMock
+    ) -> None:
+        scheduler = create_scheduler("test")
+        exists.return_value = True
+        scheduler.delete("testnamespace:testjob")
+        delete_namespaced_custom_object.assert_called_once_with(
+            group="batch.volcano.sh",
+            version="v1alpha1",
+            namespace="testnamespace",
+            plural="jobs",
+            name="testjob",
         )
 
     @patch("kubernetes.client.CustomObjectsApi.list_namespaced_custom_object")
