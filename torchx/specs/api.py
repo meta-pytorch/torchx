@@ -6,6 +6,7 @@
 
 # pyre-strict
 
+import abc
 import asyncio
 import copy
 import inspect
@@ -17,6 +18,7 @@ import re
 import shutil
 import typing
 import warnings
+from abc import abstractmethod
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum, IntEnum
@@ -36,10 +38,12 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
+import parse
+
 from torchx.util.types import to_dict
+from typing_extensions import Self
 
 _APP_STATUS_FORMAT_TEMPLATE = """AppStatus:
     State: ${state}
@@ -877,11 +881,72 @@ class AppStatusError(Exception):
         self.status = status
 
 
-# valid run cfg values; only support primitives (str, int, float, bool, List[str], Dict[str, str])
+U = TypeVar("U", bound="StructuredRunOpt")
+
+
+class StructuredRunOpt(abc.ABC):
+    """
+    StructuredRunOpt is a class that represents a structured run option.
+    This is to allow for more complex types than currently supported.
+
+    Usage
+
+    .. doctest::
+        @dataclass
+        class Ulimit(StructuredRunOpt):
+            name: str
+            hard: int
+            soft: int
+
+            def template(self) -> str:
+                # The template string should contain the field names of the Ulimit object.
+                # Template strings also may need types as below where `:d` is for integer type.
+                return "{name},{soft:d},{hard:d}"
+
+        opts = runopts()
+        opts.add("ulimit", type_=self.Ulimit, help="ulimits for the container")
+
+        # .from_repr() is used to create a Ulimit object from a string representation that is the template.
+        cfg = opts.resolve(
+            {
+                "ulimit": self.Ulimit.from_repr(
+                    "test,50,100",
+                )
+            }
+        )
+
+    """
+
+    @abstractmethod
+    def template(self) -> str:
+        """
+        Returns the template string for the StructuredRunOpt.
+        These are mapped to the field names of the StructuredRunOpt object.
+        """
+        ...
+
+    def __repr__(self) -> str:
+        return self.template().format(**asdict(self))
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, type(self)) and asdict(self) == asdict(other)
+
+    @classmethod
+    def from_repr(cls, repr: str) -> Self:
+        """
+        Parses the repr string and returns a StructuredRunOpt object
+        """
+        tmpl = cls.__new__(cls).template()
+        result = parse.parse(tmpl, repr)
+        return cls(**result.named)
+
+
+# valid run cfg values; support primitives (str, int, float, bool, List[str], Dict[str, str])
+# And StructuredRunOpt Type for more complex types.
 # TODO(wilsonhong): python 3.9+ supports list[T] in typing, which can be used directly
 # in isinstance(). Should replace with that.
 # see: https://docs.python.org/3/library/stdtypes.html#generic-alias-type
-CfgVal = Union[str, int, float, bool, List[str], Dict[str, str], None]
+CfgVal = str | int | float | bool | List[str] | Dict[str, str] | StructuredRunOpt | None
 
 
 T = TypeVar("T")
