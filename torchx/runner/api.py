@@ -420,7 +420,7 @@ class Runner:
             scheduler,
             runcfg=json.dumps(cfg) if cfg else None,
             workspace=str(workspace),
-        ):
+        ) as ctx:
             sched = self._scheduler(scheduler)
             resolved_cfg = sched.run_opts().resolve(cfg)
 
@@ -450,6 +450,14 @@ class Runner:
             sched._validate(app, scheduler, resolved_cfg)
             dryrun_info = sched.submit_dryrun(app, resolved_cfg)
             dryrun_info._scheduler = scheduler
+
+            event = ctx._torchx_event
+            event.scheduler = scheduler
+            event.runcfg = json.dumps(cfg) if cfg else None
+            event.app_id = app.name
+            event.app_image = none_throws(dryrun_info._app).roles[0].image
+            event.app_metadata = app.metadata
+
             return dryrun_info
 
     def scheduler_run_opts(self, scheduler: str) -> runopts:
