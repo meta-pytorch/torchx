@@ -868,7 +868,7 @@
             <span class="n">scheduler</span><span class="p">,</span>
             <span class="n">runcfg</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span> <span class="k">if</span> <span class="n">cfg</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">workspace</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">workspace</span><span class="p">),</span>
-        <span class="p">):</span>
+        <span class="p">)</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
             <span class="n">sched</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span>
             <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="n">sched</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
@@ -898,6 +898,14 @@
             <span class="n">sched</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
             <span class="n">dryrun_info</span> <span class="o">=</span> <span class="n">sched</span><span class="o">.</span><span class="n">submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
             <span class="n">dryrun_info</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="n">scheduler</span>
+
+            <span class="n">event</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">_torchx_event</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">scheduler</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">runcfg</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span> <span class="k">if</span> <span class="n">cfg</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">app_id</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">app_image</span> <span class="o">=</span> <span class="n">none_throws</span><span class="p">(</span><span class="n">dryrun_info</span><span class="o">.</span><span class="n">_app</span><span class="p">)</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">image</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">app_metadata</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">metadata</span>
+
             <span class="k">return</span> <span class="n">dryrun_info</span></div>
 
 <div class="viewcode-block" id="Runner.scheduler_run_opts"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_run_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
