@@ -146,6 +146,7 @@ def python(
     memMB: int = 1024,
     h: Optional[str] = None,
     num_replicas: int = 1,
+    mounts: Optional[List[str]] = None,
 ) -> specs.AppDef:
     """
     Runs ``python`` with the specified module, command or script on the specified
@@ -168,6 +169,8 @@ def python(
         memMB: cpu memory in MB per replica
         h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)
         num_replicas: number of copies to run (each on its own container)
+        mounts: mounts to mount into the worker environment/container (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
+                See scheduler documentation for more info.
     :return:
     """
     if sum([m is not None, c is not None, script is not None]) != 1:
@@ -195,6 +198,7 @@ def python(
                 resource=specs.resource(cpu=cpu, gpu=gpu, memMB=memMB, h=h),
                 args=[*cmd, *args],
                 env={"HYDRA_MAIN_MODULE": m} if m else {},
+                mounts=specs.parse_mounts(mounts) if mounts else [],
             )
         ],
     )
@@ -238,7 +242,7 @@ def binary(
     )
 
 
-def copy(src: str, dst: str, image: str = torchx.IMAGE) -> specs.AppDef:
+def copy(src: str, dst: str, image: str = torchx.IMAGE, mounts: Optional[List[str]] = None,) -> specs.AppDef:
     """
     copy copies the file from src to dst. src and dst can be any valid fsspec
     url.
@@ -249,6 +253,8 @@ def copy(src: str, dst: str, image: str = torchx.IMAGE) -> specs.AppDef:
         src: the source fsspec file location
         dst: the destination fsspec file location
         image: the image that contains the copy app
+        mounts: mounts to mount into the worker environment/container (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
+                See scheduler documentation for more info.
     """
 
     return specs.AppDef(
@@ -267,6 +273,7 @@ def copy(src: str, dst: str, image: str = torchx.IMAGE) -> specs.AppDef:
                     dst,
                 ],
                 resource=specs.Resource(cpu=1, gpu=0, memMB=1024),
+                mounts=specs.parse_mounts(mounts) if mounts else [],
             ),
         ],
     )
