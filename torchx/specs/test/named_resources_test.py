@@ -8,7 +8,6 @@
 # pyre-strict
 
 
-import os
 import unittest
 from unittest.mock import MagicMock, patch
 
