@@ -587,6 +587,16 @@ class Runner:
             if status is not None and not status.is_terminal():
                 scheduler.cancel(app_id)
 
+    def delete(self, app_handle: AppHandle) -> None:
+        """
+        Deletes the application from the scheduler.
+        """
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(app_handle)
+        with log_event("delete", scheduler_backend, app_id):
+            status = self.status(app_handle)
+            if status is not None:
+                scheduler.delete(app_id)
+
     def stop(self, app_handle: AppHandle) -> None:
         """
         See method ``cancel``.

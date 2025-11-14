@@ -622,6 +622,16 @@ class KubernetesScheduler(
         $ torchx status kubernetes://torchx_user/1234
         ...
 
+    **Cancellation**
+
+    Canceling a job aborts it while preserving the job spec for inspection
+    and cloning via kubectl apply. Use the delete command to remove the job entirely:
+
+    .. code-block:: bash
+
+        $ torchx cancel kubernetes://namespace/jobname  # abort, preserves spec
+        $ torchx delete kubernetes://namespace/jobname  # delete completely
+
     **Config Options**
 
     .. runopts::
@@ -818,6 +828,31 @@ class KubernetesScheduler(
         pass
 
     def _cancel_existing(self, app_id: str) -> None:
+        """
+        Abort a Volcano job while preserving the spec for inspection.
+        """
+        namespace, name = app_id.split(":")
+        vcjob = self._custom_objects_api().get_namespaced_custom_object(
+            group="batch.volcano.sh",
+            version="v1alpha1",
+            namespace=namespace,
+            plural="jobs",
+            name=name,
+        )
+        vcjob["status"]["state"]["phase"] = "Aborted"
+        self._custom_objects_api().replace_namespaced_custom_object_status(
+            group="batch.volcano.sh",
+            version="v1alpha1",
+            namespace=namespace,
+            plural="jobs",
+            name=name,
+            body=vcjob,
+        )
+
+    def _delete_existing(self, app_id: str) -> None:
+        """
+        Delete a Volcano job completely from the cluster.
+        """
         namespace, name = app_id.split(":")
         self._custom_objects_api().delete_namespaced_custom_object(
             group="batch.volcano.sh",
