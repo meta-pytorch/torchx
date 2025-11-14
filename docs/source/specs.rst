@@ -52,6 +52,9 @@ Run Configs
 .. autoclass:: runopts
    :members:
 
+.. autoclass:: StructuredRunOpt
+   :members:
+
 Run Status
 --------------
 .. autoclass:: AppStatus

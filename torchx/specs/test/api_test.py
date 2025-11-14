@@ -14,7 +14,7 @@ import tempfile
 import time
 import unittest
 import warnings
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Mapping, Tuple, Union
 from unittest import mock
@@ -43,6 +43,7 @@ from torchx.specs.api import (
     RoleStatus,
     runopt,
     runopts,
+    StructuredRunOpt,
     TORCHX_HOME,
     Workspace,
 )
@@ -548,6 +549,56 @@ class AppDefTest(unittest.TestCase):
         app = AppDef(name="test_app", metadata={"test_key": "test_value"})
         self.assertEqual("test_value", app.metadata["test_key"])
         self.assertEqual(None, app.metadata.get("non_existent"))
+
+
+class StructuredRunOptTest(unittest.TestCase):
+
+    @dataclass
+    class UlimitTest(StructuredRunOpt):
+        name: str
+        hard: int
+        soft: int
+
+        def template(self) -> str:
+            return "{name},{soft},{hard}"
+
+    def test_structured_runopt(self) -> None:
+        opt = self.UlimitTest(name="test", hard=100, soft=50)
+
+        # Test class from_repr
+        self.assertEqual(
+            opt,
+            self.UlimitTest.from_repr(
+                "test,50,100",
+            ),
+        )
+
+        # Test repr
+        self.assertEqual(
+            "StructuredRunOptTest.UlimitTest(name='test', hard=100, soft=50)", repr(opt)
+        )
+
+        # Test equality
+        opt_other = self.UlimitTest(name="test", hard=100, soft=50)
+        self.assertEqual(opt, opt_other)
+        opt_other = self.UlimitTest(name="test", hard=100, soft=70)
+        self.assertNotEqual(opt, opt_other)
+
+        # Test with runopts
+
+        opts = runopts()
+        opts.add("ulimit", type_=self.UlimitTest, help="test ulimit")
+        cfg = opts.resolve(
+            {
+                "ulimit": self.UlimitTest.from_repr(
+                    "test,50,100",
+                )
+            }
+        )
+        self.assertEqual(
+            cfg.get("ulimit"),
+            self.UlimitTest(name="test", hard=100, soft=50),
+        )
 
 
 class RunConfigTest(unittest.TestCase):
