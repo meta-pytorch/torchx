@@ -361,6 +361,16 @@ class ResourceTest(unittest.TestCase):
         self.assertEqual(new_resource.capabilities["new_key"], "new_value")
         self.assertEqual(resource.capabilities["test_key"], "test_value")
 
+    def test_named_resources_iterator(self) -> None:
+        registered_named_resources = set()
+        for resource_name in named_resources:
+            # just make sure we can create the resource using the name
+            self.assertIsInstance(resource(h=resource_name), Resource)
+            registered_named_resources.add(resource_name)
+
+        # validate that the for-loop was not vacuous
+        self.assertTrue(registered_named_resources)
+
     def test_named_resources(self) -> None:
         self.assertEqual(
             named_resources_aws.aws_m5_2xlarge(), named_resources["aws_m5.2xlarge"]

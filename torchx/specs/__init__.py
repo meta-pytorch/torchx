@@ -14,7 +14,7 @@ scheduler or pipeline adapter.
 import difflib
 
 import os
-from typing import Callable, Dict, Mapping, Optional
+from typing import Callable, Dict, Iterator, Mapping, Optional
 
 from torchx.specs.api import (
     ALL,
@@ -113,8 +113,22 @@ class _NamedResourcesLibrary:
     def __contains__(self, key: str) -> bool:
         return key in _named_resource_factories
 
-    def __iter__(self) -> None:
-        raise NotImplementedError("named resources doesn't support iterating")
+    def __iter__(self) -> Iterator[str]:
+        """Iterates through the names of the registered named_resources.
+
+        Usage:
+
+        .. doctest::
+
+            from torchx import specs
+
+            for resource_name in specs.named_resources:
+                resource = specs.resource(h=resource_name)
+                assert isinstance(resource, specs.Resource)
+
+        """
+        for key in _named_resource_factories:
+            yield (key)
 
 
 named_resources: _NamedResourcesLibrary = _NamedResourcesLibrary()
