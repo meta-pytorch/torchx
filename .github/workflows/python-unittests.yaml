@@ -14,7 +14,7 @@ jobs:
         platform: [linux.24_04.4x]
         include:
           - python-version: 3.12
-            platform: macos-13-xlarge
+            platform: macos-15-xlarge
       fail-fast: false
     env:
       OS: ${{ matrix.platform }}
