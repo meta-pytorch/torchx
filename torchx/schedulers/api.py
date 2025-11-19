@@ -264,6 +264,46 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
             # do nothing if the app does not exist
             return
 
+    def delete(self, app_id: str) -> None:
+        """
+        Deletes the job information for the specified ``app_id`` from the
+        scheduler's data-plane. Basically "deep-purging" the job from the
+        scheduler's data-plane. Calling this API on a "live" job (e.g in a
+        non-terminal status such as PENDING or RUNNING) cancels the job.
+
+        Note that this API is only relevant for schedulers for which its
+        data-plane persistently stores the "JobDefinition" (which is often
+        versioned). AWS Batch and Kubernetes are examples of such schedulers.
+        On these schedulers, a finished job may fall out of the data-plane
+        (e.g. really old finished jobs get deleted) but the JobDefinition is
+        typically permanently stored. In this case, calling
+        :py:meth:`~cancel` would not delete the job definition.
+
+        In schedulers with no such feature (e.g. SLURM)
+        :py:meth:`~delete` is the same as :py:meth:`~cancel`, which is the
+        default implementation. Hence implementors of such schedulers need not
+        override this method.
+
+        .. warning::
+            Calling :py:meth:`~delete` on an ``app_id`` that has fallen out of
+            the scheduler's data-plane does nothing. The user is responsible for
+            manually tracking down and cleaning up any dangling resources related
+            to the job.
+        """
+        if self.exists(app_id):
+            self._delete_existing(app_id)
+
+    def _delete_existing(self, app_id: str) -> None:
+        """
+        Deletes the job information for the specified ``app_id`` from the
+        scheduler's data-plane. This method will only be called on an
+        application that exists.
+
+        The default implementation calls :py:meth:`~_cancel_existing` which is
+        appropriate for schedulers without persistent job definitions.
+        """
+        self._cancel_existing(app_id)
+
     def log_iter(
         self,
         app_id: str,
