@@ -1072,6 +1072,16 @@
 <span class="sd">        $ torchx status kubernetes://torchx_user/1234</span>
 <span class="sd">        ...</span>
 
+<span class="sd">    **Cancellation**</span>
+
+<span class="sd">    Canceling a job aborts it while preserving the job spec for inspection</span>
+<span class="sd">    and cloning via kubectl apply. Use the delete command to remove the job entirely:</span>
+
+<span class="sd">    .. code-block:: bash</span>
+
+<span class="sd">        $ torchx cancel kubernetes://namespace/jobname  # abort, preserves spec</span>
+<span class="sd">        $ torchx delete kubernetes://namespace/jobname  # delete completely</span>
+
 <span class="sd">    **Config Options**</span>
 
 <span class="sd">    .. runopts::</span>
@@ -1268,6 +1278,31 @@
         <span class="k">pass</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_cancel_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Abort a Volcano job while preserving the spec for inspection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="n">vcjob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_objects_api</span><span class="p">()</span><span class="o">.</span><span class="n">get_namespaced_custom_object</span><span class="p">(</span>
+            <span class="n">group</span><span class="o">=</span><span class="s2">&quot;batch.volcano.sh&quot;</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="s2">&quot;v1alpha1&quot;</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span>
+            <span class="n">plural</span><span class="o">=</span><span class="s2">&quot;jobs&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">vcjob</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">][</span><span class="s2">&quot;state&quot;</span><span class="p">][</span><span class="s2">&quot;phase&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Aborted&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_custom_objects_api</span><span class="p">()</span><span class="o">.</span><span class="n">replace_namespaced_custom_object_status</span><span class="p">(</span>
+            <span class="n">group</span><span class="o">=</span><span class="s2">&quot;batch.volcano.sh&quot;</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="s2">&quot;v1alpha1&quot;</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span>
+            <span class="n">plural</span><span class="o">=</span><span class="s2">&quot;jobs&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">body</span><span class="o">=</span><span class="n">vcjob</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_delete_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a Volcano job completely from the cluster.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_custom_objects_api</span><span class="p">()</span><span class="o">.</span><span class="n">delete_namespaced_custom_object</span><span class="p">(</span>
             <span class="n">group</span><span class="o">=</span><span class="s2">&quot;batch.volcano.sh&quot;</span><span class="p">,</span>

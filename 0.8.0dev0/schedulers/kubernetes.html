@@ -554,6 +554,13 @@ $<span class="w"> </span>torchx<span class="w"> </span>status<span class="w"> </
 ...
 </pre></div>
 </div>
+<p><strong>Cancellation</strong></p>
+<p>Canceling a job aborts it while preserving the job spec for inspection
+and cloning via kubectl apply. Use the delete command to remove the job entirely:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>torchx<span class="w"> </span>cancel<span class="w"> </span>kubernetes://namespace/jobname<span class="w">  </span><span class="c1"># abort, preserves spec</span>
+$<span class="w"> </span>torchx<span class="w"> </span>delete<span class="w"> </span>kubernetes://namespace/jobname<span class="w">  </span><span class="c1"># delete completely</span>
+</pre></div>
+</div>
 <p><strong>Config Options</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    usage:
         queue=QUEUE,[namespace=NAMESPACE],[service_account=SERVICE_ACCOUNT],[priority_class=PRIORITY_CLASS],[validate_spec=VALIDATE_SPEC],[image_repo=IMAGE_REPO],[quiet=QUIET]

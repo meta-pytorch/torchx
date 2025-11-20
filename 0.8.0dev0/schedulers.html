@@ -534,6 +534,33 @@ implement this method.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the job information for the specified <code class="docutils literal notranslate"><span class="pre">app_id</span></code> from the
+scheduler’s data-plane. Basically “deep-purging” the job from the
+scheduler’s data-plane. Calling this API on a “live” job (e.g in a
+non-terminal status such as PENDING or RUNNING) cancels the job.</p>
+<p>Note that this API is only relevant for schedulers for which its
+data-plane persistently stores the “JobDefinition” (which is often
+versioned). AWS Batch and Kubernetes are examples of such schedulers.
+On these schedulers, a finished job may fall out of the data-plane
+(e.g. really old finished jobs get deleted) but the JobDefinition is
+typically permanently stored. In this case, calling
+<a class="reference internal" href="#torchx.schedulers.Scheduler.cancel" title="torchx.schedulers.Scheduler.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a> would not delete the job definition.</p>
+<p>In schedulers with no such feature (e.g. SLURM)
+<a class="reference internal" href="#torchx.schedulers.Scheduler.delete" title="torchx.schedulers.Scheduler.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete()</span></code></a> is the same as <a class="reference internal" href="#torchx.schedulers.Scheduler.cancel" title="torchx.schedulers.Scheduler.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a>, which is the
+default implementation. Hence implementors of such schedulers need not
+override this method.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Calling <a class="reference internal" href="#torchx.schedulers.Scheduler.delete" title="torchx.schedulers.Scheduler.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete()</span></code></a> on an <code class="docutils literal notranslate"><span class="pre">app_id</span></code> that has fallen out of
+the scheduler’s data-plane does nothing. The user is responsible for
+manually tracking down and cleaning up any dangling resources related
+to the job.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="torchx.schedulers.Scheduler.describe">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">describe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.schedulers.api.DescribeAppResponse" title="torchx.schedulers.api.DescribeAppResponse"><span class="pre">DescribeAppResponse</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.describe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.describe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes the specified application.</p>

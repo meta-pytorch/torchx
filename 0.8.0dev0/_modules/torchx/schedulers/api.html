@@ -714,6 +714,46 @@
             <span class="c1"># do nothing if the app does not exist</span>
             <span class="k">return</span></div>
 
+<div class="viewcode-block" id="Scheduler.delete"><a class="viewcode-back" href="../../../schedulers.html#torchx.schedulers.Scheduler.delete">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes the job information for the specified ``app_id`` from the</span>
+<span class="sd">        scheduler&#39;s data-plane. Basically &quot;deep-purging&quot; the job from the</span>
+<span class="sd">        scheduler&#39;s data-plane. Calling this API on a &quot;live&quot; job (e.g in a</span>
+<span class="sd">        non-terminal status such as PENDING or RUNNING) cancels the job.</span>
+
+<span class="sd">        Note that this API is only relevant for schedulers for which its</span>
+<span class="sd">        data-plane persistently stores the &quot;JobDefinition&quot; (which is often</span>
+<span class="sd">        versioned). AWS Batch and Kubernetes are examples of such schedulers.</span>
+<span class="sd">        On these schedulers, a finished job may fall out of the data-plane</span>
+<span class="sd">        (e.g. really old finished jobs get deleted) but the JobDefinition is</span>
+<span class="sd">        typically permanently stored. In this case, calling</span>
+<span class="sd">        :py:meth:`~cancel` would not delete the job definition.</span>
+
+<span class="sd">        In schedulers with no such feature (e.g. SLURM)</span>
+<span class="sd">        :py:meth:`~delete` is the same as :py:meth:`~cancel`, which is the</span>
+<span class="sd">        default implementation. Hence implementors of such schedulers need not</span>
+<span class="sd">        override this method.</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">            Calling :py:meth:`~delete` on an ``app_id`` that has fallen out of</span>
+<span class="sd">            the scheduler&#39;s data-plane does nothing. The user is responsible for</span>
+<span class="sd">            manually tracking down and cleaning up any dangling resources related</span>
+<span class="sd">            to the job.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">app_id</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_delete_existing</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_delete_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes the job information for the specified ``app_id`` from the</span>
+<span class="sd">        scheduler&#39;s data-plane. This method will only be called on an</span>
+<span class="sd">        application that exists.</span>
+
+<span class="sd">        The default implementation calls :py:meth:`~_cancel_existing` which is</span>
+<span class="sd">        appropriate for schedulers without persistent job definitions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cancel_existing</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
+
 <div class="viewcode-block" id="Scheduler.log_iter"><a class="viewcode-back" href="../../../schedulers.html#torchx.schedulers.Scheduler.log_iter">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">log_iter</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
