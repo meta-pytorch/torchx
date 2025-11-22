@@ -20,7 +20,6 @@ import time
 from typing import Dict
 
 from pytorch_lightning.loggers.logger import Logger
-
 from pytorch_lightning.profilers.profiler import Profiler
 
 

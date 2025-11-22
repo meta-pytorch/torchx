@@ -12,7 +12,6 @@ from unittest import mock
 
 import mlflow
 from mlflow.utils.name_utils import _generate_random_name
-
 from torchx.distributed import init_pg, on_rank0_first, rank
 from torchx.test.fixtures import DistributedTestCase, IS_CI, IS_MACOS, TestWithTmpDir
 from torchx.tracker.mlflow import create_tracker, MLflowTracker

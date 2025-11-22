@@ -31,7 +31,6 @@ from torchx.cli.cmd_run import (
 )
 from torchx.runner.config import ENV_TORCHXCONFIG
 from torchx.schedulers.local_scheduler import SignalException
-
 from torchx.specs import AppDryRunInfo, CfgVal
 
 

@@ -16,7 +16,6 @@ import tempfile
 from typing import Dict, IO, Iterable, Mapping, Optional, TextIO, Tuple, TYPE_CHECKING
 
 import fsspec
-
 import torchx
 from docker.errors import BuildError
 from torchx.specs import AppDef, CfgVal, Role, runopts

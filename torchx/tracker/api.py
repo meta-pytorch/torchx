@@ -179,7 +179,7 @@ def _extract_tracker_name_and_config_from_environ() -> Mapping[str, Optional[str
 
 
 def build_trackers(
-    factory_and_config: Mapping[str, Optional[str]]
+    factory_and_config: Mapping[str, Optional[str]],
 ) -> Iterable[TrackerBase]:
     trackers = []
 
