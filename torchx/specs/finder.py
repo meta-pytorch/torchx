@@ -20,7 +20,6 @@ from types import ModuleType
 from typing import Callable, Dict, Generator, List, Optional, Union
 
 from torchx.specs import AppDef
-
 from torchx.specs.file_linter import (
     ComponentFunctionValidator,
     get_fn_docstring,

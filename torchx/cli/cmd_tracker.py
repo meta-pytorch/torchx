@@ -10,7 +10,6 @@ import argparse
 import logging
 
 from tabulate import tabulate
-
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner.api import get_configured_trackers
 from torchx.tracker.api import build_trackers, TrackerBase

@@ -55,7 +55,6 @@ from torchx.schedulers.ids import make_unique
 from torchx.schedulers.streams import Tee
 from torchx.specs import AppDryRunInfo
 from torchx.specs.api import AppDef, AppState, is_terminal, macros, NONE, Role, runopts
-
 from torchx.util.types import none_throws
 
 log: logging.Logger = logging.getLogger(__name__)

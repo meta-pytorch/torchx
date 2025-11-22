@@ -27,7 +27,6 @@ from torchx.util.log_tee_helpers import (
     _find_role_replicas as find_role_replicas,
     _prefix_line,
 )
-
 from torchx.util.types import none_throws
 
 logger: logging.Logger = logging.getLogger(__name__)

@@ -8,10 +8,8 @@
 
 import unittest
 from configparser import ConfigParser
-
 from importlib.metadata import EntryPoint
 from types import ModuleType
-
 from unittest.mock import MagicMock, patch
 
 from torchx.util.entrypoints import load, load_group

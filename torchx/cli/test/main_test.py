@@ -14,7 +14,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig
-
 from torchx.cli.cmd_base import SubCommand
 from torchx.cli.main import get_sub_cmds, main
 

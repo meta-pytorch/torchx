@@ -17,7 +17,6 @@ from typing import Dict, List, Optional
 from unittest.mock import patch
 
 from torchx.specs import AppDef
-
 from torchx.specs.file_linter import (
     get_fn_docstring,
     TorchXArgumentHelpFormatter,

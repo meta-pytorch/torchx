@@ -19,7 +19,6 @@ from typing import Callable, Dict, Iterable, List, TypeVar, Union
 
 from torch.distributed.elastic.multiprocessing import Std
 from torch.distributed.launcher import elastic_launch, LaunchConfig
-
 from torchx.schedulers.test import test_util
 
 IS_CI: bool = os.getenv("CI", "false").lower() == "true"
