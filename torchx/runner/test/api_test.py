@@ -14,6 +14,7 @@ from typing import cast, Generator, List, Mapping, Optional
 from unittest.mock import MagicMock, patch
 
 from torchx.runner import get_runner, Runner
+from torchx.runner.api import ComponentRunner
 from torchx.schedulers import SchedulerFactory
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Scheduler
 from torchx.schedulers.local_scheduler import (
@@ -789,3 +790,128 @@ class RunnerTest(TestWithTmpDir):
                     "enable=True,disable=False,complex_list=v1;v2;v3",
                 ),
             )
+
+
+class ComponentRunnerTest(TestWithTmpDir):
+    def setUp(self) -> None:
+        super().setUp()
+        self.mock_scheduler = MagicMock()
+        self.scheduler_factories = {"local": lambda name, **kwargs: self.mock_scheduler}
+        self.runner = Runner(
+            name=SESSION_NAME, scheduler_factories=self.scheduler_factories
+        )
+
+    def tearDown(self) -> None:
+        self.runner.close()
+        super().tearDown()
+
+    def test_component_runner_init(self) -> None:
+        component_defaults = {"test.component": {"arg1": "value1"}}
+        component_runner = ComponentRunner(
+            runner=self.runner, component_defaults=component_defaults
+        )
+
+        self.assertEqual(component_runner._runner, self.runner)
+        self.assertEqual(component_runner._component_defaults, component_defaults)
+
+    def test_component_runner_context_manager(self) -> None:
+        with ComponentRunner(runner=self.runner) as component_runner:
+            self.assertIsInstance(component_runner, ComponentRunner)
+            self.assertEqual(component_runner._runner, self.runner)
+
+    @patch("torchx.runner.api.get_component")
+    @patch("torchx.runner.api.materialize_appdef")
+    def test_component_runner_dryrun_component(
+        self, materialize_mock: MagicMock, get_component_mock: MagicMock
+    ) -> None:
+        mock_component_def = MagicMock()
+        mock_component_def.fn = MagicMock()
+        get_component_mock.return_value = mock_component_def
+
+        mock_app = AppDef(
+            "test_app",
+            roles=[
+                Role(
+                    name="test_role",
+                    image="test_image",
+                    resource=resource.SMALL,
+                    entrypoint="echo",
+                    args=["hello"],
+                )
+            ],
+        )
+        materialize_mock.return_value = mock_app
+
+        component_defaults = {"test.component": {"arg1": "default_value"}}
+        component_runner = ComponentRunner(
+            runner=self.runner, component_defaults=component_defaults
+        )
+
+        mock_dryrun_info = AppDryRunInfo(mock_app, lambda x: x)
+        with patch.object(self.runner, "dryrun", return_value=mock_dryrun_info):
+            component_args = ["--arg1", "value1"]
+            result = component_runner.dryrun_component(
+                component="test.component",
+                component_args=component_args,
+                scheduler="local",
+                cfg={"key": "value"},
+            )
+
+        get_component_mock.assert_called_once_with("test.component")
+
+        materialize_mock.assert_called_once_with(
+            mock_component_def.fn,
+            ["--arg1", "value1"],
+            {"arg1": "default_value"},
+            {},
+        )
+
+        self.assertEqual(result, mock_dryrun_info)
+
+    @patch("torchx.runner.api.log_event")
+    @patch("torchx.runner.api.get_component")
+    @patch("torchx.runner.api.materialize_appdef")
+    def test_component_runner_run_component(
+        self,
+        materialize_mock: MagicMock,
+        get_component_mock: MagicMock,
+        log_event_mock: MagicMock,
+    ) -> None:
+        mock_component_def = MagicMock()
+        mock_component_def.fn = MagicMock()
+        get_component_mock.return_value = mock_component_def
+
+        mock_app = AppDef(
+            "test_app",
+            roles=[
+                Role(
+                    name="test_role",
+                    image="test_image",
+                    resource=resource.SMALL,
+                    entrypoint="echo",
+                    args=["hello"],
+                )
+            ],
+        )
+        materialize_mock.return_value = mock_app
+
+        component_runner = ComponentRunner(runner=self.runner)
+
+        mock_dryrun_info = AppDryRunInfo(mock_app, lambda x: x)
+        mock_dryrun_info._scheduler = "local"
+        mock_dryrun_info._app = mock_app
+        mock_app_handle = "local://test_session/test_app_id"
+
+        mock_schedule = MagicMock(return_value=mock_app_handle)
+        with patch.object(
+            self.runner, "dryrun", return_value=mock_dryrun_info
+        ), patch.object(self.runner, "schedule", mock_schedule):
+            result = component_runner.run_component(
+                component="test.component",
+                component_args=["--arg1", "value1"],
+                scheduler="local",
+            )
+
+        self.assertEqual(result, mock_app_handle)
+
+        mock_schedule.assert_called_once_with(mock_dryrun_info)

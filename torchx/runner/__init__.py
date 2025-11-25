@@ -7,4 +7,9 @@
 
 # pyre-strict
 
-from torchx.runner.api import get_runner, Runner  # noqa: F401 F403
+from torchx.runner.api import (  # noqa: F401 F403
+    ComponentRunner,
+    get_component_runner,
+    get_runner,
+    Runner,
+)
