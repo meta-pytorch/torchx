@@ -35,12 +35,10 @@ from torchx.specs.api import (
 from torchx.workspace.api import WorkspaceMixin
 
 T = TypeVar("T")
-A = TypeVar("A")
-D = TypeVar("D")
 
 
 class SchedulerTest(unittest.TestCase):
-    class MockScheduler(Scheduler[T, A, D], WorkspaceMixin[None]):
+    class MockScheduler(Scheduler[T], WorkspaceMixin[None]):
         def __init__(self, session_name: str) -> None:
             super().__init__("mock", session_name)
 

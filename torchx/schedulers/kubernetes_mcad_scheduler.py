@@ -796,10 +796,7 @@ class KubernetesMCADOpts(TypedDict, total=False):
     network: Optional[str]
 
 
-class KubernetesMCADScheduler(
-    DockerWorkspaceMixin,
-    Scheduler[KubernetesMCADOpts, AppDef, AppDryRunInfo[KubernetesMCADJob]],
-):
+class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts]):
     """
     KubernetesMCADScheduler is a TorchX scheduling interface to Kubernetes.
 

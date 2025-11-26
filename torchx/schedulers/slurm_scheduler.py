@@ -335,9 +335,7 @@ fi
 {self.materialize()}"""
 
 
-class SlurmScheduler(
-    DirWorkspaceMixin, Scheduler[SlurmOpts, AppDef, AppDryRunInfo[SlurmBatchRequest]]
-):
+class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
     """
     SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects
     that slurm CLI tools are locally installed and job accounting is enabled.

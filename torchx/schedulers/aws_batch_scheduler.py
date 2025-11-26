@@ -381,7 +381,7 @@ def _thread_local_cache(f: Callable[[], T]) -> Callable[[], T]:
 
 
 @_thread_local_cache
-def _local_session() -> "boto3.session.Session":
+def _local_session() -> "boto3.session.Session":  # noqa: F821
     import boto3.session
 
     return boto3.session.Session()
@@ -399,9 +399,7 @@ class AWSBatchOpts(TypedDict, total=False):
     ulimits: Optional[list[str]]
 
 
-class AWSBatchScheduler(
-    DockerWorkspaceMixin, Scheduler[AWSBatchOpts, AppDef, AppDryRunInfo[BatchJob]]
-):
+class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
     """
     AWSBatchScheduler is a TorchX scheduling interface to AWS Batch.
 
