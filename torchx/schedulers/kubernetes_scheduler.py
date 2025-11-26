@@ -591,10 +591,7 @@ class KubernetesOpts(TypedDict, total=False):
     validate_spec: Optional[bool]
 
 
-class KubernetesScheduler(
-    DockerWorkspaceMixin,
-    Scheduler[KubernetesOpts, AppDef, AppDryRunInfo[KubernetesJob]],
-):
+class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
     """
     KubernetesScheduler is a TorchX scheduling interface to Kubernetes.
 

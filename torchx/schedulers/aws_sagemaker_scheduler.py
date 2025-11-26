@@ -157,7 +157,7 @@ def _merge_ordered(
 
 class AWSSageMakerScheduler(
     DockerWorkspaceMixin,
-    Scheduler[AWSSageMakerOpts, AppDef, AppDryRunInfo[AWSSageMakerJob]],
+    Scheduler[AWSSageMakerOpts],
 ):
     """
     AWSSageMakerScheduler is a TorchX scheduling interface to AWS SageMaker.

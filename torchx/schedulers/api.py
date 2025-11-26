@@ -11,10 +11,11 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Generic, Iterable, List, Optional, TypeVar, Union
+from typing import Generic, Iterable, List, Optional, TypeVar
 
 from torchx.specs import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     NONE,
     NULL_RESOURCE,
@@ -95,11 +96,9 @@ class ListAppResponse:
 
 
 T = TypeVar("T")
-A = TypeVar("A")
-D = TypeVar("D")
 
 
-class Scheduler(abc.ABC, Generic[T, A, D]):
+class Scheduler(abc.ABC, Generic[T]):
     """
     An interface abstracting functionalities of a scheduler.
     Implementers need only implement those methods annotated with
@@ -129,7 +128,7 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
 
     def submit(
         self,
-        app: A,
+        app: AppDef,
         cfg: T,
         workspace: str | Workspace | None = None,
     ) -> str:
@@ -157,7 +156,7 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         return self.schedule(dryrun_info)
 
     @abc.abstractmethod
-    def schedule(self, dryrun_info: D) -> str:
+    def schedule(self, dryrun_info: AppDryRunInfo) -> str:
         """
         Same as ``submit`` except that it takes an ``AppDryRunInfo``.
         Implementers are encouraged to implement this method rather than
@@ -173,7 +172,7 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
 
         raise NotImplementedError()
 
-    def submit_dryrun(self, app: A, cfg: T) -> D:
+    def submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
         """
         Rather than submitting the request to run the app, returns the
         request object that would have been submitted to the underlying
@@ -187,15 +186,15 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         # pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self._submit_dryrun(app, resolved_cfg)
 
-        if isinstance(app, AppDef):
-            for role in app.roles:
-                dryrun_info = role.pre_proc(self.backend, dryrun_info)
+        for role in app.roles:
+            dryrun_info = role.pre_proc(self.backend, dryrun_info)
+
         dryrun_info._app = app
         dryrun_info._cfg = resolved_cfg
         return dryrun_info
 
     @abc.abstractmethod
-    def _submit_dryrun(self, app: A, cfg: T) -> D:
+    def _submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
         raise NotImplementedError()
 
     def run_opts(self) -> runopts:
@@ -394,15 +393,12 @@ class Scheduler(abc.ABC, Generic[T, A, D]):
         """
         pass
 
-    def _validate(self, app: A, scheduler: str, cfg: T) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: T) -> None:
         """
         Validates after workspace build whether application is consistent with the scheduler.
 
         Raises error if application is not compatible with scheduler
         """
-        if not isinstance(app, AppDef):
-            return
-
         for role in app.roles:
             if role.resource == NULL_RESOURCE:
                 raise ValueError(

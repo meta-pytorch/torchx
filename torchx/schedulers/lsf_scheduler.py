@@ -394,7 +394,7 @@ class LsfBsub:
 {self.materialize()}"""
 
 
-class LsfScheduler(Scheduler[LsfOpts, AppDef, AppDryRunInfo]):
+class LsfScheduler(Scheduler[LsfOpts]):
     """
     **Example: hello_world**
 

@@ -529,7 +529,7 @@ def _register_termination_signals() -> None:
         signal.signal(signal.SIGINT, _terminate_process_handler)
 
 
-class LocalScheduler(Scheduler[LocalOpts, AppDef, AppDryRunInfo[PopenRequest]]):
+class LocalScheduler(Scheduler[LocalOpts]):
     """
     Schedules on localhost. Containers are modeled as processes and
     certain properties of the container that are either not relevant
