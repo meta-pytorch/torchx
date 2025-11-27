@@ -253,7 +253,9 @@ class macros:
                         current_dict[k] = self.substitute(v)
                     elif isinstance(v, list):
                         for i in range(len(v)):
-                            if isinstance(v[i], str):
+                            if isinstance(v[i], dict):
+                                stack.append(v[i])
+                            elif isinstance(v[i], str):
                                 v[i] = self.substitute(v[i])
             return d
 
