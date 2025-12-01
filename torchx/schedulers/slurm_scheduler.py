@@ -135,6 +135,7 @@ SBATCH_JOB_OPTIONS = {
     "comment",
     "mail-user",
     "mail-type",
+    "account",
 }
 SBATCH_GROUP_OPTIONS = {
     "partition",
@@ -159,6 +160,7 @@ def _apply_app_id_env(s: str) -> str:
 SlurmOpts = TypedDict(
     "SlurmOpts",
     {
+        "account": Optional[str],
         "partition": str,
         "time": str,
         "comment": Optional[str],
@@ -404,6 +406,12 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
 
     def _run_opts(self) -> runopts:
         opts = runopts()
+        opts.add(
+            "account",
+            type_=str,
+            help="The account to use for the slurm job.",
+            default=None,
+        )
         opts.add(
             "partition",
             type_=str,
