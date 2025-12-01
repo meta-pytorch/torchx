@@ -457,7 +457,7 @@ components on a Slurm cluster.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.slurm_scheduler.SlurmScheduler">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.slurm_scheduler.</span></span><span class="sig-name descname"><span class="pre">SlurmScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchx/schedulers/slurm_scheduler.html#SlurmScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.slurm_scheduler.SlurmScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">SlurmOpts</span></code>, <a class="reference internal" href="../specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code>[<a class="reference internal" href="#torchx.schedulers.slurm_scheduler.SlurmBatchRequest" title="torchx.schedulers.slurm_scheduler.SlurmBatchRequest"><code class="xref py py-class docutils literal notranslate"><span class="pre">SlurmBatchRequest</span></code></a>]]</p>
+<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">SlurmOpts</span></code>]</p>
 <p>SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects
 that slurm CLI tools are locally installed and job accounting is enabled.</p>
 <p>Each app def is scheduled using a heterogenous job via sbatch.
@@ -489,9 +489,11 @@ $<span class="w"> </span>less<span class="w"> </span>slurm-1234.out
 </div>
 <p><strong>Config Options</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    usage:
-        [partition=PARTITION],[time=TIME],[comment=COMMENT],[constraint=CONSTRAINT],[mail-user=MAIL-USER],[mail-type=MAIL-TYPE],[job_dir=JOB_DIR],[qos=QOS]
+        [account=ACCOUNT],[partition=PARTITION],[time=TIME],[comment=COMMENT],[constraint=CONSTRAINT],[mail-user=MAIL-USER],[mail-type=MAIL-TYPE],[job_dir=JOB_DIR],[qos=QOS]
 
     optional arguments:
+        account=ACCOUNT (str, None)
+            The account to use for the slurm job.
         partition=PARTITION (str, None)
             The partition to run the job in.
         time=TIME (str, None)

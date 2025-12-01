@@ -585,6 +585,7 @@
     <span class="s2">&quot;comment&quot;</span><span class="p">,</span>
     <span class="s2">&quot;mail-user&quot;</span><span class="p">,</span>
     <span class="s2">&quot;mail-type&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;account&quot;</span><span class="p">,</span>
 <span class="p">}</span>
 <span class="n">SBATCH_GROUP_OPTIONS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;partition&quot;</span><span class="p">,</span>
@@ -609,6 +610,7 @@
 <span class="n">SlurmOpts</span> <span class="o">=</span> <span class="n">TypedDict</span><span class="p">(</span>
     <span class="s2">&quot;SlurmOpts&quot;</span><span class="p">,</span>
     <span class="p">{</span>
+        <span class="s2">&quot;account&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -785,9 +787,7 @@
 <span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">materialize</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="SlurmScheduler"><a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span>
-    <span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">SlurmOpts</span><span class="p">,</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">]]</span>
-<span class="p">):</span>
+<div class="viewcode-block" id="SlurmScheduler"><a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">SlurmOpts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects</span>
 <span class="sd">    that slurm CLI tools are locally installed and job accounting is enabled.</span>
@@ -856,6 +856,12 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
         <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;account&quot;</span><span class="p">,</span>
+            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The account to use for the slurm job.&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
             <span class="s2">&quot;partition&quot;</span><span class="p">,</span>
             <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
