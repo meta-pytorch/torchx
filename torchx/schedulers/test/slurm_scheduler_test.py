@@ -700,6 +700,24 @@ JobID|JobName|Partition|Account|AllocCPUS|State|ExitCode
         "torchx.schedulers.slurm_scheduler.version",
         return_value=SLURM_VERSION_24_5,
     )
+    def test_account(self, mock_version: MagicMock) -> None:
+        scheduler = create_scheduler("foo")
+        app = simple_app()
+        info = scheduler.submit_dryrun(
+            app,
+            cfg={
+                "account": "foobar",
+            },
+        )
+        self.assertIn(
+            "--account=foobar",
+            info.request.cmd,
+        )
+
+    @patch(
+        "torchx.schedulers.slurm_scheduler.version",
+        return_value=SLURM_VERSION_24_5,
+    )
     def test_dryrun_mail(self, mock_version: MagicMock) -> None:
         scheduler = create_scheduler("foo")
         app = simple_app()

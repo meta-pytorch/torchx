@@ -159,7 +159,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
     def test_submit_dryrun_job_role_arn(self) -> None:
         cfg = AWSBatchOpts({"queue": "ignored_in_test", "job_role_arn": "fizzbuzz"})
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
-        # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertEqual(cfg["job_role_arn"], node_groups[0]["container"]["jobRoleArn"])
@@ -169,7 +168,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
             {"queue": "ignored_in_test", "execution_role_arn": "veryexecutive"}
         )
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
-        # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertEqual(
@@ -179,7 +177,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
     def test_submit_dryrun_privileged(self) -> None:
         cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
-        # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertTrue(node_groups[0]["container"]["privileged"])
@@ -189,7 +186,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=2, resource=resource)
         info = create_scheduler("test").submit_dryrun(app, cfg)
-        # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertEqual(
@@ -202,7 +198,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=1, resource=resource)
         info = create_scheduler("test").submit_dryrun(app, cfg)
-        # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertTrue("instanceType" in node_groups[0]["container"])
@@ -212,7 +207,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=2)
         info = create_scheduler("test").submit_dryrun(app, cfg)
-        # pyre-ignore[16]
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertTrue("instanceType" not in node_groups[0]["container"])
