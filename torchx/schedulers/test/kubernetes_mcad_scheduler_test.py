@@ -482,20 +482,19 @@ class KubernetesMCADSchedulerTest(unittest.TestCase):
         self.assertEqual("abcd1234", cleanup_str("1234abcd1234"))
 
     def test_get_unique_truncated_appid(self) -> None:
-        scheduler = create_scheduler("test")
         app = _test_app()
         app.name = "abcde"
-        self.assertEqual(20, len(get_unique_truncated_appid(app)))
+        self.assertLessEqual(len(get_unique_truncated_appid(app)), 20)
         self.assertIn(app.name, get_unique_truncated_appid(app))
 
         app.name = "abcdefghijklmnopqrstuvwxyz012345678910111213141516"
-        self.assertEqual(56, len(get_unique_truncated_appid(app)))
+        self.assertLessEqual(len(get_unique_truncated_appid(app)), 56)
         self.assertIn(app.name, get_unique_truncated_appid(app))
 
         app.name = (
             "abcdefghijklmnopqrstuvwxyz012345678910111213141516171819202122232425"
         )
-        self.assertEqual(59, len(get_unique_truncated_appid(app)))
+        self.assertLessEqual(len(get_unique_truncated_appid(app)), 59)
         self.assertIn(
             "abcdefghijklmnopqrstuvwxyz01234567891011121314151617181",
             get_unique_truncated_appid(app),

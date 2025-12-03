@@ -8,15 +8,27 @@
 # pyre-strict
 
 
+import typing
 import unittest
+from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
-from torchx.schedulers.ids import (
-    get_len_random_id,
-    make_unique,
-    random_id,
-    random_uint64,
-)
+from torchx.schedulers.ids import make_unique, random_id, random_uint64
+
+
+@contextmanager
+def scoped_random_seed(seed: int) -> typing.Generator[None, None, None]:
+    """
+    Temporarily set the random module's seed and restore its state afterward.
+    """
+    import random
+
+    state = random.getstate()
+    try:
+        random.seed(seed)
+        yield
+    finally:
+        random.setstate(state)
 
 
 class IdsTest(unittest.TestCase):
@@ -42,15 +54,34 @@ class IdsTest(unittest.TestCase):
         self.assertIn(v[0], ALPHAS)
         self.assertGreater(len(v), 5)
 
-    def test_get_len_random_id(self) -> None:
-        size = 6
-        self.assertNotEqual(get_len_random_id(size), get_len_random_id(size))
-        self.assertEqual(size, len(get_len_random_id(size)))
+    def test_random_id_max_length(self) -> None:
+        for max_length in range(6, 10):
+            with self.subTest(max_length=max_length):
+                self.assertLessEqual(len(random_id(max_length)), max_length)
+                self.assertNotEqual(random_id(max_length), random_id(max_length))
+
+    def test_random_id_zero_max_length(self) -> None:
+        self.assertEqual("", random_id(max_length=0))
 
     @patch("os.urandom", return_value=bytes(range(8)))
     def test_random_id_seed(self, urandom: MagicMock) -> None:
         self.assertEqual(random_id(), "fzfjxlmln9")
+        self.assertEqual(random_id(max_length=6), "fzfjxl")
 
     @patch("os.urandom", return_value=bytes(range(8)))
     def test_make_unique_seed(self, urandom: MagicMock) -> None:
         self.assertEqual(make_unique("test"), "test-fzfjxlmln9")
+
+    def test_make_unique_not_affected_by_random_seed(self) -> None:
+        # Seeding the Python random module should not affect make_unique(),
+        # which relies on os.urandom for entropy.
+        with scoped_random_seed(0):
+            v1 = make_unique("test")
+
+        with scoped_random_seed(0):
+            v2 = make_unique("test")
+
+        # Even with the same random seed, make_unique should produce different values.
+        self.assertNotEqual(v1, v2)
+        self.assertTrue(v1.startswith("test-"))
+        self.assertTrue(v2.startswith("test-"))
