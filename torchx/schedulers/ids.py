@@ -8,8 +8,8 @@
 # pyre-strict
 
 import os
-import random
 import struct
+
 
 START_CANDIDATES: str = "bcdfghjklmnpqrstvwxz"
 END_CANDIDATES: str = START_CANDIDATES + "012345679"
@@ -19,14 +19,19 @@ def make_unique(name: str, string_length: int = 0) -> str:
     """
     Appends a unique 64-bit string to the input argument.
 
+    Note that the unique string pulls entropy from `/dev/urandom` hence is not
+    affected by `random.seed()`
+
+    Args:
+        name: the name string to unique-ify
+        string_length: max length of the unique 64-bit string to append to the ``name``.
+          Default is 0, which returns the length of a randomly generated 64-bit string (typically 11-14 characters long).
+
     Returns:
-        string in format $name-$unique_suffix
+        string in format ``{name}-{unique_suffix}`
     """
-    return (
-        f"{name}-{random_id()}"
-        if string_length == 0
-        else f"{name}-{get_len_random_id(string_length)}"
-    )
+    max_length = None if string_length == 0 else string_length
+    return f"{name}-{random_id(max_length)}"
 
 
 def random_uint64() -> int:
@@ -36,13 +41,24 @@ def random_uint64() -> int:
     return struct.unpack("!Q", os.urandom(8))[0]
 
 
-def random_id() -> str:
+def random_id(max_length: int | None = None) -> str:
     """
     Generates an alphanumeric string ID that matches the requirements from
     https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+
+    Note that the unique string pulls entropy from `/dev/urandom` hence is not
+    affected by `random.seed()`
+
+    If ``max_length`` is provided, the returned ID will be at most that many characters long.
+
     """
+    # If a max_length is provided and is non-positive, return empty string
+    if max_length is not None and max_length <= 0:
+        return ""
+
     out = ""
     v = random_uint64()
+
     while v > 0:
         if out == "":
             candidates = START_CANDIDATES
@@ -52,21 +68,9 @@ def random_id() -> str:
         char = v % len(candidates)
         v = v // len(candidates)
         out += candidates[char]
-    return out
 
+        if max_length is not None and len(out) >= max_length:
+            break
 
-def get_len_random_id(string_length: int) -> str:
-    """
-    Generates an alphanumeric string ID that matches the requirements from
-    https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
-    """
-    out = ""
-    for i in range(string_length):
-        if out == "":
-            candidates = START_CANDIDATES
-        else:
-            candidates = END_CANDIDATES
-
-        out += random.choice(candidates)
-
+    # NOTE: statistically the length of `out` is typically between 12-14 characters long
     return out
