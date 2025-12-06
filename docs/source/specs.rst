@@ -46,6 +46,12 @@ Macros
 .. autoclass:: macros
    :members:
 
+Overlays
+------------
+.. automodule:: torchx.specs.overlays
+
+.. currentmodule:: torchx.specs.overlays
+
 
 Run Configs
 --------------
