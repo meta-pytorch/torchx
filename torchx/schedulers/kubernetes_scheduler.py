@@ -1022,8 +1022,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
                     except ApiException:
                         # Fallback to old behavior if pod not found
-                        normalized_task_name = normalize_str(pod_name_k8s)
-                        hostname = f"{normalized_task_name}.pod.cluster.local"
+                        hostname = ""
 
                     roles_statuses[role].replicas.append(
                         ReplicaStatus(

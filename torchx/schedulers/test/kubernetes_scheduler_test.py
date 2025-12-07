@@ -741,8 +741,15 @@ spec:
         second_call_kwargs = create_namespaced_custom_object.call_args_list[1][1]
         self.assertNotIn("dry_run", second_call_kwargs)
 
+    @patch("kubernetes.client.CoreV1Api.read_namespaced_pod")
     @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
-    def test_describe(self, get_namespaced_custom_object_status: MagicMock) -> None:
+    def test_describe(
+        self,
+        get_namespaced_custom_object_status: MagicMock,
+        read_namespaced_pod: MagicMock,
+    ) -> None:
+        from kubernetes.client.rest import ApiException
+
         get_namespaced_custom_object_status.return_value = {
             "status": {
                 "state": {"phase": "Completed"},
@@ -750,6 +757,8 @@ spec:
                 "taskStatusCount": {"echo-0": {"phase": {"Succeeded": 1}}},
             }
         }
+        # Simulate pod not found to trigger fallback to empty hostname
+        read_namespaced_pod.side_effect = ApiException(status=404, reason="Not Found")
         app_id = "testnamespace:testid"
         scheduler = create_scheduler("test")
         info = scheduler.describe(app_id)
@@ -785,6 +794,61 @@ spec:
                 ],
                 roles=[
                     specs.Role(name="echo", image="", num_replicas=1),
+                ],
+            ),
+        )
+
+    @patch("kubernetes.client.CoreV1Api.read_namespaced_pod")
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
+    def test_describe_with_pod_ip(
+        self,
+        get_namespaced_custom_object_status: MagicMock,
+        read_namespaced_pod: MagicMock,
+    ) -> None:
+        get_namespaced_custom_object_status.return_value = {
+            "status": {
+                "state": {"phase": "Running"},
+                "running": 1,
+                "taskStatusCount": {"worker-0": {"phase": {"Running": 1}}},
+            }
+        }
+        # Mock a pod with a valid IP address
+        mock_pod = MagicMock()
+        mock_pod.status.pod_ip = "10.244.1.5"
+        read_namespaced_pod.return_value = mock_pod
+
+        app_id = "testnamespace:testid"
+        scheduler = create_scheduler("test")
+        info = scheduler.describe(app_id)
+
+        # Verify the pod API was called with correct parameters
+        read_namespaced_pod.assert_called_once_with(
+            name="testid-worker-0-0", namespace="testnamespace"
+        )
+
+        # Verify hostname follows the spec: {pod-ip-dashed}.{namespace}.pod.cluster.local
+        # IP 10.244.1.5 should become 10-244-1-5
+        expected_hostname = "10-244-1-5.testnamespace.pod.cluster.local"
+        self.assertEqual(
+            info,
+            DescribeAppResponse(
+                app_id=app_id,
+                state=specs.AppState.RUNNING,
+                roles_statuses=[
+                    specs.RoleStatus(
+                        "worker",
+                        [
+                            specs.ReplicaStatus(
+                                id=0,
+                                role="worker",
+                                state=specs.AppState.RUNNING,
+                                hostname=expected_hostname,
+                            )
+                        ],
+                    ),
+                ],
+                roles=[
+                    specs.Role(name="worker", image="", num_replicas=1),
                 ],
             ),
         )
