@@ -294,7 +294,14 @@ def sanitize_for_serialization(obj: object) -> object:
     return api.sanitize_for_serialization(obj)
 
 
-def role_to_pod(name: str, role: Role, service_account: Optional[str]) -> "V1Pod":
+def role_to_pod(
+    name: str,
+    role: Role,
+    service_account: Optional[str],
+    reserved_millicpu: int = RESERVED_MILLICPU,
+    reserved_memmb: int = RESERVED_MEMMB,
+    efa_device_count: Optional[int] = None,
+) -> "V1Pod":
     from kubernetes.client.models import (  # noqa: F811 redefinition of unused
         V1Container,
         V1ContainerPort,
@@ -324,17 +331,28 @@ def role_to_pod(name: str, role: Role, service_account: Optional[str]) -> "V1Pod
     if resource.cpu > 0:
         mcpu = int(resource.cpu * 1000)
         limits["cpu"] = f"{mcpu}m"
-        request_mcpu = max(mcpu - RESERVED_MILLICPU, 0)
+        request_mcpu = max(mcpu - reserved_millicpu, 0)
         requests["cpu"] = f"{request_mcpu}m"
     if resource.memMB > 0:
         limits["memory"] = f"{int(resource.memMB)}M"
-        request_memMB = max(int(resource.memMB) - RESERVED_MEMMB, 0)
+        request_memMB = max(int(resource.memMB) - reserved_memmb, 0)
         requests["memory"] = f"{request_memMB}M"
     if resource.gpu > 0:
         requests["nvidia.com/gpu"] = limits["nvidia.com/gpu"] = str(resource.gpu)
 
+    EFA_DEVICE = "vpc.amazonaws.com/efa"
     for device_name, device_limit in resource.devices.items():
         limits[device_name] = str(device_limit)
+
+    # Handle EFA device count override:
+    # - None (default): use whatever count is in the resource spec (already added above)
+    # - 0: remove EFA devices entirely
+    # - N > 0: set EFA device count to N (override or add)
+    if efa_device_count is not None:
+        if efa_device_count == 0:
+            limits.pop(EFA_DEVICE, None)
+        else:
+            limits[EFA_DEVICE] = str(efa_device_count)
 
     resources = V1ResourceRequirements(
         limits=limits,
@@ -475,6 +493,9 @@ def app_to_resource(
     queue: str,
     service_account: Optional[str],
     priority_class: Optional[str] = None,
+    reserved_millicpu: int = RESERVED_MILLICPU,
+    reserved_memmb: int = RESERVED_MEMMB,
+    efa_device_count: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     app_to_resource creates a volcano job kubernetes resource definition from
@@ -507,7 +528,14 @@ def app_to_resource(
                 replica_role.env["TORCHX_RANK0_HOST"] = "localhost"
             replica_role.env["TORCHX_IMAGE"] = replica_role.image
 
-            pod = role_to_pod(name, replica_role, service_account)
+            pod = role_to_pod(
+                name,
+                replica_role,
+                service_account,
+                reserved_millicpu,
+                reserved_memmb,
+                efa_device_count,
+            )
             if k8s_metadata := role.metadata.get("kubernetes"):
                 if isinstance(k8s_metadata, str):
                     import fsspec
@@ -589,6 +617,9 @@ class KubernetesOpts(TypedDict, total=False):
     service_account: Optional[str]
     priority_class: Optional[str]
     validate_spec: Optional[bool]
+    reserved_millicpu: Optional[int]
+    reserved_memmb: Optional[int]
+    efa_device_count: Optional[int]
 
 
 class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
@@ -783,7 +814,26 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             priority_class, str
         ), "priority_class must be a str"
 
-        resource = app_to_resource(app, queue, service_account, priority_class)
+        reserved_millicpu = cfg.get("reserved_millicpu", RESERVED_MILLICPU)
+        assert isinstance(reserved_millicpu, int), "reserved_millicpu must be an int"
+
+        reserved_memmb = cfg.get("reserved_memmb", RESERVED_MEMMB)
+        assert isinstance(reserved_memmb, int), "reserved_memmb must be an int"
+
+        efa_device_count = cfg.get("efa_device_count")
+        assert efa_device_count is None or isinstance(
+            efa_device_count, int
+        ), "efa_device_count must be an int or None"
+
+        resource = app_to_resource(
+            app,
+            queue,
+            service_account,
+            priority_class,
+            reserved_millicpu,
+            reserved_memmb,
+            efa_device_count,
+        )
 
         if cfg.get("validate_spec"):
             try:
@@ -888,6 +938,25 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             type_=bool,
             help="Validate job spec using Kubernetes API dry-run before submission",
             default=True,
+        )
+        opts.add(
+            "reserved_millicpu",
+            type_=int,
+            help="Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)",
+            default=RESERVED_MILLICPU,
+        )
+        opts.add(
+            "reserved_memmb",
+            type_=int,
+            help="Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)",
+            default=RESERVED_MEMMB,
+        )
+        opts.add(
+            "efa_device_count",
+            type_=int,
+            help="EFA device count override: None/unset=use resource spec, "
+            "0=remove EFA, N>0=set EFA count to N",
+            default=None,
         )
         return opts
 
