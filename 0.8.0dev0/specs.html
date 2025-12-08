@@ -1029,6 +1029,79 @@ scheduler.</p>
 </dd></dl>
 
 </section>
+<section id="module-torchx.specs.overlays">
+<span id="overlays"></span><h2>Overlays<a class="headerlink" href="#module-torchx.specs.overlays" title="Permalink to this heading">¶</a></h2>
+<p>Overlays are JSON structs applied to <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> and <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a>
+to specify attributes of the scheduler’s submit-job request that are not currently representable
+as attributes of <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> and <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a>.</p>
+<p>For end-uses, here are a few use-cases of overlays:</p>
+<ol class="arabic simple">
+<li><p>A new version of the scheduler has concepts/features that have not yet been added to TorchX.</p></li>
+<li><p>A bespoke internal scheduler has custom features that do not generalize hence not in TorchX.</p></li>
+<li><p>Re-using a pre-built <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> but need to make a small change to the resulting scheduler request.</p></li>
+</ol>
+<p>And for scheduler authors:</p>
+<ol class="arabic simple">
+<li><p>Scheduler setting needs to be applied to a <code class="docutils literal notranslate"><span class="pre">Role</span></code>, which makes it hard to add as <code class="docutils literal notranslate"><span class="pre">runopts</span></code>
+since <code class="docutils literal notranslate"><span class="pre">runopts</span></code> apply at the <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> level.</p></li>
+<li><p>Scheduler setting cannot be represented naturally as the types supported by <code class="docutils literal notranslate"><span class="pre">runopts</span></code>.</p></li>
+<li><p>Exposing the setting as a <code class="docutils literal notranslate"><span class="pre">runopts</span></code> obfuscates things.</p></li>
+</ol>
+<p>See <a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> for rules on how overlays are applied.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.apply_overlay">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">apply_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#apply_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.apply_overlay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies <code class="docutils literal notranslate"><span class="pre">overlay</span></code> on <code class="docutils literal notranslate"><span class="pre">base</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>this function mutates the <code class="docutils literal notranslate"><span class="pre">base</span></code>!</p>
+</div>
+<p>Overlays follow these rules:</p>
+<ol class="arabic simple">
+<li><p>Dicts, upsert key, value in base with the ones in overlay.</p></li>
+<li><p>Nested dicts, overlay recursively.</p></li>
+<li><p>Lists, append the overlay values to the base values.</p></li>
+<li><p>Nested lists DO NOT append recursively.</p></li>
+<li><p>Primitives (bool, str, int, float), replace base with the value in overlay.</p></li>
+</ol>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go">from torchx.specs.overlays import apply_overlay</span>
+
+<span class="go">base = {</span>
+<span class="go">    &quot;scheduler&quot;: {&quot;policy&quot;: &quot;default&quot;},</span>
+<span class="go">    &quot;resources&quot;: {&quot;limits&quot;: {&quot;cpu&quot;: &quot;500m&quot;}},</span>
+<span class="go">    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;}],</span>
+<span class="go">    &quot;nodeSelectorTerms&quot;: [</span>
+<span class="go">        [{&quot;matchExpressions&quot;: []}]</span>
+<span class="go">    ],</span>
+<span class="go">    &quot;maxPods&quot;: 110,</span>
+<span class="go">}</span>
+<span class="go">overlay = {</span>
+<span class="go">    &quot;scheduler&quot;: {&quot;policy&quot;: &quot;binpacking&quot;},</span>
+<span class="go">    &quot;resources&quot;: {&quot;limits&quot;: {&quot;memory&quot;: &quot;1Gi&quot;}},</span>
+<span class="go">    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;spot&quot;}],</span>
+<span class="go">    &quot;nodeSelectorTerms&quot;: [</span>
+<span class="go">        [{&quot;matchExpressions&quot;: [{&quot;key&quot;: &quot;disk&quot;}]}]</span>
+<span class="go">    ],</span>
+<span class="go">    &quot;maxPods&quot;: 250,</span>
+<span class="go">}</span>
+
+<span class="go">apply_overlay(base, overlay)</span>
+
+<span class="go">assert {</span>
+<span class="go">    &quot;scheduler&quot;: {&quot;policy&quot;: &quot;binpacking&quot;},</span>
+<span class="go">    &quot;resources&quot;: {&quot;limits&quot;: {&quot;cpu&quot;: &quot;500m&quot;, &quot;memory&quot;: &quot;1Gi&quot;}},</span>
+<span class="go">    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;}, {&quot;key&quot;: &quot;spot&quot;}],</span>
+<span class="go">    &quot;nodeSelectorTerms&quot;: [</span>
+<span class="go">        [{&quot;matchExpressions&quot;: []}],</span>
+<span class="go">        [{&quot;matchExpressions&quot;: [{&quot;key&quot;: &quot;disk&quot;}]}],</span>
+<span class="go">    ],</span>
+<span class="go">    &quot;maxPods&quot;: 250,</span>
+<span class="go">} == base</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
 <section id="module-torchx.specs.file_linter">
 <span id="component-linter"></span><h2>Component Linter<a class="headerlink" href="#module-torchx.specs.file_linter" title="Permalink to this heading">¶</a></h2>
 <dl class="py function">
@@ -1229,6 +1302,7 @@ These functions do not have both required and default arguments.</p>
 <li><a class="reference internal" href="#run-configs">Run Configs</a></li>
 <li><a class="reference internal" href="#run-status">Run Status</a></li>
 <li><a class="reference internal" href="#mounts">Mounts</a></li>
+<li><a class="reference internal" href="#module-torchx.specs.overlays">Overlays</a></li>
 <li><a class="reference internal" href="#module-torchx.specs.file_linter">Component Linter</a></li>
 </ul>
 </li>

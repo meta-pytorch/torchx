@@ -46,7 +46,6 @@ Macros
 .. autoclass:: macros
    :members:
 
-
 Run Configs
 --------------
 .. autoclass:: runopts
@@ -78,6 +77,11 @@ Mounts
 .. autoclass:: DeviceMount
    :members:
 
+Overlays
+------------
+
+.. automodule:: torchx.specs.overlays
+   :members:
 
 Component Linter
 -----------------
