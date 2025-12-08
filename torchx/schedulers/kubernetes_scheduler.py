@@ -149,7 +149,6 @@ from torchx.specs.api import (
 from torchx.util.strings import normalize_str
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
-
 if TYPE_CHECKING:
     from docker import DockerClient
     from kubernetes.client import ApiClient, CustomObjectsApi
@@ -158,6 +157,7 @@ if TYPE_CHECKING:
         V1Pod,
     )
     from kubernetes.client.rest import ApiException
+
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -738,9 +738,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         if c is None:
             configuration = client.Configuration()
             try:
-                config.load_kube_config(client_configuration=configuration)
-            except config.ConfigException as e:
-                warnings.warn(f"failed to load kube config: {e}")
+                # Try in-cluster config first (for pods with ServiceAccount)
+                config.load_incluster_config(client_configuration=configuration)
+            except config.ConfigException:
+                # Fall back to kubeconfig (for local development)
+                try:
+                    config.load_kube_config(client_configuration=configuration)
+                except config.ConfigException as e:
+                    warnings.warn(f"failed to load kube config: {e}")
 
             c = self._client = client.ApiClient(configuration)
 
@@ -961,6 +966,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         return opts
 
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+        from kubernetes import client
         from kubernetes.client.rest import ApiException
 
         namespace, name = app_id.split(":")
@@ -986,8 +992,8 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             TASK_STATUS_COUNT = "taskStatusCount"
 
             if TASK_STATUS_COUNT in status:
-                for name, status in status[TASK_STATUS_COUNT].items():
-                    role, _, idx = name.rpartition("-")
+                for task_name, status in status[TASK_STATUS_COUNT].items():
+                    role, _, idx = task_name.rpartition("-")
 
                     state_str = next(iter(status["phase"].keys()))
                     state = TASK_STATE[state_str]
@@ -996,8 +1002,32 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
                         roles[role] = Role(name=role, num_replicas=0, image="")
                         roles_statuses[role] = RoleStatus(role, [])
                     roles[role].num_replicas += 1
+
+                    # Pod name follows the pattern: {job_name}-{task_name}-0
+                    # Get the pod to retrieve its IP address
+                    pod_name_k8s = f"{name}-{task_name}-0"
+                    try:
+                        core_api = client.CoreV1Api(self._api_client())
+                        pod = core_api.read_namespaced_pod(
+                            name=pod_name_k8s, namespace=namespace
+                        )
+                        pod_ip = pod.status.pod_ip
+
+                        # Convert IP to dashed format (e.g., 10.244.1.5 -> 10-244-1-5)
+                        pod_ip_dashed = pod_ip.replace(".", "-")
+
+                        # Kubernetes DNS = <pod-ip-dashed>.<namespace>.pod.cluster.local
+                        # Note: This will only be useful if the client using the IPs in in the cluster.
+                        hostname = f"{pod_ip_dashed}.{namespace}.pod.cluster.local"
+
+                    except ApiException:
+                        # Fallback to old behavior if pod not found
+                        hostname = ""
+
                     roles_statuses[role].replicas.append(
-                        ReplicaStatus(id=int(idx), role=role, state=state, hostname="")
+                        ReplicaStatus(
+                            id=int(idx), role=role, state=state, hostname=hostname
+                        )
                     )
         else:
             app_state = AppState.UNKNOWN
