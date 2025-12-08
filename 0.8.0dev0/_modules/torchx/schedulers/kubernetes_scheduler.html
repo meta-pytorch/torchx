@@ -744,7 +744,14 @@
     <span class="k">return</span> <span class="n">api</span><span class="o">.</span><span class="n">sanitize_for_serialization</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="role_to_pod"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.role_to_pod">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">role_to_pod</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span> <span class="n">service_account</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="role_to_pod"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.role_to_pod">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">role_to_pod</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
+    <span class="n">service_account</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">reserved_millicpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">RESERVED_MILLICPU</span><span class="p">,</span>
+    <span class="n">reserved_memmb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">RESERVED_MEMMB</span><span class="p">,</span>
+    <span class="n">efa_device_count</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes.client.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F811 redefinition of unused</span>
         <span class="n">V1Container</span><span class="p">,</span>
         <span class="n">V1ContainerPort</span><span class="p">,</span>
@@ -774,17 +781,28 @@
     <span class="k">if</span> <span class="n">resource</span><span class="o">.</span><span class="n">cpu</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">mcpu</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">cpu</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
         <span class="n">limits</span><span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mcpu</span><span class="si">}</span><span class="s2">m&quot;</span>
-        <span class="n">request_mcpu</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mcpu</span> <span class="o">-</span> <span class="n">RESERVED_MILLICPU</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">request_mcpu</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mcpu</span> <span class="o">-</span> <span class="n">reserved_millicpu</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">requests</span><span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">request_mcpu</span><span class="si">}</span><span class="s2">m&quot;</span>
     <span class="k">if</span> <span class="n">resource</span><span class="o">.</span><span class="n">memMB</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">limits</span><span class="p">[</span><span class="s2">&quot;memory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">memMB</span><span class="p">)</span><span class="si">}</span><span class="s2">M&quot;</span>
-        <span class="n">request_memMB</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">memMB</span><span class="p">)</span> <span class="o">-</span> <span class="n">RESERVED_MEMMB</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">request_memMB</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">memMB</span><span class="p">)</span> <span class="o">-</span> <span class="n">reserved_memmb</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="n">requests</span><span class="p">[</span><span class="s2">&quot;memory&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">request_memMB</span><span class="si">}</span><span class="s2">M&quot;</span>
     <span class="k">if</span> <span class="n">resource</span><span class="o">.</span><span class="n">gpu</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">requests</span><span class="p">[</span><span class="s2">&quot;nvidia.com/gpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">limits</span><span class="p">[</span><span class="s2">&quot;nvidia.com/gpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">gpu</span><span class="p">)</span>
 
+    <span class="n">EFA_DEVICE</span> <span class="o">=</span> <span class="s2">&quot;vpc.amazonaws.com/efa&quot;</span>
     <span class="k">for</span> <span class="n">device_name</span><span class="p">,</span> <span class="n">device_limit</span> <span class="ow">in</span> <span class="n">resource</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">limits</span><span class="p">[</span><span class="n">device_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">device_limit</span><span class="p">)</span>
+
+    <span class="c1"># Handle EFA device count override:</span>
+    <span class="c1"># - None (default): use whatever count is in the resource spec (already added above)</span>
+    <span class="c1"># - 0: remove EFA devices entirely</span>
+    <span class="c1"># - N &gt; 0: set EFA device count to N (override or add)</span>
+    <span class="k">if</span> <span class="n">efa_device_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">efa_device_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">limits</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">EFA_DEVICE</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">limits</span><span class="p">[</span><span class="n">EFA_DEVICE</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">efa_device_count</span><span class="p">)</span>
 
     <span class="n">resources</span> <span class="o">=</span> <span class="n">V1ResourceRequirements</span><span class="p">(</span>
         <span class="n">limits</span><span class="o">=</span><span class="n">limits</span><span class="p">,</span>
@@ -925,6 +943,9 @@
     <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">service_account</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">priority_class</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">reserved_millicpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">RESERVED_MILLICPU</span><span class="p">,</span>
+    <span class="n">reserved_memmb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">RESERVED_MEMMB</span><span class="p">,</span>
+    <span class="n">efa_device_count</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    app_to_resource creates a volcano job kubernetes resource definition from</span>
@@ -957,7 +978,14 @@
                 <span class="n">replica_role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;TORCHX_RANK0_HOST&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span>
             <span class="n">replica_role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;TORCHX_IMAGE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">replica_role</span><span class="o">.</span><span class="n">image</span>
 
-            <span class="n">pod</span> <span class="o">=</span> <span class="n">role_to_pod</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">replica_role</span><span class="p">,</span> <span class="n">service_account</span><span class="p">)</span>
+            <span class="n">pod</span> <span class="o">=</span> <span class="n">role_to_pod</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">replica_role</span><span class="p">,</span>
+                <span class="n">service_account</span><span class="p">,</span>
+                <span class="n">reserved_millicpu</span><span class="p">,</span>
+                <span class="n">reserved_memmb</span><span class="p">,</span>
+                <span class="n">efa_device_count</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">k8s_metadata</span> <span class="o">:=</span> <span class="n">role</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
@@ -1039,6 +1067,9 @@
     <span class="n">service_account</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">priority_class</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">validate_spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+    <span class="n">reserved_millicpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">reserved_memmb</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">efa_device_count</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="KubernetesScheduler"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KubernetesScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">KubernetesOpts</span><span class="p">]):</span>
@@ -1233,7 +1264,26 @@
             <span class="n">priority_class</span><span class="p">,</span> <span class="nb">str</span>
         <span class="p">),</span> <span class="s2">&quot;priority_class must be a str&quot;</span>
 
-        <span class="n">resource</span> <span class="o">=</span> <span class="n">app_to_resource</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">service_account</span><span class="p">,</span> <span class="n">priority_class</span><span class="p">)</span>
+        <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">,</span> <span class="n">RESERVED_MILLICPU</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_millicpu</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_millicpu must be an int&quot;</span>
+
+        <span class="n">reserved_memmb</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_memmb&quot;</span><span class="p">,</span> <span class="n">RESERVED_MEMMB</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_memmb</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_memmb must be an int&quot;</span>
+
+        <span class="n">efa_device_count</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;efa_device_count&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">efa_device_count</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">efa_device_count</span><span class="p">,</span> <span class="nb">int</span>
+        <span class="p">),</span> <span class="s2">&quot;efa_device_count must be an int or None&quot;</span>
+
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">app_to_resource</span><span class="p">(</span>
+            <span class="n">app</span><span class="p">,</span>
+            <span class="n">queue</span><span class="p">,</span>
+            <span class="n">service_account</span><span class="p">,</span>
+            <span class="n">priority_class</span><span class="p">,</span>
+            <span class="n">reserved_millicpu</span><span class="p">,</span>
+            <span class="n">reserved_memmb</span><span class="p">,</span>
+            <span class="n">efa_device_count</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;validate_spec&quot;</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1338,6 +1388,25 @@
             <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Validate job spec using Kubernetes API dry-run before submission&quot;</span><span class="p">,</span>
             <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">,</span>
+            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="n">RESERVED_MILLICPU</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;reserved_memmb&quot;</span><span class="p">,</span>
+            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="n">RESERVED_MEMMB</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;efa_device_count&quot;</span><span class="p">,</span>
+            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;EFA device count override: None/unset=use resource spec, &quot;</span>
+            <span class="s2">&quot;0=remove EFA, N&gt;0=set EFA count to N&quot;</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">opts</span>
 
