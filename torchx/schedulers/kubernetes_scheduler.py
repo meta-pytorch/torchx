@@ -738,9 +738,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         if c is None:
             configuration = client.Configuration()
             try:
-                config.load_kube_config(client_configuration=configuration)
-            except config.ConfigException as e:
-                warnings.warn(f"failed to load kube config: {e}")
+                # Try in-cluster config first (for pods with ServiceAccount)
+                config.load_incluster_config(client_configuration=configuration)
+            except config.ConfigException:
+                # Fall back to kubeconfig (for local development)
+                try:
+                    config.load_kube_config(client_configuration=configuration)
+                except config.ConfigException as e:
+                    warnings.warn(f"failed to load kube config: {e}", stacklevel=2)
 
             c = self._client = client.ApiClient(configuration)
 
