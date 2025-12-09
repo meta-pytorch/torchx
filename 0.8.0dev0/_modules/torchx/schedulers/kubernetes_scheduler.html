@@ -599,7 +599,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.strings</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_str</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
 
-
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">docker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerClient</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes.client</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApiClient</span><span class="p">,</span> <span class="n">CustomObjectsApi</span>
@@ -608,6 +607,7 @@
         <span class="n">V1Pod</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes.client.rest</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApiException</span>
+
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -1411,6 +1411,7 @@
         <span class="k">return</span> <span class="n">opts</span>
 
 <div class="viewcode-block" id="KubernetesScheduler.describe"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DescribeAppResponse</span><span class="p">]:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes</span><span class="w"> </span><span class="kn">import</span> <span class="n">client</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes.client.rest</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApiException</span>
 
         <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
@@ -1436,18 +1437,44 @@
             <span class="n">TASK_STATUS_COUNT</span> <span class="o">=</span> <span class="s2">&quot;taskStatusCount&quot;</span>
 
             <span class="k">if</span> <span class="n">TASK_STATUS_COUNT</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">status</span><span class="p">[</span><span class="n">TASK_STATUS_COUNT</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                    <span class="n">role</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">rpartition</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">task_name</span><span class="p">,</span> <span class="n">task_status</span> <span class="ow">in</span> <span class="n">status</span><span class="p">[</span><span class="n">TASK_STATUS_COUNT</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">role</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">task_name</span><span class="o">.</span><span class="n">rpartition</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
 
-                    <span class="n">state_str</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">status</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                    <span class="n">state_str</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">task_status</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
                     <span class="n">state</span> <span class="o">=</span> <span class="n">TASK_STATE</span><span class="p">[</span><span class="n">state_str</span><span class="p">]</span>
 
                     <span class="k">if</span> <span class="n">role</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">roles</span><span class="p">:</span>
                         <span class="n">roles</span><span class="p">[</span><span class="n">role</span><span class="p">]</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">num_replicas</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
                         <span class="n">roles_statuses</span><span class="p">[</span><span class="n">role</span><span class="p">]</span> <span class="o">=</span> <span class="n">RoleStatus</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="p">[])</span>
                     <span class="n">roles</span><span class="p">[</span><span class="n">role</span><span class="p">]</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                    <span class="c1"># Pod name follows the pattern: {job_name}-{task_name}-0</span>
+                    <span class="c1"># Get the pod to retrieve its IP address</span>
+                    <span class="n">pod_name_k8s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">task_name</span><span class="si">}</span><span class="s2">-0&quot;</span>
+                    <span class="n">hostname</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">core_api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">CoreV1Api</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_client</span><span class="p">())</span>
+                        <span class="n">pod</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod</span><span class="p">(</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">pod_name_k8s</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span>
+                        <span class="p">)</span>
+                        <span class="n">pod_ip</span> <span class="o">=</span> <span class="n">pod</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">pod_ip</span>
+
+                        <span class="k">if</span> <span class="n">pod_ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="c1"># Convert IP to dashed format (e.g., 10.244.1.5 -&gt; 10-244-1-5)</span>
+                            <span class="n">pod_ip_dashed</span> <span class="o">=</span> <span class="n">pod_ip</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+
+                            <span class="c1"># Kubernetes DNS = &lt;pod-ip-dashed&gt;.&lt;namespace&gt;.pod.cluster.local</span>
+                            <span class="c1"># Note: This will only be useful if the client using the IPs is in the cluster.</span>
+                            <span class="n">hostname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pod_ip_dashed</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">.pod.cluster.local&quot;</span>
+
+                    <span class="k">except</span> <span class="n">ApiException</span><span class="p">:</span>
+                        <span class="c1"># Pod not found - hostname remains empty</span>
+                        <span class="k">pass</span>
+
                     <span class="n">roles_statuses</span><span class="p">[</span><span class="n">role</span><span class="p">]</span><span class="o">.</span><span class="n">replicas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="n">ReplicaStatus</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                        <span class="n">ReplicaStatus</span><span class="p">(</span>
+                            <span class="nb">id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="n">hostname</span>
+                        <span class="p">)</span>
                     <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">app_state</span> <span class="o">=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">UNKNOWN</span>
