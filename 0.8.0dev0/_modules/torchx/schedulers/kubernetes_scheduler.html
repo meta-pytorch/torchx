@@ -1188,9 +1188,14 @@
         <span class="k">if</span> <span class="n">c</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">configuration</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Configuration</span><span class="p">()</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">load_kube_config</span><span class="p">(</span><span class="n">client_configuration</span><span class="o">=</span><span class="n">configuration</span><span class="p">)</span>
-            <span class="k">except</span> <span class="n">config</span><span class="o">.</span><span class="n">ConfigException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;failed to load kube config: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># Try in-cluster config first (for pods with ServiceAccount)</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">load_incluster_config</span><span class="p">(</span><span class="n">client_configuration</span><span class="o">=</span><span class="n">configuration</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">config</span><span class="o">.</span><span class="n">ConfigException</span><span class="p">:</span>
+                <span class="c1"># Fall back to kubeconfig (for local development)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">load_kube_config</span><span class="p">(</span><span class="n">client_configuration</span><span class="o">=</span><span class="n">configuration</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">config</span><span class="o">.</span><span class="n">ConfigException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;failed to load kube config: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
             <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ApiClient</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
 
