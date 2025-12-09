@@ -741,8 +741,13 @@ spec:
         second_call_kwargs = create_namespaced_custom_object.call_args_list[1][1]
         self.assertNotIn("dry_run", second_call_kwargs)
 
+    @patch("kubernetes.client.CoreV1Api")
     @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
-    def test_describe(self, get_namespaced_custom_object_status: MagicMock) -> None:
+    def test_describe(
+        self,
+        get_namespaced_custom_object_status: MagicMock,
+        mock_core_api_class: MagicMock,
+    ) -> None:
         get_namespaced_custom_object_status.return_value = {
             "status": {
                 "state": {"phase": "Completed"},
@@ -750,6 +755,13 @@ spec:
                 "taskStatusCount": {"echo-0": {"phase": {"Succeeded": 1}}},
             }
         }
+        # Mock the pod response with a pod IP
+        mock_pod = MagicMock()
+        mock_pod.status.pod_ip = "10.244.1.5"
+        mock_core_api_instance = MagicMock()
+        mock_core_api_instance.read_namespaced_pod.return_value = mock_pod
+        mock_core_api_class.return_value = mock_core_api_instance
+
         app_id = "testnamespace:testid"
         scheduler = create_scheduler("test")
         info = scheduler.describe(app_id)
@@ -778,7 +790,7 @@ spec:
                                 id=0,
                                 role="echo",
                                 state=specs.AppState.SUCCEEDED,
-                                hostname="",
+                                hostname="10-244-1-5.testnamespace.pod.cluster.local",
                             )
                         ],
                     ),
@@ -788,6 +800,77 @@ spec:
                 ],
             ),
         )
+
+    @patch("kubernetes.client.CoreV1Api")
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
+    def test_describe_pod_ip_not_assigned(
+        self,
+        get_namespaced_custom_object_status: MagicMock,
+        mock_core_api_class: MagicMock,
+    ) -> None:
+        """Test that describe() returns empty hostname if pod IP is not yet assigned."""
+        get_namespaced_custom_object_status.return_value = {
+            "status": {
+                "state": {"phase": "Pending"},
+                "succeeded": 0,
+                "taskStatusCount": {"echo-0": {"phase": {"Pending": 1}}},
+            }
+        }
+        # Mock the pod response - returns None for pod_ip
+        mock_pod_no_ip = MagicMock()
+        mock_pod_no_ip.status.pod_ip = None
+
+        mock_core_api_instance = MagicMock()
+        mock_core_api_instance.read_namespaced_pod.return_value = mock_pod_no_ip
+        mock_core_api_class.return_value = mock_core_api_instance
+
+        app_id = "testnamespace:testid"
+        scheduler = create_scheduler("test")
+
+        info = scheduler.describe(app_id)
+
+        # Should only call once (no retries)
+        self.assertEqual(mock_core_api_instance.read_namespaced_pod.call_count, 1)
+        # hostname should be empty since pod IP is not yet assigned
+        self.assertIsNotNone(info)
+        self.assertEqual(info.roles_statuses[0].replicas[0].hostname, "")
+
+    @patch("kubernetes.client.CoreV1Api")
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
+    def test_describe_pod_not_found(
+        self,
+        get_namespaced_custom_object_status: MagicMock,
+        mock_core_api_class: MagicMock,
+    ) -> None:
+        """Test that describe() returns empty hostname if pod is not found (ApiException)."""
+        from kubernetes.client.rest import ApiException
+
+        get_namespaced_custom_object_status.return_value = {
+            "status": {
+                "state": {"phase": "Running"},
+                "succeeded": 0,
+                "taskStatusCount": {"echo-0": {"phase": {"Running": 1}}},
+            }
+        }
+        # Mock the pod lookup to raise ApiException (pod not found)
+        mock_core_api_instance = MagicMock()
+        mock_core_api_instance.read_namespaced_pod.side_effect = ApiException(
+            status=404, reason="Not Found"
+        )
+        mock_core_api_class.return_value = mock_core_api_instance
+
+        app_id = "testnamespace:testid"
+        scheduler = create_scheduler("test")
+
+        info = scheduler.describe(app_id)
+
+        # Verify the pod lookup was attempted
+        self.assertEqual(mock_core_api_instance.read_namespaced_pod.call_count, 1)
+        # hostname should be empty since pod was not found
+        self.assertIsNotNone(info)
+        self.assertEqual(info.roles_statuses[0].replicas[0].hostname, "")
+        # App state should still be set correctly
+        self.assertEqual(info.state, specs.AppState.RUNNING)
 
     @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
     def test_describe_unknown(
