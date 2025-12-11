@@ -52,7 +52,6 @@ from torchx.tracker.api import (
     tracker_config_env_var_name,
 )
 from torchx.util.session import get_session_id_or_create_new, TORCHX_INTERNAL_SESSION_ID
-
 from torchx.util.types import none_throws
 from torchx.workspace import WorkspaceMixin
 

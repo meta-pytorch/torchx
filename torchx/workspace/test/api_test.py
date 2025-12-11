@@ -7,13 +7,11 @@
 # pyre-strict
 
 import shutil
-
 from pathlib import Path
 from typing import Mapping
 
 from torchx.specs import CfgVal, Role, Workspace
 from torchx.test.fixtures import TestWithTmpDir
-
 from torchx.workspace.api import WorkspaceMixin
 from typing_extensions import override
 

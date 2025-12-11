@@ -12,7 +12,6 @@ used by components to define the apps which can then be launched via a TorchX
 scheduler or pipeline adapter.
 """
 import difflib
-
 import os
 from typing import Callable, Dict, Iterator, Mapping, Optional
 
@@ -50,9 +49,7 @@ from torchx.specs.api import (
     Workspace,
 )
 from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
-
 from torchx.util.entrypoints import load_group
-
 from torchx.util.modules import import_attr
 
 GiB: int = 1024

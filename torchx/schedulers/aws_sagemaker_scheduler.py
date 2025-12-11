@@ -31,7 +31,6 @@ from typing import (
 
 import boto3
 import yaml
-
 from sagemaker.pytorch import PyTorch
 from torchx.components.structured_arg import StructuredNameArgument
 from torchx.schedulers.api import (

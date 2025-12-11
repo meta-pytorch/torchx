@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Mapping, Optional
 
 import fsspec
-
 from torchx.tracker.api import Lineage, TrackerArtifact, TrackerBase, TrackerSource
 
 

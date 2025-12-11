@@ -66,7 +66,6 @@ from torchx.schedulers.api import (
     Scheduler,
     Stream,
 )
-
 from torchx.schedulers.devices import get_device_mounts
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
@@ -188,7 +187,7 @@ def resource_requirements_from_resource(resource: Resource) -> List[Dict[str, st
 
 
 def resource_from_resource_requirements(
-    resource_requirements: List[Dict[str, str]]
+    resource_requirements: List[Dict[str, str]],
 ) -> Resource:
     resrc_req = {
         ResourceType.from_str(r["type"]): int(r["value"]) for r in resource_requirements
