@@ -17,7 +17,7 @@ pytest
 pytest-cov
 pytorch-lightning==2.5.0
 tensorboard==2.14.0
-sagemaker==2.230.0
+sagemaker==2.237.3
 torch-model-archiver>=0.4.2
 torch
 torchmetrics==1.6.3
