@@ -1144,6 +1144,25 @@ spec:
             },
         )
 
+    @patch("kubernetes.watch.Watch.stream")
+    def test_log_iter_tail(self, watch_stream: MagicMock) -> None:
+        scheduler = create_scheduler("test")
+        watch_stream.return_value = iter(["line1", "line2", "line3"])
+        lines = scheduler.log_iter(
+            app_id="testnamespace:testjob",
+            role_name="role_blah",
+            k=1,
+            should_tail=True,
+        )
+        self.assertEqual(
+            list(lines),
+            [
+                "line1\n",
+                "line2\n",
+                "line3\n",
+            ],
+        )
+
     def test_push_patches(self) -> None:
         # Configure mock to return proper response for schedule() call
         self.mock_create.return_value = {"metadata": {"name": "testjob"}}
