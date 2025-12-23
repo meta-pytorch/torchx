@@ -1073,7 +1073,10 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         core_api = client.CoreV1Api(self._api_client())
         if should_tail:
             w = watch.Watch()
-            iterator = w.stream(core_api.read_namespaced_pod_log, **args)
+            iterator = (
+                f"{line}\n"
+                for line in w.stream(core_api.read_namespaced_pod_log, **args)
+            )
         else:
             resp = core_api.read_namespaced_pod_log(**args)
             iterator = split_lines(resp)
