@@ -1523,7 +1523,10 @@
         <span class="n">core_api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">CoreV1Api</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_client</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">should_tail</span><span class="p">:</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">watch</span><span class="o">.</span><span class="n">Watch</span><span class="p">()</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">resp</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
             <span class="n">iterator</span> <span class="o">=</span> <span class="n">split_lines</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
