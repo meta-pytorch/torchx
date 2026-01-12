@@ -26,7 +26,6 @@ from torchx.tracker.api import (
     trackers_from_environ,
     TrackerSource,
 )
-
 from torchx.tracker.mlflow import MLflowTracker
 
 RunId = str
