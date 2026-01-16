@@ -803,6 +803,31 @@ spec:
 
     @patch("kubernetes.client.CoreV1Api")
     @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
+    def test_describe_completing_state(
+        self,
+        get_namespaced_custom_object_status: MagicMock,
+        mock_core_api_class: MagicMock,
+    ) -> None:
+        get_namespaced_custom_object_status.return_value = {
+            "status": {
+                "state": {"phase": "Completing"},
+                "taskStatusCount": {"echo-0": {"phase": {"Running": 1}}},
+            }
+        }
+        mock_pod = MagicMock()
+        mock_pod.status.pod_ip = "10.244.1.5"
+        mock_core_api_instance = MagicMock()
+        mock_core_api_instance.read_namespaced_pod.return_value = mock_pod
+        mock_core_api_class.return_value = mock_core_api_instance
+
+        app_id = "testnamespace:testid"
+        scheduler = create_scheduler("test")
+        info = scheduler.describe(app_id)
+        self.assertIsNotNone(info)
+        self.assertEqual(info.state, specs.AppState.RUNNING)
+
+    @patch("kubernetes.client.CoreV1Api")
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object_status")
     def test_describe_pod_ip_not_assigned(
         self,
         get_namespaced_custom_object_status: MagicMock,
