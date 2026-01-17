@@ -18,7 +18,6 @@ from torchx.cli.cmd_log import get_logs
 from torchx.components.integration_tests.component_provider import ComponentProvider
 from torchx.runner import get_runner
 from torchx.specs import AppHandle, AppState, AppStatus, CfgVal
-
 from torchx.util.types import none_throws
 
 

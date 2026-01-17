@@ -25,9 +25,7 @@ from types import ModuleType
 from typing import Any, Callable, Dict, Optional
 
 from torchx.runner import get_runner
-
 from torchx.specs import AppDef, AppStatus
-
 from torchx.specs.builders import _create_args_parser
 from torchx.specs.finder import get_component
 

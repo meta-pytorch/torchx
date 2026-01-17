@@ -7,7 +7,6 @@
 # pyre-strict
 
 import unittest
-
 from unittest.mock import MagicMock, patch
 
 import torchx
@@ -37,7 +36,6 @@ from torchx.specs import (
     Role,
     VolumeMount,
 )
-
 from torchx.util import shlex
 
 

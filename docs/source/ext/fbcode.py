@@ -9,7 +9,6 @@
 import os
 
 from docutils import nodes
-
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import nested_parse_with_titles

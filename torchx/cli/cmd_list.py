@@ -11,7 +11,6 @@ import argparse
 import logging
 
 from tabulate import tabulate
-
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner import get_runner
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
