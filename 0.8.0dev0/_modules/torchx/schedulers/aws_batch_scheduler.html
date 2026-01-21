@@ -516,7 +516,6 @@
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
 <span class="p">)</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.devices</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_mounts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -638,7 +637,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">resource_from_resource_requirements</span><span class="p">(</span>
-    <span class="n">resource_requirements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+    <span class="n">resource_requirements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
     <span class="n">resrc_req</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">ResourceType</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]):</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">resource_requirements</span>
