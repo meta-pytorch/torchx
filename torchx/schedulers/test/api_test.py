@@ -7,8 +7,10 @@
 
 # pyre-strict
 
+from __future__ import annotations
 
 import unittest
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, List, Mapping, Optional, TypeVar, Union
 from unittest.mock import MagicMock, patch
@@ -20,6 +22,7 @@ from torchx.schedulers.api import (
     split_lines,
     split_lines_iterator,
     Stream,
+    StructuredOpts,
 )
 from torchx.specs.api import (
     AppDef,
@@ -214,3 +217,209 @@ class SchedulerTest(unittest.TestCase):
                 "foobar",
             ],
         )
+
+
+# =============================================================================
+# Test dataclass for StructuredOpts tests
+# =============================================================================
+
+
+@dataclass
+class SampleOpts(StructuredOpts):
+    """Sample options for testing StructuredOpts base class."""
+
+    cluster_name: str
+    """Name of the cluster."""
+
+    num_retries: int = 3
+    """Number of retry attempts."""
+
+    enable_debug: bool = False
+    """Enable debug mode."""
+
+    optional_tag: str | None = None
+    """Optional tag for the job."""
+
+
+class StructuredOptsTest(unittest.TestCase):
+    """Tests for StructuredOpts base class functionality."""
+
+    # -------------------------------------------------------------------------
+    # snake_to_camel Tests
+    # -------------------------------------------------------------------------
+
+    def test_snake_to_camel(self) -> None:
+        """Test snake_case to camelCase conversion."""
+        self.assertEqual(StructuredOpts.snake_to_camel("cluster_name"), "clusterName")
+        self.assertEqual(StructuredOpts.snake_to_camel("num_retries"), "numRetries")
+        self.assertEqual(StructuredOpts.snake_to_camel("enable_debug"), "enableDebug")
+
+    def test_snake_to_camel_single_word(self) -> None:
+        """Test that single words are unchanged."""
+        self.assertEqual(StructuredOpts.snake_to_camel("name"), "name")
+        self.assertEqual(StructuredOpts.snake_to_camel("tags"), "tags")
+
+    # -------------------------------------------------------------------------
+    # from_cfg Tests
+    # -------------------------------------------------------------------------
+
+    def test_from_cfg_snake_case_keys(self) -> None:
+        """Test from_cfg accepts snake_case keys."""
+        cfg = {
+            "cluster_name": "test_cluster",
+            "num_retries": 5,
+            "enable_debug": True,
+        }
+        opts = SampleOpts.from_cfg(cfg)
+
+        self.assertEqual(opts.cluster_name, "test_cluster")
+        self.assertEqual(opts.num_retries, 5)
+        self.assertEqual(opts.enable_debug, True)
+
+    def test_from_cfg_camel_case_keys(self) -> None:
+        """Test from_cfg accepts camelCase keys as aliases."""
+        cfg = {
+            "clusterName": "test_cluster",
+            "numRetries": 5,
+            "enableDebug": True,
+        }
+        opts = SampleOpts.from_cfg(cfg)
+
+        self.assertEqual(opts.cluster_name, "test_cluster")
+        self.assertEqual(opts.num_retries, 5)
+        self.assertEqual(opts.enable_debug, True)
+
+    def test_from_cfg_snake_case_takes_precedence(self) -> None:
+        """Test that snake_case keys take precedence over camelCase."""
+        cfg = {
+            "cluster_name": "snake_value",
+            "clusterName": "camel_value",
+        }
+        opts = SampleOpts.from_cfg(cfg)
+
+        self.assertEqual(opts.cluster_name, "snake_value")
+
+    # -------------------------------------------------------------------------
+    # Mapping Protocol Tests
+    # -------------------------------------------------------------------------
+
+    def test_get(self) -> None:
+        """Test get() returns value or default."""
+        opts = SampleOpts(cluster_name="test")
+
+        self.assertEqual(opts.get("cluster_name"), "test")
+        self.assertEqual(opts.get("num_retries"), 3)
+        self.assertEqual(opts.get("nonexistent", "default"), "default")
+
+    def test_get_returns_default_for_none(self) -> None:
+        """Test get() returns default when value is None."""
+        opts = SampleOpts(cluster_name="test", optional_tag=None)
+
+        self.assertEqual(opts.get("optional_tag", "default"), "default")
+
+    def test_getitem(self) -> None:
+        """Test __getitem__ returns value or raises KeyError."""
+        opts = SampleOpts(cluster_name="test")
+
+        self.assertEqual(opts["cluster_name"], "test")
+        with self.assertRaises(KeyError):
+            _ = opts["nonexistent"]
+
+    def test_len(self) -> None:
+        """Test __len__ returns number of fields."""
+        opts = SampleOpts(cluster_name="test")
+        self.assertEqual(len(opts), 4)
+
+    def test_iter(self) -> None:
+        """Test __iter__ yields field names."""
+        opts = SampleOpts(cluster_name="test")
+        field_names = list(opts)
+
+        self.assertEqual(
+            field_names, ["cluster_name", "num_retries", "enable_debug", "optional_tag"]
+        )
+
+    def test_contains(self) -> None:
+        """Test __contains__ checks for field existence."""
+        opts = SampleOpts(cluster_name="test")
+
+        self.assertIn("cluster_name", opts)
+        self.assertIn("num_retries", opts)
+        self.assertNotIn("nonexistent", opts)
+
+    # -------------------------------------------------------------------------
+    # as_runopts Tests
+    # -------------------------------------------------------------------------
+
+    def test_as_runopts_returns_runopts(self) -> None:
+        """Test as_runopts returns a runopts instance."""
+        opts = SampleOpts.as_runopts()
+        self.assertIsInstance(opts, runopts)
+
+    def test_as_runopts_includes_required_fields(self) -> None:
+        """Test as_runopts includes required fields marked as required."""
+        opts = SampleOpts.as_runopts()
+
+        cluster_name_opt = opts.get("cluster_name")
+        self.assertIsNotNone(cluster_name_opt)
+        self.assertTrue(cluster_name_opt.is_required)
+
+    def test_as_runopts_includes_optional_fields_with_defaults(self) -> None:
+        """Test as_runopts includes optional fields with their defaults."""
+        opts = SampleOpts.as_runopts()
+
+        num_retries_opt = opts.get("num_retries")
+        self.assertIsNotNone(num_retries_opt)
+        self.assertFalse(num_retries_opt.is_required)
+        self.assertEqual(num_retries_opt.default, 3)
+
+        enable_debug_opt = opts.get("enable_debug")
+        self.assertIsNotNone(enable_debug_opt)
+        self.assertFalse(enable_debug_opt.is_required)
+        self.assertEqual(enable_debug_opt.default, False)
+
+    def test_as_runopts_generates_camelcase_aliases(self) -> None:
+        """Test as_runopts generates camelCase aliases for snake_case fields."""
+        opts = SampleOpts.as_runopts()
+
+        # Check that camelCase alias resolves to the option
+        cluster_name_opt = opts.get("clusterName")
+        self.assertIsNotNone(cluster_name_opt)
+
+        num_retries_opt = opts.get("numRetries")
+        self.assertIsNotNone(num_retries_opt)
+
+    def test_as_runopts_resolve_accepts_aliases_and_adds_defaults(self) -> None:
+        """Test runopts.resolve() accepts alias keys and adds defaults."""
+        opts = SampleOpts.as_runopts()
+
+        # Pass cfg with camelCase keys (aliases)
+        cfg_with_aliases = {
+            "clusterName": "foo",
+        }
+
+        # resolve() should not raise - aliases are valid
+        resolved_cfg = opts.resolve(cfg_with_aliases)
+
+        # Default values are added with canonical (snake_case) keys
+        self.assertIn("num_retries", resolved_cfg)
+        self.assertEqual(resolved_cfg["num_retries"], 3)
+
+        # SampleOpts.from_cfg() works with resolved cfg containing alias keys
+        sample_opts = SampleOpts.from_cfg(resolved_cfg)
+        self.assertEqual(sample_opts.cluster_name, "foo")
+        self.assertEqual(sample_opts.num_retries, 3)
+
+    # -------------------------------------------------------------------------
+    # get_docstrings Tests
+    # -------------------------------------------------------------------------
+
+    def test_get_docstrings(self) -> None:
+        """Test get_docstrings extracts field docstrings."""
+        docstrings = SampleOpts.get_docstrings()
+
+        self.assertIn("cluster_name", docstrings)
+        self.assertEqual(docstrings["cluster_name"], "Name of the cluster.")
+
+        self.assertIn("num_retries", docstrings)
+        self.assertEqual(docstrings["num_retries"], "Number of retry attempts.")
