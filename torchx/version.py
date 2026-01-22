@@ -6,7 +6,7 @@
 
 # pyre-strict
 
-from torchx._version import BASE_VERSION
+from torchx._version import VERSION
 from torchx.util.entrypoints import load
 
 # Follows PEP-0440 version scheme guidelines
@@ -18,7 +18,7 @@ from torchx.util.entrypoints import load
 # 0.1.0bN  # Beta release
 # 0.1.0rcN  # Release Candidate
 # 0.1.0  # Final release
-__version__: str = BASE_VERSION
+__version__: str = VERSION
 
 
 # Use the github container registry images corresponding to the current package

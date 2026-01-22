@@ -5,7 +5,4 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-
-from torchx._base_version import BASE_VERSION
-
-VERSION: str = BASE_VERSION
+BASE_VERSION = "0.8.0dev0"
