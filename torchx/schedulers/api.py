@@ -6,17 +6,32 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import abc
+import inspect
 import re
-from dataclasses import dataclass, field
+from collections.abc import Iterator, Mapping
+from dataclasses import dataclass, field, fields, MISSING
 from datetime import datetime
 from enum import Enum
-from typing import Generic, Iterable, List, Optional, TypeVar
+from typing import (
+    Generic,
+    get_args,
+    get_origin,
+    get_type_hints,
+    Iterable,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from torchx.specs import (
     AppDef,
     AppDryRunInfo,
     AppState,
+    CfgVal,
     NONE,
     NULL_RESOURCE,
     Role,
@@ -25,9 +40,202 @@ from torchx.specs import (
     Workspace,
 )
 from torchx.workspace import WorkspaceMixin
+from typing_extensions import Self
 
 
 DAYS_IN_2_WEEKS = 14
+
+
+# =============================================================================
+# STRUCTURED OPTIONS BASE CLASS
+# =============================================================================
+
+_CfgValType = TypeVar("_CfgValType", bound=CfgVal)
+
+
+class StructuredOpts:
+    """Base class for typed scheduler configuration options.
+
+    Provides a type-safe way to define scheduler run options as dataclass fields
+    instead of manually building :py:class:`~torchx.specs.runopts`. Subclasses
+    should be ``@dataclass`` decorated with fields representing config options.
+
+    Features:
+        - Auto-generates ``runopts`` from dataclass fields via :py:meth:`as_runopts`
+        - Parses raw config dicts into typed instances via :py:meth:`from_cfg`
+        - Supports snake_case field names with camelCase aliases
+        - Extracts help text from field docstrings
+
+    Example:
+        .. doctest::
+
+            >>> from dataclasses import dataclass
+            >>> from torchx.schedulers.api import StructuredOpts
+            >>>
+            >>> @dataclass
+            ... class MyOpts(StructuredOpts):
+            ...     cluster_name: str
+            ...     '''Name of the cluster to submit to.'''
+            ...
+            ...     num_retries: int = 3
+            ...     '''Number of retry attempts.'''
+            ...
+            >>> # Use in scheduler:
+            >>> # def _run_opts(self) -> runopts:
+            >>> #     return MyOpts.as_runopts()
+            >>> #
+            >>> # def _submit_dryrun(self, app, cfg):
+            >>> #     opts = MyOpts.from_cfg(cfg)
+            >>> #     # opts.cluster_name, opts.num_retries are typed
+
+    """
+
+    @staticmethod
+    def snake_to_camel(name: str) -> str:
+        """Convert snake_case to camelCase."""
+        components = name.split("_")
+        return components[0] + "".join(x.title() for x in components[1:])
+
+    @classmethod
+    def from_cfg(cls, cfg: Mapping[str, CfgVal]) -> Self:
+        """Create an instance from a raw config dict.
+
+        Fields are snake_case but also accept camelCase aliases (e.g.,
+        ``hpc_identity`` can be set via ``hpcIdentity``).
+        """
+        kwargs = {}
+        for f in fields(cls):
+            name = f.name
+            # Check for snake_case key first, then camelCase alias
+            if name in cfg:
+                kwargs[name] = cfg[name]
+            else:
+                camel_case = cls.snake_to_camel(name)
+                if camel_case in cfg:
+                    kwargs[name] = cfg[camel_case]
+        return cls(**kwargs)
+
+    # -------------------------------------------------------------------------
+    # Mapping Protocol Methods (for backwards compatibility)
+    #
+    # These methods allow StructuredOpts instances to be used in places that
+    # expect a dict-like interface (e.g., plugins that do cfg.get("key") or
+    # cfg["key"]). Once all plugins are migrated to use typed field access
+    # (e.g., cfg.field_name), these methods can be removed.
+    #
+    # TODO(T252193642): Remove these methods after migrating plugins to use
+    # StructuredOpts field access instead of dict-like access.
+    # -------------------------------------------------------------------------
+
+    def get(self, key: str, default: _CfgValType = None) -> _CfgValType:
+        """Get a config value by key, returning default if not found or None."""
+        if hasattr(self, key):
+            value = getattr(self, key)
+            return value if value is not None else default
+        return default
+
+    def __getitem__(self, key: str) -> CfgVal:
+        """Get a config value by key. Raises KeyError if not found."""
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def __len__(self) -> int:
+        """Return the number of config fields."""
+        return len(fields(self))
+
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over config field names."""
+        for f in fields(self):
+            yield f.name
+
+    def __contains__(self, key: object) -> bool:
+        """Check if a config key exists."""
+        return hasattr(self, str(key)) if isinstance(key, str) else False
+
+    @classmethod
+    def get_docstrings(cls) -> dict[str, str]:
+        """Parse source code to extract attribute docstrings."""
+        docstrings: dict[str, str] = {}
+        try:
+            source = inspect.getsource(cls)
+        except (OSError, TypeError):
+            return docstrings
+
+        # Pattern to match: field_name: type = value (optional) followed by docstring
+        # Captures: field name, then the triple-quoted docstring on the next line
+        pattern = re.compile(
+            r'^\s+(\w+):\s*[^\n]+\n\s+"""([^"]+)"""',
+            re.MULTILINE,
+        )
+        for match in pattern.finditer(source):
+            field_name = match.group(1)
+            docstring = match.group(2).strip()
+            docstrings[field_name] = docstring
+
+        return docstrings
+
+    @classmethod
+    def as_runopts(cls) -> runopts:
+        """Build :py:class:`~torchx.specs.runopts` from dataclass fields."""
+        opts = runopts()
+
+        # Get resolved type hints (handles string annotations from __future__.annotations)
+        type_hints = get_type_hints(cls)
+        # Get field docstrings parsed from source code
+        docstrings = cls.get_docstrings()
+
+        for f in fields(cls):
+            name = f.name
+
+            # Generate camelCase alias for snake_case field names
+            camel_case = cls.snake_to_camel(name)
+            if camel_case != name:
+                aliases = [camel_case]
+            else:
+                aliases = None
+
+            # Get help text from field docstring
+            help_text = docstrings.get(name, name)
+
+            # Get type: extract base type from Union (e.g., int | None -> int)
+            field_type = type_hints.get(name, str)
+            origin = get_origin(field_type)
+            if origin is Union:
+                # For Union[X, None], get the non-None type
+                args = [a for a in get_args(field_type) if a is not type(None)]
+                field_type = args[0] if args else str
+            type_ = field_type
+
+            # Get default value
+            has_default = f.default is not MISSING
+            has_default_factory = f.default_factory is not MISSING
+            if has_default:
+                default = f.default
+            elif has_default_factory:
+                default = None  # Don't call factory, just indicate no default
+            else:
+                default = None
+
+            # Determine if required (no default value)
+            required = not has_default and not has_default_factory
+
+            # Add the option
+            opts.add(
+                name,
+                aliases=aliases,
+                type_=type_,
+                default=default,
+                required=required,
+                help=help_text,
+            )
+
+        return opts
+
+
+# =============================================================================
+# STREAM AND RESPONSE TYPES
+# =============================================================================
 
 
 class Stream(str, Enum):
@@ -111,7 +319,7 @@ class Scheduler(abc.ABC, Generic[T]):
 
     def close(self) -> None:
         """
-        Only for schedulers that have local state! Closes the scheduler
+        Only for schedulers th118at have local state! Closes the scheduler
         freeing any allocated resources. Once closed, the scheduler object
         is deemed to no longer be valid and any method called on the object
         results in undefined behavior.

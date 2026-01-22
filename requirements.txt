@@ -4,3 +4,4 @@ docker
 filelock
 fsspec>=2023.10.0
 tabulate
+typing-extensions
