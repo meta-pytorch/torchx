@@ -10,7 +10,7 @@
 import os
 from datetime import datetime
 from io import StringIO
-from typing import Dict, Iterable, List, Mapping, Optional
+from typing import Dict, Iterable, List, Mapping
 from unittest.mock import patch
 
 from torchx.runner.config import (
@@ -39,7 +39,7 @@ class TestScheduler(Scheduler):
     def _submit_dryrun(self, app: AppDef, cfg: Mapping[str, CfgVal]) -> AppDryRunInfo:
         raise NotImplementedError()
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         raise NotImplementedError()
 
     def _cancel_existing(self, app_id: str) -> None:
@@ -50,15 +50,15 @@ class TestScheduler(Scheduler):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         raise NotImplementedError()
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self) -> list[ListAppResponse]:
         raise NotImplementedError()
 
     def _run_opts(self) -> runopts:
@@ -370,7 +370,7 @@ image = foobar_custom
         self.assertEqual(True, cfg.get("prepend_cwd"))
 
     def test_no_override_load(self) -> None:
-        cfg: Dict[str, CfgVal] = {"log_dir": "/foo/bar", "debug": 1}
+        cfg: dict[str, CfgVal] = {"log_dir": "/foo/bar", "debug": 1}
 
         load(scheduler="local_cwd", f=StringIO(_CONFIG), cfg=cfg)
         self.assertEqual("/foo/bar", cfg.get("log_dir"))
@@ -386,7 +386,7 @@ image = foobar_custom
             TORCHX_DEFAULT_CONFIG_DIRS,
             [str(self.tmpdir / "home"), str(self.tmpdir)],
         ):
-            cfg: Dict[str, CfgVal] = {"s": "runtime_value"}
+            cfg: dict[str, CfgVal] = {"s": "runtime_value"}
             apply(scheduler="test", cfg=cfg)
 
             self.assertEqual("runtime_value", cfg.get("s"))

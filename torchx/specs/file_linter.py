@@ -13,7 +13,7 @@ import ast
 import inspect
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable
 
 from docstring_parser import parse
 from torchx.util.io import read_conf_file
@@ -23,7 +23,7 @@ from torchx.util.types import none_throws
 # pyre-ignore-all-errors[16]
 
 
-def _get_default_arguments_descriptions(fn: Callable[..., object]) -> Dict[str, str]:
+def _get_default_arguments_descriptions(fn: Callable[..., object]) -> dict[str, str]:
     parameters = inspect.signature(fn).parameters
     args_decs = {}
     for parameter_name in parameters.keys():
@@ -57,7 +57,7 @@ class TorchXArgumentHelpFormatter(
         return help
 
 
-def get_fn_docstring(fn: Callable[..., object]) -> Tuple[str, Dict[str, str]]:
+def get_fn_docstring(fn: Callable[..., object]) -> tuple[str, dict[str, str]]:
     """
     Parses the function and arguments description from the provided function. Docstring should be in
     `google-style format <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_
@@ -101,7 +101,7 @@ class LinterMessage:
 
 class ComponentFunctionValidator(abc.ABC):
     @abc.abstractmethod
-    def validate(self, app_specs_func_def: ast.FunctionDef) -> List[LinterMessage]:
+    def validate(self, app_specs_func_def: ast.FunctionDef) -> list[LinterMessage]:
         """
         Method to call to validate the provided function def.
         """
@@ -140,7 +140,7 @@ def get_generic_type(arg: ast.expr) -> ast.expr:
         return arg.slice
 
 
-def get_optional_type(arg: ast.expr) -> Optional[ast.expr]:
+def get_optional_type(arg: ast.expr) -> ast.expr | None:
     """
     Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if `arg``
     is not an ``Optional``. Handles both:
@@ -166,7 +166,7 @@ def get_optional_type(arg: ast.expr) -> Optional[ast.expr]:
 class ArgTypeValidator(ComponentFunctionValidator):
     """Validates component function's argument types."""
 
-    def validate(self, app_specs_func_def: ast.FunctionDef) -> List[LinterMessage]:
+    def validate(self, app_specs_func_def: ast.FunctionDef) -> list[LinterMessage]:
         linter_errors = []
         for arg_def in app_specs_func_def.args.args:
             arg_linter_errors = self._validate_arg_def(app_specs_func_def.name, arg_def)
@@ -183,7 +183,7 @@ class ArgTypeValidator(ComponentFunctionValidator):
 
     def _validate_arg_def(
         self, function_name: str, arg: ast.arg
-    ) -> List[LinterMessage]:
+    ) -> list[LinterMessage]:
         arg_type = arg.annotation  # type hint
 
         def ok() -> list[LinterMessage]:
@@ -249,9 +249,7 @@ class ReturnTypeValidator(ComponentFunctionValidator):
         super().__init__()
         self._supported_return_type = supported_return_type
 
-    def _get_return_annotation(
-        self, app_specs_func_def: ast.FunctionDef
-    ) -> Optional[str]:
+    def _get_return_annotation(self, app_specs_func_def: ast.FunctionDef) -> str | None:
         return_def = app_specs_func_def.returns
         if not return_def:
             return None
@@ -266,7 +264,7 @@ class ReturnTypeValidator(ComponentFunctionValidator):
         else:
             return None
 
-    def validate(self, app_specs_func_def: ast.FunctionDef) -> List[LinterMessage]:
+    def validate(self, app_specs_func_def: ast.FunctionDef) -> list[LinterMessage]:
         """
         Validates return annotation of the torchx function. Current allowed annotations:
             * AppDef
@@ -316,16 +314,16 @@ class ComponentFnVisitor(ast.NodeVisitor):
     def __init__(
         self,
         component_function_name: str,
-        validators: Optional[List[ComponentFunctionValidator]],
+        validators: list[ComponentFunctionValidator] | None,
     ) -> None:
         if validators is None:
-            self.validators: List[ComponentFunctionValidator] = [
+            self.validators: list[ComponentFunctionValidator] = [
                 ArgTypeValidator(),
                 ReturnTypeValidator("AppDef"),
             ]
         else:
             self.validators = validators
-        self.linter_errors: List[LinterMessage] = []
+        self.linter_errors: list[LinterMessage] = []
         self.component_function_name = component_function_name
         self.visited_function = False
 
@@ -343,8 +341,8 @@ class ComponentFnVisitor(ast.NodeVisitor):
 def validate(
     path: str,
     component_function: str,
-    validators: Optional[List[ComponentFunctionValidator]] = None,
-) -> List[LinterMessage]:
+    validators: list[ComponentFunctionValidator] | None = None,
+) -> list[LinterMessage]:
     """
     Validates the function to make sure it complies the component standard.
 

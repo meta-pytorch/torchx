@@ -16,7 +16,7 @@ import unittest
 import warnings
 from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, List, Mapping, Tuple, Union
+from typing import Dict, List, Mapping, Union
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -479,7 +479,7 @@ class RoleBuilderTest(unittest.TestCase):
 
     def test_concurrent_override_role(self) -> None:
 
-        def delay(value: Tuple[str, str], time_seconds: int) -> Tuple[str, str]:
+        def delay(value: tuple[str, str], time_seconds: int) -> tuple[str, str]:
             time.sleep(time_seconds)
             return value
 

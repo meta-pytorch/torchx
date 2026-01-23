@@ -13,19 +13,7 @@ import time
 import warnings
 from datetime import datetime
 from types import TracebackType
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    TYPE_CHECKING,
-    TypeVar,
-    Union,
-)
+from typing import Any, Iterable, Mapping, Type, TYPE_CHECKING, TypeVar
 
 from torchx.runner.events import log_event
 from torchx.schedulers import get_scheduler_factories, SchedulerFactory
@@ -68,7 +56,7 @@ S = TypeVar("S")
 T = TypeVar("T")
 
 
-def get_configured_trackers() -> Dict[str, Optional[str]]:
+def get_configured_trackers() -> dict[str, str | None]:
     tracker_names = list(get_configs(prefix="torchx", name="tracker").keys())
     if ENV_TORCHX_TRACKERS in os.environ:
         logger.info(f"Using TORCHX_TRACKERS={tracker_names} as tracker names")
@@ -101,9 +89,9 @@ class Runner:
     def __init__(
         self,
         name: str,
-        scheduler_factories: Dict[str, SchedulerFactory],
-        component_defaults: Optional[Dict[str, Dict[str, str]]] = None,
-        scheduler_params: Optional[Dict[str, object]] = None,
+        scheduler_factories: dict[str, SchedulerFactory],
+        component_defaults: dict[str, dict[str, str]] | None = None,
+        scheduler_params: dict[str, object] | None = None,
     ) -> None:
         """
         Creates a new runner instance.
@@ -115,18 +103,18 @@ class Runner:
         """
         self._name: str = name
         self._scheduler_factories = scheduler_factories
-        self._scheduler_params: Dict[str, Any] = {
+        self._scheduler_params: dict[str, Any] = {
             **(self._get_scheduler_params_from_env()),
             **(scheduler_params or {}),
         }
         # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
-        self._scheduler_instances: Dict[str, Scheduler] = {}
-        self._apps: Dict[AppHandle, AppDef] = {}
+        self._scheduler_instances: dict[str, Scheduler] = {}
+        self._apps: dict[AppHandle, AppDef] = {}
 
         # component_name -> map of component_fn_param_name -> user-specified default val encoded as str
-        self._component_defaults: Dict[str, Dict[str, str]] = component_defaults or {}
+        self._component_defaults: dict[str, dict[str, str]] = component_defaults or {}
 
-    def _get_scheduler_params_from_env(self) -> Dict[str, str]:
+    def _get_scheduler_params_from_env(self) -> dict[str, str]:
         scheduler_params = {}
         for key, value in os.environ.items():
             key = key.lower()
@@ -139,9 +127,9 @@ class Runner:
 
     def __exit__(
         self,
-        type: Optional[Type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        type: Type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> bool:
         # This method returns False so that if an error is raise within the
         # ``with`` statement, it is reraised properly
@@ -167,11 +155,11 @@ class Runner:
     def run_component(
         self,
         component: str,
-        component_args: Union[list[str], dict[str, Any]],
+        component_args: list[str] | dict[str, Any],
         scheduler: str,
-        cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[Union[Workspace, str]] = None,
-        parent_run_id: Optional[str] = None,
+        cfg: Mapping[str, CfgVal] | None = None,
+        workspace: Workspace | str | None = None,
+        parent_run_id: str | None = None,
     ) -> AppHandle:
         """
         Runs a component.
@@ -227,11 +215,11 @@ class Runner:
     def dryrun_component(
         self,
         component: str,
-        component_args: Union[list[str], dict[str, Any]],
+        component_args: list[str] | dict[str, Any],
         scheduler: str,
-        cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[Union[Workspace, str]] = None,
-        parent_run_id: Optional[str] = None,
+        cfg: Mapping[str, CfgVal] | None = None,
+        workspace: Workspace | str | None = None,
+        parent_run_id: str | None = None,
     ) -> AppDryRunInfo:
         """
         Dryrun version of :py:func:`run_component`. Will not actually run the
@@ -258,9 +246,9 @@ class Runner:
         self,
         app: AppDef,
         scheduler: str,
-        cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[Union[Workspace, str]] = None,
-        parent_run_id: Optional[str] = None,
+        cfg: Mapping[str, CfgVal] | None = None,
+        workspace: Workspace | str | None = None,
+        parent_run_id: str | None = None,
     ) -> AppHandle:
         """
         Runs the given application in the specified mode.
@@ -348,9 +336,9 @@ class Runner:
         self,
         app: AppDef,
         scheduler: str,
-        cfg: Optional[Mapping[str, CfgVal]] = None,
-        workspace: Optional[Union[Workspace, str]] = None,
-        parent_run_id: Optional[str] = None,
+        cfg: Mapping[str, CfgVal] | None = None,
+        workspace: Workspace | str | None = None,
+        parent_run_id: str | None = None,
     ) -> AppDryRunInfo:
         """
         Dry runs an app on the given scheduler with the provided run configs.
@@ -496,13 +484,13 @@ class Runner:
             cfg.update(opts.cfg_from_str(cfg_str))
         return cfg
 
-    def scheduler_backends(self) -> List[str]:
+    def scheduler_backends(self) -> list[str]:
         """
         Returns a list of all supported scheduler backends.
         """
         return list(self._scheduler_factories.keys())
 
-    def status(self, app_handle: AppHandle) -> Optional[AppStatus]:
+    def status(self, app_handle: AppHandle) -> AppStatus | None:
         """
         Returns:
             The status of the application, or ``None`` if the app does not exist anymore
@@ -533,7 +521,7 @@ class Runner:
 
     def wait(
         self, app_handle: AppHandle, wait_interval: float = 10
-    ) -> Optional[AppStatus]:
+    ) -> AppStatus | None:
         """
         Block waits (indefinitely) for the application to complete.
         Possible implementation:
@@ -610,7 +598,7 @@ class Runner:
         )
         self.cancel(app_handle)
 
-    def describe(self, app_handle: AppHandle) -> Optional[AppDef]:
+    def describe(self, app_handle: AppHandle) -> AppDef | None:
         """
         Reconstructs the application (to the best extent) given the app handle.
         Note that the reconstructed application may not be the complete app as
@@ -639,11 +627,11 @@ class Runner:
         app_handle: AppHandle,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         """
         Returns an iterator over the log lines of the specified job container.
@@ -730,7 +718,7 @@ class Runner:
     def list(
         self,
         scheduler: str,
-    ) -> List[ListAppResponse]:
+    ) -> list[ListAppResponse]:
         """
         For apps launched on the scheduler, this API returns a list of ListAppResponse
         objects each of which have app id, app handle and its status.
@@ -762,7 +750,7 @@ class Runner:
         app_handle: AppHandle,
         check_session: bool = True,
         # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
-    ) -> Tuple[Scheduler, str, str]:
+    ) -> tuple[Scheduler, str, str]:
         """
         Returns the scheduler and app_id from the app_handle.
         Set ``check_session`` to validate that the session name in the app handle
@@ -783,8 +771,8 @@ class Runner:
 
 
 def get_runner(
-    name: Optional[str] = None,
-    component_defaults: Optional[Dict[str, Dict[str, str]]] = None,
+    name: str | None = None,
+    component_defaults: dict[str, dict[str, str]] | None = None,
     **scheduler_params: Any,
 ) -> Runner:
     """

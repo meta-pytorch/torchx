@@ -11,12 +11,11 @@ import argparse
 import os
 import shutil
 import sys
-from typing import List
 
 import fsspec
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="copies a file between fsspec locations"
     )
@@ -41,7 +40,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     args = parse_args(argv)
 
     print(f"copying from {args.src} to {args.dst}")

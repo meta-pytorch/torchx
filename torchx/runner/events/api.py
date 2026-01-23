@@ -7,10 +7,11 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Dict, Optional, Union
 
 
 class SourceType(str, Enum):
@@ -42,25 +43,25 @@ class TorchxEvent:
     session: str
     scheduler: str
     api: str
-    app_id: Optional[str] = None
-    app_image: Optional[str] = None
-    app_metadata: Optional[Dict[str, str]] = None
-    runcfg: Optional[str] = None
-    raw_exception: Optional[str] = None
+    app_id: str | None = None
+    app_image: str | None = None
+    app_metadata: dict[str, str] | None = None
+    runcfg: str | None = None
+    raw_exception: str | None = None
     source: SourceType = SourceType.UNKNOWN
-    cpu_time_usec: Optional[int] = None
-    wall_time_usec: Optional[int] = None
-    start_epoch_time_usec: Optional[int] = None
-    workspace: Optional[str] = None
-    exception_type: Optional[str] = None
-    exception_message: Optional[str] = None
-    exception_source_location: Optional[str] = None
+    cpu_time_usec: int | None = None
+    wall_time_usec: int | None = None
+    start_epoch_time_usec: int | None = None
+    workspace: str | None = None
+    exception_type: str | None = None
+    exception_message: str | None = None
+    exception_source_location: str | None = None
 
     def __str__(self) -> str:
         return self.serialize()
 
     @staticmethod
-    def deserialize(data: Union[str, "TorchxEvent"]) -> "TorchxEvent":
+    def deserialize(data: str | "TorchxEvent") -> "TorchxEvent":
         if isinstance(data, TorchxEvent):
             return data
         if isinstance(data, str):

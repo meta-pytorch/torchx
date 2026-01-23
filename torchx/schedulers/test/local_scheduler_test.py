@@ -21,7 +21,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from os.path import join
-from typing import Callable, Dict, Generator, List, Optional
+from typing import Callable, Generator
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -192,10 +192,10 @@ class LocalSchedulerTestUtil(abc.ABC):
     def wait(
         self,
         app_id: str,
-        scheduler: Optional[LocalScheduler] = None,
+        scheduler: LocalScheduler | None = None,
         timeout: float = 30,
         wait_for: Callable[[AppState], bool] = is_terminal,
-    ) -> Optional[DescribeAppResponse]:
+    ) -> DescribeAppResponse | None:
         """
         Waits for the app to finish or raise TimeoutError upon timeout (in seconds).
         If no timeout is specified waits indefinitely.
@@ -960,7 +960,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
 
     def assert_CUDA_VISIBLE_DEVICES(
-        self, dryrun_info: AppDryRunInfo[PopenRequest], expected: Dict[str, List[str]]
+        self, dryrun_info: AppDryRunInfo[PopenRequest], expected: dict[str, list[str]]
     ) -> None:
         for role_name, replica_params in dryrun_info.request.role_params.items():
             if role_name in expected:

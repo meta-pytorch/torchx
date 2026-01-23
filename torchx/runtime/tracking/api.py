@@ -9,13 +9,12 @@
 
 import abc
 import json
-from typing import Dict, Union
 
 import fsspec
 
 
-KeyType = Union[int, str]
-ResultType = Union[int, float, str]
+KeyType = int | str
+ResultType = int | float | str
 
 
 class ResultTracker(abc.ABC):
@@ -88,10 +87,10 @@ class ResultTracker(abc.ABC):
 
     """
 
-    def __getitem__(self, key: KeyType) -> Dict[str, ResultType]:
+    def __getitem__(self, key: KeyType) -> dict[str, ResultType]:
         return self.get(key)
 
-    def __setitem__(self, key: KeyType, results: Dict[str, ResultType]) -> None:
+    def __setitem__(self, key: KeyType, results: dict[str, ResultType]) -> None:
         self.put(key, **results)
 
     @abc.abstractmethod
@@ -110,7 +109,7 @@ class ResultTracker(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get(self, key: KeyType) -> Dict[str, ResultType]:
+    def get(self, key: KeyType) -> dict[str, ResultType]:
         """
         Returns the results that have been recorded (put) with the key or
         an empty map if no such key exists.
@@ -157,7 +156,7 @@ class FsspecResultTracker(ResultTracker):
         # save results in pretty-print format so that the file is human readable
         mapper[key] = json.dumps(results, indent=2).encode("utf-8")
 
-    def get(self, key: KeyType) -> Dict[str, ResultType]:
+    def get(self, key: KeyType) -> dict[str, ResultType]:
         mapper = fsspec.get_mapper(self._tracker_base)
         try:
             results = mapper[key]

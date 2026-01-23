@@ -22,7 +22,7 @@ import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from subprocess import CalledProcessError, PIPE
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, TypedDict
+from typing import Any, Iterable, List, Mapping, TypedDict
 
 import torchx
 from torchx.schedulers.api import (
@@ -82,7 +82,7 @@ def get_appstate_from_job(job: dict[str, object]) -> AppState:
         return appstate_from_slurm_state(str(job_state))
 
 
-def version() -> Tuple[int, int]:
+def version() -> tuple[int, int]:
     """
     Uses ``sinfo --version`` to get the slurm version. If the command fails, it
     assumes the version is ``slurm 24.05.8``.
@@ -160,15 +160,15 @@ def _apply_app_id_env(s: str) -> str:
 SlurmOpts = TypedDict(
     "SlurmOpts",
     {
-        "account": Optional[str],
+        "account": str | None,
         "partition": str,
         "time": str,
-        "comment": Optional[str],
-        "constraint": Optional[str],
-        "mail-user": Optional[str],
-        "mail-type": Optional[str],
-        "job_dir": Optional[str],
-        "qos": Optional[str],
+        "comment": str | None,
+        "constraint": str | None,
+        "mail-user": str | None,
+        "mail-type": str | None,
+        "job_dir": str | None,
+        "qos": str | None,
     },
     total=False,
 )
@@ -182,10 +182,10 @@ class SlurmReplicaRequest:
 
     name: str
     entrypoint: str
-    args: List[str]
-    srun_opts: Dict[str, str]
-    sbatch_opts: Dict[str, Optional[str]]
-    env: Dict[str, str]
+    args: list[str]
+    srun_opts: dict[str, str]
+    sbatch_opts: dict[str, str | None]
+    env: dict[str, str]
 
     @classmethod
     def from_role(
@@ -199,7 +199,7 @@ class SlurmReplicaRequest:
         ``from_role`` creates a SlurmReplicaRequest for the specific role and
         name.
         """
-        sbatch_opts: Dict[str, Optional[str]] = {
+        sbatch_opts: dict[str, str | None] = {
             "requeue": None,
         }
         for k, v in cfg.items():
@@ -241,7 +241,7 @@ class SlurmReplicaRequest:
             env=dict(role.env),
         )
 
-    def _opts_to_strs(self, opts: Mapping[str, Optional[str]]) -> List[str]:
+    def _opts_to_strs(self, opts: Mapping[str, str | None]) -> list[str]:
         out = []
         for key, value in opts.items():
             if value is not None:
@@ -250,7 +250,7 @@ class SlurmReplicaRequest:
                 out.append(f"--{key}")
         return out
 
-    def materialize(self) -> Tuple[List[str], List[str]]:
+    def materialize(self) -> tuple[list[str], list[str]]:
         """
         materialize returns the sbatch and srun groups for this role. They
         should be combined using `:` per slurm heterogenous groups.
@@ -276,9 +276,9 @@ class SlurmBatchRequest:
     Holds parameters used to launch a slurm job via sbatch.
     """
 
-    cmd: List[str]
-    replicas: Dict[str, SlurmReplicaRequest]
-    job_dir: Optional[str]
+    cmd: list[str]
+    replicas: dict[str, SlurmReplicaRequest]
+    job_dir: str | None
     max_retries: int
 
     def materialize(self) -> str:
@@ -482,7 +482,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
 
             return job_id
 
-    def _partition_memmb(self, partition: Optional[str]) -> Optional[int]:
+    def _partition_memmb(self, partition: str | None) -> int | None:
         """
         _partition_memmb returns the memory allocation for the given partition
         or the default partition if none is specified.
@@ -568,7 +568,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
     def _cancel_existing(self, app_id: str) -> None:
         subprocess.run(["scancel", app_id], check=True)
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         # NOTE: depending on the version of slurm, querying for job info
         #  with `squeue` for finished (or non-existent) jobs either:
         #   1. errors out with 'slurm_load_jobs error: Invalid job id specified'
@@ -584,7 +584,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
             )
         return self._describe_sacct(app_id)
 
-    def _describe_sacct(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def _describe_sacct(self, app_id: str) -> DescribeAppResponse | None:
         # NOTE: Handles multiple job ID formats due to SLURM version differences.
         # Different clusters use heterogeneous (+) vs regular (.) job ID formats.
         try:
@@ -657,7 +657,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
             msg=msg,
         )
 
-    def _describe_squeue(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def _describe_squeue(self, app_id: str) -> DescribeAppResponse | None:
         # NOTE: This method contains multiple compatibility checks for different SLURM versions
         # due to API format changes across versions (20.02, 23.02, 24.05, 24.11+).
 
@@ -813,11 +813,11 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         if streams is None:
             log.info("log stream not specified, defaulting to STDERR")

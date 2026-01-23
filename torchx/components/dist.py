@@ -60,14 +60,14 @@ import os
 import re
 import shlex
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Iterable
 
 import torchx
 import torchx.specs as specs
 from torchx.components.structured_arg import StructuredJArgument, StructuredNameArgument
 from torchx.specs import macros
 
-_TORCH_DEBUG_FLAGS: Dict[str, str] = {
+_TORCH_DEBUG_FLAGS: dict[str, str] = {
     "CUDA_LAUNCH_BLOCKING": "1",
     "NCCL_DESYNC_DEBUG": "1",
     "TORCH_DISTRIBUTED_DEBUG": "DETAIL",
@@ -85,16 +85,16 @@ These are commonly set environment variables to debug PyTorch execution.
 
 def spmd(
     *args: str,
-    script: Optional[str] = None,
-    m: Optional[str] = None,
+    script: str | None = None,
+    m: str | None = None,
     image: str = torchx.IMAGE,
     name: str = "/",
     h: str = "gpu.small",
     j: str = "1x1",
-    env: Optional[Dict[str, str]] = None,
-    metadata: Optional[Dict[str, str]] = None,
+    env: dict[str, str] | None = None,
+    metadata: dict[str, str] | None = None,
     max_retries: int = 0,
-    mounts: Optional[List[str]] = None,
+    mounts: list[str] | None = None,
     debug: bool = False,
 ) -> specs.AppDef:
     """
@@ -161,22 +161,22 @@ def spmd(
 
 def ddp(
     *script_args: str,
-    script: Optional[str] = None,
-    m: Optional[str] = None,
+    script: str | None = None,
+    m: str | None = None,
     image: str = torchx.IMAGE,
     name: str = "/",
-    h: Optional[str] = None,
+    h: str | None = None,
     cpu: int = 2,
     gpu: int = 0,
     memMB: int = 1024,
     j: str = "1x2",
-    env: Optional[Dict[str, str]] = None,
-    metadata: Optional[Dict[str, str]] = None,
+    env: dict[str, str] | None = None,
+    metadata: dict[str, str] | None = None,
     max_retries: int = 0,
     rdzv_port: int = 29500,
     rdzv_backend: str = "c10d",
-    rdzv_conf: Optional[str] = None,
-    mounts: Optional[List[str]] = None,
+    rdzv_conf: str | None = None,
+    mounts: list[str] | None = None,
     debug: bool = False,
     tee: int = 3,
 ) -> specs.AppDef:
@@ -308,7 +308,7 @@ def ddp(
     )
 
 
-def get_role_name(script: Optional[str], m: Optional[str]) -> str:
+def get_role_name(script: str | None, m: str | None) -> str:
     if script:
         # script name/module no extension
         role_name = Path(script).stem
@@ -337,7 +337,7 @@ class _noquote(str):
     pass
 
 
-def parse_nnodes(j: str) -> Tuple[int, int, int, str]:
+def parse_nnodes(j: str) -> tuple[int, int, int, str]:
     """
     parse_nnodes converts a node and process string into the individual
     components. Format is ``[[<min_replicas>:]<replicas>x]<num processes>``.

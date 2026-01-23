@@ -11,7 +11,7 @@ import importlib
 import sys
 import unittest
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import torchx
@@ -42,7 +42,7 @@ from torchx.specs import AppDryRunInfo, AppState, Resource, Role
 
 SKIP_DOCKER: bool = not has_docker()
 
-TEST_KUBE_CONFIG: Dict[str, Any] = {
+TEST_KUBE_CONFIG: dict[str, Any] = {
     "current-context": "default",
     "contexts": [
         {
@@ -70,7 +70,7 @@ TEST_KUBE_CONFIG: Dict[str, Any] = {
 }
 
 
-def _test_mcad_generic_item() -> Dict[str, Any]:
+def _test_mcad_generic_item() -> dict[str, Any]:
     generic_item = {
         "status": {
             "state": "Running",
@@ -377,7 +377,7 @@ class KubernetesMCADSchedulerTest(unittest.TestCase):
         podgroup = create_pod_group(app, app.roles[0], 0, namespace, unique_app_name)
 
         pod_group_name = unique_app_name + "-pg0"
-        expected_pod_group: Dict[str, Any] = {
+        expected_pod_group: dict[str, Any] = {
             "apiVersion": "scheduling.sigs.k8s.io/v1alpha1",
             "kind": "PodGroup",
             "metadata": {
@@ -394,7 +394,7 @@ class KubernetesMCADSchedulerTest(unittest.TestCase):
                 "minMember": 1,
             },
         }
-        want: Dict[str, Any] = {
+        want: dict[str, Any] = {
             "replicas": 1,
             "generictemplate": expected_pod_group,
         }

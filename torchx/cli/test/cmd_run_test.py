@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, Generator
+from typing import Generator
 from unittest.mock import MagicMock, patch
 
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig
@@ -636,7 +636,7 @@ class TorchXRunArgsTest(unittest.TestCase):
 
         component_name = "test_component"
         component_args = ["--param1", "value1", "--param2", "value2"]
-        scheduler_cfg: Dict[str, CfgVal] = {
+        scheduler_cfg: dict[str, CfgVal] = {
             "cluster": "test_cluster",
             "namespace": "default",
         }

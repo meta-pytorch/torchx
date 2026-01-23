@@ -7,7 +7,7 @@
 
 import os
 from collections import defaultdict
-from typing import cast, DefaultDict, Dict, Iterable, Mapping, Optional, Tuple
+from typing import cast, DefaultDict, Iterable, Mapping
 from unittest import mock, TestCase
 from unittest.mock import MagicMock, patch
 
@@ -34,16 +34,16 @@ DEFAULT_SOURCE: str = "__parent__"
 
 
 class TestTrackerBackend(TrackerBase):
-    def __init__(self, config_path: Optional[str] = None) -> None:
+    def __init__(self, config_path: str | None = None) -> None:
         self._artifacts: DefaultDict[
             RunId,
-            DefaultDict[str, Tuple[str, Optional[Mapping[str, object]]]],
+            DefaultDict[str, tuple[str, Mapping[str, object] | None]],
         ] = defaultdict(lambda: defaultdict())
         self._metdata: DefaultDict[RunId, DefaultDict[str, object]] = defaultdict(
             lambda: defaultdict()
         )
 
-        self._sources: DefaultDict[RunId, Dict[str, str]] = defaultdict(dict)
+        self._sources: DefaultDict[RunId, dict[str, str]] = defaultdict(dict)
         self.config_path = config_path
 
     def add_artifact(
@@ -51,7 +51,7 @@ class TestTrackerBackend(TrackerBase):
         run_id: str,
         name: str,
         path: str,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Mapping[str, object] | None = None,
     ) -> None:
         self._artifacts[run_id][name] = (path, metadata)
 
@@ -72,7 +72,7 @@ class TestTrackerBackend(TrackerBase):
         self,
         run_id: str,
         source_id: str,
-        artifact_name: Optional[str],
+        artifact_name: str | None,
     ) -> None:
         if not artifact_name:
             artifact_name = DEFAULT_SOURCE
@@ -81,7 +81,7 @@ class TestTrackerBackend(TrackerBase):
     def sources(
         self,
         run_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> Iterable[TrackerSource]:
         source_data = self._sources[run_id]
 
@@ -182,7 +182,7 @@ class AppRunApiTest(TestCase):
         self.tracker.run_ids()
 
 
-def tracker_factory(config: Optional[str] = None) -> TrackerBase:
+def tracker_factory(config: str | None = None) -> TrackerBase:
     return TestTrackerBackend(config)
 
 

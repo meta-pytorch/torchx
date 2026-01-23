@@ -12,7 +12,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, List, Mapping, Optional, TypeVar, Union
+from typing import Iterable, Mapping, TypeVar
 from unittest.mock import MagicMock, patch
 
 from torchx.schedulers.api import (
@@ -57,7 +57,7 @@ class SchedulerTest(unittest.TestCase):
         ) -> AppDryRunInfo[None]:
             return AppDryRunInfo(None, lambda t: "None")
 
-        def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+        def describe(self, app_id: str) -> DescribeAppResponse | None:
             return None
 
         def _cancel_existing(self, app_id: str) -> None:
@@ -68,15 +68,15 @@ class SchedulerTest(unittest.TestCase):
             app_id: str,
             role_name: str,
             k: int = 0,
-            regex: Optional[str] = None,
-            since: Optional[datetime] = None,
-            until: Optional[datetime] = None,
+            regex: str | None = None,
+            since: datetime | None = None,
+            until: datetime | None = None,
             should_tail: bool = False,
-            streams: Optional[Stream] = None,
+            streams: Stream | None = None,
         ) -> Iterable[str]:
             return iter([])
 
-        def list(self) -> List[ListAppResponse]:
+        def list(self) -> list[ListAppResponse]:
             return []
 
         def _run_opts(self) -> runopts:
@@ -84,7 +84,7 @@ class SchedulerTest(unittest.TestCase):
             opts.add("foo", type_=str, required=True, help="required option")
             return opts
 
-        def resolve_resource(self, resource: Union[str, Resource]) -> Resource:
+        def resolve_resource(self, resource: str | Resource) -> Resource:
             return NULL_RESOURCE
 
         def build_workspace_and_update_role(

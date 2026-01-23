@@ -105,19 +105,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import (
-    Any,
-    cast,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    TYPE_CHECKING,
-    TypedDict,
-    Union,
-)
+from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING, TypedDict
 
 import torchx
 import yaml
@@ -170,7 +158,7 @@ RESERVED_MILLICPU = 100
 RESERVED_MEMMB = 1024
 
 
-def _apply_pod_overlay(pod: "V1Pod", overlay: Dict[str, Any]) -> None:
+def _apply_pod_overlay(pod: "V1Pod", overlay: dict[str, Any]) -> None:
     """Apply overlay dict to V1Pod object, merging nested fields.
 
     Merge semantics:
@@ -183,7 +171,7 @@ def _apply_pod_overlay(pod: "V1Pod", overlay: Dict[str, Any]) -> None:
     api = client.ApiClient()
     pod_dict = api.sanitize_for_serialization(pod)
 
-    def deep_merge(base: Dict[str, Any], overlay: Dict[str, Any]) -> None:
+    def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> None:
         for key, value in overlay.items():
             if isinstance(value, dict) and key in base and isinstance(base[key], dict):
                 deep_merge(base[key], value)
@@ -211,7 +199,7 @@ RETRY_POLICIES: Mapping[str, Iterable[Mapping[str, str]]] = {
     ],
 }
 
-JOB_STATE: Dict[str, AppState] = {
+JOB_STATE: dict[str, AppState] = {
     # Pending is the phase that job is pending in the queue, waiting for
     # scheduling decision
     "Pending": AppState.PENDING,
@@ -234,7 +222,7 @@ JOB_STATE: Dict[str, AppState] = {
     "Failed": ReplicaState.FAILED,
 }
 
-TASK_STATE: Dict[str, ReplicaState] = {
+TASK_STATE: dict[str, ReplicaState] = {
     # Pending means the task is pending in the apiserver.
     "Pending": ReplicaState.PENDING,
     # Allocated means the scheduler assigns a host to it.
@@ -297,10 +285,10 @@ def sanitize_for_serialization(obj: object) -> object:
 def role_to_pod(
     name: str,
     role: Role,
-    service_account: Optional[str],
+    service_account: str | None,
     reserved_millicpu: int = RESERVED_MILLICPU,
     reserved_memmb: int = RESERVED_MEMMB,
-    efa_device_count: Optional[int] = None,
+    efa_device_count: int | None = None,
 ) -> "V1Pod":
     from kubernetes.client.models import (  # noqa: F811 redefinition of unused
         V1Container,
@@ -359,7 +347,7 @@ def role_to_pod(
         requests=requests,
     )
 
-    node_selector: Dict[str, str] = {}
+    node_selector: dict[str, str] = {}
     if LABEL_INSTANCE_TYPE in resource.capabilities:
         node_selector[LABEL_INSTANCE_TYPE] = resource.capabilities[LABEL_INSTANCE_TYPE]
 
@@ -491,12 +479,12 @@ def role_to_pod(
 def app_to_resource(
     app: AppDef,
     queue: str,
-    service_account: Optional[str],
-    priority_class: Optional[str] = None,
+    service_account: str | None,
+    priority_class: str | None = None,
     reserved_millicpu: int = RESERVED_MILLICPU,
     reserved_memmb: int = RESERVED_MEMMB,
-    efa_device_count: Optional[int] = None,
-) -> Dict[str, Any]:
+    efa_device_count: int | None = None,
+) -> dict[str, Any]:
     """
     app_to_resource creates a volcano job kubernetes resource definition from
     the provided AppDef. The resource definition can be used to launch the
@@ -556,7 +544,7 @@ def app_to_resource(
                     app_id=unique_app_id,
                 )
             )
-            task: Dict[str, Any] = {
+            task: dict[str, Any] = {
                 "replicas": 1,
                 "name": name,
                 "template": pod,
@@ -589,7 +577,7 @@ does NOT support retries correctly. More info: https://github.com/volcano-sh/vol
     if priority_class is not None:
         job_spec["priorityClassName"] = priority_class
 
-    resource: Dict[str, Any] = {
+    resource: dict[str, Any] = {
         "apiVersion": "batch.volcano.sh/v1alpha1",
         "kind": "Job",
         "metadata": {"name": f"{unique_app_id}"},
@@ -600,8 +588,8 @@ does NOT support retries correctly. More info: https://github.com/volcano-sh/vol
 
 @dataclass
 class KubernetesJob:
-    images_to_push: Dict[str, Tuple[str, str]]
-    resource: Dict[str, Any]
+    images_to_push: dict[str, tuple[str, str]]
+    resource: dict[str, Any]
 
     def __str__(self) -> str:
         return yaml.dump(sanitize_for_serialization(self.resource))
@@ -611,15 +599,15 @@ class KubernetesJob:
 
 
 class KubernetesOpts(TypedDict, total=False):
-    namespace: Optional[str]
+    namespace: str | None
     queue: str
-    image_repo: Optional[str]
-    service_account: Optional[str]
-    priority_class: Optional[str]
-    validate_spec: Optional[bool]
-    reserved_millicpu: Optional[int]
-    reserved_memmb: Optional[int]
-    efa_device_count: Optional[int]
+    image_repo: str | None
+    service_account: str | None
+    priority_class: str | None
+    validate_spec: bool | None
+    reserved_millicpu: int | None
+    reserved_memmb: int | None
+    efa_device_count: int | None
 
 
 class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
@@ -723,8 +711,8 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
     def __init__(
         self,
         session_name: str,
-        client: Optional["ApiClient"] = None,
-        docker_client: Optional["DockerClient"] = None,
+        client: "ApiClient | None" = None,
+        docker_client: "DockerClient | None" = None,
     ) -> None:
         # NOTE: make sure any new init options are supported in create_scheduler(...)
         super().__init__("kubernetes", session_name, docker_client=docker_client)
@@ -756,14 +744,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
         return client.CustomObjectsApi(self._api_client())
 
-    def _get_job_name_from_exception(self, e: "ApiException") -> Optional[str]:
+    def _get_job_name_from_exception(self, e: "ApiException") -> str | None:
         try:
             return json.loads(e.body)["details"]["name"]
         except Exception as e:
             logger.exception("Unable to retrieve job name, got exception", e)
             return None
 
-    def _get_active_context(self) -> Dict[str, Any]:
+    def _get_active_context(self) -> dict[str, Any]:
         from kubernetes import config
 
         contexts, active_context = config.list_kube_config_contexts()
@@ -965,7 +953,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         )
         return opts
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         from kubernetes import client
         from kubernetes.client.rest import ApiException
 
@@ -1045,11 +1033,11 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         assert until is None, "kubernetes API doesn't support until"
 
@@ -1062,7 +1050,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
         pod_name = normalize_str(f"{name}-{role_name}-{k}-0")
 
-        args: Dict[str, object] = {
+        args: dict[str, object] = {
             "name": pod_name,
             "namespace": namespace,
             "timestamps": True,
@@ -1086,7 +1074,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         else:
             return iterator
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self) -> list[ListAppResponse]:
         active_context = self._get_active_context()
         namespace = active_context["context"]["namespace"]
         resp = self._custom_objects_api().list_namespaced_custom_object(
@@ -1107,8 +1095,8 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
 def create_scheduler(
     session_name: str,
-    client: Optional["ApiClient"] = None,
-    docker_client: Optional["DockerClient"] = None,
+    client: "ApiClient | None" = None,
+    docker_client: "DockerClient | None" = None,
     **kwargs: Any,
 ) -> KubernetesScheduler:
     return KubernetesScheduler(
@@ -1120,7 +1108,7 @@ def create_scheduler(
 
 def pod_labels(
     app: AppDef, role_idx: int, role: Role, replica_id: int, app_id: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
 
     def clean(label_value: str) -> str:
         # cleans the provided `label_value` to make it compliant

@@ -23,7 +23,6 @@ Usage (also see ``doc_push.sh``):
 
 import os
 from string import Template
-from typing import List, Optional
 
 from packaging.version import InvalidVersion, Version
 
@@ -79,7 +78,7 @@ TAGS_VER_PROXY = {
 VERSIONS_HTML = "versions.html"
 
 
-def parse_ver(version: str) -> Optional[Version]:
+def parse_ver(version: str) -> Version | None:
     if version in TAGS_VER_PROXY:
         return TAGS_VER_PROXY[version]
     try:
@@ -88,9 +87,9 @@ def parse_ver(version: str) -> Optional[Version]:
         return None
 
 
-def versions_list(versions: List[str]) -> List[str]:
-    tag_list: List[(Version, str)] = []
-    ver_list: List[(Version, str)] = []
+def versions_list(versions: list[str]) -> list[str]:
+    tag_list: list[(Version, str)] = []
+    ver_list: list[(Version, str)] = []
 
     for ver in versions:
         v = parse_ver(ver)

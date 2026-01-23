@@ -9,11 +9,10 @@
 
 import os
 import uuid
-from typing import Optional
 
 TORCHX_INTERNAL_SESSION_ID = "TORCHX_INTERNAL_SESSION_ID"
 
-CURRENT_SESSION_ID: Optional[str] = None
+CURRENT_SESSION_ID: str | None = None
 
 
 def get_session_id_or_create_new() -> str:
@@ -34,7 +33,7 @@ def get_session_id_or_create_new() -> str:
     return session_id
 
 
-def get_torchx_session_id() -> Optional[str]:
+def get_torchx_session_id() -> str | None:
     """
     Returns the torchx session ID.
     Please use this function to get the session ID out of torchx codebase.

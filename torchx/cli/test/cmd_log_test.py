@@ -11,7 +11,7 @@ import io
 import sys
 import unittest
 from datetime import datetime
-from typing import Iterator, Optional
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 from torchx.cli.cmd_log import _prefix_line, ENDC, get_logs, GREEN, validate
@@ -35,7 +35,7 @@ class MockRunner(Runner):
     def __init__(self) -> None:
         pass
 
-    def __call__(self, name: Optional[str] = None) -> "MockRunner":
+    def __call__(self, name: str | None = None) -> "MockRunner":
         return self
 
     def describe(self, app_handle: str) -> AppDef:
@@ -56,11 +56,11 @@ class MockRunner(Runner):
         app_handle: AppHandle,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterator[str]:
         import re
 
