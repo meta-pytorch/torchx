@@ -5,18 +5,21 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
+import re
 import sys
 from datetime import date
-from pathlib import Path
 
 from setuptools import find_packages, setup
 
 
 def get_version():
-    # get version string from version.txt
-    version_file = Path(__file__).parent / "torchx" / "version.txt"
+    # get version string from _version.py
+    version_file = os.path.join(os.path.dirname(__file__), "torchx/_version.py")
+    version_regex = r"BASE_VERSION = ['\"]([^'\"]*)['\"]"
     with open(version_file, "r") as f:
-        return f.read().strip()
+        version = re.search(version_regex, f.read(), re.M).group(1)
+        return version
 
 
 def get_nightly_version():
@@ -63,7 +66,6 @@ if __name__ == "__main__":
         python_requires=">=3.7",
         install_requires=reqs.strip().split("\n"),
         include_package_data=True,
-        package_data={"torchx": ["version.txt"]},
         packages=find_packages(exclude=("examples", "*.test", "aws*", "*.fb")),
         test_suite="torchx.test.suites.unittests",
         entry_points={

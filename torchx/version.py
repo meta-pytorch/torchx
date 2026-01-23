@@ -6,16 +6,8 @@
 
 # pyre-strict
 
-import os
-
+from torchx._version import BASE_VERSION
 from torchx.util.entrypoints import load
-
-
-def _version() -> str:
-    version_file = os.path.join(os.path.dirname(__file__), "version.txt")
-    with open(version_file, "r") as f:
-        return f.read().strip()
-
 
 # Follows PEP-0440 version scheme guidelines
 # https://www.python.org/dev/peps/pep-0440/#version-scheme
@@ -26,7 +18,7 @@ def _version() -> str:
 # 0.1.0bN  # Beta release
 # 0.1.0rcN  # Release Candidate
 # 0.1.0  # Final release
-__version__: str = _version()
+__version__: str = BASE_VERSION
 
 
 # Use the github container registry images corresponding to the current package
