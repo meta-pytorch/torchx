@@ -6,15 +6,14 @@
 
 # pyre-strict
 
-import os
+import importlib.resources
 
 from torchx.util.entrypoints import load
 
 
 def _version() -> str:
-    version_file = os.path.join(os.path.dirname(__file__), "version.txt")
-    with open(version_file, "r") as f:
-        return f.read().strip()
+    # use importlib.resources to support zipped packages and single-file executables
+    return importlib.resources.read_text("torchx", "version.txt").strip()
 
 
 # Follows PEP-0440 version scheme guidelines
