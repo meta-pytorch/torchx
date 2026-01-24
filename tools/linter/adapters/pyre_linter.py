@@ -1,3 +1,9 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 import argparse
 import concurrent.futures
 import json
@@ -7,7 +13,7 @@ import subprocess
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, List, NamedTuple, Optional, Set, TypedDict
+from typing import NamedTuple, TypedDict
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -20,15 +26,15 @@ class LintSeverity(str, Enum):
 
 
 class LintMessage(NamedTuple):
-    path: Optional[str]
-    line: Optional[int]
-    char: Optional[int]
+    path: str | None
+    line: int | None
+    char: int | None
     code: str
     severity: LintSeverity
     name: str
-    original: Optional[str]
-    replacement: Optional[str]
-    description: Optional[str]
+    original: str | None
+    replacement: str | None
+    description: str | None
 
 
 class PyreResult(TypedDict):
@@ -43,7 +49,7 @@ class PyreResult(TypedDict):
     concise_description: str
 
 
-def run_pyre() -> List[PyreResult]:
+def run_pyre() -> list[PyreResult]:
     proc = subprocess.run(
         ["pyre", "--output=json", "incremental"],
         capture_output=True,
@@ -52,8 +58,8 @@ def run_pyre() -> List[PyreResult]:
 
 
 def check_pyre(
-    filenames: Set[str],
-) -> List[LintMessage]:
+    filenames: set[str],
+) -> list[LintMessage]:
     try:
         results = run_pyre()
 

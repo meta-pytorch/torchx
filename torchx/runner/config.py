@@ -161,7 +161,7 @@ import configparser as configparser
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, TextIO
+from typing import Iterable, TextIO
 
 from torchx.schedulers import get_scheduler_factories, Scheduler
 from torchx.specs import CfgVal, get_type_name
@@ -220,7 +220,7 @@ def _fixme_placeholder(runopt: runopt, max_len: int = 60) -> str:
 
 
 def dump(
-    f: TextIO, schedulers: Optional[List[str]] = None, required_only: bool = False
+    f: TextIO, schedulers: list[str] | None = None, required_only: bool = False
 ) -> None:
     """
     Dumps a default INI-style config template containing the :py:class:torchx.specs.runopts for the
@@ -301,8 +301,8 @@ def dump(
 
 def apply(
     scheduler: str,
-    cfg: Dict[str, CfgVal],
-    dirs: Optional[List[str]] = None,
+    cfg: dict[str, CfgVal],
+    dirs: list[str] | None = None,
 ) -> None:
     """
     Loads a ``.torchxconfig`` INI file from the specified directories in
@@ -342,8 +342,8 @@ def apply(
 
 def load_sections(
     prefix: str,
-    dirs: Optional[List[str]] = None,
-) -> Dict[str, Dict[str, str]]:
+    dirs: list[str] | None = None,
+) -> dict[str, dict[str, str]]:
     """
     Loads the content of the sections in the given ``.torchxconfig`` file
     that start with the specified prefix. Returns a map of maps of the
@@ -395,7 +395,7 @@ def load_sections(
 
     """
 
-    def strip_prefix(section_name: str) -> Optional[str]:
+    def strip_prefix(section_name: str) -> str | None:
         # returns the section_name with the prefix removed
         # or None if the section name does not match the prefix
         idx = section_name.find(CONFIG_PREFIX_DELIM)
@@ -406,7 +406,7 @@ def load_sections(
                 return section_name[idx + 1 :]
         return None
 
-    sections: Dict[str, Dict[str, str]] = {}
+    sections: dict[str, dict[str, str]] = {}
     for configfile in find_configs(dirs):
         with open(configfile, "r") as f:
             config = _configparser()
@@ -428,8 +428,8 @@ def load_sections(
 def get_configs(
     prefix: str,
     name: str,
-    dirs: Optional[List[str]] = None,
-) -> Dict[str, str]:
+    dirs: list[str] | None = None,
+) -> dict[str, str]:
     """
     Gets all the config values in the section ``["{prefix}:{name}"]``.
     Or an empty map if the section does not exist.
@@ -454,8 +454,8 @@ def get_config(
     prefix: str,
     name: str,
     key: str,
-    dirs: Optional[List[str]] = None,
-) -> Optional[str]:
+    dirs: list[str] | None = None,
+) -> str | None:
     """
     Gets the config value for the ``key`` in the section ``["{prefix}:{name}"]``.
     Or ``None`` if no section or key exists
@@ -477,7 +477,7 @@ def get_config(
     return get_configs(prefix, name, dirs).get(key, None)
 
 
-def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
+def find_configs(dirs: Iterable[str] | None = None) -> list[str]:
     """
     Finds and returns the filepath to ``.torchxconfig`` files based
     on the following logic:
@@ -513,7 +513,7 @@ def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
     return config_files
 
 
-def load(scheduler: str, f: TextIO, cfg: Dict[str, CfgVal]) -> None:
+def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
     """
     loads the section ``[{scheduler}]`` from the given
     configfile ``f`` (in .INI format) into the provided ``runcfg``, only adding

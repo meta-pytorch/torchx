@@ -5,6 +5,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
 
 import getpass
 import os
@@ -17,13 +18,9 @@ from typing import (
     Any,
     Callable,
     cast,
-    Dict,
     Iterable,
-    List,
     Mapping,
-    Optional,
     OrderedDict,
-    Tuple,
     TYPE_CHECKING,
     TypedDict,
     TypeVar,
@@ -47,7 +44,7 @@ from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 if TYPE_CHECKING:
     from docker import DockerClient  # pragma: no cover
 
-JOB_STATE: Dict[str, AppState] = {
+JOB_STATE: dict[str, AppState] = {
     "InProgress": AppState.RUNNING,
     "Completed": AppState.SUCCEEDED,
     "Failed": AppState.FAILED,
@@ -64,41 +61,41 @@ class AWSSageMakerOpts(TypedDict, total=False):
     role: str
     instance_count: int
     instance_type: str
-    keep_alive_period_in_seconds: Optional[int]
-    volume_size: Optional[int]
-    volume_kms_key: Optional[str]
-    max_run: Optional[int]
-    input_mode: Optional[str]
-    output_path: Optional[str]
-    output_kms_key: Optional[str]
-    base_job_name: Optional[str]
-    tags: Optional[Dict[str, str]]
-    subnets: Optional[List[str]]
-    security_group_ids: Optional[List[str]]
-    model_uri: Optional[str]
-    model_channel_name: Optional[str]
-    metric_definitions: Optional[Dict[str, str]]
-    encrypt_inter_container_traffic: Optional[bool]
-    use_spot_instances: Optional[bool]
-    max_wait: Optional[int]
-    checkpoint_s3_uri: Optional[str]
-    checkpoint_local_path: Optional[str]
-    debugger_hook_config: Optional[bool]
-    enable_sagemaker_metrics: Optional[bool]
-    enable_network_isolation: Optional[bool]
-    disable_profiler: Optional[bool]
-    environment: Optional[Dict[str, str]]
-    max_retry_attempts: Optional[int]
-    source_dir: Optional[str]
-    git_config: Optional[Dict[str, str]]
-    hyperparameters: Optional[Dict[str, str]]
-    container_log_level: Optional[int]
-    code_location: Optional[str]
-    dependencies: Optional[List[str]]
-    training_repository_access_mode: Optional[str]
-    training_repository_credentials_provider_arn: Optional[str]
-    disable_output_compression: Optional[bool]
-    enable_infra_check: Optional[bool]
+    keep_alive_period_in_seconds: int | None
+    volume_size: int | None
+    volume_kms_key: str | None
+    max_run: int | None
+    input_mode: str | None
+    output_path: str | None
+    output_kms_key: str | None
+    base_job_name: str | None
+    tags: dict[str, str]
+    subnets: list[str] | None
+    security_group_ids: list[str] | None
+    model_uri: str | None
+    model_channel_name: str | None
+    metric_definitions: dict[str, str] | None
+    encrypt_inter_container_traffic: bool | None
+    use_spot_instances: bool | None
+    max_wait: int | None
+    checkpoint_s3_uri: str | None
+    checkpoint_local_path: str | None
+    debugger_hook_config: bool | None
+    enable_sagemaker_metrics: bool | None
+    enable_network_isolation: bool | None
+    disable_profiler: bool | None
+    environment: dict[str, str] | None
+    max_retry_attempts: int | None
+    source_dir: str | None
+    git_config: dict[str, str] | None
+    hyperparameters: dict[str, str] | None
+    container_log_level: int | None
+    code_location: str | None
+    dependencies: list[str] | None
+    training_repository_access_mode: str | None
+    training_repository_credentials_provider_arn: str | None
+    disable_output_compression: bool | None
+    enable_infra_check: bool | None
 
 
 @dataclass
@@ -113,8 +110,8 @@ class AWSSageMakerJob:
     """
 
     job_name: str
-    job_def: Dict[str, Any]
-    images_to_push: Dict[str, Tuple[str, str]]
+    job_def: dict[str, Any]
+    images_to_push: dict[str, tuple[str, str]]
 
     def __str__(self) -> str:
         return yaml.dump(asdict(self))
@@ -147,7 +144,7 @@ def _local_session() -> boto3.session.Session:
 
 
 def _merge_ordered(
-    src: Optional[Dict[str, str]], extra: Dict[str, str]
+    src: dict[str, str] | None, extra: dict[str, str]
 ) -> OrderedDict[str, str]:
     merged = OrdDict(src or {})
     merged.update(extra)
@@ -195,8 +192,8 @@ class AWSSageMakerScheduler(
     def __init__(
         self,
         session_name: str,
-        client: Optional[Any] = None,  # pyre-ignore[2]
-        docker_client: Optional["DockerClient"] = None,
+        client: Any | None = None,  # pyre-ignore[2]
+        docker_client: "DockerClient | None" = None,
     ) -> None:
         super().__init__("aws_sagemaker", session_name, docker_client=docker_client)
         # pyre-fixme[4]: Attribute annotation cannot be `Any`.
@@ -243,7 +240,7 @@ class AWSSageMakerScheduler(
         role.env["TORCHX_JOB_ID"] = job_name
 
         # see https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase
-        job_def = {
+        job_def: dict[str, object] = {
             "entry_point": entrypoint,
             "image_uri": role.image,
             "distribution": {"torch_distributed": {"enabled": True}},
@@ -255,22 +252,29 @@ class AWSSageMakerScheduler(
         cfg["hyperparameters"] = _merge_ordered(
             cfg.get("hyperparameters"), hyperparameters
         )
-        # tags are used for AppDef metadata and the values from .torchxconfig
-        cfg["tags"] = [  # pyre-ignore[54]
-            *(cfg.get("tags") or []),
-            *({"Key": k, "Value": v} for k, v in app.metadata.items()),
-        ]
         # following the principle of least astonishment defaulting source_dir to current working directory
+
         cfg["source_dir"] = cfg.get("source_dir") or os.getcwd()
 
         for key in cfg:
-            if key in job_def:
-                raise ValueError(
-                    f"{key} is controlled by aws_sagemaker_scheduler and is set to {job_def[key]}"
-                )
-            value = cfg.get(key)  # type: ignore
-            if value is not None:
-                job_def[key] = value  # type: ignore
+            if key == "tags":
+                # tags are used for AppDef metadata and the values from .torchxconfig
+                # Convert dict[str, str] to SageMaker's list[dict[str, str]] format
+                job_def["tags"] = [
+                    *(
+                        {"Key": k, "Value": v}
+                        for k, v in (cfg.get("tags") or {}).items()
+                    ),
+                    *({"Key": k, "Value": v} for k, v in app.metadata.items()),
+                ]
+            else:
+                if key in job_def:
+                    raise ValueError(
+                        f"{key} is controlled by aws_sagemaker_scheduler and is set to {job_def[key]}"
+                    )
+                value = cfg.get(key)  # type: ignore
+                if value is not None:
+                    job_def[key] = value  # type: ignore
 
         req = AWSSageMakerJob(
             job_name=job_name,
@@ -279,7 +283,7 @@ class AWSSageMakerScheduler(
         )
         return AppDryRunInfo(req, repr)
 
-    def _parse_args(self, args: List[str]) -> Tuple[str, Dict[str, str]]:
+    def _parse_args(self, args: list[str]) -> tuple[str, dict[str, str]]:
         if len(args) < 1:
             raise ValueError("Not enough args to resolve entrypoint")
         offset = 1
@@ -385,19 +389,19 @@ class AWSSageMakerScheduler(
         )
         opts.add(
             "tags",
-            type_=List[Dict[str, str]],
-            default=None,
-            help="list of tags for labeling a training job.",
+            type_=dict[str, str],
+            default={},
+            help="dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).",
         )
         opts.add(
             "subnets",
-            type_=List[str],
+            type_=list[str],
             default=None,
             help="list of subnet ids. If not specified training job will be created without VPC config.",
         )
         opts.add(
             "security_group_ids",
-            type_=List[str],
+            type_=list[str],
             default=None,
             help="list of security group ids. If not specified training job will be created without VPC config.",
         )
@@ -415,9 +419,14 @@ class AWSSageMakerScheduler(
         )
         opts.add(
             "metric_definitions",
-            type_=List[Dict[str, str]],
+            type_=dict[str, str],
             default=None,
-            help="list of dictionaries that defines the metric(s) used to evaluate the training jobs. Each dictionary contains two keys: ‘Name’ for the name of the metric, and ‘Regex’ for the regular expression used to extract the metric from the logs.",
+            help=(
+                "dictionary that defines the metric(s) used to evaluate the "
+                "training jobs. Each key is the metric name and the value is the "
+                "regular expression used to extract the metric from the logs "
+                "(e.g., metric_name:regex_pattern,other_metric:other_regex)."
+            ),
         )
         opts.add(
             "encrypt_inter_container_traffic",
@@ -475,7 +484,7 @@ class AWSSageMakerScheduler(
         )
         opts.add(
             "environment",
-            type_=Dict[str, str],
+            type_=dict[str, str],
             default=None,
             help="environment variables to be set for use during training job",
         )
@@ -493,13 +502,13 @@ class AWSSageMakerScheduler(
         )
         opts.add(
             "git_config",
-            type_=Dict[str, str],
+            type_=dict[str, str],
             default=None,
             help="git configurations used for cloning files, including repo, branch, commit, 2FA_enabled, username, password, and token.",
         )
         opts.add(
             "hyperparameters",
-            type_=Dict[str, str],
+            type_=dict[str, str],
             default=None,
             help="dictionary containing the hyperparameters to initialize this estimator with.",
         )
@@ -517,7 +526,7 @@ class AWSSageMakerScheduler(
         )
         opts.add(
             "dependencies",
-            type_=List[str],
+            type_=list[str],
             default=None,
             help="list of absolute or relative paths to directories with any additional libraries that should be exported to the container.",
         )
@@ -547,7 +556,7 @@ class AWSSageMakerScheduler(
         )
         return opts
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         job = self._get_job(app_id)
         if job is None:
             return None
@@ -558,7 +567,7 @@ class AWSSageMakerScheduler(
             ui_url=self._job_ui_url(job["TrainingJobArn"]),
         )
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self) -> list[ListAppResponse]:
         raise NotImplementedError()
 
     def _cancel_existing(self, app_id: str) -> None:
@@ -569,19 +578,19 @@ class AWSSageMakerScheduler(
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         raise NotImplementedError()
 
-    def _get_job(self, app_id: str) -> Optional[Dict[str, Any]]:
+    def _get_job(self, app_id: str) -> dict[str, Any] | None:
         job = self._client.describe_training_job(TrainingJobName=app_id)
         return job
 
-    def _job_ui_url(self, job_arn: str) -> Optional[str]:
+    def _job_ui_url(self, job_arn: str) -> str | None:
         match = re.match(
             "arn:aws:sagemaker:(?P<region>[a-z-0-9]+):[0-9]+:training-job/(?P<job_id>[a-z-0-9]+)",
             job_arn,

@@ -13,7 +13,7 @@ import re
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING, TypedDict, Union
+from typing import Any, Iterable, TYPE_CHECKING, TypedDict
 
 import torchx
 import yaml
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
 log: logging.Logger = logging.getLogger(__name__)
 
-CONTAINER_STATE: Dict[str, AppState] = {
+CONTAINER_STATE: dict[str, AppState] = {
     "created": AppState.SUBMITTED,
     "restarting": AppState.PENDING,
     "running": AppState.RUNNING,
@@ -63,14 +63,14 @@ CONTAINER_STATE: Dict[str, AppState] = {
 @dataclass
 class DockerContainer:
     image: str
-    command: List[str]
-    kwargs: Dict[str, object]
+    command: list[str]
+    kwargs: dict[str, object]
 
 
 @dataclass
 class DockerJob:
     app_id: str
-    containers: List[DockerContainer]
+    containers: list[DockerContainer]
 
     def __str__(self) -> str:
         return yaml.dump(self.containers)
@@ -99,7 +99,7 @@ def has_docker() -> bool:
         return False
 
 
-def ensure_network(client: Optional["DockerClient"] = None) -> None:
+def ensure_network(client: "DockerClient | None" = None) -> None:
     """
     This creates the torchx docker network. Multi-process safe.
     """
@@ -124,8 +124,8 @@ def ensure_network(client: Optional["DockerClient"] = None) -> None:
 
 
 class DockerOpts(TypedDict, total=False):
-    copy_env: Optional[List[str]]
-    env: Optional[Dict[str, str]]
+    copy_env: list[str] | None
+    env: dict[str, str] | None
     privileged: bool
 
 
@@ -355,7 +355,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             )
         return containers[0]
 
-    def _get_containers(self, app_id: str) -> List["Container"]:
+    def _get_containers(self, app_id: str) -> list["Container"]:
         client = self._docker_client
         return client.containers.list(
             all=True, filters={"label": f"{LABEL_APP_ID}={app_id}"}
@@ -370,13 +370,13 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         opts = runopts()
         opts.add(
             "copy_env",
-            type_=List[str],
+            type_=list[str],
             default=None,
             help="list of glob patterns of environment variables to copy if not set in AppDef. Ex: FOO_*",
         )
         opts.add(
             "env",
-            type_=Dict[str, str],
+            type_=dict[str, str],
             default=None,
             help="""environment variables to be passed to the run. The separator sign can be eiher comma or semicolon
             (e.g. ENV1:v1,ENV2:v2,ENV3:v3 or ENV1:V1;ENV2:V2). Environment variables from env will be applied on top
@@ -404,7 +404,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             state = CONTAINER_STATE[container.status]
         return state
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         roles = {}
         roles_statuses = {}
 
@@ -457,11 +457,11 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         c = self._get_container(app_id, role_name, k)
 
@@ -488,7 +488,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         else:
             return logs
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self) -> list[ListAppResponse]:
         unique_apps = {
             ListAppResponse(
                 app_id=cntr.labels[LABEL_APP_ID], state=self._get_app_state(cntr)
@@ -500,7 +500,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         return list(unique_apps)
 
 
-def _to_str(a: Union[str, bytes]) -> str:
+def _to_str(a: str | bytes) -> str:
     if isinstance(a, bytes):
         a = a.decode("utf-8")
     return a

@@ -10,7 +10,7 @@
 import datetime
 import os
 from contextlib import contextmanager
-from typing import cast, Generator, List, Mapping, Optional
+from typing import cast, Generator, Mapping
 from unittest.mock import MagicMock, patch
 
 from torchx.runner import get_runner, Runner
@@ -385,10 +385,10 @@ class RunnerTest(TestWithTmpDir):
             ) -> AppDryRunInfo[AppDef]:
                 return AppDryRunInfo(app, lambda s: s)
 
-            def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+            def describe(self, app_id: str) -> DescribeAppResponse | None:
                 pass
 
-            def list(self) -> List[DescribeAppResponse]:
+            def list(self) -> list[DescribeAppResponse]:
                 pass
 
             def _cancel_existing(self, app_id: str) -> None:
@@ -765,7 +765,7 @@ class RunnerTest(TestWithTmpDir):
         opts.add("default_time", type_=int, default=0, help="")
         opts.add("enable", type_=bool, default=True, help="")
         opts.add("disable", type_=bool, default=True, help="")
-        opts.add("complex_list", type_=List[str], default=[], help="")
+        opts.add("complex_list", type_=list[str], default=[], help="")
         scheduler_mock.run_opts.return_value = opts
 
         with Runner(

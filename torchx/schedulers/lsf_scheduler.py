@@ -29,7 +29,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, TypedDict
+from typing import Any, Iterable, TypedDict
 
 import torchx
 from torchx.schedulers.api import (
@@ -58,7 +58,7 @@ from torchx.specs import (
 )
 from torchx.util import shlex
 
-JOB_STATE: Dict[str, AppState] = {
+JOB_STATE: dict[str, AppState] = {
     "DONE": AppState.SUCCEEDED,
     "EXIT": AppState.FAILED,
     "PEND": AppState.PENDING,
@@ -79,11 +79,11 @@ def get_job_state(state_str: str, exit_code: str) -> AppState:
 
 
 class LsfOpts(TypedDict, total=False):
-    lsf_queue: Optional[str]
-    jobdir: Optional[str]
-    container_workdir: Optional[str]
-    host_network: Optional[bool]
-    shm_size: Optional[str]
+    lsf_queue: str | None
+    jobdir: str | None
+    container_workdir: str | None
+    host_network: bool | None
+    shm_size: str | None
 
 
 def get_docker_command(job_name: str, role: Role, cfg: LsfOpts) -> str:
@@ -235,7 +235,7 @@ def find_rank0_host(role: Role) -> str:
 
 
 def get_submit_script(
-    app_id: str, cmd: List[str], app: AppDef, cfg: LsfOpts, rank0_host: str
+    app_id: str, cmd: list[str], app: AppDef, cfg: LsfOpts, rank0_host: str
 ) -> str:
     bsubs = []
     head_job_name = ""
@@ -265,7 +265,7 @@ def get_submit_script(
     return script + "\n".join(bsubs) + "\n"
 
 
-def bjobs_msg_to_describe(app_id: str, msg: str) -> Optional[DescribeAppResponse]:
+def bjobs_msg_to_describe(app_id: str, msg: str) -> DescribeAppResponse | None:
     if msg == "":
         return None
     roles = {}
@@ -314,7 +314,7 @@ def bjobs_msg_to_log_file(
     app_id: str,
     role_name: str,
     k: int = 0,
-    streams: Optional[Stream] = None,
+    streams: Stream | None = None,
     msg: str = "",
 ) -> str:
     if streams == Stream.COMBINED:
@@ -344,7 +344,7 @@ def bjobs_msg_to_log_file(
     return log_file
 
 
-def bjobs_msg_to_list(msg: str) -> List[ListAppResponse]:
+def bjobs_msg_to_list(msg: str) -> list[ListAppResponse]:
     ret = []
     lines = msg.split("\n")
     apps = {}
@@ -377,11 +377,11 @@ def bjobs_msg_to_list(msg: str) -> List[ListAppResponse]:
 
 @dataclass
 class LsfBsub:
-    jobdir: Optional[str]
+    jobdir: str | None
     app_id: str
     app: AppDef
     cfg: LsfOpts
-    cmd: List[str]
+    cmd: list[str]
 
     def materialize(self, rank0_host: str = "RANK0_HOST") -> str:
         return get_submit_script(self.app_id, self.cmd, self.app, self.cfg, rank0_host)
@@ -517,7 +517,7 @@ class LsfScheduler(Scheduler[LsfOpts]):
             repr,
         )
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         p = subprocess.run(
             [
                 "bjobs",
@@ -539,11 +539,11 @@ class LsfScheduler(Scheduler[LsfOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         p = subprocess.run(
             ["bjobs", "-noheader", "-a", "-P", app_id, "-o", "proj name output_dir"],
@@ -565,7 +565,7 @@ class LsfScheduler(Scheduler[LsfOpts]):
             iterator = filter_regex(regex, iterator)
         return iterator
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self) -> list[ListAppResponse]:
         p = subprocess.run(
             ["bjobs", "-noheader", "-a", "-o", "proj stat exit_code"],
             stdout=subprocess.PIPE,

@@ -13,7 +13,7 @@ import posixpath
 import tempfile
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, Generic, Iterable, Mapping, Tuple, TYPE_CHECKING, TypeVar
+from typing import Any, Generic, Iterable, Mapping, TYPE_CHECKING, TypeVar
 
 from torchx.specs import AppDef, CfgVal, Role, runopts, Workspace
 
@@ -37,7 +37,7 @@ class PkgInfo(Generic[PackageType]):
     """
 
     img: str
-    lazy_overrides: Dict[str, Any]
+    lazy_overrides: dict[str, Any]
     metadata: PackageType
 
     def __post_init__(self) -> None:
@@ -206,7 +206,7 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         raise NotImplementedError("push is not implemented")
 
 
-def _ignore(s: str, patterns: Iterable[str]) -> Tuple[int, bool]:
+def _ignore(s: str, patterns: Iterable[str]) -> tuple[int, bool]:
     last_matching_pattern = -1
     match = False
     if s in (".", "Dockerfile.torchx"):
@@ -226,7 +226,7 @@ def walk_workspace(
     fs: "AbstractFileSystem",
     path: str,
     ignore_name: str = TORCHX_IGNORE,
-) -> Iterable[Tuple[str, Iterable[str], Mapping[str, Mapping[str, object]]]]:
+) -> Iterable[tuple[str, Iterable[str], Mapping[str, Mapping[str, object]]]]:
     """
     walk_workspace walks the filesystem path and applies the ignore rules
     specified via ``ignore_name``.

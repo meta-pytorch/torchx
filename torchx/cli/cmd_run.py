@@ -17,7 +17,7 @@ from dataclasses import asdict, dataclass, field, fields, MISSING as DATACLASS_M
 from itertools import groupby
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torchx.specs as specs
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig_run
@@ -56,19 +56,19 @@ logger: logging.Logger = logging.getLogger(__name__)
 class TorchXRunArgs:
     component_name: str
     scheduler: str
-    scheduler_args: Dict[str, Any]
-    scheduler_cfg: Dict[str, CfgVal] = field(default_factory=dict)
+    scheduler_args: dict[str, Any]
+    scheduler_cfg: dict[str, CfgVal] = field(default_factory=dict)
     dryrun: bool = False
     wait: bool = False
     log: bool = False
     workspace: str = ""
-    parent_run_id: Optional[str] = None
+    parent_run_id: str | None = None
     tee_logs: bool = False
-    component_args: Dict[str, Any] = field(default_factory=dict)
-    component_args_str: List[str] = field(default_factory=list)
+    component_args: dict[str, Any] = field(default_factory=dict)
+    component_args_str: list[str] = field(default_factory=list)
 
 
-def torchx_run_args_from_json(json_data: Dict[str, Any]) -> TorchXRunArgs:
+def torchx_run_args_from_json(json_data: dict[str, Any]) -> TorchXRunArgs:
     all_fields = [f.name for f in fields(TorchXRunArgs)]
     required_fields = {
         f.name
@@ -99,8 +99,8 @@ def torchx_run_args_from_json(json_data: Dict[str, Any]) -> TorchXRunArgs:
 def torchx_run_args_from_argparse(
     args: argparse.Namespace,
     component_name: str,
-    component_args: List[str],
-    scheduler_cfg: Dict[str, CfgVal],
+    component_args: list[str],
+    scheduler_cfg: dict[str, CfgVal],
 ) -> TorchXRunArgs:
     return TorchXRunArgs(
         component_name=component_name,
@@ -118,10 +118,10 @@ def torchx_run_args_from_argparse(
 
 
 def _parse_component_name_and_args(
-    component_name_and_args: List[str],
+    component_name_and_args: list[str],
     subparser: argparse.ArgumentParser,
-    dirs: Optional[List[str]] = None,  # for testing only
-) -> Tuple[str, List[str]]:
+    dirs: list[str] | None = None,  # for testing only
+) -> tuple[str, list[str]]:
     """
     Given a list of nargs parsed from commandline, parses out the component name
     and component args. If component name is not found in the list, then
@@ -188,7 +188,7 @@ class CmdBuiltins(SubCommand):
             help="prints the builtin's component def to stdout",
         )
 
-    def _builtins(self) -> Dict[str, _Component]:
+    def _builtins(self) -> dict[str, _Component]:
         return get_components()
 
     def run(self, args: argparse.Namespace) -> None:
@@ -205,8 +205,8 @@ class CmdBuiltins(SubCommand):
 
 class CmdRun(SubCommand):
     def __init__(self) -> None:
-        self._subparser: Optional[argparse.ArgumentParser] = None
-        self._stdin_data_json: Optional[Dict[str, Any]] = None
+        self._subparser: argparse.ArgumentParser | None = None
+        self._stdin_data_json: dict[str, Any] | None = None
 
     def add_arguments(self, subparser: argparse.ArgumentParser) -> None:
         scheduler_names = get_scheduler_factories().keys()
@@ -363,7 +363,7 @@ class CmdRun(SubCommand):
         )
         self._run_inner(runner, torchx_run_args)
 
-    def _run_from_stdin_args(self, runner: Runner, stdin_data: Dict[str, Any]) -> None:
+    def _run_from_stdin_args(self, runner: Runner, stdin_data: dict[str, Any]) -> None:
         torchx_run_args = torchx_run_args_from_json(stdin_data)
         scheduler_opts = runner.scheduler_run_opts(torchx_run_args.scheduler)
         cfg = scheduler_opts.cfg_from_json_repr(
@@ -372,9 +372,7 @@ class CmdRun(SubCommand):
         torchx_run_args.scheduler_cfg = cfg
         self._run_inner(runner, torchx_run_args)
 
-    def _get_torchx_stdin_args(
-        self, args: argparse.Namespace
-    ) -> Optional[Dict[str, Any]]:
+    def _get_torchx_stdin_args(self, args: argparse.Namespace) -> dict[str, Any] | None:
         if not args.stdin:
             return None
         if self._stdin_data_json is None:
@@ -382,8 +380,8 @@ class CmdRun(SubCommand):
         return self._stdin_data_json
 
     def torchx_json_from_stdin(
-        self, args: Optional[argparse.Namespace] = None
-    ) -> Dict[str, Any]:
+        self, args: argparse.Namespace | None = None
+    ) -> dict[str, Any]:
         try:
             stdin_data_json = json.load(sys.stdin)
             if args and args.dryrun:

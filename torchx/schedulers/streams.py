@@ -11,7 +11,6 @@ import io
 import os
 import threading
 import time
-from typing import List
 
 
 class Tee:
@@ -29,7 +28,7 @@ class Tee:
         assert len(sources) > 0, "must have at least one stream"
         self.streams_lock = threading.Lock()  # protects streams
         self.out = out
-        self.streams: List[io.FileIO] = []
+        self.streams: list[io.FileIO] = []
         for source in sources:
             r = io.open(source, "rb", buffering=0)
             os.set_blocking(r.fileno(), False)

@@ -29,19 +29,7 @@ import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from types import FrameType
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Protocol,
-    TextIO,
-    Tuple,
-    TypedDict,
-)
+from typing import Any, BinaryIO, Callable, Iterable, Protocol, TextIO, TypedDict
 
 from torchx.schedulers.api import (
     DescribeAppResponse,
@@ -98,15 +86,15 @@ class ReplicaParam:
     Holds ``LocalScheduler._popen()`` parameters for each replica of the role.
     """
 
-    args: List[str]
-    env: Dict[str, str]
+    args: list[str]
+    env: dict[str, str]
 
     # IO stream files
-    stdout: Optional[str] = None
-    stderr: Optional[str] = None
-    combined: Optional[str] = None
+    stdout: str | None = None
+    stderr: str | None = None
+    combined: str | None = None
 
-    cwd: Optional[str] = None
+    cwd: str | None = None
 
 
 class ImageProvider(abc.ABC):
@@ -140,9 +128,9 @@ class ImageProvider(abc.ABC):
         self,
         img_root: str,
         role: Role,
-        stdout: Optional[str] = None,
-        stderr: Optional[str] = None,
-        combined: Optional[str] = None,
+        stdout: str | None = None,
+        stderr: str | None = None,
+        combined: str | None = None,
     ) -> ReplicaParam:
         """
         Given the role replica's specs returns ``ReplicaParam`` holder
@@ -162,7 +150,7 @@ class ImageProvider(abc.ABC):
             self.get_cwd(role.image),
         )
 
-    def get_cwd(self, image: str) -> Optional[str]:
+    def get_cwd(self, image: str) -> str | None:
         """
         Returns the absolute path of the mounted img directory. Used as a working
         directory for starting child processes.
@@ -178,8 +166,8 @@ class ImageProvider(abc.ABC):
 
 class LocalOpts(TypedDict, total=False):
     log_dir: str
-    prepend_cwd: Optional[bool]
-    auto_set_cuda_visible_devices: Optional[bool]
+    prepend_cwd: bool | None
+    auto_set_cuda_visible_devices: bool | None
 
 
 class LocalDirectoryImageProvider(ImageProvider):
@@ -215,7 +203,7 @@ class LocalDirectoryImageProvider(ImageProvider):
 
         return image
 
-    def get_cwd(self, image: str) -> Optional[str]:
+    def get_cwd(self, image: str) -> str | None:
         """
         Returns the absolute working directory. Used as a working
         directory for the child process.
@@ -251,7 +239,7 @@ class CWDImageProvider(ImageProvider):
     def fetch(self, image: str) -> str:
         return os.getcwd()
 
-    def get_cwd(self, image: str) -> Optional[str]:
+    def get_cwd(self, image: str) -> str | None:
         return os.getcwd()
 
     def get_entrypoint(self, img_root: str, role: Role) -> str:
@@ -277,9 +265,9 @@ class PopenProtocol(Protocol):
     @property
     def returncode(self) -> int: ...
 
-    def wait(self, timeout: Optional[float] = None) -> int: ...
+    def wait(self, timeout: float | None = None) -> int: ...
 
-    def poll(self) -> Optional[int]: ...
+    def poll(self) -> int | None: ...
 
     def kill(self) -> None: ...
 
@@ -296,9 +284,9 @@ class _LocalReplica:
 
     # IO streams:
     # None means no log_dir (out to console)
-    stdout: Optional[BinaryIO]
-    stderr: Optional[BinaryIO]
-    combined: Optional[Tee]
+    stdout: BinaryIO | None
+    stderr: BinaryIO | None
+    combined: Tee | None
 
     error_file: str
 
@@ -344,7 +332,7 @@ class _LocalAppDef:
         # cfg.get("log_dir")/<session_name>/<app_id> or /tmp/torchx/<session_name>/<app_id>
         self.log_dir = log_dir
         # role name -> [replicas, ...]
-        self.role_replicas: Dict[RoleName, List[_LocalReplica]] = {}
+        self.role_replicas: dict[RoleName, list[_LocalReplica]] = {}
         self.state: AppState = AppState.PENDING
         # time (in seconds since epoch) when the last set_state method() was called
         self.last_updated: float = -1
@@ -398,7 +386,7 @@ class _LocalAppDef:
                 r.proc.wait()
                 r.terminate()
 
-    def _get_error_file(self) -> Optional[str]:
+    def _get_error_file(self) -> str | None:
         error_file = None
         min_timestamp = sys.maxsize
         for replicas in self.role_replicas.values():
@@ -430,7 +418,7 @@ class _LocalAppDef:
         """
         self.kill()
 
-        def _fmt_io_filename(std_io: Optional[BinaryIO]) -> str:
+        def _fmt_io_filename(std_io: BinaryIO | None) -> str:
             if std_io:
                 return std_io.name
             else:
@@ -477,7 +465,7 @@ class _LocalAppDef:
         return f"{{app_id:{self.id}, state:{self.state}, pid_map:{role_to_pid}}}"
 
 
-def _join_PATH(*paths: Optional[str]) -> str:
+def _join_PATH(*paths: str | None) -> str:
     """
     Joins strings that go in the PATH env var.
     Deals with empty strings and None-types, making sure no leading
@@ -511,10 +499,10 @@ class PopenRequest:
     log_dir: str
     # maps role_name -> List[ReplicaSpec]
     # role_params["trainer"][0] -> holds trainer's 0^th replica's (NOT rank!) parameters
-    role_params: Dict[RoleName, List[ReplicaParam]]
+    role_params: dict[RoleName, list[ReplicaParam]]
     # maps role_name -> List[replica_log_dir]
     # role_log_dirs["trainer"][0] -> holds trainer's 0^th replica's log directory path
-    role_log_dirs: Dict[RoleName, List[str]]
+    role_log_dirs: dict[RoleName, list[str]]
 
 
 def _register_termination_signals() -> None:
@@ -585,13 +573,13 @@ class LocalScheduler(Scheduler[LocalOpts]):
         session_name: str,
         image_provider_class: Callable[[LocalOpts], ImageProvider],
         cache_size: int = 100,
-        extra_paths: Optional[List[str]] = None,
+        extra_paths: list[str] | None = None,
     ) -> None:
         # NOTE: make sure any new init options are supported in create_scheduler(...)
         super().__init__("local", session_name)
 
         # TODO T72035686 replace dict with a proper LRUCache data structure
-        self._apps: Dict[AppId, _LocalAppDef] = {}
+        self._apps: dict[AppId, _LocalAppDef] = {}
         self._image_provider_class = image_provider_class
 
         if cache_size <= 0:
@@ -599,10 +587,10 @@ class LocalScheduler(Scheduler[LocalOpts]):
         self._cache_size = cache_size
         _register_termination_signals()
 
-        self._extra_paths: List[str] = extra_paths or []
+        self._extra_paths: list[str] = extra_paths or []
 
         # sets lazily on submit or dryrun based on log_dir cfg
-        self._base_log_dir: Optional[str] = None
+        self._base_log_dir: str | None = None
         self._created_tmp_log_dir: bool = False
 
     def _run_opts(self) -> runopts:
@@ -659,7 +647,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
             log.debug(f"no apps evicted, all {len(self._apps)} apps are running")
             return False
 
-    def _get_file_io(self, file: Optional[str]) -> Optional[io.FileIO]:
+    def _get_file_io(self, file: str | None) -> io.FileIO | None:
         """
         Given a file name, opens the file for write and returns the IO.
         If no file name is given, then returns ``None``
@@ -714,11 +702,11 @@ class LocalScheduler(Scheduler[LocalOpts]):
 
     def run_local_job(
         self,
-        args: List[str],
-        env: Dict[str, str],
-        stdout: Optional[io.FileIO],
-        stderr: Optional[io.FileIO],
-        cwd: Optional[str] = None,
+        args: list[str],
+        env: dict[str, str],
+        stdout: io.FileIO | None,
+        stderr: io.FileIO | None,
+        cwd: str | None = None,
     ) -> "subprocess.Popen[bytes]":
         return subprocess.Popen(
             args=args,
@@ -732,7 +720,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
     def _get_replica_output_handles(
         self,
         replica_params: ReplicaParam,
-    ) -> Tuple[Optional[io.FileIO], Optional[io.FileIO], Optional[Tee]]:
+    ) -> tuple[io.FileIO | None, io.FileIO | None, Tee | None]:
         """
         Returns the stdout, stderr, and combined outputs of the replica.
         If the combined output file is not specified, then the combined output is ``None``.
@@ -740,7 +728,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
 
         stdout_ = self._get_file_io(replica_params.stdout)
         stderr_ = self._get_file_io(replica_params.stderr)
-        combined_: Optional[Tee] = None
+        combined_: Tee | None = None
         combined_file = self._get_file_io(replica_params.combined)
         if combined_file:
             combined_ = Tee(
@@ -753,7 +741,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
     def _get_replica_env(
         self,
         replica_params: ReplicaParam,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Returns environment variables for the ``_LocalReplica``
         """
@@ -854,7 +842,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
 
     def auto_set_CUDA_VISIBLE_DEVICES(
         self,
-        role_params: Dict[str, List[ReplicaParam]],
+        role_params: dict[str, list[ReplicaParam]],
         app: AppDef,
         cfg: LocalOpts,
     ) -> None:
@@ -957,8 +945,8 @@ Reduce requested GPU resources or use a host with more GPUs
         image_provider = self._image_provider_class(cfg)
         app_log_dir = self._get_app_log_dir(app_id, cfg)
 
-        role_params: Dict[str, List[ReplicaParam]] = {}
-        role_log_dirs: Dict[str, List[str]] = {}
+        role_params: dict[str, list[ReplicaParam]] = {}
+        role_log_dirs: dict[str, list[str]] = {}
 
         for role in app.roles:
             replica_params = role_params.setdefault(role.name, [])
@@ -1021,7 +1009,7 @@ Reduce requested GPU resources or use a host with more GPUs
         self.auto_set_CUDA_VISIBLE_DEVICES(role_params, app, cfg)
         return PopenRequest(app_id, app_log_dir, role_params, role_log_dirs)
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         if app_id not in self._apps:
             return None
 
@@ -1063,11 +1051,11 @@ Reduce requested GPU resources or use a host with more GPUs
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         if since or until:
             warnings.warn(
@@ -1096,7 +1084,7 @@ Reduce requested GPU resources or use a host with more GPUs
             iterator = filter_regex(regex, iterator)
         return iterator
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self) -> list[ListAppResponse]:
         raise Exception(
             "App handles cannot be listed for local scheduler as they are not persisted by torchx"
         )
@@ -1138,7 +1126,7 @@ class LogIterator:
     ) -> None:
         self._app_id: str = app_id
         self._log_file: str = log_file
-        self._log_fp: Optional[TextIO] = None
+        self._log_fp: TextIO | None = None
         # pyre-fixme: Scheduler opts
         self._scheduler: Scheduler = scheduler
         self._app_finished: bool = not should_tail
@@ -1199,7 +1187,7 @@ class LogIterator:
 def create_scheduler(
     session_name: str,
     cache_size: int = 100,
-    extra_paths: Optional[List[str]] = None,
+    extra_paths: list[str] | None = None,
     image_provider_class: Callable[[LocalOpts], ImageProvider] = CWDImageProvider,
     **kwargs: Any,
 ) -> LocalScheduler:

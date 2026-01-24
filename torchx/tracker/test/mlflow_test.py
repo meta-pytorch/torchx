@@ -3,11 +3,11 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
 import os
 import unittest
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List
 from unittest import mock
 
 import mlflow
@@ -40,11 +40,11 @@ class Config:
     lr: float = 0.01
     checkpoint_url: str = "s3://foo/bar"
     use_amp: bool = False
-    locales: List[str] = field(default_factory=lambda: ["us", "eu", "fr"])
-    empty_list: List[str] = field(default_factory=list)
-    empty_map: Dict[str, str] = field(default_factory=dict)
+    locales: list[str] = field(default_factory=lambda: ["us", "eu", "fr"])
+    empty_list: list[str] = field(default_factory=list)
+    empty_map: dict[str, str] = field(default_factory=dict)
     model_config: ModelConfig = field(default_factory=ModelConfig)
-    datasets: List[DatasetConfig] = field(
+    datasets: list[DatasetConfig] = field(
         default_factory=lambda: [
             DatasetConfig(url="s3://dataset1"),
             DatasetConfig(url="s3://dataset2"),

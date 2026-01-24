@@ -13,7 +13,7 @@ import stat
 import sys
 import tarfile
 import tempfile
-from typing import Dict, IO, Iterable, Mapping, Optional, TextIO, Tuple, TYPE_CHECKING
+from typing import IO, Iterable, Mapping, TextIO, TYPE_CHECKING
 
 import fsspec
 import torchx
@@ -37,7 +37,7 @@ COPY . .
 """
 
 
-class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
+class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
     """
     DockerWorkspaceMixin will build patched docker images from the workspace. These
     patched images are docker images and can be either used locally via the
@@ -70,7 +70,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
     def __init__(
         self,
         *args: object,
-        docker_client: Optional["DockerClient"] = None,
+        docker_client: "DockerClient | None" = None,
         **kwargs: object,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -162,7 +162,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
 
     def dryrun_push_images(
         self, app: AppDef, cfg: Mapping[str, CfgVal]
-    ) -> Dict[str, Tuple[str, str]]:
+    ) -> dict[str, tuple[str, str]]:
         """
         _update_app_images replaces the local Docker images (identified via
         ``sha256:...``) in the provided ``AppDef`` with the remote path that they will be uploaded to and
@@ -195,7 +195,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
                 role.image = remote_image
         return images_to_push
 
-    def push_images(self, images_to_push: Dict[str, Tuple[str, str]]) -> None:
+    def push_images(self, images_to_push: dict[str, tuple[str, str]]) -> None:
         """
         _push_images pushes the specified images to the remote container
         repository with the specified tag. The docker daemon must be
@@ -219,7 +219,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
 
 
 def print_push_events(
-    events: Iterable[Dict[str, str]],
+    events: Iterable[dict[str, str]],
     stream: TextIO = sys.stderr,
 ) -> None:
     ID_KEY = "id"

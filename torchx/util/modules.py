@@ -8,10 +8,10 @@
 
 import importlib
 from types import ModuleType
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, TypeVar
 
 
-def load_module(path: str) -> Union[ModuleType, Optional[Callable[..., object]]]:
+def load_module(path: str) -> ModuleType | Callable[..., object] | None:
     """
     Loads and returns the module/module attr represented by the ``path``: ``full.module.path:optional_attr``
 

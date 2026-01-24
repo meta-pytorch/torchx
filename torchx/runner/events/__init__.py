@@ -26,14 +26,14 @@ import sys
 import time
 import traceback
 from types import TracebackType
-from typing import Dict, Optional, Type
+from typing import Type
 
 from torchx.runner.events.handlers import get_logging_handler
 from torchx.util.session import get_session_id_or_create_new
 
 from .api import SourceType, TorchxEvent  # noqa F401
 
-_events_logger: Optional[logging.Logger] = None
+_events_logger: logging.Logger | None = None
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -94,12 +94,12 @@ class log_event:
     def __init__(
         self,
         api: str,
-        scheduler: Optional[str] = None,
-        app_id: Optional[str] = None,
-        app_image: Optional[str] = None,
-        app_metadata: Optional[Dict[str, str]] = None,
-        runcfg: Optional[str] = None,
-        workspace: Optional[str] = None,
+        scheduler: str | None = None,
+        app_id: str | None = None,
+        app_image: str | None = None,
+        app_metadata: dict[str, str] | None = None,
+        runcfg: str | None = None,
+        workspace: str | None = None,
     ) -> None:
         self._torchx_event: TorchxEvent = self._generate_torchx_event(
             api,
@@ -123,10 +123,10 @@ class log_event:
 
     def __exit__(
         self,
-        exec_type: Optional[Type[BaseException]],
-        exec_value: Optional[BaseException],
-        traceback_type: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exec_type: Type[BaseException] | None,
+        exec_value: BaseException | None,
+        traceback_type: TracebackType | None,
+    ) -> bool | None:
         self._torchx_event.cpu_time_usec = (
             time.process_time_ns() - self._start_cpu_time_ns
         ) // 1000
@@ -155,12 +155,12 @@ class log_event:
         self,
         api: str,
         scheduler: str,
-        app_id: Optional[str] = None,
-        app_image: Optional[str] = None,
-        app_metadata: Optional[Dict[str, str]] = None,
-        runcfg: Optional[str] = None,
+        app_id: str | None = None,
+        app_image: str | None = None,
+        app_metadata: dict[str, str] | None = None,
+        runcfg: str | None = None,
         source: SourceType = SourceType.UNKNOWN,
-        workspace: Optional[str] = None,
+        workspace: str | None = None,
     ) -> TorchxEvent:
         return TorchxEvent(
             session=get_session_id_or_create_new(),

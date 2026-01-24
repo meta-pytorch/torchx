@@ -15,7 +15,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, TypeVar, Union
+from typing import Callable, Iterable, TypeVar
 
 from torch.distributed.elastic.multiprocessing import Std
 from torch.distributed.launcher import elastic_launch, LaunchConfig
@@ -102,7 +102,7 @@ class TestWithTmpDir(unittest.TestCase):
             fout.writelines(content)
         return f
 
-    def write_shell_script(self, script_path: str, content: List[str]) -> Path:
+    def write_shell_script(self, script_path: str, content: list[str]) -> Path:
         """
         Writes a bash script with the body as provided by ``content`` in the test's tmp directory.
         The content should not include the shebang (``#!/bin/bash``) header as one is added automatically.
@@ -125,7 +125,7 @@ class TestWithTmpDir(unittest.TestCase):
             test_util.write_shell_script(str(self.tmpdir), script_path, content)
         )
 
-    def read(self, filepath: Union[str, Path]) -> List[str]:
+    def read(self, filepath: str | Path) -> list[str]:
         """
         Reads the entire contents of the file into a list.
         The ``filepath`` is assumed to be relative to the test tmpdir
@@ -282,7 +282,7 @@ class DistributedTestCase(TestWithTmpDir):
 
     def run_ddp(
         self, world_size: int, fn: Callable[..., Ret]
-    ) -> Callable[..., Dict[int, Ret]]:
+    ) -> Callable[..., dict[int, Ret]]:
         """
         Runs ``world_size`` copies of ``fn`` (one on each sub-process) as a DDP job on the local host.
 

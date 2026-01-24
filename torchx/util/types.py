@@ -9,7 +9,7 @@
 import inspect
 import re
 from types import UnionType
-from typing import Any, Callable, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, TypeVar, Union
 
 
 def to_list(arg: str) -> list[str]:
@@ -63,7 +63,7 @@ def to_dict(arg: str) -> dict[str, str]:
      to_dict('FOO="value with = and , and ;"') == {"FOO": "value with = and , and ;"}
     """
 
-    def parse_val_key(vk: str) -> Tuple[str, str]:
+    def parse_val_key(vk: str) -> tuple[str, str]:
         # ``vk`` is assumed to be in value<delim>key format
         delims = [",", ";"]
         idx = max([vk.rfind(d) for d in delims])
@@ -172,7 +172,7 @@ def decode(encoded_value: Any, annotation: Any):
 
 def decode_from_string(
     encoded_value: str, annotation: Any
-) -> Union[dict[Any, Any], list[Any], None]:
+) -> dict[Any, Any] | list[Any] | None:
     """Decodes string representation to the underlying type(Dict or List)
 
     Given a string representation of the value, the method decodes it according
@@ -266,7 +266,7 @@ def get_argparse_param_type(parameter: inspect.Parameter) -> Callable[[str], obj
 _T = TypeVar("_T")
 
 
-def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _T:
+def none_throws(optional: _T | None, message: str = "Unexpected `None`") -> _T:
     """Convert an optional to its value. Raises an `AssertionError` if the value is `None`
     Copied from https://github.com/facebook/pyre-check/blob/main/pyre_extensions/refinement.py for performance reasons.
     """

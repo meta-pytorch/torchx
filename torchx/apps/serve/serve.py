@@ -17,7 +17,6 @@ import threading
 from functools import partial
 from getpass import getuser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from typing import List
 from urllib.parse import urlparse
 
 import fsspec
@@ -35,7 +34,7 @@ TORCHSERVE_PARAMS = (
 )
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="uploads the provided model to torchserve",
     )
@@ -101,7 +100,7 @@ def rand_id() -> str:
     return f"{getuser()}_{id}"
 
 
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     args = parse_args(argv)
     if args.dryrun:
         print("App serve started successfully")

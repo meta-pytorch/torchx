@@ -10,7 +10,6 @@ import argparse
 import os
 import pathlib
 from argparse import Namespace
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -57,7 +56,7 @@ def train(
     train_loader: torch.utils.data.DataLoader[VisionDataset],
     optimizer: optim.Optimizer,
     epoch: int,
-    writer: Optional[SummaryWriter],
+    writer: SummaryWriter | None,
 ) -> None:
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -88,7 +87,7 @@ def test(
     model: nn.Module,
     device: torch.device,
     test_loader: torch.utils.data.DataLoader[VisionDataset],
-    writer: Optional[SummaryWriter],
+    writer: SummaryWriter | None,
 ) -> None:
     model.eval()
     test_loss = 0

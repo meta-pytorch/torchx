@@ -8,7 +8,7 @@
 # pyre-strict
 
 import unittest
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
@@ -20,10 +20,10 @@ class spy_load_group:
     def __call__(
         self,
         group: str,
-        default: Dict[str, Any],
-        ignore_missing: Optional[bool] = False,
+        default: dict[str, Any],
+        ignore_missing: bool | None = False,
         skip_defaults: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return default
 
 

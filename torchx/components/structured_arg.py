@@ -28,7 +28,6 @@ Examples:
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from torchx import specs
 
@@ -44,8 +43,8 @@ class StructuredNameArgument:
     @staticmethod
     def parse_from(
         name: str,
-        m: Optional[str] = None,
-        script: Optional[str] = None,
+        m: str | None = None,
+        script: str | None = None,
         default_experiment_name: str = "default-experiment",
     ) -> "StructuredNameArgument":
         """

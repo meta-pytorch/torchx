@@ -11,7 +11,6 @@ import argparse
 import json
 import logging
 import sys
-from typing import List, Optional
 
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner import get_runner
@@ -31,7 +30,7 @@ _REPLICA_FORMAT_TEMPLATE_DETAILED = """\n  ${role}[${replica_id}]:
 _LINE_WIDTH = 100
 
 
-def parse_list_arg(arg: str) -> Optional[List[str]]:
+def parse_list_arg(arg: str) -> list[str] | None:
     if not arg:
         return None
     return arg.split(",")

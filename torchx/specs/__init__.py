@@ -13,7 +13,7 @@ scheduler or pipeline adapter.
 """
 import difflib
 import os
-from typing import Callable, Dict, Iterator, Mapping, Optional
+from typing import Callable, Iterator, Mapping
 
 from torchx.specs.api import (
     ALL,
@@ -70,9 +70,9 @@ CUSTOM_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
 )
 
 
-def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
+def _load_named_resources() -> dict[str, Callable[[], Resource]]:
     resource_methods = load_group("torchx.named_resources", default={})
-    materialized_resources: Dict[str, Callable[[], Resource]] = {}
+    materialized_resources: dict[str, Callable[[], Resource]] = {}
 
     for name, resource in {
         **GENERIC_NAMED_RESOURCES,
@@ -87,7 +87,7 @@ def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
     return materialized_resources
 
 
-_named_resource_factories: Dict[str, Callable[[], Resource]] = _load_named_resources()
+_named_resource_factories: dict[str, Callable[[], Resource]] = _load_named_resources()
 
 
 class _NamedResourcesLibrary:
@@ -132,10 +132,10 @@ named_resources: _NamedResourcesLibrary = _NamedResourcesLibrary()
 
 
 def resource(
-    cpu: Optional[int] = None,
-    gpu: Optional[int] = None,
-    memMB: Optional[int] = None,
-    h: Optional[str] = None,
+    cpu: int | None = None,
+    gpu: int | None = None,
+    memMB: int | None = None,
+    h: str | None = None,
 ) -> Resource:
     """
     Convenience method to create a ``Resource`` object from either the

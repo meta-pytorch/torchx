@@ -25,7 +25,7 @@ from torchx.util.types import (
 
 def _test_complex_args(
     arg1: int,
-    arg2: Optional[list[str]],
+    arg2: list[str] | None,
     arg3: Union[float, int],
 ) -> int:
     return 42
