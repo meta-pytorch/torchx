@@ -10,22 +10,22 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Install Dependencies
         run: |
           set -eux
-          grep -E "(lintrunner)" < dev-requirements.txt > /tmp/lint-requirements.txt
-          pip install -r /tmp/lint-requirements.txt
-
-          lintrunner init
+          uv sync --frozen --extra dev
+          uv run lintrunner init
       - name: Run Lint
+        # PYRE is skipped here because it has its own workflow (pyre.yaml) that
+        # runs pyre directly for cleaner output and better error handling.
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
-          lintrunner --skip PYRE --force-color --all-files
+          uv run lintrunner --skip PYRE --force-color --all-files

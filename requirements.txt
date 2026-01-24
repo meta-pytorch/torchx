@@ -1,7 +1,0 @@
-docstring-parser>=0.8.1
-pyyaml
-docker
-filelock
-fsspec>=2023.10.0
-tabulate
-typing-extensions

@@ -19,8 +19,8 @@ from os.path import exists
 from urllib import request
 
 PYTORCH_COLLECT_ENV_URL = "https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py"
-TORCHX_PACKAGES = (
-    "https://raw.githubusercontent.com/pytorch/torchx/main/dev-requirements.txt"
+TORCHX_PYPROJECT = (
+    "https://raw.githubusercontent.com/pytorch/torchx/main/pyproject.toml"
 )
 
 
@@ -59,14 +59,18 @@ def get_pip_packages() -> str:
         shell=True,
     )
 
-    torchx_packages, _ = request.urlretrieve(TORCHX_PACKAGES)
-    with open(torchx_packages, "r") as packages:
-        torchx_deps = [
-            re.split(r"==|>=|<=|!=|!=|===|<|>", package.strip())[0]
-            for package in packages.readlines()
-            if package.strip() and not package.startswith("#")
-        ]
-        assert torchx_deps is not None
+    # Parse pyproject.toml to get dev dependencies
+    pyproject_file, _ = request.urlretrieve(TORCHX_PYPROJECT)
+    with open(pyproject_file, "r") as f:
+        content = f.read()
+
+    # Extract package names from dev dependencies in pyproject.toml
+    torchx_deps = []
+    # Match dependencies and optional-dependencies sections
+    for match in re.finditer(r'"([a-zA-Z0-9_-]+)(?:\[.*?\])?(?:[><=!~].*?)?"', content):
+        pkg_name = match.group(1).lower()
+        if pkg_name and pkg_name not in torchx_deps:
+            torchx_deps.append(pkg_name)
 
     user_deps = [
         re.split(r"==|>=|<=|!=|!=|===|<|>", line)
@@ -76,7 +80,7 @@ def get_pip_packages() -> str:
     return "\n".join(
         f"{udeps[0]}:{udeps[1]}"
         for udeps in user_deps
-        if any(tdeps in udeps[0] for tdeps in torchx_deps)
+        if any(tdeps in udeps[0].lower() for tdeps in torchx_deps)
     )
 
 

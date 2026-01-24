@@ -50,7 +50,7 @@ for info.
 # install torchx sdk and CLI -- minimum dependencies
 pip install torchx
 
-# install torchx sdk and CLI -- all dependencies
+# install with all dependencies
 pip install "torchx[dev]"
 
 # install torchx Kubernetes / Volcano support
@@ -67,14 +67,18 @@ pip install "torchx[gcp_batch]"
 pip install torchx-nightly[dev]
 ```
 
-### Source
+### Source (Development)
 
 ```bash
-# install torchx sdk and CLI from source
-$ pip install -e git+https://github.com/meta-pytorch/torchx.git#egg=torchx
+# clone the repo
+git clone https://github.com/meta-pytorch/torchx.git
+cd torchx
 
-# install extra dependencies
-$ pip install -e git+https://github.com/meta-pytorch/torchx.git#egg=torchx[dev]
+# install with uv (recommended for development)
+uv sync --extra dev
+
+# or with pip
+pip install -e ".[dev]"
 ```
 
 ### Docker

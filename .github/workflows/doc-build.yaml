@@ -13,49 +13,42 @@ jobs:
   docbuild:
     runs-on: linux.24_04.4x
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Install Doc Dependencies
         run: |
           set -eux
           sudo apt-get update
           sudo apt-get install -y pandoc
-          pip install -r docs/requirements.txt
-      - name: Install TorchX
-        run: |
-          pip install -e .[dev]
-      - name: Start Airflow
-        run: |
-          # start airflow in background
-          airflow standalone &
-          # wait 5 seconds for airflow to start
-          sleep 5
+          uv sync --frozen --extra dev --extra docs
+          # pytorch_sphinx_theme is a git dependency, install separately
+          uv pip install git+http://github.com/pytorch/pytorch_sphinx_theme.git
       - name: Doc Test
         run: |
           cd docs
-          make doctest
+          uv run make doctest
       - name: Linkcheck
         run: |
           cd docs
-          make linkcheck
+          uv run make linkcheck
       - name: Doc Build
         run: |
           cd docs
-          make html
+          uv run make html
       - name: Papermill
         run: |
           cd docs
-          make papermill
+          uv run make papermill
       - name: Coverage
         run: |
           set -ex
           cd docs
-          make coverage
+          uv run make coverage
           if [ "$(wc -l build/*/coverage/python.txt)" -ne 2 ]
           then
               cat build/*/coverage/python.txt
@@ -68,13 +61,13 @@ jobs:
     needs: docbuild
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Set Identity
         run: |
           set -ex
@@ -84,11 +77,12 @@ jobs:
         run: |
           set -eux
           sudo apt-get install -y pandoc
-          pip install -r docs/requirements.txt
+          uv sync --frozen --extra dev --extra docs
+          uv pip install git+http://github.com/pytorch/pytorch_sphinx_theme.git
       - name: Build
         run: |
           set -ex
-          docs/doc_push.sh --dry-run
+          uv run docs/doc_push.sh --dry-run
       - name: Push
         run: |
           set -ex

@@ -13,17 +13,17 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Install dependencies
         run: |
           set -eux
-          pip install -e .[kubernetes]
+          uv sync --frozen --extra kubernetes
       - name: Start Kubernetes
         run: |
           scripts/setup_minikube.sh
@@ -32,4 +32,4 @@ jobs:
           CONTAINER_REPO: localhost:5000/torchx
         run: |
           chmod +x scripts/minikube_trainer.py
-          scripts/minikube_trainer.py
+          uv run scripts/minikube_trainer.py

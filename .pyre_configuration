@@ -7,7 +7,8 @@
     ".*/torchx/examples/apps/compute_world_size/.*"
   ],
   "ignore_all_errors": [
-    "./stubs/"
+    "./stubs/",
+    "./.venv/"
   ],
   "site_package_search_strategy": "all",
   "source_directories": [

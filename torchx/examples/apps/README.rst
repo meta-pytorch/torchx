@@ -15,10 +15,9 @@ Prerequisites
 Before executing examples, install TorchX and dependencies necessary to run examples:
 
 ```
-$ pip install torchx
+$ pip install "torchx[dev]"
 $ git clone https://github.com/meta-pytorch/torchx.git
 $ cd torchx/examples/apps
 $ TORCHX_VERSION=$(torchx --version | sed 's/torchx-//')
 $ git checkout v$TORCHX_VERSION
-$ pip install -r dev-requirements.txt
 ```

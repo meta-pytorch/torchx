@@ -9,8 +9,14 @@ set -ex
 
 rm -r dist || true
 
+# Temporarily change package name to torchx-nightly in pyproject.toml
+sed -i 's/^name = "torchx"$/name = "torchx-nightly"/' pyproject.toml
 
-python setup.py --override-name torchx-nightly bdist_wheel
+# Build the wheel using uv
+uv build --wheel
+
+# Restore original package name
+sed -i 's/^name = "torchx-nightly"$/name = "torchx"/' pyproject.toml
 
 if [ -z "$PYPI_TOKEN" ]; then
     echo "must specify PYPI_TOKEN"
