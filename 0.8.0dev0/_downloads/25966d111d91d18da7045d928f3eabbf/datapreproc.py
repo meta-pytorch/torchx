@@ -52,7 +52,6 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-from typing import List
 
 import fsspec
 from PIL import Image
@@ -61,7 +60,7 @@ from torchvision.datasets.folder import is_image_file
 from tqdm import tqdm
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="example data preprocessing",
     )
@@ -91,7 +90,7 @@ def download_and_extract_zip_archive(url: str, path: str) -> None:
             zip_ref.extractall(path)
 
 
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     args = parse_args(argv)
     with tempfile.TemporaryDirectory() as tmpdir:
         print(f"downloading {args.input_path} to {tmpdir}...")

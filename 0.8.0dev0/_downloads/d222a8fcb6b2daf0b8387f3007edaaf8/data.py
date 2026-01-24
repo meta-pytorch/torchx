@@ -16,7 +16,7 @@ libraries.
 
 import os.path
 import tarfile
-from typing import Callable, Optional
+from typing import Callable
 
 import fsspec
 import numpy
@@ -42,8 +42,8 @@ class ImageFolderSamplesDataset(datasets.ImageFolder):
     def __init__(
         self,
         root: str,
-        transform: Optional[Callable[..., object]] = None,
-        num_samples: Optional[int] = None,
+        transform: Callable[..., object] | None = None,
+        num_samples: int | None = None,
         **kwargs: object,
     ) -> None:
         """
@@ -78,14 +78,14 @@ class TinyImageNetDataModule(pl.LightningDataModule):
     test_ds: ImageFolderSamplesDataset
 
     def __init__(
-        self, data_dir: str, batch_size: int = 16, num_samples: Optional[int] = None
+        self, data_dir: str, batch_size: int = 16, num_samples: int | None = None
     ) -> None:
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_samples = num_samples
 
-    def setup(self, stage: Optional[str] = None) -> None:
+    def setup(self, stage: str | None = None) -> None:
         # Setup data loader and transforms
         img_transform = transforms.Compose(
             [
@@ -117,7 +117,7 @@ class TinyImageNetDataModule(pl.LightningDataModule):
     def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_ds, batch_size=self.batch_size)
 
-    def teardown(self, stage: Optional[str] = None) -> None:
+    def teardown(self, stage: str | None = None) -> None:
         pass
 
 

@@ -53,7 +53,6 @@ Use an image viewer to visualize the ``*.png`` files generated under the ``outpu
     import os.path
     import sys
     import tempfile
-    from typing import List
 
     import fsspec
     import torch
@@ -75,7 +74,7 @@ Use an image viewer to visualize the ``*.png`` files generated under the ``outpu
         from captum.attr import IntegratedGradients, visualization as viz
 
 
-    def parse_args(argv: List[str]) -> argparse.Namespace:
+    def parse_args(argv: list[str]) -> argparse.Namespace:
         parser = argparse.ArgumentParser(description="example TorchX captum app")
         parser.add_argument(
             "--load_path",
@@ -108,7 +107,7 @@ Use an image viewer to visualize the ``*.png`` files generated under the ``outpu
         return out.numpy()
 
 
-    def main(argv: List[str]) -> None:
+    def main(argv: list[str]) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             args = parse_args(argv)
 

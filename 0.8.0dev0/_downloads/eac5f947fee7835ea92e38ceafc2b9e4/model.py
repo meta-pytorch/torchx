@@ -16,7 +16,6 @@ by the apps in the same folder.
 
 import os.path
 import subprocess
-from typing import List, Optional, Tuple
 
 import fsspec
 import pytorch_lightning as pl
@@ -33,7 +32,7 @@ class TinyImageNetModel(pl.LightningModule):
     """
 
     def __init__(
-        self, layer_sizes: Optional[List[int]] = None, lr: Optional[float] = None
+        self, layer_sizes: list[int] | None = None, lr: float | None = None
     ) -> None:
         super().__init__()
 
@@ -57,13 +56,13 @@ class TinyImageNetModel(pl.LightningModule):
 
     # pyre-fixme[14]
     def training_step(
-        self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         return self._step("train", self.train_acc, batch, batch_idx)
 
     # pyre-fixme[14]
     def validation_step(
-        self, val_batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        self, val_batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         return self._step("val", self.val_acc, val_batch, batch_idx)
 
@@ -71,7 +70,7 @@ class TinyImageNetModel(pl.LightningModule):
         self,
         step_name: str,
         acc_metric: MulticlassAccuracy,
-        batch: Tuple[torch.Tensor, torch.Tensor],
+        batch: tuple[torch.Tensor, torch.Tensor],
         batch_idx: int,
     ) -> torch.Tensor:
         x, y = batch

@@ -17,7 +17,6 @@ output is used for HPO optimization with Ax.
 """
 
 import time
-from typing import Dict
 
 from pytorch_lightning.loggers.logger import Logger
 from pytorch_lightning.profilers.profiler import Profiler
@@ -33,7 +32,7 @@ class SimpleLoggingProfiler(Profiler):
     def __init__(self, logger: Logger) -> None:
         super().__init__()
 
-        self.current_actions: Dict[str, float] = {}
+        self.current_actions: dict[str, float] = {}
         self.logger = logger
 
     def start(self, action_name: str) -> None:

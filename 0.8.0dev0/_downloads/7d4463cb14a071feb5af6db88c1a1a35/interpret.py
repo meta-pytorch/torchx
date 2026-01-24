@@ -48,7 +48,6 @@ import itertools
 import os.path
 import sys
 import tempfile
-from typing import List
 
 import fsspec
 import torch
@@ -70,7 +69,7 @@ if True:
     from captum.attr import IntegratedGradients, visualization as viz
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="example TorchX captum app")
     parser.add_argument(
         "--load_path",
@@ -103,7 +102,7 @@ def convert_to_rgb(arr: torch.Tensor) -> np.ndarray:  # pyre-ignore[24]
     return out.numpy()
 
 
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         args = parse_args(argv)
 
