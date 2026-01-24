@@ -32,9 +32,7 @@ from torchx.schedulers.aws_batch_scheduler import (
 from torchx.specs import AppState, Resource
 
 
-def _test_app(
-    num_replicas: int = 2, resource: Optional[Resource] = None
-) -> specs.AppDef:
+def _test_app(num_replicas: int = 2, resource: Resource | None = None) -> specs.AppDef:
     trainer_role = specs.Role(
         name="trainer",
         image="pytorch/torchx:latest",

@@ -54,7 +54,6 @@ import argparse
 import os
 import sys
 import tempfile
-from typing import List, Optional
 
 import pytorch_lightning as pl
 import torch
@@ -77,7 +76,7 @@ from torchx.examples.apps.lightning.profiler import SimpleLoggingProfiler
 sys.path.append(".")
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="pytorch lightning TorchX example app")
     parser.add_argument(
         "--epochs", type=int, default=3, help="number of epochs to train"
@@ -119,7 +118,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def get_model_checkpoint(args: argparse.Namespace) -> Optional[ModelCheckpoint]:
+def get_model_checkpoint(args: argparse.Namespace) -> ModelCheckpoint | None:
     if not args.output_path:
         return None
     # Note: It is important that each rank behaves the same.
@@ -133,7 +132,7 @@ def get_model_checkpoint(args: argparse.Namespace) -> Optional[ModelCheckpoint]:
 
 
 @errors.record
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         args = parse_args(argv)
 

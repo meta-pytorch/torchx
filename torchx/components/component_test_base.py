@@ -22,7 +22,7 @@ import tempfile
 import time
 import unittest
 from types import ModuleType
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable
 
 from torchx.runner import get_runner
 from torchx.specs import AppDef, AppStatus
@@ -83,12 +83,12 @@ class ComponentTestCase(unittest.TestCase):
     def run_component(
         self,
         component: Callable[..., AppDef],
-        args: Optional[Dict[str, Any]] = None,
-        scheduler_params: Optional[Dict[str, Any]] = None,
+        args: dict[str, Any] | None = None,
+        scheduler_params: dict[str, Any] | None = None,
         scheduler: str = "local_cwd",
         interval: float = 0.1,
         timeout: float = 1,
-    ) -> Optional[AppStatus]:
+    ) -> AppStatus | None:
         """
         Helper function that hides complexity of setting up the runner and polling results.
         Note: method is blocking until either scheduler exits or timeout is reached (for non-blocking schedulers).

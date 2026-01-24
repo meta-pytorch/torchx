@@ -11,7 +11,7 @@ import importlib
 import sys
 import unittest
 from datetime import datetime
-from typing import Any, cast, Dict
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import torchx
@@ -45,7 +45,7 @@ from torchx.util.strings import normalize_str
 
 SKIP_DOCKER: bool = not has_docker()
 
-TEST_KUBE_CONFIG: Dict[str, Any] = {
+TEST_KUBE_CONFIG: dict[str, Any] = {
     "current-context": "default",
     "contexts": [
         {

@@ -16,7 +16,6 @@ import sys
 import tempfile
 from os import getenv
 from os.path import exists
-from typing import Optional, Tuple
 from urllib import request
 
 PYTORCH_COLLECT_ENV_URL = "https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py"
@@ -26,8 +25,8 @@ TORCHX_PACKAGES = (
 
 
 def run(
-    command: str, filter_output_regexp: Optional[str] = None
-) -> Optional[Tuple[int, bytes, bytes]]:
+    command: str, filter_output_regexp: str | None = None
+) -> tuple[int, bytes, bytes] | None:
     """Returns (return-code, stdout, stderr)"""
     p = subprocess.Popen(
         args=command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
@@ -94,7 +93,7 @@ def get_torchx_config() -> str:
         return f.read()
 
 
-def run_pytorch_collect_env() -> Tuple[int, bytes]:
+def run_pytorch_collect_env() -> tuple[int, bytes]:
     with tempfile.NamedTemporaryFile(delete=True, suffix=".py") as temp:
         request.urlretrieve(PYTORCH_COLLECT_ENV_URL, temp.name)
         out = subprocess.run(

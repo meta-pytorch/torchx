@@ -9,7 +9,7 @@
 
 from importlib import metadata
 from importlib.metadata import EntryPoint
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 def load(group: str, name: str, default=None):
@@ -69,7 +69,7 @@ def _defer_load_ep(ep: EntryPoint) -> object:
     return run
 
 
-def load_group(group: str, default: Optional[Dict[str, Any]] = None):
+def load_group(group: str, default: dict[str, Any] | None = None):
     """
     Loads all the entry points specified by ``group`` and returns
     the entry points as a map of ``name (str) -> deferred_load_fn``.

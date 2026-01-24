@@ -10,7 +10,6 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser
-from typing import Dict, List
 
 import torchx
 from torchx.cli.cmd_base import SubCommand
@@ -33,7 +32,7 @@ torchx run ${JOB_NAME}
 """
 
 
-def get_default_sub_cmds() -> Dict[str, SubCommand]:
+def get_default_sub_cmds() -> dict[str, SubCommand]:
     return {
         "builtins": CmdBuiltins(),
         "cancel": CmdCancel(),
@@ -49,7 +48,7 @@ def get_default_sub_cmds() -> Dict[str, SubCommand]:
     }
 
 
-def get_sub_cmds() -> Dict[str, SubCommand]:
+def get_sub_cmds() -> dict[str, SubCommand]:
     """
     Find available subcommands for `torchx cli`.
     The method consits of two parts:
@@ -72,7 +71,7 @@ def get_sub_cmds() -> Dict[str, SubCommand]:
     return sub_cmds
 
 
-def create_parser(subcmds: Dict[str, SubCommand]) -> ArgumentParser:
+def create_parser(subcmds: dict[str, SubCommand]) -> ArgumentParser:
     """
     Helper function parsing the command line options.
     """
@@ -102,7 +101,7 @@ def create_parser(subcmds: Dict[str, SubCommand]) -> ArgumentParser:
     return parser
 
 
-def run_main(subcmds: Dict[str, SubCommand], argv: List[str] = sys.argv[1:]) -> None:
+def run_main(subcmds: dict[str, SubCommand], argv: list[str] = sys.argv[1:]) -> None:
     parser = create_parser(subcmds)
     args = parser.parse_args(argv)
     logging.basicConfig(
@@ -116,7 +115,7 @@ def run_main(subcmds: Dict[str, SubCommand], argv: List[str] = sys.argv[1:]) -> 
     args.func(args)
 
 
-def main(argv: List[str] = sys.argv[1:]) -> None:
+def main(argv: list[str] = sys.argv[1:]) -> None:
     run_main(get_sub_cmds(), argv)
 
 

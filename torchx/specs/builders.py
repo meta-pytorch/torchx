@@ -10,7 +10,7 @@ import argparse
 import inspect
 import os
 from argparse import Namespace
-from typing import Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Union
+from typing import Any, Callable, Mapping, NamedTuple
 
 from torchx.specs.api import BindMount, MountType, VolumeMount
 from torchx.specs.file_linter import get_fn_docstring, TorchXArgumentHelpFormatter
@@ -29,8 +29,8 @@ class ComponentArgs(NamedTuple):
 
 def _create_args_parser(
     cmpnt_fn: Callable[..., AppDef],
-    cmpnt_defaults: Optional[Dict[str, str]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    cmpnt_defaults: dict[str, str] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> argparse.ArgumentParser:
     parameters = inspect.signature(cmpnt_fn).parameters
     return _create_args_parser_from_parameters(
@@ -41,8 +41,8 @@ def _create_args_parser(
 def _create_args_parser_from_parameters(
     cmpnt_fn: Callable[..., AppDef],
     parameters: Mapping[str, inspect.Parameter],
-    cmpnt_defaults: Optional[Dict[str, str]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    cmpnt_defaults: dict[str, str] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> argparse.ArgumentParser:
     function_desc, args_desc = get_fn_docstring(cmpnt_fn)
     script_parser = argparse.ArgumentParser(
@@ -68,7 +68,7 @@ def _create_args_parser_from_parameters(
             parser: argparse.ArgumentParser,
             namespace: argparse.Namespace,
             values: Any,
-            option_string: Optional[str] = None,
+            option_string: str | None = None,
         ) -> None:
             setattr(
                 namespace,
@@ -78,7 +78,7 @@ def _create_args_parser_from_parameters(
 
     for param_name, parameter in parameters.items():
         param_desc = args_desc[parameter.name]
-        args: Dict[str, Any] = {
+        args: dict[str, Any] = {
             "help": param_desc,
             "type": get_argparse_param_type(parameter),
         }
@@ -112,7 +112,7 @@ def _create_args_parser_from_parameters(
 
 
 def _merge_config_values_with_args(
-    parsed_args: argparse.Namespace, config: Dict[str, Any]
+    parsed_args: argparse.Namespace, config: dict[str, Any]
 ) -> None:
     for key, val in config.items():
         if key in parsed_args:
@@ -121,9 +121,9 @@ def _merge_config_values_with_args(
 
 def parse_args(
     cmpnt_fn: Callable[..., AppDef],
-    cmpnt_args: List[str],
-    cmpnt_defaults: Optional[Dict[str, Any]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    cmpnt_args: list[str],
+    cmpnt_defaults: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> Namespace:
     """
     Parse passed arguments, defaults, and config values into a namespace for
@@ -151,8 +151,8 @@ def parse_args(
 def component_args_from_str(
     cmpnt_fn: Callable[..., AppDef],
     cmpnt_args: list[str],
-    cmpnt_args_defaults: Optional[Dict[str, Any]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    cmpnt_args_defaults: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> ComponentArgs:
     """
     Parses and decodes command-line arguments for a component function.
@@ -239,9 +239,9 @@ def component_args_from_str(
 
 def materialize_appdef(
     cmpnt_fn: Callable[..., AppDef],
-    cmpnt_args: List[str],
-    cmpnt_defaults: Optional[Dict[str, Any]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    cmpnt_args: list[str],
+    cmpnt_defaults: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> AppDef:
     """
     Creates an application by running user defined ``app_fn``.
@@ -304,7 +304,7 @@ _MOUNT_OPT_MAP: Mapping[str, str] = {
 }
 
 
-def parse_mounts(opts: List[str]) -> List[Union[BindMount, VolumeMount, DeviceMount]]:
+def parse_mounts(opts: list[str]) -> list[BindMount | VolumeMount | DeviceMount]:
     """
     parse_mounts parses a list of options into typed mounts following a similar
     format to Dockers bind mount.

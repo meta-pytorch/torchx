@@ -15,7 +15,6 @@ meaningful stages in a workflow.
 
 import os
 import shlex
-from typing import Dict, List, Optional
 
 import torchx
 import torchx.specs as specs
@@ -79,11 +78,11 @@ def sh(
     cpu: int = 1,
     gpu: int = 0,
     memMB: int = 1024,
-    h: Optional[str] = None,
-    env: Optional[Dict[str, str]] = None,
+    h: str | None = None,
+    env: dict[str, str] | None = None,
     max_retries: int = 0,
-    mounts: Optional[List[str]] = None,
-    entrypoint: Optional[str] = None,
+    mounts: list[str] | None = None,
+    entrypoint: str | None = None,
 ) -> specs.AppDef:
     """
     Runs the provided command via sh. Currently sh does not support
@@ -136,15 +135,15 @@ def sh(
 
 def python(
     *args: str,
-    m: Optional[str] = None,
-    c: Optional[str] = None,
-    script: Optional[str] = None,
+    m: str | None = None,
+    c: str | None = None,
+    script: str | None = None,
     image: str = torchx.IMAGE,
     name: str = "torchx_utils_python",
     cpu: int = 1,
     gpu: int = 0,
     memMB: int = 1024,
-    h: Optional[str] = None,
+    h: str | None = None,
     num_replicas: int = 1,
 ) -> specs.AppDef:
     """
@@ -208,7 +207,7 @@ def binary(
     cpu: int = 1,
     gpu: int = 0,
     memMB: int = 1024,
-    h: Optional[str] = None,
+    h: str | None = None,
 ) -> specs.AppDef:
     """
     Test component

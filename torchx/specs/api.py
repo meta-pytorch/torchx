@@ -15,7 +15,6 @@ import os
 import pathlib
 import re
 import shutil
-import typing
 import warnings
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -31,12 +30,9 @@ from typing import (
     List,
     Mapping,
     NamedTuple,
-    Optional,
     Pattern,
-    Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
 from torchx.util.types import to_dict
@@ -122,9 +118,9 @@ class Resource:
     cpu: int
     gpu: int
     memMB: int
-    capabilities: Dict[str, Any] = field(default_factory=dict)
-    devices: Dict[str, int] = field(default_factory=dict)
-    tags: Dict[str, object] = field(default_factory=dict)
+    capabilities: dict[str, Any] = field(default_factory=dict)
+    devices: dict[str, int] = field(default_factory=dict)
+    tags: dict[str, object] = field(default_factory=dict)
 
     @staticmethod
     def copy(original: "Resource", **capabilities: Any) -> "Resource":
@@ -242,7 +238,7 @@ class macros:
 
             return role
 
-        def _apply_nested(self, d: typing.Dict[str, Any]) -> typing.Dict[str, Any]:
+        def _apply_nested(self, d: dict[str, Any]) -> dict[str, Any]:
             stack = [d]
             while stack:
                 current_dict = stack.pop()
@@ -260,7 +256,7 @@ class macros:
             return d
 
         # Overrides the asdict method to generate a dictionary of macro values to be substituted.
-        def to_dict(self) -> Dict[str, Any]:
+        def to_dict(self) -> dict[str, Any]:
             return asdict(self)
 
         def substitute(self, arg: str) -> str:
@@ -529,21 +525,21 @@ class Role:
 
     name: str
     image: str
-    min_replicas: Optional[int] = None
+    min_replicas: int | None = None
     entrypoint: str = MISSING
-    args: List[str] = field(default_factory=list)
-    env: Dict[str, str] = field(default_factory=dict)
+    args: list[str] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
     num_replicas: int = 1
     max_retries: int = 0
     retry_policy: RetryPolicy = RetryPolicy.APPLICATION
     resource: Resource = field(default_factory=_null_resource)
-    port_map: Dict[str, int] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    mounts: List[BindMount | VolumeMount | DeviceMount] = field(default_factory=list)
+    port_map: dict[str, int] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    mounts: list[BindMount | VolumeMount | DeviceMount] = field(default_factory=list)
     workspace: Workspace | None = None
 
     # DEPRECATED DO NOT SET, WILL BE REMOVED SOON
-    overrides: Dict[str, Any] = field(default_factory=dict)
+    overrides: dict[str, Any] = field(default_factory=dict)
 
     # pyre-ignore
     def __getattribute__(self, attrname: str) -> Any:
@@ -592,8 +588,8 @@ class AppDef:
     """
 
     name: str
-    roles: List[Role] = field(default_factory=list)
-    metadata: Dict[str, str] = field(default_factory=dict)
+    roles: list[Role] = field(default_factory=list)
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 class AppState(int, Enum):
@@ -636,13 +632,13 @@ class AppState(int, Enum):
         return f"{self.name} ({self.value})"
 
 
-_TERMINAL_STATES: List[AppState] = [
+_TERMINAL_STATES: list[AppState] = [
     AppState.SUCCEEDED,
     AppState.FAILED,
     AppState.CANCELLED,
 ]
 
-_STARTED_STATES: List[AppState] = _TERMINAL_STATES + [
+_STARTED_STATES: list[AppState] = _TERMINAL_STATES + [
     AppState.RUNNING,
 ]
 
@@ -694,9 +690,9 @@ class RoleStatus:
     """
 
     role: str
-    replicas: List[ReplicaStatus]
+    replicas: list[ReplicaStatus]
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         """
         Convert the RoleStatus to a json object.
         """
@@ -724,8 +720,8 @@ class AppStatus:
     num_restarts: int = 0
     msg: str = ""
     structured_error_msg: str = NONE
-    ui_url: Optional[str] = None
-    roles: List[RoleStatus] = field(default_factory=list)
+    ui_url: str | None = None
+    roles: list[RoleStatus] = field(default_factory=list)
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
@@ -806,8 +802,8 @@ class AppStatus:
         return f"\n {header}{replica_status.role}[{replica_status.id}]:{data}"
 
     def _get_role_statuses(
-        self, roles: List[RoleStatus], filter_roles: Optional[List[str]] = None
-    ) -> List[RoleStatus]:
+        self, roles: list[RoleStatus], filter_roles: list[str] | None = None
+    ) -> list[RoleStatus]:
         if not filter_roles:
             return roles
         return [
@@ -824,7 +820,7 @@ class AppStatus:
             replica_data += self._format_replica_status(replica)
         return f"{replica_data}"
 
-    def to_json(self, filter_roles: Optional[List[str]] = None) -> Dict[str, Any]:
+    def to_json(self, filter_roles: list[str] | None = None) -> dict[str, Any]:
         """
         Convert the AppStatus to a json object, including RoleStatus.
         """
@@ -841,7 +837,7 @@ class AppStatus:
 
     def format(
         self,
-        filter_roles: Optional[List[str]] = None,
+        filter_roles: list[str] | None = None,
     ) -> str:
         """
         Format logs for app status. The app status include:
@@ -879,11 +875,8 @@ class AppStatusError(Exception):
         self.status = status
 
 
-# valid run cfg values; only support primitives (str, int, float, bool, List[str], Dict[str, str])
-# TODO(wilsonhong): python 3.9+ supports list[T] in typing, which can be used directly
-# in isinstance(). Should replace with that.
-# see: https://docs.python.org/3/library/stdtypes.html#generic-alias-type
-CfgVal = Union[str, int, float, bool, List[str], Dict[str, str], None]
+# valid run cfg values; only support primitives (str, int, float, bool, list[str], dict[str, str])
+CfgVal = str | int | float | bool | list[str] | dict[str, str] | None
 
 
 T = TypeVar("T")
@@ -911,9 +904,9 @@ class AppDryRunInfo(Generic[T]):
         # manually rather than through constructor arguments
         # DO NOT create getters or make these public
         # unless there is a good reason to
-        self._app: Optional[AppDef] = None
+        self._app: AppDef | None = None
         self._cfg: Mapping[str, CfgVal] = {}
-        self._scheduler: Optional[str] = None
+        self._scheduler: str | None = None
 
     def __repr__(self) -> str:
         return self._fmt(self.request)
@@ -1034,10 +1027,10 @@ class runopts:
     """
 
     def __init__(self) -> None:
-        self._opts: Dict[str, runopt] = {}
+        self._opts: dict[str, runopt] = {}
         self._alias_to_key: dict[str, str] = {}
 
-    def __iter__(self) -> Iterator[Tuple[str, runopt]]:
+    def __iter__(self) -> Iterator[tuple[str, runopt]]:
         return self._opts.items().__iter__()
 
     def __len__(self) -> int:
@@ -1061,7 +1054,7 @@ class runopts:
             else:
                 return False
 
-    def get(self, name: str) -> Optional[runopt]:
+    def get(self, name: str) -> runopt | None:
         """
         Returns option if any was registered, or None otherwise.
         First searches for the option by ``name``, then falls-back to matching ``name`` with any
@@ -1074,7 +1067,7 @@ class runopts:
             return self._opts[self._alias_to_key[name]]
         return None
 
-    def resolve(self, cfg: Mapping[str, CfgVal]) -> Dict[str, CfgVal]:
+    def resolve(self, cfg: Mapping[str, CfgVal]) -> dict[str, CfgVal]:
         """
         Checks the given config against this ``runopts`` and sets default configs
         if not set.
@@ -1083,7 +1076,7 @@ class runopts:
 
         """
 
-        resolved_cfg: Dict[str, CfgVal] = {**cfg}
+        resolved_cfg: dict[str, CfgVal] = {**cfg}
 
         for cfg_key, runopt in self._opts.items():
             val = resolved_cfg.get(cfg_key)
@@ -1140,7 +1133,7 @@ class runopts:
                 resolved_cfg[cfg_key] = runopt.default
         return resolved_cfg
 
-    def cfg_from_str(self, cfg_str: str) -> Dict[str, CfgVal]:
+    def cfg_from_str(self, cfg_str: str) -> dict[str, CfgVal]:
         """
         Parses scheduler ``cfg`` from a string literal and returns
         a cfg map where the cfg values have been cast into the appropriate
@@ -1196,7 +1189,7 @@ class runopts:
 
         """
 
-        cfg: Dict[str, CfgVal] = {}
+        cfg: dict[str, CfgVal] = {}
         for key, val in to_dict(cfg_str).items():
             opt = self.get(key)
             if opt:
@@ -1207,11 +1200,11 @@ class runopts:
                 )
         return cfg
 
-    def cfg_from_json_repr(self, json_repr: str) -> Dict[str, CfgVal]:
+    def cfg_from_json_repr(self, json_repr: str) -> dict[str, CfgVal]:
         """
         Converts the given dict to a valid cfg for this ``runopts`` object.
         """
-        cfg: Dict[str, CfgVal] = {}
+        cfg: dict[str, CfgVal] = {}
         cfg_dict = json.loads(json_repr)
         for key, val in cfg_dict.items():
             opt = self.get(key)
@@ -1236,8 +1229,8 @@ class runopts:
         help: str,
         default: CfgVal = None,
         required: bool = False,
-        aliases: Optional[list[str]] = None,
-        deprecated_aliases: Optional[list[str]] = None,
+        aliases: list[str] | None = None,
+        deprecated_aliases: list[str] | None = None,
     ) -> None:
         """
         Adds the ``config`` option with the given help string and ``default``

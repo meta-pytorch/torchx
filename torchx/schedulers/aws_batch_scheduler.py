@@ -46,12 +46,9 @@ from typing import (
     Any,
     Callable,
     cast,
-    Dict,
     Iterable,
     List,
     Mapping,
-    Optional,
-    Tuple,
     TYPE_CHECKING,
     TypedDict,
     TypeVar,
@@ -100,7 +97,7 @@ TAG_TORCHX_APPNAME = "torchx.pytorch.org/app-name"
 TAG_TORCHX_USER = "torchx.pytorch.org/user"
 
 
-def parse_ulimits(ulimits_list: list[str]) -> List[Dict[str, Any]]:
+def parse_ulimits(ulimits_list: list[str]) -> list[dict[str, Any]]:
     """
     Parse ulimit string in format: name:softLimit:hardLimit
     Multiple ulimits separated by commas.
@@ -134,7 +131,7 @@ def parse_ulimits(ulimits_list: list[str]) -> List[Dict[str, Any]]:
 if TYPE_CHECKING:
     from docker import DockerClient
 
-JOB_STATE: Dict[str, AppState] = {
+JOB_STATE: dict[str, AppState] = {
     "SUBMITTED": AppState.PENDING,
     "PENDING": AppState.PENDING,
     "RUNNABLE": AppState.PENDING,
@@ -169,7 +166,7 @@ class ResourceType(Enum):
         )
 
 
-def resource_requirements_from_resource(resource: Resource) -> List[Dict[str, str]]:
+def resource_requirements_from_resource(resource: Resource) -> list[dict[str, str]]:
     cpu = resource.cpu if resource.cpu > 0 else 1
     gpu = resource.gpu
     memMB = resource.memMB
@@ -187,7 +184,7 @@ def resource_requirements_from_resource(resource: Resource) -> List[Dict[str, st
 
 
 def resource_from_resource_requirements(
-    resource_requirements: List[Dict[str, str]],
+    resource_requirements: list[dict[str, str]],
 ) -> Resource:
     resrc_req = {
         ResourceType.from_str(r["type"]): int(r["value"]) for r in resource_requirements
@@ -207,10 +204,10 @@ def _role_to_node_properties(
     role: Role,
     start_idx: int,
     privileged: bool = False,
-    job_role_arn: Optional[str] = None,
-    execution_role_arn: Optional[str] = None,
-    ulimits: Optional[List[Dict[str, Any]]] = None,
-) -> Dict[str, Any]:
+    job_role_arn: str | None = None,
+    execution_role_arn: str | None = None,
+    ulimits: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     role.mounts += get_device_mounts(role.resource.devices)
 
     mount_points = []
@@ -300,7 +297,7 @@ def _role_to_node_properties(
     }
 
 
-def _job_ui_url(job_arn: str) -> Optional[str]:
+def _job_ui_url(job_arn: str) -> str | None:
     match = re.match(
         "arn:aws:batch:([a-z-0-9]+):[0-9]+:job/([a-z-0-9]+)",
         job_arn,
@@ -323,7 +320,7 @@ def _parse_num_replicas(target_nodes: str, num_nodes: int) -> int:
     return end_idx - start_idx + 1
 
 
-def _parse_start_and_end_idx(target_nodes: str, num_nodes: int) -> Tuple[int, int]:
+def _parse_start_and_end_idx(target_nodes: str, num_nodes: int) -> tuple[int, int]:
     """
     Takes the ``target_nodes`` str (as required by AWS Batch NodeRangeProperties)
     and parses out the start and end indices (aka global rank) of the replicas in the node group.
@@ -350,9 +347,9 @@ def _parse_start_and_end_idx(target_nodes: str, num_nodes: int) -> Tuple[int, in
 class BatchJob:
     name: str
     queue: str
-    share_id: Optional[str]
-    job_def: Dict[str, object]
-    images_to_push: Dict[str, Tuple[str, str]]
+    share_id: str | None
+    job_def: dict[str, object]
+    images_to_push: dict[str, tuple[str, str]]
 
     def __str__(self) -> str:
         return yaml.dump(asdict(self))
@@ -389,13 +386,13 @@ def _local_session() -> "boto3.session.Session":  # noqa: F821
 class AWSBatchOpts(TypedDict, total=False):
     queue: str
     user: str
-    image_repo: Optional[str]
+    image_repo: str | None
     privileged: bool
-    share_id: Optional[str]
+    share_id: str | None
     priority: int
-    job_role_arn: Optional[str]
-    execution_role_arn: Optional[str]
-    ulimits: Optional[list[str]]
+    job_role_arn: str | None
+    execution_role_arn: str | None
+    ulimits: list[str] | None
 
 
 class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
@@ -455,10 +452,10 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         self,
         session_name: str,
         # pyre-fixme[2]: Parameter annotation cannot be `Any`.
-        client: Optional[Any] = None,
+        client: Any | None = None,
         # pyre-fixme[2]: Parameter annotation cannot be `Any`.
-        log_client: Optional[Any] = None,
-        docker_client: Optional["DockerClient"] = None,
+        log_client: Any | None = None,
+        docker_client: "DockerClient | None" = None,
     ) -> None:
         # NOTE: make sure any new init options are supported in create_scheduler(...)
         super().__init__("aws_batch", session_name, docker_client=docker_client)
@@ -636,12 +633,12 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         )
         opts.add(
             "ulimits",
-            type_=List[str],
+            type_=list[str],
             help="Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)",
         )
         return opts
 
-    def _get_job_id(self, app_id: str) -> Optional[str]:
+    def _get_job_id(self, app_id: str) -> str | None:
         queue, name = app_id.split(":")
 
         for resp in self._client.get_paginator("list_jobs").paginate(
@@ -653,9 +650,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
                 return job_summary_list[0]["jobArn"]
         return None
 
-    def _get_job(
-        self, app_id: str, rank: Optional[int] = None
-    ) -> Optional[Dict[str, Any]]:
+    def _get_job(self, app_id: str, rank: int | None = None) -> dict[str, Any] | None:
         job_id = self._get_job_id(app_id)
         if not job_id:
             return None
@@ -666,7 +661,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
             return None
         return jobs[0]
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         job = self._get_job(app_id)
         if job is None:
             return None
@@ -709,11 +704,11 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         if streams not in (None, Stream.COMBINED):
             raise ValueError("AWSBatchScheduler only supports COMBINED log stream")
@@ -814,7 +809,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
 
         return jobs
 
-    def _get_torchx_submitted_jobs(self, job_ids: List[str]) -> List[Dict[str, Any]]:
+    def _get_torchx_submitted_jobs(self, job_ids: List[str]) -> List[dict[str, Any]]:
         if not job_ids:
             return []
 
@@ -828,8 +823,8 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         self,
         app_id: str,
         stream_name: str,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
     ) -> Iterable[str]:
         next_token = None
@@ -874,10 +869,10 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
 def create_scheduler(
     session_name: str,
     # pyre-fixme[2]: Parameter annotation cannot be `Any`.
-    client: Optional[Any] = None,
+    client: Any | None = None,
     # pyre-fixme[2]: Parameter annotation cannot be `Any`.
-    log_client: Optional[Any] = None,
-    docker_client: Optional["DockerClient"] = None,
+    log_client: Any | None = None,
+    docker_client: "DockerClient | None" = None,
     **kwargs: object,
 ) -> AWSBatchScheduler:
     return AWSBatchScheduler(

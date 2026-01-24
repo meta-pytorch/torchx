@@ -8,10 +8,9 @@
 # pyre-strict
 
 import logging
-from typing import Dict
 
 
-_log_handlers: Dict[str, logging.Handler] = {
+_log_handlers: dict[str, logging.Handler] = {
     "console": logging.StreamHandler(),
     "null": logging.NullHandler(),
 }

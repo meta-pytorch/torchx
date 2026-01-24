@@ -13,7 +13,7 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Iterable, Mapping, Optional
+from typing import Iterable, Mapping
 
 from torchx.util.entrypoints import load_group
 from torchx.util.modules import load_module
@@ -36,7 +36,7 @@ class TrackerSource:
     """
 
     source_run_id: str
-    artifact_name: Optional[str]
+    artifact_name: str | None
 
 
 @dataclass
@@ -52,7 +52,7 @@ class TrackerArtifact:
 
     name: str
     path: str
-    metadata: Optional[Mapping[str, object]]
+    metadata: Mapping[str, object] | None
 
 
 @dataclass
@@ -66,7 +66,7 @@ class AppRunTrackableSource:
     """
 
     parent: AppRun
-    artifact_name: Optional[str]
+    artifact_name: str | None
 
 
 class Lineage: ...
@@ -85,7 +85,7 @@ class TrackerBase(ABC):
         run_id: str,
         name: str,
         path: str,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Mapping[str, object] | None = None,
     ) -> None:
         """
         Adds an artifact to the tracker with the specified name, path and any arbitrary metadata.
@@ -118,7 +118,7 @@ class TrackerBase(ABC):
         self,
         run_id: str,
         source_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> None:
         """
         Adds a link to a different job identifying the lineage of the current experiment
@@ -130,7 +130,7 @@ class TrackerBase(ABC):
     def sources(
         self,
         run_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> Iterable[TrackerSource]:
         """
         Returns sources for the specified run. Artifact name can be used to filter the sources.
@@ -159,7 +159,7 @@ def tracker_config_env_var_name(entrypoint_key: str) -> str:
     return f"TORCHX_TRACKER_{entrypoint_key.upper()}_CONFIG"
 
 
-def _extract_tracker_name_and_config_from_environ() -> Mapping[str, Optional[str]]:
+def _extract_tracker_name_and_config_from_environ() -> Mapping[str, str | None]:
     if ENV_TORCHX_TRACKERS not in os.environ:
         logger.info("No trackers were configured, skipping setup.")
         return {}
@@ -179,7 +179,7 @@ def _extract_tracker_name_and_config_from_environ() -> Mapping[str, Optional[str
 
 
 def build_trackers(
-    factory_and_config: Mapping[str, Optional[str]],
+    factory_and_config: Mapping[str, str | None],
 ) -> Iterable[TrackerBase]:
     trackers = []
 
@@ -287,7 +287,7 @@ class AppRun:
             backend.add_metadata(self.id, **kwargs)
 
     def add_artifact(
-        self, name: str, path: str, metadata: Optional[Mapping[str, object]] = None
+        self, name: str, path: str, metadata: Mapping[str, object] | None = None
     ) -> None:
         """Stores artifacts for the current run
 
@@ -303,7 +303,7 @@ class AppRun:
         """Current Id of the run"""
         return self.id
 
-    def add_source(self, source_id: str, artifact_name: Optional[str] = None) -> None:
+    def add_source(self, source_id: str, artifact_name: str | None = None) -> None:
         """
         Attaches source to this run. Sources can be either other TorchX runs or external entities such as experiments that may
         or may not be queriable.

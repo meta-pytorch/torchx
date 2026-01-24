@@ -14,7 +14,7 @@ import sys
 import threading
 import time
 from queue import Queue
-from typing import List, Optional, TextIO, Tuple
+from typing import TextIO
 
 from torchx import specs
 from torchx.cli.cmd_base import SubCommand
@@ -51,7 +51,7 @@ def print_log_lines(
     regex: str,
     should_tail: bool,
     exceptions: "Queue[Exception]",
-    streams: Optional[Stream],
+    streams: Stream | None,
 ) -> None:
     try:
         for line in runner.log_lines(
@@ -72,10 +72,10 @@ def print_log_lines(
 def get_logs(
     file: TextIO,
     identifier: str,
-    regex: Optional[str],
+    regex: str | None,
     should_tail: bool = False,
-    runner: Optional[Runner] = None,
-    streams: Optional[Stream] = None,
+    runner: Runner | None = None,
+    streams: Stream | None = None,
 ) -> None:
     validate(identifier)
     scheduler_backend, _, path_str = identifier.partition("://")

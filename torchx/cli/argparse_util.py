@@ -9,7 +9,7 @@
 import logging
 import sys
 from argparse import Action, ArgumentParser, Namespace
-from typing import Any, Dict, List, Optional, Sequence, Set, Text
+from typing import Any, Sequence
 
 from torchx.runner import config
 
@@ -23,17 +23,17 @@ class torchxconfig(Action):
 
     """
 
-    called_args: Set[str] = set()
+    called_args: set[str] = set()
 
     # since this action is used for each argparse argument
     # load the config section for the subcmd once
-    _subcmd_configs: Dict[str, Dict[str, str]] = {}
+    _subcmd_configs: dict[str, dict[str, str]] = {}
 
     def __init__(
         self,
         subcmd: str,
         dest: str,
-        option_strings: Sequence[Text],
+        option_strings: Sequence[str],
         required: bool = False,
         # pyre-ignore[2] declared as Any in superclass Action
         default: Any = None,
@@ -70,7 +70,7 @@ class torchxconfig(Action):
         parser: ArgumentParser,
         namespace: Namespace,
         values: Any,  # pyre-ignore[2] declared as Any in superclass Action
-        option_string: Optional[str] = None,
+        option_string: str | None = None,
     ) -> None:
         if option_string is not None:
             if option_string in self.called_args:
@@ -91,7 +91,7 @@ class torchxconfig_run(torchxconfig):
     def __init__(
         self,
         dest: str,
-        option_strings: Sequence[Text],
+        option_strings: Sequence[str],
         required: bool = False,
         # pyre-ignore[2] declared as Any in superclass Action
         default: Any = None,
@@ -112,14 +112,14 @@ class ArgOnceAction(Action):
     Custom argparse action only allows argument to be specified once
     """
 
-    called_args: Set[str] = set()
+    called_args: set[str] = set()
 
     def __call__(
         self,
         parser: ArgumentParser,
         namespace: Namespace,
-        values: List[str],
-        option_string: Optional[str] = None,
+        values: list[str],
+        option_string: str | None = None,
     ) -> None:
         if option_string is not None:
             if option_string in self.called_args:

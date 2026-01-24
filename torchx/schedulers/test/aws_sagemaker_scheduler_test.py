@@ -4,12 +4,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import threading
 import unittest
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Dict, Generator, Iterable, Optional
+from typing import Generator, Iterable
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -21,7 +23,7 @@ from torchx.schedulers.aws_sagemaker_scheduler import (
     create_scheduler,
     JOB_STATE,
 )
-from torchx.specs.api import AppDryRunInfo, runopts
+from torchx.specs.api import AppDef, AppDryRunInfo, CfgVal, Role, runopts
 
 ENV_TORCHX_ROLE_NAME = "TORCHX_ROLE_NAME"
 MODULE = "torchx.schedulers.aws_sagemaker_scheduler"
@@ -60,7 +62,7 @@ def mock_rand() -> Generator[None, None, None]:
         yield
 
 
-boto3Response = Dict[str, Any]  # boto3 responses are JSON
+boto3Response = dict[str, object]  # boto3 responses are JSON
 
 
 class MockPaginator:
@@ -70,14 +72,14 @@ class MockPaginator:
 
     def __init__(self, **op_to_pages: Iterable[boto3Response]) -> None:
         # boto3 paginators return an iterable of API responses
-        self.op_to_pages: Dict[str, Iterable[boto3Response]] = op_to_pages
-        self.op_name: Optional[str] = None
+        self.op_to_pages: dict[str, Iterable[boto3Response]] = op_to_pages
+        self.op_name: str | None = None
 
     def __call__(self, op_name: str) -> "MockPaginator":
         self.op_name = op_name
         return self
 
-    def paginate(self, *_1: Any, **_2: Any) -> Iterable[Dict[str, Any]]:
+    def paginate(self, *_1: object, **_2: object) -> Iterable[dict[str, object]]:
         if self.op_name:
             return self.op_to_pages[self.op_name]
         raise RuntimeError(
@@ -390,6 +392,82 @@ class AWSSageMakerSchedulerTest(TestCase):
     def test_create_scheduler(self) -> None:
         scheduler = create_scheduler(session_name="test-sm")
         self.assertIsInstance(scheduler, AWSSageMakerScheduler)
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_tags_from_cfg(self, mock_make_unique: MagicMock) -> None:
+        """Test that tags from cfg are properly converted and merged with app.metadata."""
+        mock_make_unique.return_value = "test-job-42"
+
+        # Create a minimal AppDef with metadata
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(
+            name="test-app",
+            roles=[role],
+            metadata={"app_key": "app_value"},
+        )
+
+        # Create cfg with tags as dict[str, str] (the CLI-parseable format)
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "tags": {"env": "prod", "team": "ml"},
+        }
+
+        # Call submit_dryrun (the public API that resolves cfg)
+        # pyre-ignore[6]: Testing with raw cfg dict, not AWSSageMakerOpts
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+
+        # Verify tags are converted to SageMaker format and merged
+        job_def = dryrun_info.request.job_def
+        tags = job_def["tags"]
+
+        # Should have 3 tags: 2 from cfg + 1 from app.metadata
+        self.assertEqual(len(tags), 3)
+
+        # Verify cfg tags are converted to SageMaker format
+        self.assertIn({"Key": "env", "Value": "prod"}, tags)
+        self.assertIn({"Key": "team", "Value": "ml"}, tags)
+
+        # Verify app.metadata is also included
+        self.assertIn({"Key": "app_key", "Value": "app_value"}, tags)
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_tags_empty_cfg(self, mock_make_unique: MagicMock) -> None:
+        """Test that when tags is empty dict, only app.metadata tags are included."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(
+            name="test-app",
+            roles=[role],
+            metadata={"meta_key": "meta_value"},
+        )
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            # tags defaults to {} via runopts
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict, not AWSSageMakerOpts
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+
+        job_def = dryrun_info.request.job_def
+        tags = job_def["tags"]
+
+        # Should only have the app.metadata tag
+        self.assertEqual(len(tags), 1)
+        self.assertIn({"Key": "meta_key", "Value": "meta_value"}, tags)
 
 
 if __name__ == "__main__":

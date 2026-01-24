@@ -9,7 +9,6 @@
 
 import ctypes
 import os
-from typing import List
 
 
 def is_asan() -> bool:
@@ -26,7 +25,7 @@ def is_asan_or_tsan() -> bool:
     return is_asan() or is_tsan()
 
 
-def write_shell_script(dir: str, name: str, content: List[str]) -> str:
+def write_shell_script(dir: str, name: str, content: list[str]) -> str:
     """
     Creates and writes a bash script in the specified dir with the given name.
     The contents of the script are taken from the ``content`` parameter

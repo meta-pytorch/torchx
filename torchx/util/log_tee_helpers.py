@@ -15,7 +15,7 @@ help show the logs of the job within your CLI, just like
 import logging
 import threading
 from queue import Queue
-from typing import List, Optional, TextIO, Tuple, TYPE_CHECKING
+from typing import TextIO, TYPE_CHECKING
 
 from torchx.util.types import none_throws
 
@@ -39,8 +39,8 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 def _find_role_replicas(
     app: "AppDef",
-    role_name: Optional[str],
-) -> List[Tuple[str, int]]:
+    role_name: str | None,
+) -> list[tuple[str, int]]:
     """
     Enumerate all (role, replica id) pairs in the given AppDef.
     Replica IDs are 0-indexed, and range up to num_replicas,
@@ -71,13 +71,13 @@ def _prefix_line(prefix: str, line: str) -> str:
 def _print_log_lines_for_role_replica(
     dst: TextIO,
     app_handle: str,
-    regex: Optional[str],
+    regex: str | None,
     runner: "Runner",
     which_role: str,
     which_replica: int,
     exceptions: "Queue[Exception]",
     should_tail: bool,
-    streams: Optional["Stream"],
+    streams: "Stream | None",
     colorize: bool = False,
 ) -> None:
     """
@@ -111,11 +111,11 @@ def _print_log_lines_for_role_replica(
 def _start_threads_to_monitor_role_replicas(
     dst: TextIO,
     app_handle: str,
-    regex: Optional[str],
+    regex: str | None,
     runner: "Runner",
-    which_role: Optional[str] = None,
+    which_role: str | None = None,
     should_tail: bool = False,
-    streams: Optional["Stream"] = None,
+    streams: "Stream | None" = None,
     colorize: bool = False,
 ) -> None:
     threads = []
@@ -174,10 +174,10 @@ def _start_threads_to_monitor_role_replicas(
 def tee_logs(
     dst: TextIO,
     app_handle: str,
-    regex: Optional[str],
+    regex: str | None,
     runner: "Runner",
     should_tail: bool = False,
-    streams: Optional["Stream"] = None,
+    streams: "Stream | None" = None,
     colorize: bool = False,
 ) -> threading.Thread:
     """
