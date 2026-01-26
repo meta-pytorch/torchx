@@ -10,7 +10,7 @@ set -ex
 DIST=dist
 
 rm -r $DIST || true
-python setup.py bdist_wheel
+uv build --wheel
 
 WHEEL="$DIST/$(ls $DIST)"
 

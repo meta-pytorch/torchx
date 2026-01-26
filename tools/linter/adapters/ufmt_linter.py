@@ -12,18 +12,11 @@ import os
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from ufmt.core import ufmt_string
 from ufmt.util import make_black_config
 from usort import Config as UsortConfig
-
-
-IS_WINDOWS: bool = os.name == "nt"
-
-
-def eprint(*args: Any, **kwargs: Any) -> None:
-    print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
 class LintSeverity(str, Enum):
@@ -43,10 +36,6 @@ class LintMessage(NamedTuple):
     original: str | None
     replacement: str | None
     description: str | None
-
-
-def as_posix(name: str) -> str:
-    return name.replace("\\", "/") if IS_WINDOWS else name
 
 
 def format_error_message(filename: str, err: Exception) -> LintMessage:

@@ -1,5 +1,170 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchx"
+dynamic = ["version"]
+description = "TorchX SDK and Components"
+readme = "README.md"
+license = "BSD-3-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "TorchX Devs", email = "torchx@fb.com" }
+]
+keywords = ["pytorch", "machine learning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "docstring-parser>=0.8.1",
+    "pyyaml",
+    "docker",
+    "filelock",
+    "fsspec>=2023.10.0",
+    "tabulate",
+    "typing-extensions",
+]
+
+[project.optional-dependencies]
+aws_batch = ["boto3"]
+kubernetes = ["kubernetes>=11"]
+dev = [
+    # -- test deps
+    "pytest",
+    "pytest-cov",
+    # -- plugin deps (schedulers, workspaces)
+    "aiobotocore",
+    "boto3",
+    "kubernetes>=11",
+    "moto>=5",
+    "s3fs",
+    "sagemaker",
+    # -- torchx.apps deps (examples)
+    "ax-platform[mysql]",
+    "captum",
+    "hydra-core",
+    "ipython",
+    "mlflow-skinny",
+    "pytorch-lightning",
+    "tensorboard",
+    "torch",
+    "torch-model-archiver",
+    "torchmetrics",
+    "torchserve",
+    "torchtext",
+    "torchvision",
+    "ts",
+    # -- lintrunner deps
+    "lintrunner",
+    "lintrunner-adapters",
+    "pip", # pip required by lintrunner but not installed by default in a uv env
+    "pyre-check",
+]
+docs = [
+    "sphinx~=5.0",
+    "sphinx-gallery<1",
+    "sphinxcontrib.katex",
+    "matplotlib",
+    "papermill",
+    "ipykernel",
+    "nbsphinx",
+    "jupytext",
+    "ipython_genutils",
+    "jinja2>=3.1.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/meta-pytorch/torchx"
+Documentation = "https://pytorch.org/torchx/"
+Repository = "https://github.com/meta-pytorch/torchx"
+
+[project.scripts]
+torchx = "torchx.cli.main:main"
+
+[project.entry-points."torchx.tracker"]
+fsspec = "torchx.tracker.backend.fsspec:create"
+
+[project.entry-points."fsspec.specs"]
+torchx_minio = "torchx.test.minio:MinioFS"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["examples", "*.test", "aws*", "*.fb"]
+
+[tool.setuptools.package-data]
+torchx = ["version.txt"]
+
+[tool.setuptools.dynamic]
+version = { file = "torchx/version.txt" }
+
 [tool.usort]
 first_party_detection = false
 
 [tool.black]
-target-version = ["py38", "py39", "py310", "py311"]
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 120
+exclude = [
+    ".git",
+    "docs",
+    "build",
+    "scripts",
+    "venv",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+]
+ignore = [
+    # pycodestyle
+    "E302",  # expected 2 blank lines
+    "E303",  # too many blank lines
+    "E305",  # expected 2 blank lines after class or function definition
+    "E402",  # module level import not at top of file
+    "E501",  # line too long (using B950 instead via bugbear)
+    "E721",  # do not compare types, use isinstance()
+    "E741",  # ambiguous variable name
+    # pyflakes
+    "F401",  # module imported but unused
+    "F405",  # name may be undefined, or defined from star imports
+    "F821",  # undefined name
+    "F841",  # local variable is assigned to but never used
+    # flake8-bugbear
+    "B007",  # Loop control variable not used within the loop body
+    "B008",  # Do not perform function calls in argument defaults
+    "B012",  # return/continue/break inside finally blocks
+    "B018",  # Found useless expression
+    "B027",  # Empty method in abstract base class without abstract decorator
+    "B028",  # No explicit stacklevel in warnings.warn
+    "B905",  # zip() without an explicit strict= parameter
+    # flake8-comprehensions
+    "C400",  # Unnecessary generator
+    "C401",  # Unnecessary generator
+    "C402",  # Unnecessary generator
+    "C403",  # Unnecessary list comprehension
+    "C404",  # Unnecessary list comprehension
+    "C405",  # Unnecessary literal
+    "C408",  # Unnecessary dict call
+    "C411",  # Unnecessary list call
+    "C413",  # Unnecessary list/reversed call
+    "C414",  # Unnecessary list/sorted call
+    "C415",  # Unnecessary subscript reversal
+    "C416",  # Unnecessary dict/list/set comprehension
+]

@@ -12,18 +12,18 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Get TorchX version
         run: |
           set -eux
-          python setup.py install
-          echo "VERSION=$(python -c 'import torchx; print(torchx.__version__)')" >> $GITHUB_ENV
+          uv sync --frozen
+          echo "VERSION=$(uv run python -c 'import torchx; print(torchx.__version__)')" >> $GITHUB_ENV
       - name: Configure Docker
         run: |
           set -eux

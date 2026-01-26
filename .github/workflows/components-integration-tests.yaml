@@ -30,11 +30,6 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
       - name: Configure AWS Credentials
@@ -52,12 +47,15 @@ jobs:
           if [ -n "$AWS_ROLE_ARN" ]; then
             aws ecr get-login-password --region us-west-1 | docker login --username AWS --password-stdin 495572122715.dkr.ecr.us-west-1.amazonaws.com
           fi
-
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Install dependencies
         run: |
           set -eux
-          pip install -r dev-requirements.txt
-          pip install -e .[kubernetes]
+          uv sync --frozen --extra dev --extra kubernetes
 
       - name: Start Kubernetes
         if: ${{ matrix.scheduler == 'kubernetes' }}
@@ -68,4 +66,4 @@ jobs:
         env:
           INTEGRATION_TEST_STORAGE: ${{ secrets.INTEGRATION_TEST_STORAGE }}
         run: |
-          scripts/component_integration_tests.py --scheduler ${{ matrix.scheduler }} --container_repo "${{ matrix.container_repo || secrets.TF_CONTAINER_REPO }}"  ${{ matrix.extra_args }}
+          uv run scripts/component_integration_tests.py --scheduler ${{ matrix.scheduler }} --container_repo "${{ matrix.container_repo || secrets.TF_CONTAINER_REPO }}"  ${{ matrix.extra_args }}

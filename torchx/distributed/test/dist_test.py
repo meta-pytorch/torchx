@@ -119,15 +119,17 @@ class DistributedTest(DistributedTestCase):
         # use pytorch distributed but did not run the script with torchrun
         # in either case the return value is still trivially 0
 
-        with mock.patch(DIST_IS_INITIALIZED, return_value=True), mock.patch(
-            WARNINGS_WARN
-        ) as mock_warn:
+        with (
+            mock.patch(DIST_IS_INITIALIZED, return_value=True),
+            mock.patch(WARNINGS_WARN) as mock_warn,
+        ):
             self.assertEqual(0, local_rank())
             mock_warn.assert_called_once()
 
-        with mock.patch(DIST_IS_INITIALIZED, return_value=False), mock.patch(
-            WARNINGS_WARN
-        ) as mock_warn:
+        with (
+            mock.patch(DIST_IS_INITIALIZED, return_value=False),
+            mock.patch(WARNINGS_WARN) as mock_warn,
+        ):
             self.assertEqual(0, local_rank())
             mock_warn.assert_not_called()
 
@@ -151,20 +153,23 @@ class DistributedTest(DistributedTestCase):
 
     @mock.patch(DIST_INIT_PROCESS_GROUP)
     def test_init_process_group_backend_auto(self, init_pg_mock: MagicMock) -> None:
-        with mock.patch(TORCH_CUDA_IS_AVAILABLE, return_value=True), mock.patch(
-            TORCH_CUDA_DEVICE_COUNT, return_value=1
-        ), mock.patch(DIST_IS_NCCL_AVAILABLE, return_value=True), mock.patch(
-            DIST_GET_LOCAL_CUDA_DEVICE
-        ) as mock_get_local_cuda_device:
+        with (
+            mock.patch(TORCH_CUDA_IS_AVAILABLE, return_value=True),
+            mock.patch(TORCH_CUDA_DEVICE_COUNT, return_value=1),
+            mock.patch(DIST_IS_NCCL_AVAILABLE, return_value=True),
+            mock.patch(DIST_GET_LOCAL_CUDA_DEVICE) as mock_get_local_cuda_device,
+        ):
             init_pg(backend="auto")
             mock_get_local_cuda_device.assert_called_once()
             init_pg_mock.assert_called_once_with(backend="nccl", rank=0, world_size=1)
 
         init_pg_mock.reset_mock()
 
-        with mock.patch(TORCH_CUDA_IS_AVAILABLE, return_value=True), mock.patch(
-            TORCH_CUDA_DEVICE_COUNT, return_value=0
-        ), mock.patch(DIST_IS_NCCL_AVAILABLE, return_value=True):
+        with (
+            mock.patch(TORCH_CUDA_IS_AVAILABLE, return_value=True),
+            mock.patch(TORCH_CUDA_DEVICE_COUNT, return_value=0),
+            mock.patch(DIST_IS_NCCL_AVAILABLE, return_value=True),
+        ):
             device = init_pg(backend="auto")
             self.assertEqual(torch.device("cpu"), device)
             init_pg_mock.assert_called_once_with(backend="gloo", rank=0, world_size=1)

@@ -17,13 +17,24 @@ fi
 
 # Check if file is in .claude directory
 if [[ "$file_path" == *"/.claude/"* ]] && [[ -f "$file_path" ]]; then
-    # Run linting deterministically
     echo "Auto-linting: $file_path"
-    arc f "$file_path" 2>/dev/null || true
-    arc lint -a "$file_path" 2>/dev/null || true
+
+    # Detect repo type and use appropriate linter
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        # Git checkout - use lintrunner
+        if command -v lintrunner >/dev/null 2>&1; then
+            lintrunner -a --paths "$file_path" 2>/dev/null || true
+        elif command -v uv >/dev/null 2>&1; then
+            uv run lintrunner -a --paths "$file_path" 2>/dev/null || true
+        fi
+    elif hg root >/dev/null 2>&1; then
+        # Hg checkout (fbcode) - use arc
+        arc f "$file_path" 2>/dev/null || true
+        arc lint -a "$file_path" 2>/dev/null || true
+    fi
 
     # Output review reminder for non-automatable checks
     cat << 'EOF'
-Review .claude/ for: duplicates, verbosity, misplaced content, fb-* naming.
+Review .claude/ for: duplicates, verbosity, misplaced content.
 EOF
 fi

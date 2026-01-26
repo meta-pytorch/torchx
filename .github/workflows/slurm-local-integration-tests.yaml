@@ -19,11 +19,6 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.10"
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
       - name: Checkout slurm-docker-cluster
@@ -52,10 +47,11 @@ jobs:
           set -ex
           cd slurm-docker-cluster
           IMAGE_TAG=$SLURM_VERSION docker compose up --detach
-      - name: Install Dependencies
-        run: |
-          set -ex
-          pip install wheel
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Run Slurm Integration Tests
         run: |
           set -e

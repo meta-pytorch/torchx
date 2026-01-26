@@ -1,5 +1,16 @@
 # Coding Conventions
 
+## Markdown Tables
+
+Align columns so they line up in raw markdown (not just when rendered):
+
+```markdown
+| Command   | Description                |
+|-----------|----------------------------|
+| `/lint`   | Run lintrunner with fixes  |
+| `/test`   | Run pytest                 |
+```
+
 ## File Headers
 
 ```python
