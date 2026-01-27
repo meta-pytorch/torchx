@@ -641,31 +641,8 @@ See <a class="reference external" href="https://meta-pytorch.org/torchx/latest/a
 <dl class="py function">
 <dt class="sig sig-object py" id="torchx.specs.get_named_resources">
 <span class="sig-prename descclassname"><span class="pre">torchx.specs.</span></span><span class="sig-name descname"><span class="pre">get_named_resources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.api.Resource"><span class="pre">Resource</span></a></span></span><a class="reference internal" href="_modules/torchx/specs.html#get_named_resources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.get_named_resources" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get resource object based on the string definition registered via entrypoints.txt.</p>
-<p>TorchX implements <code class="docutils literal notranslate"><span class="pre">named_resource</span></code> registration mechanism, which consists of
-the following steps:</p>
-<ol class="arabic simple">
-<li><p>Create a module and define your resource retrieval function:</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_module.resources</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">gpu_x_1</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Resource</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">64</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span> <span class="n">gpu</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span>
-</pre></div>
-</div>
-<ol class="arabic simple" start="2">
-<li><p>Register resource retrieval in the entrypoints section:</p></li>
-</ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">torchx</span><span class="o">.</span><span class="n">named_resources</span><span class="p">]</span>
-<span class="n">gpu_x_1</span> <span class="o">=</span> <span class="n">my_module</span><span class="o">.</span><span class="n">resources</span><span class="p">:</span><span class="n">gpu_x_1</span>
-</pre></div>
-</div>
-<p>The <code class="docutils literal notranslate"><span class="pre">gpu_x_1</span></code> can be used as string argument to this function:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">named_resources</span>
-<span class="n">resource</span> <span class="o">=</span> <span class="n">named_resources</span><span class="p">[</span><span class="s2">&quot;gpu_x_1&quot;</span><span class="p">]</span>
-</pre></div>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version Use: </span><a class="reference internal" href="#torchx.specs.resource" title="torchx.specs.resource"><code class="xref py py-func docutils literal notranslate"><span class="pre">resource(h=name)</span></code></a> instead.</p>
 </div>
 </dd></dl>
 
