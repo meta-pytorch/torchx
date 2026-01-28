@@ -900,6 +900,58 @@ class RunConfigTest(unittest.TestCase):
         for name, opt in runopts:
             self.assertEqual(opt, runopts.get(name))
 
+    def test_runopts_or_merges_options(self) -> None:
+        """Test that __or__ merges two runopts into a new runopts."""
+        opts1 = runopts()
+        opts1.add("foo", type_=str, default="a", help="foo option")
+        opts1.add("bar", type_=int, default=1, help="bar option")
+
+        opts2 = runopts()
+        opts2.add("baz", type_=bool, default=True, help="baz option")
+
+        merged = opts1 | opts2
+
+        # Original runopts should be unchanged
+        self.assertIsNone(opts1.get("baz"))
+        self.assertIsNone(opts2.get("foo"))
+
+        # Merged should have all options
+        self.assertIsNotNone(merged.get("foo"))
+        self.assertIsNotNone(merged.get("bar"))
+        self.assertIsNotNone(merged.get("baz"))
+        self.assertEqual(sorted([key for key, _ in merged]), ["bar", "baz", "foo"])
+
+    def test_runopts_or_merges_aliases(self) -> None:
+        """Test that __or__ correctly merges options with aliases."""
+        opts1 = runopts()
+        opts1.add("job_priority", aliases=["jobPriority"], type_=str, help="priority")
+
+        opts2 = runopts()
+        opts2.add("cluster_name", aliases=["clusterName"], type_=str, help="cluster")
+
+        merged = opts1 | opts2
+
+        # Both canonical and alias keys should work
+        self.assertIsNotNone(merged.get("job_priority"))
+        self.assertIsNotNone(merged.get("jobPriority"))
+        self.assertIsNotNone(merged.get("cluster_name"))
+        self.assertIsNotNone(merged.get("clusterName"))
+
+    def test_runopts_update_merges_aliases(self) -> None:
+        """Test that update() merges aliases from the other runopts."""
+        opts1 = runopts()
+        opts1.add("foo", aliases=["fooAlias"], type_=str, help="foo option")
+
+        opts2 = runopts()
+        opts2.add("bar", aliases=["barAlias"], type_=str, help="bar option")
+
+        opts1.update(opts2)
+
+        # Original aliases should still work
+        self.assertIsNotNone(opts1.get("fooAlias"))
+        # New aliases from opts2 should be merged
+        self.assertIsNotNone(opts1.get("barAlias"))
+
 
 class GetTypeNameTest(unittest.TestCase):
     def test_get_type_name(self) -> None:

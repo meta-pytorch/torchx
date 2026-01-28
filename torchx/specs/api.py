@@ -1266,6 +1266,27 @@ class runopts:
 
     def update(self, other: "runopts") -> None:
         self._opts.update(other._opts)
+        self._alias_to_key.update(other._alias_to_key)
+
+    # pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType
+    def __or__(self, other: "runopts") -> "runopts":
+        """Merge two runopts, returning a new runopts.
+
+        Example:
+            .. doctest::
+
+                >>> opts1 = runopts()
+                >>> opts1.add("foo", type_=str, default="a", help="foo option")
+                >>> opts2 = runopts()
+                >>> opts2.add("bar", type_=int, default=1, help="bar option")
+                >>> merged = opts1 | opts2
+                >>> sorted(merged.keys())
+                ['bar', 'foo']
+        """
+        merged = runopts()
+        merged.update(self)
+        merged.update(other)
+        return merged
 
     def __repr__(self) -> str:
         required = [(key, opt) for key, opt in self._opts.items() if opt.is_required]
