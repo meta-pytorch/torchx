@@ -1716,6 +1716,27 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_opts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">)</span>
+
+    <span class="c1"># pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;runopts&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge two runopts, returning a new runopts.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            .. doctest::</span>
+
+<span class="sd">                &gt;&gt;&gt; opts1 = runopts()</span>
+<span class="sd">                &gt;&gt;&gt; opts1.add(&quot;foo&quot;, type_=str, default=&quot;a&quot;, help=&quot;foo option&quot;)</span>
+<span class="sd">                &gt;&gt;&gt; opts2 = runopts()</span>
+<span class="sd">                &gt;&gt;&gt; opts2.add(&quot;bar&quot;, type_=int, default=1, help=&quot;bar option&quot;)</span>
+<span class="sd">                &gt;&gt;&gt; merged = opts1 | opts2</span>
+<span class="sd">                &gt;&gt;&gt; sorted(merged.keys())</span>
+<span class="sd">                [&#39;bar&#39;, &#39;foo&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">merged</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
+        <span class="n">merged</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">merged</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">merged</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">required</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_required</span><span class="p">]</span>

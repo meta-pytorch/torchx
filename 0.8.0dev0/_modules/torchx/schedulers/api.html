@@ -682,6 +682,32 @@
 
         <span class="k">return</span> <span class="n">opts</span>
 
+    <span class="c1"># pyre-fixme[15]: Inconsistent override - __or__ returns dict, not UnionType</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">StructuredOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge two StructuredOpts instances into a cfg dict.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            .. doctest::</span>
+
+<span class="sd">                &gt;&gt;&gt; from dataclasses import dataclass</span>
+<span class="sd">                &gt;&gt;&gt; from torchx.schedulers.api import StructuredOpts</span>
+<span class="sd">                &gt;&gt;&gt; @dataclass</span>
+<span class="sd">                ... class OptsA(StructuredOpts):</span>
+<span class="sd">                ...     foo: str = &quot;a&quot;</span>
+<span class="sd">                &gt;&gt;&gt; @dataclass</span>
+<span class="sd">                ... class OptsB(StructuredOpts):</span>
+<span class="sd">                ...     bar: int = 1</span>
+<span class="sd">                &gt;&gt;&gt; cfg = OptsA(foo=&quot;x&quot;) | OptsB(bar=2)</span>
+<span class="sd">                &gt;&gt;&gt; cfg[&quot;foo&quot;], cfg[&quot;bar&quot;]</span>
+<span class="sd">                (&#39;x&#39;, 2)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">merged</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">other</span><span class="p">:</span>
+            <span class="n">merged</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">merged</span>
+
 
 <span class="c1"># =============================================================================</span>
 <span class="c1"># STREAM AND RESPONSE TYPES</span>
