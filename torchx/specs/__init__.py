@@ -161,7 +161,7 @@ def resource(
     """
 
     if h:
-        return get_named_resources(h)
+        return named_resources[h]
     else:
         # could make these defaults customizable via entrypoint
         # not doing that now since its not a requested feature and may just over complicate things
@@ -179,37 +179,16 @@ def resource(
 
 def get_named_resources(res: str) -> Resource:
     """
-    Get resource object based on the string definition registered via entrypoints.txt.
-
-    TorchX implements ``named_resource`` registration mechanism, which consists of
-    the following steps:
-
-    1. Create a module and define your resource retrieval function:
-
-    .. code-block:: python
-
-     # my_module.resources
-     from typing import Dict
-     from torchx.specs import Resource
-
-     def gpu_x_1() -> Dict[str, Resource]:
-         return Resource(cpu=2, memMB=64 * 1024, gpu = 2)
-
-    2. Register resource retrieval in the entrypoints section:
-
-    ::
-
-     [torchx.named_resources]
-     gpu_x_1 = my_module.resources:gpu_x_1
-
-    The ``gpu_x_1`` can be used as string argument to this function:
-
-    ::
-
-     from torchx.specs import named_resources
-     resource = named_resources["gpu_x_1"]
-
+    .. deprecated::
+        Use :py:func:`resource(h=name) <resource>` instead.
     """
+    import warnings
+
+    warnings.warn(
+        "`get_named_resources()` is deprecated, use `resource(h=name)` instead",
+        FutureWarning,
+        stacklevel=2,
+    )
     return named_resources[res]
 
 

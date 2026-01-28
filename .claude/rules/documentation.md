@@ -45,3 +45,19 @@ Remind user when editing related files:
 - Notebooks in docs require pandoc for conversion
 
 The docs page hasn't had a content refresh in years - improve incrementally with each task.
+
+## Markdown Files to Keep in Sync
+
+When making changes to tooling, dependencies, or workflows, update these markdown files:
+
+| File                         | What to update                                  |
+|------------------------------|------------------------------------------------ |
+| `README.md`                  | Installation instructions, requirements, badges |
+| `CONTRIBUTING.md`            | Development setup, lint/test commands           |
+| `docs/source/quickstart.md`  | Installation and getting started instructions   |
+
+Examples of changes that require markdown updates:
+- Dependency management changes (pip → uv, requirements.txt → pyproject.toml)
+- New development tools or commands
+- CI/CD workflow changes that affect contributors
+- Python version requirements

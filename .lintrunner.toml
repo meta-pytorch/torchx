@@ -22,7 +22,38 @@ init_command = [
 is_formatter = true
 
 [[linter]]
+code = 'RUFF'
+include_patterns = [
+    '**/*.py',
+    '**/*.pyi',
+]
+command = [
+    'python3',
+    '-m',
+    'lintrunner_adapters',
+    'run',
+    'ruff_linter',
+    '--config=pyproject.toml',
+    '--',
+    '@{{PATHSFILE}}'
+]
+init_command = [
+    'python3',
+    '-m',
+    'lintrunner_adapters',
+    'run',
+    'pip_init',
+    '--dry-run={{DRYRUN}}',
+    'ruff==0.14.14',
+]
+is_formatter = false
+
+[[linter]]
 code = 'PYRE'
+# In CI, pyre is run directly via scripts/pyre.sh instead of lintrunner
+# to check the entire codebase. Lintrunner only checks files passed via
+# PATHSFILE, which is useful for local development but not for full CI checks.
+# See .github/workflows/pyre.yaml and .github/workflows/lint.yaml.
 include_patterns = [
     '**/*.py',
     '**/*.pyi',

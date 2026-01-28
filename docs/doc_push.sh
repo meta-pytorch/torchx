@@ -57,12 +57,9 @@ fi
 echo "Installing TorchX and Doc dependencies from $repo_root..."
 cd "$repo_root" || exit
 
-# First install doc requirements, then install torchx
-# so that torchx's pinned requirements are honored
-pip install -r docs/requirements.txt
+# Install torchx with dev and docs dependencies
 pip uninstall -y torchx
-pip install -r dev-requirements.txt
-python setup.py install
+pip install -e ".[dev,docs]"
 
 torchx_ver=$(python -c "import torchx; print(torchx.__version__)")
 

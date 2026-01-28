@@ -10,10 +10,10 @@ jobs:
   unittest:
     strategy:
       matrix:
-        python-version: ["3.10", 3.11, 3.12]
+        python-version: ["3.10", "3.11", "3.12"]
         platform: [linux.24_04.4x]
         include:
-          - python-version: 3.12
+          - python-version: "3.12"
             platform: macos-15-xlarge
       fail-fast: false
     env:
@@ -21,31 +21,21 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
     steps:
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
       - name: Checkout TorchX
         uses: actions/checkout@v2
-      - name: Pin pip-25.0.1
-        run: |
-          set -eux
-          # required since pip-25.1 breaks a few old deps in dev-requirements.txt
-          # (upgrading those will take some time)
-          # see: https://pip.pypa.io/en/stable/news/#v25-1
-          python -m pip install pip==25.0.1
-          pip --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
       - name: Install dependencies
         run: |
           set -eux
-          pip install pytest pytest-cov
-          # use legacy resolver for python 3.11, otherwise pip will timeout trying to resolve deps
-          # TODO(kiukchung) long term we should narrowly scope dependency versions
-          # see: https://pip.pypa.io/en/latest/topics/dependency-resolution/
-          pip install --use-deprecated=legacy-resolver -e .[dev]
+          uv sync --frozen --extra dev
       - name: Run tests
-        run: pytest --cov=./ --cov-report=xml
+        run: |
+          set -eux
+          uv run pytest --cov=./ --cov-report=xml
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
