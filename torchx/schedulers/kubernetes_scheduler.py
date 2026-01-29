@@ -214,6 +214,8 @@ JOB_STATE: dict[str, AppState] = {
     "Restarting": AppState.RUNNING,
     # Completed is the phase that all tasks of Job are completed successfully
     "Completed": AppState.SUCCEEDED,
+    # Completing is the phase that the Job is in the process of completing
+    "Completing": AppState.RUNNING,
     # Terminating is the phase that the Job is terminated, waiting for releasing
     # pods
     "Terminating": AppState.RUNNING,
