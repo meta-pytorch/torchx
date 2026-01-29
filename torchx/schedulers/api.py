@@ -232,6 +232,32 @@ class StructuredOpts:
 
         return opts
 
+    # pyre-fixme[15]: Inconsistent override - __or__ returns dict, not UnionType
+    def __or__(self, other: StructuredOpts) -> dict[str, CfgVal]:
+        """Merge two StructuredOpts instances into a cfg dict.
+
+        Example:
+            .. doctest::
+
+                >>> from dataclasses import dataclass
+                >>> from torchx.schedulers.api import StructuredOpts
+                >>> @dataclass
+                ... class OptsA(StructuredOpts):
+                ...     foo: str = "a"
+                >>> @dataclass
+                ... class OptsB(StructuredOpts):
+                ...     bar: int = 1
+                >>> cfg = OptsA(foo="x") | OptsB(bar=2)
+                >>> cfg["foo"], cfg["bar"]
+                ('x', 2)
+        """
+        merged: dict[str, CfgVal] = {}
+        for key in self:
+            merged[key] = self[key]
+        for key in other:
+            merged[key] = other[key]
+        return merged
+
 
 # =============================================================================
 # STREAM AND RESPONSE TYPES

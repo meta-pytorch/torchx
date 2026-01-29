@@ -423,3 +423,57 @@ class StructuredOptsTest(unittest.TestCase):
 
         self.assertIn("num_retries", docstrings)
         self.assertEqual(docstrings["num_retries"], "Number of retry attempts.")
+
+    # -------------------------------------------------------------------------
+    # __or__ Operator Tests
+    # -------------------------------------------------------------------------
+
+    def test_or_merges_two_structured_opts(self) -> None:
+        """Test __or__ merges two StructuredOpts into a cfg dict."""
+        opts1 = SampleOpts(cluster_name="test1", num_retries=5)
+        opts2 = SampleOpts(cluster_name="test2", enable_debug=True)
+
+        cfg = opts1 | opts2
+
+        # Result is a dict, not StructuredOpts
+        self.assertIsInstance(cfg, dict)
+        # Should have all fields from both opts
+        self.assertIn("cluster_name", cfg)
+        self.assertIn("num_retries", cfg)
+        self.assertIn("enable_debug", cfg)
+
+    def test_or_second_opts_overwrites_first(self) -> None:
+        """Test that values from second opts overwrite the first in merge."""
+
+        @dataclass
+        class OptsA(StructuredOpts):
+            foo: str = "from_a"
+            bar: int = 1
+
+        @dataclass
+        class OptsB(StructuredOpts):
+            foo: str = "from_b"
+            baz: bool = True
+
+        opts_a = OptsA()
+        opts_b = OptsB()
+
+        cfg = opts_a | opts_b
+
+        # foo from opts_b overwrites foo from opts_a
+        self.assertEqual(cfg["foo"], "from_b")
+        # bar from opts_a is preserved
+        self.assertEqual(cfg["bar"], 1)
+        # baz from opts_b is added
+        self.assertEqual(cfg["baz"], True)
+
+    def test_or_none_values_are_preserved(self) -> None:
+        """Test that None values are preserved in the merge."""
+        opts1 = SampleOpts(cluster_name="test1", optional_tag=None)
+        opts2 = SampleOpts(cluster_name="test2", num_retries=10)
+
+        cfg = opts1 | opts2
+
+        # None values should be preserved
+        self.assertIn("optional_tag", cfg)
+        self.assertIsNone(cfg["optional_tag"])
