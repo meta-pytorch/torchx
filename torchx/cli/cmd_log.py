@@ -52,6 +52,7 @@ def print_log_lines(
     should_tail: bool,
     exceptions: "Queue[Exception]",
     streams: Stream | None,
+    container: str | None,
 ) -> None:
     try:
         for line in runner.log_lines(
@@ -61,6 +62,7 @@ def print_log_lines(
             regex,
             should_tail=should_tail,
             streams=streams,
+            container=container,
         ):
             prefix = f"{GREEN}{role_name}/{replica_id}{ENDC} "
             print(_prefix_line(prefix, line), file=file, end="", flush=True)
@@ -76,6 +78,7 @@ def get_logs(
     should_tail: bool = False,
     runner: Runner | None = None,
     streams: Stream | None = None,
+    container: str | None = None,
 ) -> None:
     validate(identifier)
     scheduler_backend, _, path_str = identifier.partition("://")
@@ -136,6 +139,7 @@ def get_logs(
                 should_tail,
                 exceptions,
                 streams,
+                container,
             ),
         )
         thread.daemon = True
@@ -178,6 +182,13 @@ class CmdLog(SubCommand):
             help="IO streams to use. Default is scheduler specific.",
         )
         subparser.add_argument(
+            "-c",
+            "--container",
+            type=str,
+            default=None,
+            help="Container name for multi-container replicas. Defaults to main container.",
+        )
+        subparser.add_argument(
             "identifier",
             type=str,
             metavar=ID_FORMAT,
@@ -186,5 +197,10 @@ class CmdLog(SubCommand):
 
     def run(self, args: argparse.Namespace) -> None:
         get_logs(
-            sys.stdout, args.identifier, args.regex, args.tail, streams=args.streams
+            sys.stdout,
+            args.identifier,
+            args.regex,
+            args.tail,
+            streams=args.streams,
+            container=args.container,
         )

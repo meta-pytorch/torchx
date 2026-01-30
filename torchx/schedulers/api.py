@@ -547,6 +547,7 @@ class Scheduler(abc.ABC, Generic[T]):
         until: Optional[datetime] = None,
         should_tail: bool = False,
         streams: Optional[Stream] = None,
+        container: Optional[str] = None,
     ) -> Iterable[str]:
         """
         Returns an iterator to the log lines of the ``k``th replica of the ``role``.
@@ -608,6 +609,10 @@ class Scheduler(abc.ABC, Generic[T]):
                 One of: combined, stdout, stderr.
                 If the selected stream isn't supported by the scheduler it will
                 throw an ValueError.
+            container: The container name to fetch logs from. For schedulers that
+                support multi-container replicas (e.g., Kubernetes), this specifies
+                which container's logs to retrieve. If None, defaults to the main
+                container.
 
         Returns:
             An ``Iterator`` over log lines of the specified role replica

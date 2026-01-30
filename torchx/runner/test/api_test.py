@@ -637,6 +637,33 @@ class RunnerTest(TestWithTmpDir):
                 app_id, role_name, replica_id, regex, since, until, False, streams=None
             )
 
+    def test_log_lines_without_container_kwarg(self, _) -> None:
+        """Test that container kwarg is not passed when None (for DockerScheduler compatibility)"""
+        app_id = "mock_app"
+
+        scheduler_mock = MagicMock()
+        scheduler_mock.describe.return_value = DescribeAppResponse(
+            app_id, AppState.RUNNING
+        )
+        scheduler_mock.log_iter.return_value = iter(["hello", "world"])
+
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+        ) as runner:
+            list(
+                runner.log_lines(
+                    f"local_dir://test_session/{app_id}",
+                    "trainer",
+                    0,
+                    container=None,
+                )
+            )
+
+            # Verify container kwarg is NOT passed when None
+            call_kwargs = scheduler_mock.log_iter.call_args[1]
+            self.assertNotIn("container", call_kwargs)
+
     def test_list(self, _) -> None:
         scheduler_mock = MagicMock()
         sched_list_return = [

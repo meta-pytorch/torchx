@@ -61,6 +61,7 @@ class MockRunner(Runner):
         until: datetime | None = None,
         should_tail: bool = False,
         streams: Stream | None = None,
+        container: str | None = None,
     ) -> Iterator[str]:
         import re
 

@@ -2041,6 +2041,7 @@ spec:
             {
                 "namespace": "testnamespace",
                 "name": "testjob-1",
+                "container": "role_blah-1",
                 "timestamps": True,
             },
         )
