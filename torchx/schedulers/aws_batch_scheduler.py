@@ -769,7 +769,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         else:
             return iterator
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> List[ListAppResponse]:
         # TODO: get queue name input instead of iterating over all queues?
         all_apps = []
         for resp in self._client.get_paginator("describe_job_queues").paginate():

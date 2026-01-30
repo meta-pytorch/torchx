@@ -29,7 +29,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, TypedDict
+from typing import Any, Iterable, Mapping, TypedDict
 
 import torchx
 from torchx.schedulers.api import (
@@ -47,6 +47,7 @@ from torchx.specs import (
     AppDryRunInfo,
     AppState,
     BindMount,
+    CfgVal,
     DeviceMount,
     macros,
     NONE,
@@ -565,7 +566,7 @@ class LsfScheduler(Scheduler[LsfOpts]):
             iterator = filter_regex(regex, iterator)
         return iterator
 
-    def list(self) -> list[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         p = subprocess.run(
             ["bjobs", "-noheader", "-a", "-o", "proj stat exit_code"],
             stdout=subprocess.PIPE,

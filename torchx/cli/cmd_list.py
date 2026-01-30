@@ -11,9 +11,11 @@ import argparse
 import logging
 
 from tabulate import tabulate
+from torchx.cli.argparse_util import ArgOnceAction
 from torchx.cli.cmd_base import SubCommand
-from torchx.runner import get_runner
+from torchx.runner import config, get_runner
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
+from torchx.specs import CfgVal
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -34,10 +36,27 @@ class CmdList(SubCommand):
             choices=list(scheduler_names),
             help=f"Name of the scheduler to use. One of: [{','.join(scheduler_names)}].",
         )
+        subparser.add_argument(
+            "-cfg",
+            "--scheduler_args",
+            type=str,
+            action=ArgOnceAction,
+            help="Arguments to pass to the scheduler (Ex: `cluster=foo,user=bar`)."
+            " For a list of scheduler run options run: `torchx runopts`",
+        )
 
     def run(self, args: argparse.Namespace) -> None:
         with get_runner() as runner:
-            apps = runner.list(args.scheduler)
+            # Parse scheduler config from CLI args first (takes precedence)
+            cfg: dict[str, CfgVal] = {}
+            if args.scheduler_args:
+                scheduler_opts = runner.scheduler_run_opts(args.scheduler)
+                cfg = scheduler_opts.cfg_from_str(args.scheduler_args)
+
+            # Fill in gaps from .torchxconfig (doesn't override CLI args)
+            config.apply(scheduler=args.scheduler, cfg=cfg)
+
+            apps = runner.list(args.scheduler, cfg if cfg else None)
             apps_data = [[app.app_handle, app.name, str(app.state)] for app in apps]
             print(
                 tabulate(apps_data, headers=[HANDLE_HEADER, NAME_HEADER, STATUS_HEADER])

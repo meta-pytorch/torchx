@@ -29,7 +29,16 @@ import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from types import FrameType
-from typing import Any, BinaryIO, Callable, Iterable, Protocol, TextIO, TypedDict
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    Iterable,
+    Mapping,
+    Protocol,
+    TextIO,
+    TypedDict,
+)
 
 from torchx.schedulers.api import (
     DescribeAppResponse,
@@ -42,7 +51,16 @@ from torchx.schedulers.api import (
 from torchx.schedulers.ids import make_unique
 from torchx.schedulers.streams import Tee
 from torchx.specs import AppDryRunInfo
-from torchx.specs.api import AppDef, AppState, is_terminal, macros, NONE, Role, runopts
+from torchx.specs.api import (
+    AppDef,
+    AppState,
+    CfgVal,
+    is_terminal,
+    macros,
+    NONE,
+    Role,
+    runopts,
+)
 from torchx.util.types import none_throws
 
 log: logging.Logger = logging.getLogger(__name__)
@@ -1084,7 +1102,7 @@ Reduce requested GPU resources or use a host with more GPUs
             iterator = filter_regex(regex, iterator)
         return iterator
 
-    def list(self) -> list[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         raise Exception(
             "App handles cannot be listed for local scheduler as they are not persisted by torchx"
         )
