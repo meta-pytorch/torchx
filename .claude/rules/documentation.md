@@ -4,21 +4,12 @@ When working on TorchX code, incrementally improve documentation.
 
 ## Docstrings
 
-Google Style. Components lead with CLI examples:
+See `coding-conventions.md` for docstring style (Google Style, doctest examples).
 
-```python
-def ddp(*args, script: str, j: str = "1x2") -> AppDef:
-    """Distributed data parallel application.
-
-    .. code:: shell-session
-
-        $ torchx run dist.ddp -j 1x4 --script main.py
-    """
-```
-
-- Skip trivial methods where function name + args are self-explanatory
-- Docstrings should help, not hurt readability
-- Add `.. doctest::` examples where they clarify behavior better than prose
+When editing code, suggest doc updates if:
+- New features/APIs need documentation
+- Existing docs are outdated or misleading
+- Examples could be added or improved
 
 ## Generated Docs
 

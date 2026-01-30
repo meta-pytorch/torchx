@@ -1,5 +1,48 @@
 # Coding Conventions
 
+## Docstrings
+
+Google Style. See `python-docstring-google-style.md` for full guide.
+
+### Code Examples: Prefer Doctest
+
+**Use `.. doctest::` over plain code blocks** for Python examples in docstrings.
+Doctest examples are validated by Sphinx during doc builds.
+
+```python
+def parse_resource(resource_str: str) -> Resource:
+    """Parse a resource string into a Resource object.
+
+    Example:
+        .. doctest::
+
+            >>> parse_resource("cpu=2,gpu=1,memMB=1024")
+            Resource(cpu=2, gpu=1, memMB=1024)
+            >>> parse_resource("gpu=4")
+            Resource(cpu=1, gpu=4, memMB=128)
+
+    """
+```
+
+**When to use each:**
+- `.. doctest::` - Python code examples (validated)
+- `.. code:: shell-session` - CLI/shell examples (not validated)
+- `.. code-block:: python` - Python snippets not suitable for doctest (setup code, partial examples)
+
+### Component Docstrings
+
+Components lead with CLI usage examples:
+
+```python
+def ddp(*args, script: str, j: str = "1x2") -> AppDef:
+    """Distributed data parallel application.
+
+    .. code:: shell-session
+
+        $ torchx run dist.ddp -j 1x4 --script main.py
+    """
+```
+
 ## Markdown Tables
 
 Align columns so they line up in raw markdown (not just when rendered):
