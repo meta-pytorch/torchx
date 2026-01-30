@@ -11,7 +11,7 @@ import argparse
 import logging
 
 from tabulate import tabulate
-from torchx.cli.argparse_util import ArgOnceAction
+from torchx.cli.argparse_util import ArgOnceAction, torchxconfig_list
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner import config, get_runner
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
@@ -34,6 +34,7 @@ class CmdList(SubCommand):
             type=str,
             default=get_default_scheduler_name(),
             choices=list(scheduler_names),
+            action=torchxconfig_list,
             help=f"Name of the scheduler to use. One of: [{','.join(scheduler_names)}].",
         )
         subparser.add_argument(

@@ -107,6 +107,30 @@ class torchxconfig_run(torchxconfig):
         )
 
 
+class torchxconfig_list(torchxconfig):
+    """
+    Custom action that gets the default argument from .torchxconfig [cli:list] section.
+    """
+
+    def __init__(
+        self,
+        dest: str,
+        option_strings: Sequence[str],
+        required: bool = False,
+        # pyre-ignore[2] declared as Any in superclass Action
+        default: Any = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            "list",
+            dest=dest,
+            default=default,
+            required=required,
+            option_strings=option_strings,
+            **kwargs,
+        )
+
+
 class ArgOnceAction(Action):
     """
     Custom argparse action only allows argument to be specified once
