@@ -1166,6 +1166,7 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
         until: datetime | None = None,
         should_tail: bool = False,
         streams: Stream | None = None,
+        container: str | None = None,
     ) -> Iterable[str]:
         assert until is None, "kubernetes API doesn't support until"
 
@@ -1179,10 +1180,13 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
         namespace, name = app_id.split(":")
 
         pod_name = cleanup_str(f"{name}-{k}")
+        # Default to main container: {role_name}-{replica_id}
+        container = container or f"{role_name}-{k}"
 
         args: dict[str, object] = {
             "name": pod_name,
             "namespace": namespace,
+            "container": container,
             "timestamps": True,
         }
         if since is not None:

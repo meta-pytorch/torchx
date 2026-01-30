@@ -632,6 +632,7 @@ class Runner:
         until: datetime | None = None,
         should_tail: bool = False,
         streams: Stream | None = None,
+        container: str | None = None,
     ) -> Iterable[str]:
         """
         Returns an iterator over the log lines of the specified job container.
@@ -689,6 +690,8 @@ class Runner:
                     first log line (start of job).
             until: datetime based end cursor. If left empty, follows the log output
                     until the job completes and all log lines have been consumed.
+            container: optional container name for multi-container replicas. If None,
+                    defaults to the main container.
 
         Returns:
              An iterator over the role k-th replica of the specified application.
@@ -703,6 +706,11 @@ class Runner:
         with log_event("log_lines", scheduler_backend, app_id):
             if not self.status(app_handle):
                 raise UnknownAppException(app_handle)
+            kwargs = {
+                "streams": streams,
+            }
+            if container is not None:
+                kwargs["container"] = container
             log_iter = scheduler.log_iter(
                 app_id,
                 role_name,
@@ -711,7 +719,7 @@ class Runner:
                 since,
                 until,
                 should_tail,
-                streams=streams,
+                **kwargs,
             )
             return log_iter
 

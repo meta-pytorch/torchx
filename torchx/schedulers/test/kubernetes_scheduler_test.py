@@ -1165,6 +1165,35 @@ spec:
             {
                 "namespace": "testnamespace",
                 "name": "testjob-roleblah-1-0",
+                "container": "role_blah-1",
+                "timestamps": True,
+            },
+        )
+
+    @patch("kubernetes.client.CoreV1Api.read_namespaced_pod_log")
+    def test_log_iter_sidecar(self, read_namespaced_pod_log: MagicMock) -> None:
+        scheduler = create_scheduler("test")
+        read_namespaced_pod_log.return_value = "sidecar log\n"
+        lines = scheduler.log_iter(
+            app_id="testnamespace:testjob",
+            role_name="role_blah",
+            k=1,
+            container="sidecar",
+        )
+        self.assertEqual(
+            list(lines),
+            [
+                "sidecar log\n",
+            ],
+        )
+        call = read_namespaced_pod_log.call_args
+        args, kwargs = call
+        self.assertEqual(
+            kwargs,
+            {
+                "namespace": "testnamespace",
+                "name": "testjob-roleblah-1-0",
+                "container": "sidecar",
                 "timestamps": True,
             },
         )
