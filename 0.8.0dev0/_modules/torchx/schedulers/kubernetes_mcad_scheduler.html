@@ -1152,7 +1152,7 @@
             <span class="k">if</span> <span class="n">CPU_KEY</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container_result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">RESOURCE_KEY</span><span class="p">][</span><span class="n">REQUEST_KEY</span><span class="p">]:</span>
                 <span class="k">continue</span>
             <span class="n">resource_req</span><span class="o">.</span><span class="n">cpu</span> <span class="o">=</span> <span class="n">container_result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">RESOURCE_KEY</span><span class="p">][</span><span class="n">REQUEST_KEY</span><span class="p">][</span><span class="n">CPU_KEY</span><span class="p">]</span>
-            <span class="c1"># Substring matching to accomodate different gpu types</span>
+            <span class="c1"># Substring matching to accommodate different gpu types</span>
             <span class="n">gpu_key_values</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
                 <span class="nb">filter</span><span class="p">(</span>
                     <span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">GPU_KEY</span> <span class="ow">in</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
@@ -1651,7 +1651,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">iterator</span></div>
 
-<div class="viewcode-block" id="KubernetesMCADScheduler.list"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
+<div class="viewcode-block" id="KubernetesMCADScheduler.list"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="n">active_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_active_context</span><span class="p">()</span>
         <span class="n">namespace</span> <span class="o">=</span> <span class="n">active_context</span><span class="p">[</span><span class="s2">&quot;context&quot;</span><span class="p">][</span><span class="s2">&quot;namespace&quot;</span><span class="p">]</span>
 

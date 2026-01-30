@@ -1166,15 +1166,22 @@
 <div class="viewcode-block" id="Runner.list"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        For apps launched on the scheduler, this API returns a list of ListAppResponse</span>
 <span class="sd">        objects each of which have app id, app handle and its status.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scheduler: name of the scheduler backend.</span>
+<span class="sd">            cfg: scheduler configuration, same as passed to run/dryrun APIs.</span>
+<span class="sd">                Some schedulers may use this for backend routing decisions.</span>
+
 <span class="sd">        Note: This API is in prototype phase and is subject to change.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">):</span>
             <span class="n">sched</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span>
-            <span class="n">apps</span> <span class="o">=</span> <span class="n">sched</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+            <span class="n">apps</span> <span class="o">=</span> <span class="n">sched</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">app</span> <span class="ow">in</span> <span class="n">apps</span><span class="p">:</span>
                 <span class="n">app</span><span class="o">.</span><span class="n">app_handle</span> <span class="o">=</span> <span class="n">make_app_handle</span><span class="p">(</span><span class="n">scheduler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">app_id</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">apps</span></div>
