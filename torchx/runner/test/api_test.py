@@ -388,7 +388,9 @@ class RunnerTest(TestWithTmpDir):
             def describe(self, app_id: str) -> DescribeAppResponse | None:
                 pass
 
-            def list(self) -> list[DescribeAppResponse]:
+            def list(
+                self, cfg: Mapping[str, CfgVal] | None = None
+            ) -> list[DescribeAppResponse]:
                 pass
 
             def _cancel_existing(self, app_id: str) -> None:

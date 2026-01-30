@@ -58,7 +58,7 @@ class TestScheduler(Scheduler):
     ) -> Iterable[str]:
         raise NotImplementedError()
 
-    def list(self) -> list[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         raise NotImplementedError()
 
     def _run_opts(self) -> runopts:

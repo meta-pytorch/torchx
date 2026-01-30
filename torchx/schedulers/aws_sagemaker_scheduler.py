@@ -101,7 +101,7 @@ class AWSSageMakerOpts(TypedDict, total=False):
 @dataclass
 class AWSSageMakerJob:
     """
-    Jobs defined the key values that is requried to schedule a job. This will be the value
+    Jobs defined the key values that is required to schedule a job. This will be the value
     of `request` in the AppDryRunInfo object.
 
     - job_name: defines the job name shown in SageMaker
@@ -567,7 +567,7 @@ class AWSSageMakerScheduler(
             ui_url=self._job_ui_url(job["TrainingJobArn"]),
         )
 
-    def list(self) -> list[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         raise NotImplementedError()
 
     def _cancel_existing(self, app_id: str) -> None:
