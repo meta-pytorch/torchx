@@ -1,3 +1,8 @@
+---
+oncalls: ['torchx_core']
+apply_to_regex: '.*'
+---
+
 # Development (Git Checkout)
 
 See `.github/workflows/` for CI commands. Common commands:
