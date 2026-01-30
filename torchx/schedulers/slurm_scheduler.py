@@ -38,6 +38,7 @@ from torchx.specs import (
     AppDef,
     AppDryRunInfo,
     AppState,
+    CfgVal,
     macros,
     NONE,
     ReplicaStatus,
@@ -847,7 +848,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
             iterator = filter_regex(regex, iterator)
         return iterator
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> List[ListAppResponse]:
         try:
             return self._list_sacct()
         except subprocess.CalledProcessError:

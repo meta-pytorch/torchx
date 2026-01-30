@@ -76,7 +76,9 @@ class SchedulerTest(unittest.TestCase):
         ) -> Iterable[str]:
             return iter([])
 
-        def list(self) -> list[ListAppResponse]:
+        def list(
+            self, cfg: Mapping[str, CfgVal] | None = None
+        ) -> list[ListAppResponse]:
             return []
 
         def _run_opts(self) -> runopts:

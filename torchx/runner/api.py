@@ -718,15 +718,22 @@ class Runner:
     def list(
         self,
         scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
     ) -> list[ListAppResponse]:
         """
         For apps launched on the scheduler, this API returns a list of ListAppResponse
         objects each of which have app id, app handle and its status.
+
+        Args:
+            scheduler: name of the scheduler backend.
+            cfg: scheduler configuration, same as passed to run/dryrun APIs.
+                Some schedulers may use this for backend routing decisions.
+
         Note: This API is in prototype phase and is subject to change.
         """
         with log_event("list", scheduler):
             sched = self._scheduler(scheduler)
-            apps = sched.list()
+            apps = sched.list(cfg)
             for app in apps:
                 app.app_handle = make_app_handle(scheduler, self._name, app.app_id)
             return apps

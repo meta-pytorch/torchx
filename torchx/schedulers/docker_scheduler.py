@@ -13,7 +13,7 @@ import re
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, TYPE_CHECKING, TypedDict
+from typing import Any, Iterable, Mapping, TYPE_CHECKING, TypedDict
 
 import torchx
 import yaml
@@ -32,6 +32,7 @@ from torchx.specs.api import (
     AppDryRunInfo,
     AppState,
     BindMount,
+    CfgVal,
     DeviceMount,
     is_terminal,
     macros,
@@ -488,7 +489,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         else:
             return logs
 
-    def list(self) -> list[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         unique_apps = {
             ListAppResponse(
                 app_id=cntr.labels[LABEL_APP_ID], state=self._get_app_state(cntr)

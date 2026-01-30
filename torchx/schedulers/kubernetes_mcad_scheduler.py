@@ -702,7 +702,7 @@ def get_role_information(generic_items: Iterable[dict[str, Any]]) -> dict[str, A
             if CPU_KEY not in container_result[0][RESOURCE_KEY][REQUEST_KEY]:
                 continue
             resource_req.cpu = container_result[0][RESOURCE_KEY][REQUEST_KEY][CPU_KEY]
-            # Substring matching to accomodate different gpu types
+            # Substring matching to accommodate different gpu types
             gpu_key_values = dict(
                 filter(
                     lambda item: GPU_KEY in item[0],
@@ -1201,7 +1201,7 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
         else:
             return iterator
 
-    def list(self) -> list[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         active_context = self._get_active_context()
         namespace = active_context["context"]["namespace"]
 

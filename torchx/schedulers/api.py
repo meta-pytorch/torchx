@@ -455,10 +455,15 @@ class Scheduler(abc.ABC, Generic[T]):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def list(self) -> List[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> List[ListAppResponse]:
         """
         For apps launched on the scheduler, this API returns a list of ListAppResponse
         objects each of which have app id and its status.
+
+        Args:
+            cfg: scheduler configuration, same as passed to run/dryrun APIs.
+                Some schedulers may use this for backend routing decisions.
+
         Note: This API is in prototype phase and is subject to change.
         """
         raise NotImplementedError()
