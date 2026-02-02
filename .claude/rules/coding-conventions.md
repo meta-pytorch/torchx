@@ -1,3 +1,8 @@
+---
+oncalls: ['torchx_core']
+apply_to_regex: '.*'
+---
+
 # Coding Conventions
 
 ## Docstrings
