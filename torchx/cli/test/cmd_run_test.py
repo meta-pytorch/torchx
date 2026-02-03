@@ -46,6 +46,11 @@ def cwd(path: str) -> Generator[None, None, None]:
 
 class CmdRunTest(unittest.TestCase):
     def setUp(self) -> None:
+        # Reset class variables to prevent state leaking between tests
+        ArgOnceAction.called_args = set()
+        torchxconfig.called_args = set()
+        torchxconfig._subcmd_configs = {}
+
         self.tmpdir = Path(tempfile.mkdtemp())
 
         # create empty .torchxconfig so that user .torchxconfig is not picked up
@@ -63,6 +68,7 @@ class CmdRunTest(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
         ArgOnceAction.called_args = set()
         torchxconfig.called_args = set()
+        torchxconfig._subcmd_configs = {}
 
     def test_run_with_multiple_scheduler_args(self) -> None:
         args = ["--scheduler_args", "first_args", "--scheduler_args", "second_args"]
