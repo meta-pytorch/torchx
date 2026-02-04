@@ -4,6 +4,10 @@ include_patterns = [
     '**/*.py',
     '**/*.pyi',
 ]
+exclude_patterns = [
+    '.venv/**',
+    'torchx/github/**',
+]
 command = [
     'python3',
     'tools/linter/adapters/ufmt_linter.py',
@@ -26,6 +30,10 @@ code = 'RUFF'
 include_patterns = [
     '**/*.py',
     '**/*.pyi',
+]
+exclude_patterns = [
+    '.venv/**',
+    'torchx/github/**',
 ]
 command = [
     'python3',
@@ -57,6 +65,10 @@ code = 'PYRE'
 include_patterns = [
     '**/*.py',
     '**/*.pyi',
+]
+exclude_patterns = [
+    '.venv/**',
+    'torchx/github/**',
 ]
 command = [
     'python3',
