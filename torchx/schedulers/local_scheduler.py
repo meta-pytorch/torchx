@@ -29,16 +29,7 @@ import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from types import FrameType
-from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    Iterable,
-    Mapping,
-    Protocol,
-    TextIO,
-    TypedDict,
-)
+from typing import Any, BinaryIO, Callable, Iterable, Mapping, Protocol, TextIO
 
 from torchx.schedulers.api import (
     DescribeAppResponse,
@@ -47,6 +38,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines_iterator,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.schedulers.streams import Tee
@@ -182,10 +174,33 @@ class ImageProvider(abc.ABC):
         return os.path.join(img_root, role.entrypoint)
 
 
-class LocalOpts(TypedDict, total=False):
-    log_dir: str
-    prepend_cwd: bool | None
-    auto_set_cuda_visible_devices: bool | None
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for LocalScheduler.
+
+    Example:
+        .. doctest::
+
+            >>> from torchx.schedulers.local_scheduler import Opts
+            >>> opts = Opts(log_dir="/tmp/logs", prepend_cwd=True)
+            >>> opts["log_dir"]
+            '/tmp/logs'
+            >>> opts["prepend_cwd"]
+            True
+    """
+
+    log_dir: str | None = None
+    """Directory to write stdout/stderr log files of replicas."""
+
+    prepend_cwd: bool = False
+    """If set, prepends CWD to replica's PATH env var making binaries in CWD take precedence."""
+
+    auto_set_cuda_visible_devices: bool = False
+    """Sets CUDA_VISIBLE_DEVICES for roles that request GPU resources."""
+
+
+# Type alias for backwards compatibility with existing code
+LocalOpts = Mapping[str, CfgVal]
 
 
 class LocalDirectoryImageProvider(ImageProvider):
@@ -347,7 +362,7 @@ class _LocalAppDef:
 
     def __init__(self, id: str, log_dir: str) -> None:
         self.id = id
-        # cfg.get("log_dir")/<session_name>/<app_id> or /tmp/torchx/<session_name>/<app_id>
+        # opts.log_dir/<session_name>/<app_id> or /tmp/torchx/<session_name>/<app_id>
         self.log_dir = log_dir
         # role name -> [replicas, ...]
         self.role_replicas: dict[RoleName, list[_LocalReplica]] = {}
@@ -612,30 +627,9 @@ class LocalScheduler(Scheduler[LocalOpts]):
         self._created_tmp_log_dir: bool = False
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "log_dir",
-            type_=str,
-            default=None,
-            help="dir to write stdout/stderr log files of replicas",
-        )
-        opts.add(
-            "prepend_cwd",
-            type_=bool,
-            default=False,
-            help="if set, prepends CWD to replica's PATH env var"
-            " making any binaries in CWD take precedence over those in PATH",
-        )
-        opts.add(
-            "auto_set_cuda_visible_devices",
-            type_=bool,
-            default=False,
-            help="sets the `CUDA_AVAILABLE_DEVICES` for roles that request GPU resources."
-            " Each role replica will be assigned one GPU. Does nothing if the device count is less than replicas.",
-        )
-        return opts
+        return Opts.as_runopts()
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: LocalOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Mapping[str, CfgVal]) -> None:
         # Skip validation step for local application
         pass
 
@@ -776,16 +770,16 @@ class LocalScheduler(Scheduler[LocalOpts]):
 
         return env
 
-    def _get_app_log_dir(self, app_id: str, cfg: LocalOpts) -> str:
+    def _get_app_log_dir(self, app_id: str, cfg: Opts) -> str:
         """
         Returns the log dir. We redirect stdout/err
-        to a log file ONLY if the log_dir is user-provided in the cfg
+        to a log file ONLY if the log_dir is user-provided in the cfg.
 
-        1. if cfg.get("log_dir") -> (user-specified log dir, True)
-        2. if not cfg.get("log_dir") -> (autogen tmp log dir, False)
+        1. if cfg.log_dir -> (user-specified log dir, True)
+        2. if not cfg.log_dir -> (autogen tmp log dir, False)
         """
 
-        self._base_log_dir = cfg.get("log_dir")
+        self._base_log_dir = cfg.log_dir
         if not self._base_log_dir:
             self._base_log_dir = tempfile.mkdtemp(prefix="torchx_")
             self._created_tmp_log_dir = True
@@ -862,7 +856,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
         self,
         role_params: dict[str, list[ReplicaParam]],
         app: AppDef,
-        cfg: LocalOpts,
+        cfg: Opts,
     ) -> None:
         """
         If the run option ``auto_set_cuda_visible_devices = True``, then
@@ -903,7 +897,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
             gpus = role.num_replicas * role.resource.gpu
             total_requested_gpus += gpus
 
-        if not cfg.get("auto_set_cuda_visible_devices") or total_requested_gpus <= 0:
+        if not cfg.auto_set_cuda_visible_devices or total_requested_gpus <= 0:
             if total_requested_gpus > 0:
                 log.warning(
                     """\n
@@ -958,10 +952,12 @@ Reduce requested GPU resources or use a host with more GPUs
         """
         Converts the application and cfg into a ``PopenRequest``.
         """
+        # Convert to typed Opts for attribute access; keep original cfg for image_provider
+        opts = cfg if isinstance(cfg, Opts) else Opts.from_cfg(cfg)
 
         app_id = make_unique(app.name)
         image_provider = self._image_provider_class(cfg)
-        app_log_dir = self._get_app_log_dir(app_id, cfg)
+        app_log_dir = self._get_app_log_dir(app_id, opts)
 
         role_params: dict[str, list[ReplicaParam]] = {}
         role_log_dirs: dict[str, list[str]] = {}
@@ -981,9 +977,7 @@ Reduce requested GPU resources or use a host with more GPUs
                 # making binaries in cwd take precedence to those in PATH
                 # otherwise append cwd to PATH so that the binaries in PATH
                 # precede over those in cwd
-                prepend_cwd = cfg.get("prepend_cwd")
-
-                if prepend_cwd:
+                if opts.prepend_cwd:
                     role.env["PATH"] = _join_PATH(cwd, role.env.get("PATH"))
                 else:
                     role.env["PATH"] = _join_PATH(role.env.get("PATH"), cwd)
@@ -1024,7 +1018,7 @@ Reduce requested GPU resources or use a host with more GPUs
                     )
                 )
                 replica_log_dirs.append(replica_log_dir)
-        self.auto_set_CUDA_VISIBLE_DEVICES(role_params, app, cfg)
+        self.auto_set_CUDA_VISIBLE_DEVICES(role_params, app, opts)
         return PopenRequest(app_id, app_log_dir, role_params, role_log_dirs)
 
     def describe(self, app_id: str) -> DescribeAppResponse | None:

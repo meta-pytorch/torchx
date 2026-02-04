@@ -11,6 +11,7 @@ from __future__ import annotations
 import abc
 import inspect
 import re
+import types
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field, fields, MISSING
 from datetime import datetime
@@ -53,7 +54,7 @@ DAYS_IN_2_WEEKS = 14
 _CfgValType = TypeVar("_CfgValType", bound=CfgVal)
 
 
-class StructuredOpts:
+class StructuredOpts(Mapping[str, CfgVal]):
     """Base class for typed scheduler configuration options.
 
     Provides a type-safe way to define scheduler run options as dataclass fields
@@ -127,6 +128,7 @@ class StructuredOpts:
     # StructuredOpts field access instead of dict-like access.
     # -------------------------------------------------------------------------
 
+    # pyre-fixme[14]: Inconsistent override - uses different param name than Mapping.get
     def get(self, key: str, default: _CfgValType = None) -> _CfgValType:
         """Get a config value by key, returning default if not found or None."""
         if hasattr(self, key):
@@ -149,6 +151,7 @@ class StructuredOpts:
         for f in fields(self):
             yield f.name
 
+    # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
     def __contains__(self, key: object) -> bool:
         """Check if a config key exists."""
         return hasattr(self, str(key)) if isinstance(key, str) else False
@@ -201,8 +204,15 @@ class StructuredOpts:
             # Get type: extract base type from Union (e.g., int | None -> int)
             field_type = type_hints.get(name, str)
             origin = get_origin(field_type)
-            if origin is Union:
-                # For Union[X, None], get the non-None type
+            # Handle Union types to extract the base type for runopts.
+            # This logic handles field declarations like:
+            #   * foo: str | None = None  (types.UnionType without __future__.annotations)
+            #   * foo: Union[str, None] = None
+            #   * foo: Optional[str] = None  (equivalent to Union[str, None])
+            # Note: With `from __future__ import annotations`, get_type_hints() returns
+            # typing.Union for all syntaxes. The UnionType check handles the case
+            # without __future__.annotations where `str | None` creates types.UnionType.
+            if origin is Union or isinstance(field_type, types.UnionType):
                 args = [a for a in get_args(field_type) if a is not type(None)]
                 field_type = args[0] if args else str
             type_ = field_type
