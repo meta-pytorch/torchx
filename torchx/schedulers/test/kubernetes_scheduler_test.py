@@ -1138,9 +1138,22 @@ spec:
             with self.assertRaises(ApiException):
                 scheduler.list()
 
+    @patch("kubernetes.client.CoreV1Api.read_namespaced_pod")
     @patch("kubernetes.client.CoreV1Api.read_namespaced_pod_log")
-    def test_log_iter(self, read_namespaced_pod_log: MagicMock) -> None:
+    def test_log_iter(
+        self,
+        read_namespaced_pod_log: MagicMock,
+        read_namespaced_pod: MagicMock,
+    ) -> None:
         scheduler = create_scheduler("test")
+
+        # Mock pod with default container (role_blah-1)
+        mock_pod = MagicMock()
+        mock_container = MagicMock()
+        mock_container.name = "role_blah-1"
+        mock_pod.spec.containers = [mock_container]
+        read_namespaced_pod.return_value = mock_pod
+
         read_namespaced_pod_log.return_value = "foo reg\nfoo\nbar reg\n"
         lines = scheduler.log_iter(
             app_id="testnamespace:testjob",
@@ -1165,13 +1178,27 @@ spec:
             {
                 "namespace": "testnamespace",
                 "name": "testjob-roleblah-1-0",
+                "container": "role_blah-1",
                 "timestamps": True,
             },
         )
 
+    @patch("kubernetes.client.CoreV1Api.read_namespaced_pod")
     @patch("kubernetes.watch.Watch.stream")
-    def test_log_iter_tail(self, watch_stream: MagicMock) -> None:
+    def test_log_iter_tail(
+        self,
+        watch_stream: MagicMock,
+        read_namespaced_pod: MagicMock,
+    ) -> None:
         scheduler = create_scheduler("test")
+
+        # Mock pod with default container (role_blah-1)
+        mock_pod = MagicMock()
+        mock_container = MagicMock()
+        mock_container.name = "role_blah-1"
+        mock_pod.spec.containers = [mock_container]
+        read_namespaced_pod.return_value = mock_pod
+
         watch_stream.return_value = iter(["line1", "line2", "line3"])
         lines = scheduler.log_iter(
             app_id="testnamespace:testjob",
