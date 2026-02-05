@@ -1047,34 +1047,42 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             raise ValueError("KubernetesScheduler only supports COMBINED log stream")
 
         from kubernetes import client, watch
+        from torchx.cli.colors import prefix_container_name
 
         namespace, name = app_id.split(":")
 
         pod_name = normalize_str(f"{name}-{role_name}-{k}-0")
-
-        args: dict[str, object] = {
-            "name": pod_name,
-            "namespace": namespace,
-            "timestamps": True,
-        }
-        if since is not None:
-            args["since_seconds"] = (datetime.now() - since).total_seconds()
-
         core_api = client.CoreV1Api(self._api_client())
-        if should_tail:
-            w = watch.Watch()
-            iterator = (
-                f"{line}\n"
-                for line in w.stream(core_api.read_namespaced_pod_log, **args)
-            )
-        else:
-            resp = core_api.read_namespaced_pod_log(**args)
-            iterator = split_lines(resp)
 
-        if regex:
-            return filter_regex(regex, iterator)
-        else:
-            return iterator
+        # Get all containers in the pod
+        pod = core_api.read_namespaced_pod(name=pod_name, namespace=namespace)
+        containers = [c.name for c in pod.spec.containers]
+
+        for container_name in containers:
+            args: dict[str, object] = {
+                "name": pod_name,
+                "namespace": namespace,
+                "container": container_name,
+                "timestamps": True,
+            }
+            if since is not None:
+                args["since_seconds"] = (datetime.now() - since).total_seconds()
+
+            if should_tail:
+                w = watch.Watch()
+                iterator = (
+                    f"{line}\n"
+                    for line in w.stream(core_api.read_namespaced_pod_log, **args)
+                )
+            else:
+                resp = core_api.read_namespaced_pod_log(**args)
+                iterator = split_lines(resp)
+
+            if regex:
+                iterator = filter_regex(regex, iterator)
+
+            for line in iterator:
+                yield f"{prefix_container_name(container_name, role_name, k)}{line}"
 
     def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         active_context = self._get_active_context()
