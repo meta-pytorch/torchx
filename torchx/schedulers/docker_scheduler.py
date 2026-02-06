@@ -13,7 +13,7 @@ import re
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, Mapping, TYPE_CHECKING, TypedDict
+from typing import Any, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
@@ -24,6 +24,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.devices import get_device_mounts
 from torchx.schedulers.ids import make_unique
@@ -124,13 +125,21 @@ def ensure_network(client: "DockerClient | None" = None) -> None:
                 raise
 
 
-class DockerOpts(TypedDict, total=False):
-    copy_env: list[str] | None
-    env: dict[str, str] | None
-    privileged: bool
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for DockerScheduler."""
+
+    copy_env: list[str] | None = None
+    """List of glob patterns of environment variables to copy if not set in AppDef. Ex: FOO_*"""
+
+    env: dict[str, str] | None = None
+    """Environment variables to be passed to the run. The separator sign can be either comma or semicolon (e.g. ENV1:v1,ENV2:v2,ENV3:v3 or ENV1:V1;ENV2:V2). Environment variables from env will be applied on top of the ones from copy_env."""
+
+    privileged: bool = False
+    """If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`."""
 
 
-class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
+class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     DockerScheduler is a TorchX scheduling interface to Docker.
 
@@ -207,7 +216,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
 
         return req.app_id
 
-    def _submit_dryrun(self, app: AppDef, cfg: DockerOpts) -> AppDryRunInfo[DockerJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[DockerJob]:
         from docker.types import DeviceRequest, Mount
 
         default_env = {}
@@ -224,6 +233,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
 
         env = cfg.get("env")
         if env:
+            assert isinstance(env, dict), f"env must be a dict, got {env}"
             default_env.update(env)
 
         app_id = make_unique(app.name)
@@ -295,7 +305,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
                             LABEL_REPLICA_ID: str(replica_id),
                         },
                         "hostname": name,
-                        "privileged": cfg.get("privileged", False),
+                        "privileged": cfg.get("privileged") or False,
                         "network": NETWORK,
                         "mounts": mounts,
                         "devices": devices,
@@ -330,7 +340,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
 
         return AppDryRunInfo(req, repr)
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: DockerOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step
         pass
 
@@ -368,29 +378,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             container.stop()
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "copy_env",
-            type_=list[str],
-            default=None,
-            help="list of glob patterns of environment variables to copy if not set in AppDef. Ex: FOO_*",
-        )
-        opts.add(
-            "env",
-            type_=dict[str, str],
-            default=None,
-            help="""environment variables to be passed to the run. The separator sign can be eiher comma or semicolon
-            (e.g. ENV1:v1,ENV2:v2,ENV3:v3 or ENV1:V1;ENV2:V2). Environment variables from env will be applied on top
-            of the ones from copy_env""",
-        )
-        opts.add(
-            "privileged",
-            type_=bool,
-            default=False,
-            help="If true runs the container with elevated permissions."
-            " Equivalent to running with `docker run --privileged`.",
-        )
-        return opts
+        return Opts.as_runopts()
 
     def _get_app_state(self, container: "Container") -> AppState:
         if container.status == "exited":
