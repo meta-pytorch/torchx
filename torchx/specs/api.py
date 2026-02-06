@@ -1086,7 +1086,7 @@ class runopts:
             if val is None:
                 for alias in aliases:
                     val = resolved_cfg.get(alias)
-                    if alias in cfg or val is not None:
+                    if alias in resolved_cfg or val is not None:
                         resolved_name = alias
                         break
                 for alias in deprecated_aliases:
@@ -1104,7 +1104,7 @@ class runopts:
                 resolved_name = cfg_key
                 for alias in aliases:
                     duplicate_val = resolved_cfg.get(alias)
-                    if alias in cfg or duplicate_val is not None:
+                    if alias in resolved_cfg or duplicate_val is not None:
                         raise InvalidRunConfigException(
                             f"Duplicate opt name. runopt: `{resolved_name}``, is an alias of runopt: `{alias}`",
                             resolved_name,
