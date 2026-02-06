@@ -51,7 +51,16 @@ DAYS_IN_2_WEEKS = 14
 # STRUCTURED OPTIONS BASE CLASS
 # =============================================================================
 
-_CfgValType = TypeVar("_CfgValType", bound=CfgVal)
+
+def _snake_to_camel(name: str) -> str:
+    """Convert snake_case to camelCase."""
+    components = name.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def _to_snake_case(name: str) -> str:
+    """Convert to snake_case."""
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
 class StructuredOpts(Mapping[str, CfgVal]):
@@ -91,12 +100,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     """
 
-    @staticmethod
-    def snake_to_camel(name: str) -> str:
-        """Convert snake_case to camelCase."""
-        components = name.split("_")
-        return components[0] + "".join(x.title() for x in components[1:])
-
     @classmethod
     def from_cfg(cls, cfg: Mapping[str, CfgVal]) -> Self:
         """Create an instance from a raw config dict.
@@ -111,7 +114,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             if name in cfg:
                 kwargs[name] = cfg[name]
             else:
-                camel_case = cls.snake_to_camel(name)
+                camel_case = _snake_to_camel(name)
                 if camel_case in cfg:
                     kwargs[name] = cfg[camel_case]
         return cls(**kwargs)
@@ -128,19 +131,23 @@ class StructuredOpts(Mapping[str, CfgVal]):
     # StructuredOpts field access instead of dict-like access.
     # -------------------------------------------------------------------------
 
-    # pyre-fixme[14]: Inconsistent override - uses different param name than Mapping.get
-    def get(self, key: str, default: _CfgValType = None) -> _CfgValType:
-        """Get a config value by key, returning default if not found or None."""
-        if hasattr(self, key):
-            value = getattr(self, key)
-            return value if value is not None else default
-        return default
+    # pyre-fixme[14]: Inconsistent override - Mapping.get accepts a default parameter
+    def get(self, key: str) -> CfgVal:
+        """Get a config value by key, returning None if not found."""
+        try:
+            return self[key]
+        except KeyError:
+            return None
 
     def __getitem__(self, key: str) -> CfgVal:
-        """Get a config value by key. Raises KeyError if not found."""
-        if hasattr(self, key):
-            return getattr(self, key)
-        raise KeyError(key)
+        """Get a config value by key. Raises KeyError if not found.
+
+        Transparently handles camelCase keys by converting to snake_case.
+        """
+        snake_key = _to_snake_case(key)
+        if hasattr(self, snake_key):
+            return getattr(self, snake_key)
+        raise KeyError(key) from None
 
     def __len__(self) -> int:
         """Return the number of config fields."""
@@ -153,8 +160,36 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
     def __contains__(self, key: object) -> bool:
-        """Check if a config key exists."""
-        return hasattr(self, str(key)) if isinstance(key, str) else False
+        """Check if a config key exists.
+
+        camelCase keys are normalized to snake_case prior to lookup.
+
+        Example:
+            .. doctest::
+
+                >>> from dataclasses import dataclass
+                >>> @dataclass
+                ... class Opt(StructuredOpts):
+                ...     job_queue_name: str = "default"
+
+                >>> cfg = Opt()
+                >>> "job_queue_name" in cfg
+                True
+                >>> "jobQueueName" in cfg
+                True
+                >>> "queue_name" in cfg
+                False
+                >>> "queueName" in cfg
+                False
+
+        """
+        if not isinstance(key, str):
+            return False
+        try:
+            self[key]
+        except KeyError:
+            return False
+        return True
 
     @classmethod
     def get_docstrings(cls) -> dict[str, str]:
@@ -192,7 +227,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             name = f.name
 
             # Generate camelCase alias for snake_case field names
-            camel_case = cls.snake_to_camel(name)
+            camel_case = _snake_to_camel(name)
             if camel_case != name:
                 aliases = [camel_case]
             else:

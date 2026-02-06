@@ -247,21 +247,6 @@ class StructuredOptsTest(unittest.TestCase):
     """Tests for StructuredOpts base class functionality."""
 
     # -------------------------------------------------------------------------
-    # snake_to_camel Tests
-    # -------------------------------------------------------------------------
-
-    def test_snake_to_camel(self) -> None:
-        """Test snake_case to camelCase conversion."""
-        self.assertEqual(StructuredOpts.snake_to_camel("cluster_name"), "clusterName")
-        self.assertEqual(StructuredOpts.snake_to_camel("num_retries"), "numRetries")
-        self.assertEqual(StructuredOpts.snake_to_camel("enable_debug"), "enableDebug")
-
-    def test_snake_to_camel_single_word(self) -> None:
-        """Test that single words are unchanged."""
-        self.assertEqual(StructuredOpts.snake_to_camel("name"), "name")
-        self.assertEqual(StructuredOpts.snake_to_camel("tags"), "tags")
-
-    # -------------------------------------------------------------------------
     # from_cfg Tests
     # -------------------------------------------------------------------------
 
@@ -306,18 +291,18 @@ class StructuredOptsTest(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_get(self) -> None:
-        """Test get() returns value or default."""
+        """Test get() returns value or None if not found."""
         opts = SampleOpts(cluster_name="test")
 
         self.assertEqual(opts.get("cluster_name"), "test")
         self.assertEqual(opts.get("num_retries"), 3)
-        self.assertEqual(opts.get("nonexistent", "default"), "default")
+        self.assertIsNone(opts.get("nonexistent"))
 
-    def test_get_returns_default_for_none(self) -> None:
-        """Test get() returns default when value is None."""
+    def test_get_returns_none_for_none_value(self) -> None:
+        """Test get() returns None when field value is explicitly None."""
         opts = SampleOpts(cluster_name="test", optional_tag=None)
 
-        self.assertEqual(opts.get("optional_tag", "default"), "default")
+        self.assertIsNone(opts.get("optional_tag"))
 
     def test_getitem(self) -> None:
         """Test __getitem__ returns value or raises KeyError."""
@@ -348,6 +333,66 @@ class StructuredOptsTest(unittest.TestCase):
         self.assertIn("cluster_name", opts)
         self.assertIn("num_retries", opts)
         self.assertNotIn("nonexistent", opts)
+
+    def test_contains_handles_camelcase(self) -> None:
+        """Test __contains__ converts camelCase to snake_case."""
+        opts = SampleOpts(cluster_name="test")
+
+        # __contains__ should find camelCase aliases
+        self.assertIn("clusterName", opts)
+        self.assertIn("numRetries", opts)
+        # But not invalid keys
+        self.assertNotIn("nonExistent", opts)
+
+    # -------------------------------------------------------------------------
+    # camelCase Handling Tests
+    # -------------------------------------------------------------------------
+
+    def test_graceful_camelCase_handling(self) -> None:
+        """Comprehensive test for graceful camelCase handling across all methods."""
+
+        @dataclass
+        class Opts(StructuredOpts):
+            cluster_name: str = "default-cluster"  # snake_case name
+            job_queue_name: str = "default-jq"
+            region: str = "us-east-1"  # simple name
+
+        cfg = Opts.from_cfg(
+            {"clusterName": "prod", "job_queue_name": "llms", "region": "us-west-2"}
+        )
+
+        for snake_case_key, camel_case_key in [
+            ("cluster_name", "clusterName"),
+            ("job_queue_name", "jobQueueName"),
+            ("region", "region"),
+        ]:
+            with self.subTest(
+                snake_case_key=snake_case_key, camel_case_key=camel_case_key
+            ):
+                # test __contains__
+                self.assertIn(snake_case_key, cfg)
+                self.assertIn(camel_case_key, cfg)
+
+                # test __getitem__
+                self.assertEqual(cfg[snake_case_key], cfg[camel_case_key])
+
+                # test get
+                self.assertEqual(cfg.get(snake_case_key), cfg.get(camel_case_key))
+                self.assertEqual(cfg.get(snake_case_key), cfg[snake_case_key])
+
+                # test value correctness
+                self.assertEqual(getattr(cfg, snake_case_key), cfg.get(snake_case_key))
+                self.assertEqual(getattr(cfg, snake_case_key), cfg.get(camel_case_key))
+
+                # test accessing camelCase attribute raises (only for actual camelCase keys)
+                if snake_case_key != camel_case_key:
+                    with self.assertRaises(AttributeError):
+                        getattr(cfg, camel_case_key)
+
+        # Verify values are correct
+        self.assertEqual(cfg.cluster_name, "prod")
+        self.assertEqual(cfg.job_queue_name, "llms")
+        self.assertEqual(cfg.region, "us-west-2")
 
     # -------------------------------------------------------------------------
     # as_runopts Tests
