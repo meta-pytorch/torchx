@@ -103,3 +103,22 @@ raise ValueError(f"unknown scheduler: `{scheduler}`")
 ## Tests
 
 Location: `module/test/module_test.py` | Class: `ModuleTest` | Method: `test_*`
+
+## Runopts (Scheduler Configuration)
+
+**Avoid adding runopts to implement features.** This should be a last resort.
+
+**Why:**
+1. Runopts reduce AppDef portability—the AppDef becomes tightly coupled to specific schedulers
+2. Runopts obscure scheduler behavior, making it hard for users to reason about the resulting job
+
+**Preferred alternatives:**
+- **Overlays** in AppDef or Role metadata (search scheduler source for logic that applies user-specified overrides on top of the generated request)
+- **Workspace type checking**: `isinstance(self, SomeWorkspace)`
+- **Scheduler/workspace composition**: Compose schedulers and workspaces to encapsulate behavior
+- **Extend core APIs**: Add attributes/methods to `torchx.specs`, `torchx.schedulers`, `torchx.workspace`, or `torchx.runner`
+
+**Anti-patterns (avoid these):**
+- **Resource capabilities**: `resource.capabilities["key"] = "value"` — overloads an unrelated field
+
+Only add runopts when no alternative exists and the option is fundamental to scheduler operation.
