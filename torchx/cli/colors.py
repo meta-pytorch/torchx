@@ -22,3 +22,14 @@ else:
     BLUE = ""
     GRAY = ""
     ENDC = ""
+
+
+def prefix_container_name(container_name: str, role_name: str, replica_id: int) -> str:
+    """
+    Generate a colored prefix for a container name.
+    Returns empty string for default container (role_name-replica_id), colored name for others.
+    """
+    default_container = f"{role_name}-{replica_id}"
+    if container_name == default_container:
+        return ""
+    return f"{BLUE}{container_name}{ENDC} "
