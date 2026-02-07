@@ -23,8 +23,8 @@ from torchx.schedulers.lsf_scheduler import (
     get_job_state,
     get_submit_script,
     LsfBsub,
-    LsfOpts,
     LsfScheduler,
+    Opts,
 )
 from torchx.specs import (
     AppDef,
@@ -67,15 +67,13 @@ def simple_app() -> AppDef:
     )
 
 
-def simple_opts() -> LsfOpts:
-    return LsfOpts(
-        {
-            "lsf_queue": "queue",
-            "jobdir": "/path/to/job",
-            "container_workdir": "/path/to/container",
-            "host_network": True,
-            "shm_size": "10G",
-        }
+def simple_opts() -> Opts:
+    return Opts(
+        lsf_queue="queue",
+        jobdir="/path/to/job",
+        container_workdir="/path/to/container",
+        host_network=True,
+        shm_size="10G",
     )
 
 
@@ -122,7 +120,7 @@ class LsfSchedulerTest(unittest.TestCase):
     def test_get_docker_command(self) -> None:
         role = simple_role()
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -132,7 +130,7 @@ class LsfSchedulerTest(unittest.TestCase):
             BindMount(src_path="/bind/src", dst_path="/bind/dst", read_only=True)
         ]
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo -v /bind/src:/bind/dst:ro --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -142,7 +140,7 @@ class LsfSchedulerTest(unittest.TestCase):
             BindMount(src_path="/bind/src", dst_path="/bind/dst", read_only=False)
         ]
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo -v /bind/src:/bind/dst:rw --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -150,7 +148,7 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         role.mounts = [VolumeMount(src="srcvol", dst_path="/vol/dst", read_only=True)]
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo --mount type=volume,src=srcvol,dst=/vol/dst,ro "
             "--entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
@@ -159,7 +157,7 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         role.mounts = [VolumeMount(src="srcvol", dst_path="/vol/dst", read_only=False)]
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo --mount type=volume,src=srcvol,dst=/vol/dst "
             "--entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
@@ -170,7 +168,7 @@ class LsfSchedulerTest(unittest.TestCase):
             DeviceMount(src_path="/dev/fuse", dst_path="/dev/fuse", permissions="rwm")
         ]
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo --device=/dev/fuse:/dev/fuse:rwm --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -178,7 +176,7 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         self.assertEqual(
             get_docker_command(
-                "foo", role, cfg={"container_workdir": "/tmp/container"}
+                "foo", role, cfg=Opts(container_workdir="/tmp/container")
             ),
             "docker run --name=foo -w /tmp/container --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
@@ -186,7 +184,7 @@ class LsfSchedulerTest(unittest.TestCase):
     def test_get_docker_command_host_network(self) -> None:
         role = simple_role()
         self.assertEqual(
-            get_docker_command("foo", role, cfg={"host_network": True}),
+            get_docker_command("foo", role, cfg=Opts(host_network=True)),
             "docker run --name=foo --net=host --ipc=host --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -194,14 +192,14 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         role.port_map = {"http": 80}
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo -p 80 --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
     def test_get_docker_command_shm_size(self) -> None:
         role = simple_role()
         self.assertEqual(
-            get_docker_command("foo", role, cfg={"shm_size": "10G"}),
+            get_docker_command("foo", role, cfg=Opts(shm_size="10G")),
             "docker run --name=foo --shm-size=10G --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -209,7 +207,7 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         role.env = {"FOO": "bar"}
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             "docker run --name=foo -e FOO=bar --entrypoint echo --rm /some/path hello '\\$HOSTNAME'",
         )
 
@@ -217,7 +215,7 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         role.resource = Resource(cpu=1, memMB=1, gpu=1)
         self.assertEqual(
-            get_docker_command("foo", role, cfg={}),
+            get_docker_command("foo", role, cfg=Opts()),
             f"docker run --name=foo --cpus=1 --memory={1024 * 1024} --gpus all --entrypoint echo "
             "--rm /some/path hello '\\$HOSTNAME'",
         )
@@ -240,7 +238,7 @@ class LsfSchedulerTest(unittest.TestCase):
             get_docker_command(
                 "foo",
                 role,
-                cfg={"container_workdir": "/tmp/container", "shm_size": "10G"},
+                cfg=Opts(container_workdir="/tmp/container", shm_size="10G"),
             ),
             "docker run --name=foo -v /bind/src:/bind/dst:ro -v /bind/src:/bind/dst:rw --device=/dev/fuse:/dev/fuse:rwm "
             f"-w /tmp/container -p 80 --shm-size=10G -e FOO=bar --cpus=1 --memory={1024 * 1024} --gpus all "
@@ -254,10 +252,15 @@ class LsfSchedulerTest(unittest.TestCase):
         role = simple_role()
         self.assertEqual(
             get_bsub(
-                app_id, job_name, role, cfg={}, head_job_name="", head_job_host=job_host
+                app_id,
+                job_name,
+                role,
+                cfg=Opts(),
+                head_job_name="",
+                head_job_host=job_host,
             ),
             f'bsub -P {app_id} -J {job_name} -m {job_host} -R "span[hosts=1]]" '
-            f"<< EOF\n{get_docker_command(job_name, role, cfg={})}\nEOF",
+            f"<< EOF\n{get_docker_command(job_name, role, cfg=Opts())}\nEOF",
         )
 
     def test_get_bsub_head_job(self) -> None:
@@ -271,12 +274,12 @@ class LsfSchedulerTest(unittest.TestCase):
                 app_id,
                 job_name,
                 role,
-                cfg={},
+                cfg=Opts(),
                 head_job_name=head_job_name,
                 head_job_host=job_host,
             ),
             f'bsub -P {app_id} -J {job_name} -w "started({head_job_name})" -R "select[hname!=\'{job_host}\']" '
-            f'-R "span[hosts=1]]" << EOF\n{get_docker_command(job_name, role, cfg={})}\nEOF',
+            f'-R "span[hosts=1]]" << EOF\n{get_docker_command(job_name, role, cfg=Opts())}\nEOF',
         )
 
     def test_get_bsub_jobdir(self) -> None:
@@ -290,13 +293,13 @@ class LsfSchedulerTest(unittest.TestCase):
                 app_id,
                 job_name,
                 role,
-                cfg={"jobdir": jobdir},
+                cfg=Opts(jobdir=jobdir),
                 head_job_name="",
                 head_job_host=job_host,
             ),
             f"bsub -P {app_id} -J {job_name} -m {job_host} "
             f"-cwd {jobdir} -outdir {jobdir} -oo {jobdir}/{job_name}.submit.out -eo {jobdir}/{job_name}.submit.err "
-            f'-R "span[hosts=1]]" << EOF\n{get_docker_command(job_name, role, cfg={})} > {jobdir}/{job_name}.out '
+            f'-R "span[hosts=1]]" << EOF\n{get_docker_command(job_name, role, cfg=Opts())} > {jobdir}/{job_name}.out '
             f"2> {jobdir}/{job_name}.err\nEOF",
         )
 
@@ -310,12 +313,12 @@ class LsfSchedulerTest(unittest.TestCase):
                 app_id,
                 job_name,
                 role,
-                cfg={"lsf_queue": "queue"},
+                cfg=Opts(lsf_queue="queue"),
                 head_job_name="",
                 head_job_host=job_host,
             ),
             f'bsub -P {app_id} -J {job_name} -m {job_host} -q queue -R "span[hosts=1]]" '
-            f"<< EOF\n{get_docker_command(job_name, role, cfg={})}\nEOF",
+            f"<< EOF\n{get_docker_command(job_name, role, cfg=Opts())}\nEOF",
         )
 
     def test_get_bsub_resource(self) -> None:
@@ -326,11 +329,16 @@ class LsfSchedulerTest(unittest.TestCase):
         role.resource = Resource(cpu=1, memMB=1, gpu=1)
         self.assertEqual(
             get_bsub(
-                app_id, job_name, role, cfg={}, head_job_name="", head_job_host=job_host
+                app_id,
+                job_name,
+                role,
+                cfg=Opts(),
+                head_job_name="",
+                head_job_host=job_host,
             ),
             f"bsub -P {app_id} -J {job_name} -m {job_host} "
             f'-n 1 -R "span[hosts=1] rusage[mem=1]" -gpu "num=1:mode=shared:j_exclusive=yes" << EOF\n'
-            f"{get_docker_command(job_name, role, cfg={})}\nEOF",
+            f"{get_docker_command(job_name, role, cfg=Opts())}\nEOF",
         )
 
     def test_get_bsub_full(self) -> None:
@@ -347,14 +355,14 @@ class LsfSchedulerTest(unittest.TestCase):
                 app_id,
                 job_name,
                 role,
-                cfg={"jobdir": jobdir, "lsf_queue": "queue"},
+                cfg=Opts(jobdir=jobdir, lsf_queue="queue"),
                 head_job_name=head_job_name,
                 head_job_host=job_host,
             ),
             f'bsub -P {app_id} -J {job_name} -w "started({head_job_name})" -R "select[hname!=\'{job_host}\']" '
             f"-cwd {jobdir} -outdir {jobdir} -oo {jobdir}/{job_name}.submit.out -eo {jobdir}/{job_name}.submit.err -q queue "
             '-n 1 -R "span[hosts=1] rusage[mem=1]" -gpu "num=1:mode=shared:j_exclusive=yes" << EOF\n'
-            f"{get_docker_command(job_name, role, cfg={})} > {jobdir}/{job_name}.out 2> {jobdir}/{job_name}.err\nEOF",
+            f"{get_docker_command(job_name, role, cfg=Opts())} > {jobdir}/{job_name}.out 2> {jobdir}/{job_name}.err\nEOF",
         )
 
     def test_cleanup_str(self) -> None:
@@ -394,14 +402,14 @@ class LsfSchedulerTest(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(
             get_submit_script(
-                app_id, cmd=cmd, app=app, cfg=LsfOpts({}), rank0_host=rank0_host
+                app_id, cmd=cmd, app=app, cfg=Opts(), rank0_host=rank0_host
             ),
             f"""#!/bin/bash
 #
 # Generated by TorchX {torchx.__version__}
 # Run with: {shlex.join(cmd)}
 #
-{get_bsub(app_id, job_name, replica_role, LsfOpts({}), head_job_name, rank0_host)}
+{get_bsub(app_id, job_name, replica_role, Opts(), head_job_name, rank0_host)}
 """,
         )
 
@@ -506,21 +514,21 @@ dist_app-vdkcfm1p7lxcx EXIT 1
     def test_submit_dryrun(self) -> None:
         scheduler = create_scheduler("foo")
         app = simple_app()
-        info = scheduler.submit_dryrun(app, cfg={})
+        info = scheduler.submit_dryrun(app, cfg=Opts())
         req = info.request
         self.assertIsInstance(req, LsfBsub)
 
     def test_validate(self) -> None:
         scheduler = create_scheduler("foo")
         app = simple_app()
-        scheduler._validate(app, "lsf", cfg={})
+        scheduler._validate(app, "lsf", cfg=Opts())
 
     @patch("subprocess.run")
     def test_schedule(self, run: MagicMock) -> None:
         run.return_value.stdout = b"icgen2host-10-240-0-23 16 2\n"
         scheduler = create_scheduler("foo")
         app = simple_app()
-        info = scheduler.submit_dryrun(app, cfg={})
+        info = scheduler.submit_dryrun(app, cfg=Opts())
         out = scheduler.schedule(info)
         self.assertEqual(out, "app-name-42")
         self.assertEqual(run.call_count, 2)
