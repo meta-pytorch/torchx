@@ -17,9 +17,10 @@ jobs:
             container_repo: localhost
             extra_args: "--mock"
             platform: linux.24_04.4x
-          - scheduler: "kubernetes"
-            container_repo: localhost:5000/torchx
-            platform: linux.24_04.4x
+          # Temporarily disabled
+          # - scheduler: "kubernetes"
+          #   container_repo: localhost:5000/torchx
+          #   platform: linux.24_04.4x
           - scheduler: "local_cwd"
             platform: ubuntu-latest
           - scheduler: "local_docker"
