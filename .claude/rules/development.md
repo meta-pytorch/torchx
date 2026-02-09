@@ -40,6 +40,21 @@ pyre check
 torchx --help
 ```
 
+## UV Lock Management
+
+Run `uv lock` when:
+- Dependencies change in `pyproject.toml`
+- User requests dependency updates (`uv lock --upgrade`)
+- Lock file missing or conflicts
+
+```bash
+uv lock                              # regenerate after pyproject.toml changes
+uv lock --upgrade                    # update all deps
+uv lock --upgrade-package <name>     # update specific package
+```
+
+Commit `pyproject.toml` and `uv.lock` together.
+
 ## CI Workflows
 
 See `.github/workflows/` for CI commands:

@@ -29,7 +29,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, Mapping, TypedDict
+from typing import Any, Iterable, Mapping
 
 import torchx
 from torchx.schedulers.api import (
@@ -39,6 +39,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines_iterator,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.schedulers.local_scheduler import LogIterator
@@ -79,15 +80,27 @@ def get_job_state(state_str: str, exit_code: str) -> AppState:
     return state
 
 
-class LsfOpts(TypedDict, total=False):
-    lsf_queue: str | None
-    jobdir: str | None
-    container_workdir: str | None
-    host_network: bool | None
-    shm_size: str | None
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for LsfScheduler."""
+
+    lsf_queue: str | None = None
+    """Queue name to submit jobs."""
+
+    jobdir: str | None = None
+    """The directory to place the job code and outputs. The directory must not exist and will be created."""
+
+    container_workdir: str | None = None
+    """Working directory in container jobs."""
+
+    host_network: bool = False
+    """True if using the host network for jobs."""
+
+    shm_size: str | None = None
+    """Size of shared memory (/dev/shm) for jobs. Defaults to 64m when used via CLI."""
 
 
-def get_docker_command(job_name: str, role: Role, cfg: LsfOpts) -> str:
+def get_docker_command(job_name: str, role: Role, cfg: Opts) -> str:
     cmds = ["docker", "run", f"--name={job_name}"]
     for mount in role.mounts:
         if isinstance(mount, BindMount):
@@ -107,6 +120,9 @@ def get_docker_command(job_name: str, role: Role, cfg: LsfOpts) -> str:
             cmds += [f"--device={mount.src_path}:{mount.dst_path}:{mount.permissions}"]
     container_workdir = cfg.get("container_workdir")
     if container_workdir:
+        assert isinstance(
+            container_workdir, str
+        ), f"container_workdir must be a str, got {container_workdir}"
         cmds += ["-w", container_workdir]
     host_network = cfg.get("host_network")
     if host_network:
@@ -134,7 +150,7 @@ def get_docker_command(job_name: str, role: Role, cfg: LsfOpts) -> str:
     return shlex.join(cmds)
 
 
-def get_command(job_name: str, role: Role, cfg: LsfOpts) -> str:
+def get_command(job_name: str, role: Role, cfg: Opts) -> str:
     return get_docker_command(job_name, role, cfg)  # TODO: add get_singularity_command
 
 
@@ -142,7 +158,7 @@ def get_bsub(
     app_id: str,
     job_name: str,
     role: Role,
-    cfg: LsfOpts,
+    cfg: Opts,
     head_job_name: str,
     head_job_host: str,
 ) -> str:
@@ -158,6 +174,7 @@ def get_bsub(
         bsub_args += ["-m", head_job_host]
     jobdir = cfg.get("jobdir")
     if jobdir:
+        assert isinstance(jobdir, str), f"jobdir must be a str, got {jobdir}"
         bsub_args += [
             "-cwd",
             jobdir,
@@ -170,6 +187,7 @@ def get_bsub(
         ]
     queue = cfg.get("lsf_queue")
     if queue:
+        assert isinstance(queue, str), f"lsf_queue must be a str, got {queue}"
         bsub_args += ["-q", queue]
     resource = role.resource
 
@@ -236,7 +254,7 @@ def find_rank0_host(role: Role) -> str:
 
 
 def get_submit_script(
-    app_id: str, cmd: list[str], app: AppDef, cfg: LsfOpts, rank0_host: str
+    app_id: str, cmd: list[str], app: AppDef, cfg: Opts, rank0_host: str
 ) -> str:
     bsubs = []
     head_job_name = ""
@@ -381,7 +399,7 @@ class LsfBsub:
     jobdir: str | None
     app_id: str
     app: AppDef
-    cfg: LsfOpts
+    cfg: Opts
     cmd: list[str]
 
     def materialize(self, rank0_host: str = "RANK0_HOST") -> str:
@@ -395,7 +413,7 @@ class LsfBsub:
 {self.materialize()}"""
 
 
-class LsfScheduler(Scheduler[LsfOpts]):
+class LsfScheduler(Scheduler[Opts]):
     """
     **Example: hello_world**
 
@@ -444,39 +462,7 @@ class LsfScheduler(Scheduler[LsfOpts]):
         super().__init__("lsf", session_name)
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "lsf_queue",
-            type_=str,
-            default=None,
-            help="queue name to submit jobs",
-        )
-        opts.add(
-            "jobdir",
-            type_=str,
-            default=None,
-            help="The directory to place the job code and outputs. The directory must not exist and will be created.",
-        )
-        opts.add(
-            "container_workdir",
-            type_=str,
-            default=None,
-            help="working directory in container jobs",
-        )
-        opts.add(
-            "host_network",
-            type_=bool,
-            default=False,
-            help="True if using the host network for jobs",
-        )
-        opts.add(
-            "shm_size",
-            type_=str,
-            default="64m",
-            help="size of shared memory (/dev/shm) for jobs",
-        )
-
-        return opts
+        return Opts.as_runopts()
 
     def schedule(self, dryrun_info: AppDryRunInfo[LsfBsub]) -> str:
         req = dryrun_info.request
@@ -488,7 +474,7 @@ class LsfScheduler(Scheduler[LsfOpts]):
             subprocess.run(req.cmd, stdout=subprocess.PIPE, check=True)
         return req.app_id
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: LsfOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step for lsf
         pass
 
@@ -508,7 +494,7 @@ class LsfScheduler(Scheduler[LsfOpts]):
                 check=True,
             )
 
-    def _submit_dryrun(self, app: AppDef, cfg: LsfOpts) -> AppDryRunInfo[LsfBsub]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[LsfBsub]:
         jobdir = cfg.get("jobdir")
         assert jobdir is None or isinstance(jobdir, str), "jobdir must be str"
 
