@@ -88,8 +88,8 @@ class Runner:
 
     def __init__(
         self,
-        name: str,
-        scheduler_factories: dict[str, SchedulerFactory],
+        name: str = "",  # session names can be empty
+        scheduler_factories: dict[str, SchedulerFactory] | None = None,
         component_defaults: dict[str, dict[str, str]] | None = None,
         scheduler_params: dict[str, object] | None = None,
     ) -> None:
@@ -102,7 +102,9 @@ class Runner:
             schedulers: a list of schedulers the runner can use.
         """
         self._name: str = name
-        self._scheduler_factories = scheduler_factories
+        self._scheduler_factories: dict[str, SchedulerFactory] = (
+            scheduler_factories or {}
+        )
         self._scheduler_params: dict[str, Any] = {
             **(self._get_scheduler_params_from_env()),
             **(scheduler_params or {}),
