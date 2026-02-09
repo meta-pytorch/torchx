@@ -8,6 +8,7 @@ on:
 
 jobs:
   kubernetes-launch:
+    if: false  # Temporarily disabled
     runs-on: linux.24_04.4x
     permissions:
       id-token: write
