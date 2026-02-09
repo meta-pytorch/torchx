@@ -326,6 +326,7 @@ Traceback (most recent call last):
                                 "role": "worker",
                                 "hostname": "localhost",
                                 "structured_error_msg": error_msg,
+                                "hostaddr": "localhost",
                             },
                             {
                                 "id": 1,
@@ -333,6 +334,7 @@ Traceback (most recent call last):
                                 "role": "worker",
                                 "hostname": "localhost",
                                 "structured_error_msg": "<NONE>",
+                                "hostaddr": "localhost",
                             },
                         ],
                     }
