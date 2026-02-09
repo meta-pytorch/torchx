@@ -670,6 +670,8 @@ class ReplicaStatus:
         role: The role name
         hostname: The hostname where the replica is running
         structured_error_msg: Error message if any, None if job succeeded.
+        hostaddr: DNS resolvable hostname or ipv4 or ipv6 addr of the container
+            running this replica. Defaults to `hostname` if the scheduler does not set it.
     """
 
     id: int
@@ -677,6 +679,11 @@ class ReplicaStatus:
     role: str
     hostname: str
     structured_error_msg: str = NONE
+    hostaddr: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.hostaddr is None:
+            self.hostaddr = self.hostname
 
 
 @dataclass
