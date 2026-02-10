@@ -11,7 +11,7 @@ import importlib
 import sys
 import unittest
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import torchx
@@ -26,7 +26,6 @@ from torchx.schedulers.kubernetes_scheduler import (
     app_to_resource,
     create_scheduler,
     KubernetesJob,
-    KubernetesOpts,
     KubernetesScheduler,
     LABEL_APP_NAME,
     LABEL_INSTANCE_TYPE,
@@ -37,6 +36,7 @@ from torchx.schedulers.kubernetes_scheduler import (
     LABEL_ROLE_NAME,
     LABEL_UNIQUE_NAME,
     LABEL_VERSION,
+    Opts,
     PLACEHOLDER_FIELD_PATH,
     role_to_pod,
 )
@@ -272,7 +272,7 @@ class KubernetesSchedulerTest(unittest.TestCase):
     def test_submit_dryrun(self) -> None:
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -590,7 +590,7 @@ spec:
 
         scheduler = create_scheduler("test")
         app = _test_app(num_replicas=2)
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -617,12 +617,7 @@ spec:
         scheduler = create_scheduler("test")
         app = _test_app()
         app.roles[0].image = "sha256:testhash"
-        cfg = KubernetesOpts(
-            {
-                "queue": "testqueue",
-                "image_repo": "example.com/some/repo",
-            }
-        )
+        cfg = Opts(queue="testqueue", image_repo="example.com/some/repo")
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -647,16 +642,11 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("service_account", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "queue": "testqueue",
-                "service_account": "srvacc",
-            }
-        )
+        cfg = Opts(queue="testqueue", service_account="srvacc")
         info = scheduler.submit_dryrun(app, cfg)
         self.assertIn("'service_account_name': 'srvacc'", str(info.request.resource))
 
-        del cfg["service_account"]
+        cfg = Opts(queue="testqueue")
         info = scheduler.submit_dryrun(app, cfg)
         self.assertIn("service_account_name': None", str(info.request.resource))
 
@@ -668,17 +658,12 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("priority_class", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "queue": "testqueue",
-                "priority_class": "high",
-            }
-        )
+        cfg = Opts(queue="testqueue", priority_class="high")
 
         info = scheduler.submit_dryrun(app, cfg)
         self.assertIn("'priorityClassName': 'high'", str(info.request.resource))
 
-        del cfg["priority_class"]
+        cfg = Opts(queue="testqueue")
         info = scheduler.submit_dryrun(app, cfg)
         self.assertNotIn("'priorityClassName'", str(info.request.resource))
 
@@ -693,12 +678,7 @@ spec:
         }
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "namespace": "testnamespace",
-                "queue": "testqueue",
-            }
-        )
+        cfg = Opts(namespace="testnamespace", queue="testqueue")
 
         info = scheduler.submit_dryrun(app, cfg)
         id = scheduler.schedule(info)
@@ -723,12 +703,7 @@ spec:
 
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "namespace": "testnamespace",
-                "queue": "testqueue",
-            }
-        )
+        cfg = Opts(namespace="testnamespace", queue="testqueue")
         info = scheduler.submit_dryrun(app, cfg)
         with self.assertRaises(ValueError):
             scheduler.schedule(info)
@@ -1234,7 +1209,7 @@ spec:
             reason="Invalid",
         )
 
-        cfg = cast(KubernetesOpts, {"queue": "testqueue", "validate_spec": True})
+        cfg = Opts(queue="testqueue", validate_spec=True)
 
         with self.assertRaises(ValueError) as ctx:
             scheduler.submit_dryrun(app, cfg)
@@ -1248,7 +1223,7 @@ spec:
         scheduler = create_scheduler("test")
         app = _test_app()
 
-        cfg = KubernetesOpts({"queue": "testqueue", "validate_spec": False})
+        cfg = Opts(queue="testqueue", validate_spec=False)
 
         info = scheduler.submit_dryrun(app, cfg)
 
@@ -1268,7 +1243,7 @@ spec:
             reason="Invalid",
         )
 
-        cfg = cast(KubernetesOpts, {"queue": "testqueue", "validate_spec": True})
+        cfg = Opts(queue="testqueue", validate_spec=True)
         with self.assertRaises(ValueError) as ctx:
             scheduler.submit_dryrun(app, cfg)
             self.assertIn("Invalid job spec", str(ctx.exception))
@@ -1352,7 +1327,7 @@ spec:
             metadata={"kubernetes": {"spec": {"nodeSelector": {"gpu": "true"}}}},
         )
         app = specs.AppDef("test", roles=[trainer_role])
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
 
         info = scheduler.submit_dryrun(app, cfg)
         resource = info.request.resource
@@ -1387,7 +1362,7 @@ spec:
                 metadata={"kubernetes": f"file://{overlay_path}"},
             )
             app = specs.AppDef("test", roles=[trainer_role])
-            cfg = KubernetesOpts({"queue": "testqueue"})
+            cfg = Opts(queue="testqueue")
 
             info = scheduler.submit_dryrun(app, cfg)
             resource = info.request.resource
@@ -1490,7 +1465,7 @@ spec:
                 metadata={"kubernetes": f"file://{overlay_path}"},
             )
             app = specs.AppDef("test", roles=[trainer_role])
-            cfg = KubernetesOpts({"queue": "testqueue"})
+            cfg = Opts(queue="testqueue")
 
             info = scheduler.submit_dryrun(app, cfg)
             resource = info.request.resource
@@ -1517,7 +1492,7 @@ spec:
             metadata={"kubernetes": 123},  # Invalid type
         )
         app = specs.AppDef("test", roles=[trainer_role])
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
 
         with self.assertRaises(ValueError) as ctx:
             scheduler.submit_dryrun(app, cfg)
@@ -1528,7 +1503,7 @@ spec:
         app.name = "x" * 50
         app.roles[0].name = "y" * 20
 
-        cfg = cast(KubernetesOpts, {"queue": "testqueue", "validate_spec": True})
+        cfg = Opts(queue="testqueue", validate_spec=True)
 
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
@@ -1615,12 +1590,7 @@ class KubernetesSchedulerNoImportTest(unittest.TestCase):
     def test_dryrun(self) -> None:
         scheduler = kubernetes_scheduler.create_scheduler("foo")
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "namespace": "testnamespace",
-                "queue": "testqueue",
-            }
-        )
+        cfg = Opts(namespace="testnamespace", queue="testqueue")
 
         with self.assertRaises(ModuleNotFoundError):
             scheduler.submit_dryrun(app, cfg)

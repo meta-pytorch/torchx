@@ -105,7 +105,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING, TypedDict
+from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
@@ -116,6 +116,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
@@ -600,19 +601,42 @@ class KubernetesJob:
         return str(self)
 
 
-class KubernetesOpts(TypedDict, total=False):
-    namespace: str | None
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for KubernetesScheduler."""
+
     queue: str
-    image_repo: str | None
-    service_account: str | None
-    priority_class: str | None
-    validate_spec: bool | None
-    reserved_millicpu: int | None
-    reserved_memmb: int | None
-    efa_device_count: int | None
+    """Volcano queue to schedule job in."""
+
+    namespace: str = "default"
+    """Kubernetes namespace to schedule job in."""
+
+    service_account: str | None = None
+    """The service account name to set on the pod specs."""
+
+    priority_class: str | None = None
+    """The name of the PriorityClass to set on the job specs."""
+
+    validate_spec: bool = True
+    """Validate job spec using Kubernetes API dry-run before submission."""
+
+    reserved_millicpu: int = RESERVED_MILLICPU
+    """Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)."""
+
+    reserved_memmb: int = RESERVED_MEMMB
+    """Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)."""
+
+    image_repo: str | None = None
+    """The image repository to use when pushing patched images, must have push access."""
+
+    efa_device_count: int | None = None
+    """EFA device count override: None/unset=use resource spec, 0=remove EFA, N>0=set EFA count to N."""
 
 
-class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
+KubernetesOpts = Opts
+
+
+class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     KubernetesScheduler is a TorchX scheduling interface to Kubernetes.
 
@@ -789,9 +813,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
         return f"{namespace}:{resp['metadata']['name']}"
 
-    def _submit_dryrun(
-        self, app: AppDef, cfg: KubernetesOpts
-    ) -> AppDryRunInfo[KubernetesJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[KubernetesJob]:
         queue = cfg.get("queue")
         if not isinstance(queue, str):
             raise TypeError(f"config value 'queue' must be a string, got {queue}")
@@ -809,10 +831,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             priority_class, str
         ), "priority_class must be a str"
 
-        reserved_millicpu = cfg.get("reserved_millicpu", RESERVED_MILLICPU)
+        reserved_millicpu = cfg.get("reserved_millicpu")
+        if reserved_millicpu is None:
+            reserved_millicpu = RESERVED_MILLICPU
         assert isinstance(reserved_millicpu, int), "reserved_millicpu must be an int"
 
-        reserved_memmb = cfg.get("reserved_memmb", RESERVED_MEMMB)
+        reserved_memmb = cfg.get("reserved_memmb")
+        if reserved_memmb is None:
+            reserved_memmb = RESERVED_MEMMB
         assert isinstance(reserved_memmb, int), "reserved_memmb must be an int"
 
         efa_device_count = cfg.get("efa_device_count")
@@ -865,7 +891,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         )
         return AppDryRunInfo(req, repr)
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: KubernetesOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step
         pass
 
@@ -905,55 +931,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         )
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "namespace",
-            type_=str,
-            help="Kubernetes namespace to schedule job in",
-            default="default",
-        )
-        opts.add(
-            "queue",
-            type_=str,
-            help="Volcano queue to schedule job in",
-            required=True,
-        )
-        opts.add(
-            "service_account",
-            type_=str,
-            help="The service account name to set on the pod specs",
-        )
-        opts.add(
-            "priority_class",
-            type_=str,
-            help="The name of the PriorityClass to set on the job specs",
-        )
-        opts.add(
-            "validate_spec",
-            type_=bool,
-            help="Validate job spec using Kubernetes API dry-run before submission",
-            default=True,
-        )
-        opts.add(
-            "reserved_millicpu",
-            type_=int,
-            help="Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)",
-            default=RESERVED_MILLICPU,
-        )
-        opts.add(
-            "reserved_memmb",
-            type_=int,
-            help="Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)",
-            default=RESERVED_MEMMB,
-        )
-        opts.add(
-            "efa_device_count",
-            type_=int,
-            help="EFA device count override: None/unset=use resource spec, "
-            "0=remove EFA, N>0=set EFA count to N",
-            default=None,
-        )
-        return opts
+        return Opts.as_runopts()
 
     def describe(self, app_id: str) -> DescribeAppResponse | None:
         from kubernetes import client
