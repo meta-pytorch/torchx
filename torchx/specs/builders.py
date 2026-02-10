@@ -101,7 +101,11 @@ def _create_args_parser_from_parameters(
             script_parser.add_argument(param_name, **args)
         else:
             arg_names = [f"--{param_name}"]
-            if len(param_name) == 1:
+            if hasattr(parameter.annotation, "__metadata__"):
+                for meta in parameter.annotation.__metadata__:
+                    if isinstance(meta, str) and meta.startswith("-"):
+                        arg_names.insert(0, meta)
+            elif len(param_name) == 1:
                 arg_names = [f"-{param_name}"] + arg_names
             if "default" not in args:
                 if (config and param_name not in config) or not config:
