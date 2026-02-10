@@ -32,10 +32,10 @@ from torchx.schedulers.kubernetes_mcad_scheduler import (
     get_tasks_status_description,
     get_unique_truncated_appid,
     KubernetesMCADJob,
-    KubernetesMCADOpts,
     KubernetesMCADScheduler,
     LABEL_INSTANCE_TYPE,
     mcad_svc,
+    Opts,
     role_to_pod,
 )
 from torchx.specs import AppDryRunInfo, AppState, Resource, Role
@@ -471,7 +471,7 @@ class KubernetesMCADSchedulerTest(unittest.TestCase):
         scheduler._validate(
             app,
             "kubernetes_mcad",
-            cfg=KubernetesMCADOpts({"namespace": "test_namespace"}),
+            cfg=Opts(namespace="test_namespace"),
         )
 
     def test_cleanup_str(self) -> None:
@@ -541,13 +541,11 @@ class KubernetesMCADSchedulerTest(unittest.TestCase):
     def test_submit_dryrun(self) -> None:
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "priority": 0,
-                "namespace": "test_namespace",
-                "coscheduler_name": "test_coscheduler",
-                "network": "test-network-conf",
-            }
+        cfg = Opts(
+            priority=0,
+            namespace="test_namespace",
+            coscheduler_name="test_coscheduler",
+            network="test-network-conf",
         )
         with patch(
             "torchx.schedulers.kubernetes_mcad_scheduler.make_unique"
@@ -1451,7 +1449,7 @@ spec:
 
         scheduler = create_scheduler("test")
         app = _test_app(num_replicas=2)
-        cfg = KubernetesMCADOpts({"namespace": "test_namespace"})
+        cfg = Opts(namespace="test_namespace")
         with patch(
             "torchx.schedulers.kubernetes_mcad_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -1472,11 +1470,9 @@ spec:
         scheduler = create_scheduler("test")
         app = _test_app()
         app.roles[0].image = "sha256:testhash"
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-                "image_repo": "example.com/some/repo",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
+            image_repo="example.com/some/repo",
         )
         with patch(
             "torchx.schedulers.kubernetes_mcad_scheduler.make_unique"
@@ -1499,16 +1495,14 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("service_account", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-                "service_account": "srvacc",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
+            service_account="srvacc",
         )
         info = scheduler._submit_dryrun(app, cfg)
         self.assertIn("'service_account_name': 'srvacc'", str(info.request.resource))
 
-        del cfg["service_account"]
+        cfg = Opts(namespace="testnamespace")
         info = scheduler._submit_dryrun(app, cfg)
         self.assertIn("service_account_name': None", str(info.request.resource))
 
@@ -1516,17 +1510,15 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("image_secret", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-                "image_secret": "secret_name",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
+            image_secret="secret_name",
         )
         info = scheduler._submit_dryrun(app, cfg)
         want = "image_pull_secrets': [{'name': 'secret_name'}]"
         self.assertIn(want, str(info.request.resource))
 
-        del cfg["image_secret"]
+        cfg = Opts(namespace="testnamespace")
         info = scheduler._submit_dryrun(app, cfg)
         want = "image_pull_secrets': [{'name': None}]"
         self.assertIn(want, str(info.request.resource))
@@ -1535,17 +1527,15 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("priority", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-                "priority": 10,
-            }
+        cfg = Opts(
+            namespace="testnamespace",
+            priority=10,
         )
 
         info = scheduler._submit_dryrun(app, cfg)
         self.assertIn("'priority': 10", str(info.request.resource))
 
-        del cfg["priority"]
+        cfg = Opts(namespace="testnamespace")
         info = scheduler._submit_dryrun(app, cfg)
         self.assertIn("'priority': None", str(info.request.resource))
 
@@ -1553,11 +1543,9 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("priority_class_name", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-                "priority_class_name": "test-priority",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
+            priority_class_name="test-priority",
         )
 
         info = scheduler._submit_dryrun(app, cfg)
@@ -1565,7 +1553,7 @@ spec:
             "'priority_class_name': 'test-priority'", str(info.request.resource)
         )
 
-        del cfg["priority_class_name"]
+        cfg = Opts(namespace="testnamespace")
         info = scheduler._submit_dryrun(app, cfg)
         self.assertIn("'priority_class_name': None", str(info.request.resource))
 
@@ -1573,11 +1561,9 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("network", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-                "network": "test-network-conf",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
+            network="test-network-conf",
         )
 
         info = scheduler._submit_dryrun(app, cfg)
@@ -1586,7 +1572,7 @@ spec:
             str(info.request.resource),
         )
 
-        del cfg["network"]
+        cfg = Opts(namespace="testnamespace")
         info = scheduler._submit_dryrun(app, cfg)
         self.assertNotIn("'k8s.v1.cni.cncf.io/networks'", str(info.request.resource))
 
@@ -1597,10 +1583,8 @@ spec:
         }
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
         )
 
         info = scheduler._submit_dryrun(app, cfg)
@@ -1626,10 +1610,8 @@ spec:
 
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
         )
         info = scheduler._submit_dryrun(app, cfg)
         with self.assertRaises(ValueError):
@@ -1833,6 +1815,7 @@ spec:
                 "image_secret",
                 "coscheduler_name",
                 "network",
+                "quiet",
             },
         )
 
@@ -2105,10 +2088,8 @@ class KubernetesMCADSchedulerNoImportTest(unittest.TestCase):
     def test_dryrun(self) -> None:
         scheduler = kubernetes_mcad_scheduler.create_scheduler("foo")
         app = _test_app()
-        cfg = KubernetesMCADOpts(
-            {
-                "namespace": "testnamespace",
-            }
+        cfg = Opts(
+            namespace="testnamespace",
         )
 
         with self.assertRaises(ModuleNotFoundError):
