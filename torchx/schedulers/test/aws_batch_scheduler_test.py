@@ -19,11 +19,11 @@ from torchx.schedulers.aws_batch_scheduler import (
     _local_session,
     _parse_num_replicas,
     _role_to_node_properties,
-    AWSBatchOpts,
     AWSBatchScheduler,
     create_scheduler,
     ENV_TORCHX_IMAGE,
     ENV_TORCHX_ROLE_NAME,
+    Opts,
     parse_ulimits,
     resource_from_resource_requirements,
     resource_requirements_from_resource,
@@ -113,7 +113,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
 
     def test_submit_dryrun_with_share_id(self) -> None:
         app = _test_app()
-        cfg = AWSBatchOpts({"queue": "testqueue", "share_id": "fooshare"})
+        cfg = Opts(queue="testqueue", share_id="fooshare")
         info = create_scheduler("test").submit_dryrun(app, cfg)
 
         req = info.request
@@ -123,13 +123,13 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         self.assertEqual(job_def["schedulingPriority"], 0)
 
     def test_submit_dryrun_with_priority_but_not_share_id(self) -> None:
-        cfg = AWSBatchOpts({"queue": "testqueue", "priority": 42})
+        cfg = Opts(queue="testqueue", priority=42)
         dryrun_info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         self.assertFalse("schedulingPriority" in dryrun_info.request.job_def)
         self.assertIsNone(dryrun_info.request.share_id)
 
     def test_submit_dryrun_with_priority(self) -> None:
-        cfg = AWSBatchOpts({"queue": "testqueue", "share_id": "foo", "priority": 42})
+        cfg = Opts(queue="testqueue", share_id="foo", priority=42)
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
 
         req = info.request
@@ -137,12 +137,8 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         self.assertEqual(req.share_id, "foo")
         self.assertEqual(job_def["schedulingPriority"], 42)
 
-    @patch(
-        "torchx.schedulers.aws_batch_scheduler.getpass.getuser", return_value="testuser"
-    )
-    def test_submit_dryrun_tags(self, _) -> None:
-        # intentionally not specifying user in cfg to test default
-        cfg = AWSBatchOpts({"queue": "ignored_in_test"})
+    def test_submit_dryrun_tags(self) -> None:
+        cfg = Opts(queue="ignored_in_test", user="testuser")
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         self.assertEqual(
             {
@@ -155,16 +151,14 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
 
     def test_submit_dryrun_job_role_arn(self) -> None:
-        cfg = AWSBatchOpts({"queue": "ignored_in_test", "job_role_arn": "fizzbuzz"})
+        cfg = Opts(queue="ignored_in_test", job_role_arn="fizzbuzz")
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertEqual(cfg["job_role_arn"], node_groups[0]["container"]["jobRoleArn"])
 
     def test_submit_dryrun_execution_role_arn(self) -> None:
-        cfg = AWSBatchOpts(
-            {"queue": "ignored_in_test", "execution_role_arn": "veryexecutive"}
-        )
+        cfg = Opts(queue="ignored_in_test", execution_role_arn="veryexecutive")
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
@@ -173,14 +167,14 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
 
     def test_submit_dryrun_privileged(self) -> None:
-        cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
+        cfg = Opts(queue="ignored_in_test", privileged=True)
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertTrue(node_groups[0]["container"]["privileged"])
 
     def test_submit_dryrun_instance_type_multinode(self) -> None:
-        cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
+        cfg = Opts(queue="ignored_in_test", privileged=True)
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=2, resource=resource)
         info = create_scheduler("test").submit_dryrun(app, cfg)
@@ -192,7 +186,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
 
     def test_submit_dryrun_instance_type_singlenode(self) -> None:
-        cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
+        cfg = Opts(queue="ignored_in_test", privileged=True)
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=1, resource=resource)
         info = create_scheduler("test").submit_dryrun(app, cfg)
@@ -201,7 +195,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         self.assertTrue("instanceType" in node_groups[0]["container"])
 
     def test_submit_dryrun_no_instance_type_non_aws(self) -> None:
-        cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
+        cfg = Opts(queue="ignored_in_test", privileged=True)
         resource = specs.named_resources_aws.aws_p3dn_24xlarge()
         app = _test_app(num_replicas=2)
         info = create_scheduler("test").submit_dryrun(app, cfg)
@@ -211,7 +205,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
 
     @mock_rand()
     def test_submit_dryrun(self) -> None:
-        cfg = AWSBatchOpts({"queue": "testqueue", "user": "testuser"})
+        cfg = Opts(queue="testqueue", user="testuser")
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
 
         req = info.request
@@ -714,7 +708,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
     def test_submit(self) -> None:
         scheduler = self._mock_scheduler()
         app = _test_app()
-        cfg = AWSBatchOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
 
         info = scheduler.submit_dryrun(app, cfg)
         id = scheduler.schedule(info)
