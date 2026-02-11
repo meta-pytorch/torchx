@@ -35,7 +35,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING, TypedDict
+from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
@@ -46,6 +46,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
@@ -772,18 +773,39 @@ class KubernetesMCADJob:
         return str(self)
 
 
-class KubernetesMCADOpts(TypedDict, total=False):
-    namespace: str | None
-    image_repo: str | None
-    service_account: str | None
-    priority: int | None
-    priority_class_name: str | None
-    image_secret: str | None
-    coscheduler_name: str | None
-    network: str | None
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for KubernetesMCADScheduler."""
+
+    namespace: str = "default"
+    """Kubernetes namespace to schedule job in."""
+
+    image_repo: str | None = None
+    """The image repository to use when pushing patched images, must have push access."""
+
+    service_account: str | None = None
+    """The service account name to set on the pod specs."""
+
+    priority: int | None = None
+    """The priority level to set on the job specs. Higher integer value means higher priority."""
+
+    priority_class_name: str | None = None
+    """Pod specific priority level. Check with your Kubernetes cluster admin if Priority classes are defined on your system."""
+
+    image_secret: str | None = None
+    """The name of the Kubernetes/OpenShift secret set up for private images."""
+
+    coscheduler_name: str | None = None
+    """Option to run TorchX-MCAD with a co-scheduler. User must provide the co-scheduler name."""
+
+    network: str | None = None
+    """Name of additional pod-to-pod network beyond default Kubernetes network."""
 
 
-class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts]):
+KubernetesMCADOpts = Opts
+
+
+class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     KubernetesMCADScheduler is a TorchX scheduling interface to Kubernetes.
 
@@ -957,24 +979,26 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
         return f'{namespace}:{resp["metadata"]["name"]}'
 
     def _submit_dryrun(
-        self, app: AppDef, cfg: KubernetesMCADOpts
+        self, app: AppDef, cfg: Opts
     ) -> AppDryRunInfo[KubernetesMCADJob]:
         # map any local images to the remote image
         # images_to_push = self._update_app_images(app, cfg.get("image_repo"))
         images_to_push = self.dryrun_push_images(app, cast(Mapping[str, CfgVal], cfg))
 
         service_account = cfg.get("service_account")
-        assert service_account is None or isinstance(
-            service_account, str
-        ), "service_account must be a str"
+        assert isinstance(
+            service_account, (str, type(None))
+        ), "service_account must be a str or None"
 
         priority = cfg.get("priority")
-        assert priority is None or isinstance(priority, int), "priority must be a int"
+        assert isinstance(
+            priority, (int, type(None))
+        ), "priority must be an int or None"
 
         image_secret = cfg.get("image_secret")
-        assert image_secret is None or isinstance(
-            image_secret, str
-        ), "image_secret must be a str"
+        assert isinstance(
+            image_secret, (str, type(None))
+        ), "image_secret must be a str or None"
 
         if image_secret is not None and service_account is not None:
             msg = """Service Account and Image Secret names are both provided.
@@ -986,17 +1010,17 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
         assert isinstance(namespace, str), "namespace must be a str"
 
         coscheduler_name = cfg.get("coscheduler_name")
-        assert coscheduler_name is None or isinstance(
-            coscheduler_name, str
-        ), "coscheduler_name must be a string"
+        assert isinstance(
+            coscheduler_name, (str, type(None))
+        ), "coscheduler_name must be a str or None"
 
         priority_class_name = cfg.get("priority_class_name")
-        assert priority_class_name is None or isinstance(
-            priority_class_name, str
-        ), "priority_class_name must be a string"
+        assert isinstance(
+            priority_class_name, (str, type(None))
+        ), "priority_class_name must be a str or None"
 
         network = cfg.get("network")
-        assert network is None or isinstance(network, str), "network must be a string"
+        assert isinstance(network, (str, type(None))), "network must be a str or None"
 
         resource = app_to_resource(
             app=app,
@@ -1016,11 +1040,10 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
 
         info = AppDryRunInfo(req, repr)
         info._app = app
-        # pyre-fixme
         info._cfg = cfg
         return info
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: KubernetesMCADOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step
         pass
 
@@ -1034,50 +1057,8 @@ class KubernetesMCADScheduler(DockerWorkspaceMixin, Scheduler[KubernetesMCADOpts
             name=name,
         )
 
-    def run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "namespace",
-            type_=str,
-            help="Kubernetes namespace to schedule job in",
-            default="default",
-        )
-        opts.add(
-            "image_repo",
-            type_=str,
-            help="The image repository to use when pushing patched images, must have push access. Ex: example.com/your/container",
-        )
-        opts.add(
-            "service_account",
-            type_=str,
-            help="The service account name to set on the pod specs",
-        )
-        opts.add(
-            "priority",
-            type_=int,
-            help="The priority level to set on the job specs. Higher integer value means higher priority",
-        )
-        opts.add(
-            "priority_class_name",
-            type_=str,
-            help="Pod specific priority level. Check with your Kubernetes cluster admin if Priority classes are defined on your system",
-        )
-        opts.add(
-            "image_secret",
-            type_=str,
-            help="The name of the Kubernetes/OpenShift secret set up for private images",
-        )
-        opts.add(
-            "coscheduler_name",
-            type_=str,
-            help="Option to run TorchX-MCAD with a co-scheduler. User must provide the co-scheduler name.",
-        )
-        opts.add(
-            "network",
-            type_=str,
-            help="Name of additional pod-to-pod network beyond default Kubernetes network",
-        )
-        return opts
+    def _run_opts(self) -> runopts:
+        return Opts.as_runopts()
 
     def describe(self, app_id: str) -> DescribeAppResponse | None:
         namespace, name = app_id.split(":")
