@@ -12,19 +12,9 @@ import os
 import re
 import threading
 from collections import OrderedDict as OrdDict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import (
-    Any,
-    Callable,
-    cast,
-    Iterable,
-    Mapping,
-    OrderedDict,
-    TYPE_CHECKING,
-    TypedDict,
-    TypeVar,
-)
+from typing import Any, Callable, Iterable, Mapping, OrderedDict, TYPE_CHECKING, TypeVar
 
 import boto3
 import yaml
@@ -35,6 +25,7 @@ from torchx.schedulers.api import (
     ListAppResponse,
     Scheduler,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import AppDef, AppDryRunInfo, AppState, CfgVal, runopts
@@ -53,49 +44,129 @@ JOB_STATE: dict[str, AppState] = {
 }
 
 
-class AWSSageMakerOpts(TypedDict, total=False):
-    """
-    Opts where we can get from .torchxconfig or user command args
-    """
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for AWSSageMakerScheduler."""
 
     role: str
-    instance_count: int
+    """An AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource."""
+
     instance_type: str
-    keep_alive_period_in_seconds: int | None
-    volume_size: int | None
-    volume_kms_key: str | None
-    max_run: int | None
-    input_mode: str | None
-    output_path: str | None
-    output_kms_key: str | None
-    base_job_name: str | None
-    tags: dict[str, str]
-    subnets: list[str] | None
-    security_group_ids: list[str] | None
-    model_uri: str | None
-    model_channel_name: str | None
-    metric_definitions: dict[str, str] | None
-    encrypt_inter_container_traffic: bool | None
-    use_spot_instances: bool | None
-    max_wait: int | None
-    checkpoint_s3_uri: str | None
-    checkpoint_local_path: str | None
-    debugger_hook_config: bool | None
-    enable_sagemaker_metrics: bool | None
-    enable_network_isolation: bool | None
-    disable_profiler: bool | None
-    environment: dict[str, str] | None
-    max_retry_attempts: int | None
-    source_dir: str | None
-    git_config: dict[str, str] | None
-    hyperparameters: dict[str, str] | None
-    container_log_level: int | None
-    code_location: str | None
-    dependencies: list[str] | None
-    training_repository_access_mode: str | None
-    training_repository_credentials_provider_arn: str | None
-    disable_output_compression: bool | None
-    enable_infra_check: bool | None
+    """Type of EC2 instance to use for training, for example, 'ml.c4.xlarge'."""
+
+    instance_count: int = 1
+    """Number of Amazon EC2 instances to use for training. Required if instance_groups is not set."""
+
+    user: str = getpass.getuser()
+    """The username to tag the job with. `getpass.getuser()` if not specified."""
+
+    keep_alive_period_in_seconds: int | None = None
+    """The duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs."""
+
+    volume_size: int | None = None
+    """Size in GB of the storage volume to use for storing input and output data during training (default: 30)."""
+
+    volume_kms_key: str | None = None
+    """KMS key ID for encrypting EBS volume attached to the training instance."""
+
+    max_run: int | None = None
+    """Timeout in seconds for training (default: 24 * 60 * 60)."""
+
+    input_mode: str | None = None
+    """The input mode that the algorithm supports (default: 'File')."""
+
+    output_path: str | None = None
+    """S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket. If the bucket with the specific name does not exist, the estimator creates the bucket during the fit() method execution."""
+
+    output_kms_key: str | None = None
+    """KMS key ID for encrypting the training output (default: Your IAM role's KMS key for Amazon S3)."""
+
+    base_job_name: str | None = None
+    """Prefix for training job name when the fit() method launches. If not specified, the estimator generates a default job name based on the training image name and current timestamp."""
+
+    tags: dict[str, str] = field(default_factory=dict)
+    """Dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2)."""
+
+    subnets: list[str] | None = None
+    """List of subnet ids. If not specified training job will be created without VPC config."""
+
+    security_group_ids: list[str] | None = None
+    """List of security group ids. If not specified training job will be created without VPC config."""
+
+    model_uri: str | None = None
+    """URI where a pre-trained model is stored, either locally or in S3."""
+
+    model_channel_name: str | None = None
+    """Name of the channel where 'model_uri' will be downloaded (default: 'model')."""
+
+    metric_definitions: dict[str, str] | None = None
+    """Dictionary that defines the metric(s) used to evaluate the training jobs. Each key is the metric name and the value is the regular expression used to extract the metric from the logs (e.g., metric_name:regex_pattern,other_metric:other_regex)."""
+
+    encrypt_inter_container_traffic: bool | None = None
+    """Specifies whether traffic between training containers is encrypted for the training job (default: False)."""
+
+    use_spot_instances: bool | None = None
+    """Specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set."""
+
+    max_wait: int | None = None
+    """Timeout in seconds waiting for spot training job."""
+
+    checkpoint_s3_uri: str | None = None
+    """S3 URI in which to persist checkpoints that the algorithm persists (if any) during training."""
+
+    checkpoint_local_path: str | None = None
+    """Local path that the algorithm writes its checkpoints to."""
+
+    debugger_hook_config: bool | None = None
+    """Configuration for how debugging information is emitted with SageMaker Debugger. If not specified, a default one is created using the estimator's output_path, unless the region does not support SageMaker Debugger. To disable SageMaker Debugger, set this parameter to False."""
+
+    enable_sagemaker_metrics: bool | None = None
+    """Enable SageMaker Metrics Time Series."""
+
+    enable_network_isolation: bool | None = None
+    """Specifies whether container will run in network isolation mode (default: False)."""
+
+    disable_profiler: bool | None = None
+    """Specifies whether Debugger monitoring and profiling will be disabled (default: False)."""
+
+    environment: dict[str, str] | None = None
+    """Environment variables to be set for use during training job."""
+
+    max_retry_attempts: int | None = None
+    """Number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts."""
+
+    source_dir: str | None = None
+    """Absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory)."""
+
+    git_config: dict[str, str] | None = None
+    """Git configurations used for cloning files, including repo, branch, commit, 2FA_enabled, username, password, and token."""
+
+    hyperparameters: dict[str, str] | None = None
+    """Dictionary containing the hyperparameters to initialize this estimator with."""
+
+    container_log_level: int | None = None
+    """Log level to use within the container (default: logging.INFO)."""
+
+    code_location: str | None = None
+    """S3 prefix URI where custom code is uploaded."""
+
+    dependencies: list[str] | None = None
+    """List of absolute or relative paths to directories with any additional libraries that should be exported to the container."""
+
+    training_repository_access_mode: str | None = None
+    """Specifies how SageMaker accesses the Docker image that contains the training algorithm."""
+
+    training_repository_credentials_provider_arn: str | None = None
+    """Amazon Resource Name (ARN) of an AWS Lambda function that provides credentials to authenticate to the private Docker registry where your training image is hosted."""
+
+    disable_output_compression: bool | None = None
+    """When set to true, Model is uploaded to Amazon S3 without compression after training finishes."""
+
+    enable_infra_check: bool | None = None
+    """Specifies whether it is running Sagemaker built-in infra check jobs."""
+
+
+AWSSageMakerOpts = Opts
 
 
 @dataclass
@@ -153,7 +224,7 @@ def _merge_ordered(
 
 class AWSSageMakerScheduler(
     DockerWorkspaceMixin,
-    Scheduler[AWSSageMakerOpts],
+    Scheduler[Opts],
 ):
     """
     AWSSageMakerScheduler is a TorchX scheduling interface to AWS SageMaker.
@@ -219,14 +290,14 @@ class AWSSageMakerScheduler(
 
         return req.job_name
 
-    def _submit_dryrun(
-        self, app: AppDef, cfg: AWSSageMakerOpts
-    ) -> AppDryRunInfo[AWSSageMakerJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[AWSSageMakerJob]:
         role = app.roles[0]
         entrypoint, hyperparameters = self._parse_args(role.args)
 
+        opts = Opts.from_cfg(cfg)
+
         # map any local images to the remote image
-        images_to_push = self.dryrun_push_images(app, cast(Mapping[str, CfgVal], cfg))
+        images_to_push = self.dryrun_push_images(app, opts)
         structured_name_kwargs = {}
         if entrypoint.startswith("-m"):
             structured_name_kwargs["m"] = entrypoint.replace("-m", "").strip()
@@ -246,35 +317,36 @@ class AWSSageMakerScheduler(
             "distribution": {"torch_distributed": {"enabled": True}},
         }
 
-        cfg["environment"] = _merge_ordered(cfg.get("environment"), role.env)
+        # Merge environment and hyperparameters with role values
+        merged_env = _merge_ordered(opts.environment, role.env)
         # hyperparameters are used for both script/module entrypoint args and the values from .torchxconfig
         # order matters, adding script args last to handle wildcard parameters
-        cfg["hyperparameters"] = _merge_ordered(
-            cfg.get("hyperparameters"), hyperparameters
-        )
+        merged_hp = _merge_ordered(opts.hyperparameters, hyperparameters)
         # following the principle of least astonishment defaulting source_dir to current working directory
+        resolved_source_dir = opts.source_dir or os.getcwd()
 
-        cfg["source_dir"] = cfg.get("source_dir") or os.getcwd()
-
-        for key in cfg:
+        for key in opts:
             if key == "tags":
                 # tags are used for AppDef metadata and the values from .torchxconfig
                 # Convert dict[str, str] to SageMaker's list[dict[str, str]] format
                 job_def["tags"] = [
-                    *(
-                        {"Key": k, "Value": v}
-                        for k, v in (cfg.get("tags") or {}).items()
-                    ),
+                    *({"Key": k, "Value": v} for k, v in (opts.tags or {}).items()),
                     *({"Key": k, "Value": v} for k, v in app.metadata.items()),
                 ]
+            elif key == "environment":
+                job_def["environment"] = merged_env
+            elif key == "hyperparameters":
+                job_def["hyperparameters"] = merged_hp
+            elif key == "source_dir":
+                job_def["source_dir"] = resolved_source_dir
             else:
                 if key in job_def:
                     raise ValueError(
                         f"{key} is controlled by aws_sagemaker_scheduler and is set to {job_def[key]}"
                     )
-                value = cfg.get(key)  # type: ignore
+                value = getattr(opts, key)
                 if value is not None:
-                    job_def[key] = value  # type: ignore
+                    job_def[key] = value
 
         req = AWSSageMakerJob(
             job_name=job_name,
@@ -314,247 +386,7 @@ class AWSSageMakerScheduler(
         return entrypoint, hyperparameters
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "role",
-            type_=str,
-            help="an AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.",
-            required=True,
-        )
-        opts.add(
-            "instance_count",
-            type_=int,
-            default=1,
-            help="number of Amazon EC2 instances to use for training. Required if instance_groups is not set.",
-        )
-        opts.add(
-            "instance_type",
-            type_=str,
-            help="type of EC2 instance to use for training, for example, 'ml.c4.xlarge'",
-            required=True,
-        )
-        opts.add(
-            "user",
-            type_=str,
-            default=getpass.getuser(),
-            help="the username to tag the job with. `getpass.getuser()` if not specified.",
-        )
-        opts.add(
-            "keep_alive_period_in_seconds",
-            type_=int,
-            default=None,
-            help="the duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs.",
-        )
-        opts.add(
-            "volume_size",
-            type_=int,
-            default=None,
-            help="size in GB of the storage volume to use for storing input and output data during training (default: 30).",
-        )
-        opts.add(
-            "volume_kms_key",
-            type_=str,
-            default=None,
-            help="KMS key ID for encrypting EBS volume attached to the training instance.",
-        )
-        opts.add(
-            "max_run",
-            type_=int,
-            default=None,
-            help="timeout in seconds for training (default: 24 * 60 * 60).",
-        )
-        opts.add(
-            "input_mode",
-            type_=str,
-            default=None,
-            help="the input mode that the algorithm supports (default: ‘File’).",
-        )
-        opts.add(
-            "output_path",
-            type_=str,
-            default=None,
-            help="S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket. If the bucket with the specific name does not exist, the estimator creates the bucket during the fit() method execution.",
-        )
-        opts.add(
-            "output_kms_key",
-            type_=str,
-            default=None,
-            help="KMS key ID for encrypting the training output (default: Your IAM role’s KMS key for Amazon S3).",
-        )
-        opts.add(
-            "base_job_name",
-            type_=str,
-            default=None,
-            help="prefix for training job name when the fit() method launches. If not specified, the estimator generates a default job name based on the training image name and current timestamp.",
-        )
-        opts.add(
-            "tags",
-            type_=dict[str, str],
-            default={},
-            help="dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).",
-        )
-        opts.add(
-            "subnets",
-            type_=list[str],
-            default=None,
-            help="list of subnet ids. If not specified training job will be created without VPC config.",
-        )
-        opts.add(
-            "security_group_ids",
-            type_=list[str],
-            default=None,
-            help="list of security group ids. If not specified training job will be created without VPC config.",
-        )
-        opts.add(
-            "model_uri",
-            type_=str,
-            default=None,
-            help="URI where a pre-trained model is stored, either locally or in S3.",
-        )
-        opts.add(
-            "model_channel_name",
-            type_=str,
-            default=None,
-            help="name of the channel where ‘model_uri’ will be downloaded (default: ‘model’).",
-        )
-        opts.add(
-            "metric_definitions",
-            type_=dict[str, str],
-            default=None,
-            help=(
-                "dictionary that defines the metric(s) used to evaluate the "
-                "training jobs. Each key is the metric name and the value is the "
-                "regular expression used to extract the metric from the logs "
-                "(e.g., metric_name:regex_pattern,other_metric:other_regex)."
-            ),
-        )
-        opts.add(
-            "encrypt_inter_container_traffic",
-            type_=bool,
-            default=None,
-            help="specifies whether traffic between training containers is encrypted for the training job (default: False).",
-        )
-        opts.add(
-            "use_spot_instances",
-            type_=bool,
-            default=None,
-            help="specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set.",
-        )
-        opts.add(
-            "max_wait",
-            type_=int,
-            default=None,
-            help="timeout in seconds waiting for spot training job.",
-        )
-        opts.add(
-            "checkpoint_s3_uri",
-            type_=str,
-            default=None,
-            help="S3 URI in which to persist checkpoints that the algorithm persists (if any) during training.",
-        )
-        opts.add(
-            "checkpoint_local_path",
-            type_=str,
-            default=None,
-            help="local path that the algorithm writes its checkpoints to.",
-        )
-        opts.add(
-            "debugger_hook_config",
-            type_=bool,
-            default=None,
-            help="configuration for how debugging information is emitted with SageMaker Debugger. If not specified, a default one is created using the estimator’s output_path, unless the region does not support SageMaker Debugger. To disable SageMaker Debugger, set this parameter to False.",
-        )
-        opts.add(
-            "enable_sagemaker_metrics",
-            type_=bool,
-            default=None,
-            help="enable SageMaker Metrics Time Series.",
-        )
-        opts.add(
-            "enable_network_isolation",
-            type_=bool,
-            default=None,
-            help="specifies whether container will run in network isolation mode (default: False).",
-        )
-        opts.add(
-            "disable_profiler",
-            type_=bool,
-            default=None,
-            help="specifies whether Debugger monitoring and profiling will be disabled (default: False).",
-        )
-        opts.add(
-            "environment",
-            type_=dict[str, str],
-            default=None,
-            help="environment variables to be set for use during training job",
-        )
-        opts.add(
-            "max_retry_attempts",
-            type_=int,
-            default=None,
-            help="number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts.",
-        )
-        opts.add(
-            "source_dir",
-            type_=str,
-            default=None,
-            help="absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory)",
-        )
-        opts.add(
-            "git_config",
-            type_=dict[str, str],
-            default=None,
-            help="git configurations used for cloning files, including repo, branch, commit, 2FA_enabled, username, password, and token.",
-        )
-        opts.add(
-            "hyperparameters",
-            type_=dict[str, str],
-            default=None,
-            help="dictionary containing the hyperparameters to initialize this estimator with.",
-        )
-        opts.add(
-            "container_log_level",
-            type_=int,
-            default=None,
-            help="log level to use within the container (default: logging.INFO).",
-        )
-        opts.add(
-            "code_location",
-            type_=str,
-            default=None,
-            help="S3 prefix URI where custom code is uploaded.",
-        )
-        opts.add(
-            "dependencies",
-            type_=list[str],
-            default=None,
-            help="list of absolute or relative paths to directories with any additional libraries that should be exported to the container.",
-        )
-        opts.add(
-            "training_repository_access_mode",
-            type_=str,
-            default=None,
-            help="specifies how SageMaker accesses the Docker image that contains the training algorithm.",
-        )
-        opts.add(
-            "training_repository_credentials_provider_arn",
-            type_=str,
-            default=None,
-            help="Amazon Resource Name (ARN) of an AWS Lambda function that provides credentials to authenticate to the private Docker registry where your training image is hosted.",
-        )
-        opts.add(
-            "disable_output_compression",
-            type_=bool,
-            default=None,
-            help="when set to true, Model is uploaded to Amazon S3 without compression after training finishes.",
-        )
-        opts.add(
-            "enable_infra_check",
-            type_=bool,
-            default=None,
-            help="specifies whether it is running Sagemaker built-in infra check jobs.",
-        )
-        return opts
+        return Opts.as_runopts()
 
     def describe(self, app_id: str) -> DescribeAppResponse | None:
         job = self._get_job(app_id)

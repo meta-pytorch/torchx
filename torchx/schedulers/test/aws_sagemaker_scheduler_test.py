@@ -18,10 +18,10 @@ from unittest.mock import MagicMock, patch
 from torchx.schedulers.aws_sagemaker_scheduler import (
     _local_session,
     AWSSageMakerJob,
-    AWSSageMakerOpts,
     AWSSageMakerScheduler,
     create_scheduler,
     JOB_STATE,
+    Opts,
 )
 from torchx.specs.api import AppDef, AppDryRunInfo, CfgVal, Role, runopts
 
@@ -36,23 +36,24 @@ def to_millis_since_epoch(ts: datetime) -> int:
 
 class AWSSageMakerOptsTest(TestCase):
     def setUp(self) -> None:
-        self.test_dict: AWSSageMakerOpts = {
-            "role": "test-arn",
-            "subnets": ["subnet-1", "subnet-2"],
-            "security_group_ids": ["sg-1", "sg-2"],
-        }
+        self.test_opts: Opts = Opts(
+            role="test-arn",
+            instance_type="ml.m5.large",
+            subnets=["subnet-1", "subnet-2"],
+            security_group_ids=["sg-1", "sg-2"],
+        )
 
     def test_role(self) -> None:
-        self.assertEqual(self.test_dict["role"], "test-arn")
-        self.assertIsInstance(self.test_dict["role"], str)
+        self.assertEqual(self.test_opts.role, "test-arn")
+        self.assertIsInstance(self.test_opts.role, str)
 
     def test_subnets(self) -> None:
-        self.assertEqual(self.test_dict["subnets"], ["subnet-1", "subnet-2"])
-        self.assertIsInstance(self.test_dict["subnets"], list)
+        self.assertEqual(self.test_opts.subnets, ["subnet-1", "subnet-2"])
+        self.assertIsInstance(self.test_opts.subnets, list)
 
     def test_security_group_ids(self) -> None:
-        self.assertEqual(self.test_dict["security_group_ids"], ["sg-1", "sg-2"])
-        self.assertIsInstance(self.test_dict["security_group_ids"], list)
+        self.assertEqual(self.test_opts.security_group_ids, ["sg-1", "sg-2"])
+        self.assertIsInstance(self.test_opts.security_group_ids, list)
 
 
 @contextmanager
