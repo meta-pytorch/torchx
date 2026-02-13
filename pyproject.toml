@@ -48,7 +48,7 @@ dev = [
     "s3fs",
     # CVE fixes: https://github.com/meta-pytorch/torchx/security/dependabot/19
     #            https://github.com/meta-pytorch/torchx/security/dependabot/20
-    "sagemaker>=2.256.0,!=3.0.*,!=3.1.*",
+    "sagemaker>=3.2.0",
     # -- torchx.apps deps (examples)
     "ax-platform[mysql]",
     "captum",
