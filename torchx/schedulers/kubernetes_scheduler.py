@@ -135,6 +135,7 @@ from torchx.specs.api import (
     runopts,
     VolumeMount,
 )
+from torchx.specs.overlays import apply_overlay, get_overlay
 from torchx.util.strings import normalize_str
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
@@ -159,33 +160,31 @@ RESERVED_MILLICPU = 100
 RESERVED_MEMMB = 1024
 
 
-def _apply_pod_overlay(pod: "V1Pod", overlay: dict[str, Any]) -> None:
+def _apply_pod_overlay(
+    pod: "V1Pod",
+    overlay: dict[str, Any],
+) -> None:
     """Apply overlay dict to V1Pod object, merging nested fields.
 
-    Merge semantics:
-    - dict: upsert (recursive merge)
-    - list: append by default, replace if tuple
-    - primitives: replace
+    Uses :py:func:`~torchx.specs.overlays.apply_overlay` with operator support:
+
+    - Default: dicts merge recursively, lists append, primitives overwrite.
+    - Use :py:func:`~torchx.specs.overlays.PUT` to replace a value entirely.
+    - Use :py:func:`~torchx.specs.overlays.JOIN` for strategic merge of list
+      items by key field.
+    - Use :py:func:`~torchx.specs.overlays.DEL` to remove a key.
+
+    .. note:: Only ``pod.spec`` and ``pod.metadata`` are updated from the
+        merged result. Other top-level V1Pod fields (e.g., ``apiVersion``,
+        ``kind``, ``status``) in the overlay are applied during merging but
+        not copied back to the pod object.
     """
     from kubernetes import client
 
     api = client.ApiClient()
     pod_dict = api.sanitize_for_serialization(pod)
 
-    def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> None:
-        for key, value in overlay.items():
-            if isinstance(value, dict) and key in base and isinstance(base[key], dict):
-                deep_merge(base[key], value)
-            elif isinstance(value, tuple):
-                base[key] = list(value)
-            elif (
-                isinstance(value, list) and key in base and isinstance(base[key], list)
-            ):
-                base[key].extend(value)
-            else:
-                base[key] = value
-
-    deep_merge(pod_dict, overlay)
+    apply_overlay(pod_dict, overlay)
 
     merged_pod = api._ApiClient__deserialize(pod_dict, "V1Pod")
     pod.spec = merged_pod.spec
@@ -527,17 +526,8 @@ def app_to_resource(
                 reserved_memmb,
                 efa_device_count,
             )
-            if k8s_metadata := role.metadata.get("kubernetes"):
-                if isinstance(k8s_metadata, str):
-                    import fsspec
-
-                    with fsspec.open(k8s_metadata, "r") as f:
-                        k8s_metadata = yaml.unsafe_load(f)
-                elif not isinstance(k8s_metadata, dict):
-                    raise ValueError(
-                        f"metadata['kubernetes'] must be a dict or resource URI, got {type(k8s_metadata)}"
-                    )
-                _apply_pod_overlay(pod, k8s_metadata)
+            if pod_overlay := get_overlay(role, "kubernetes", "V1Pod"):
+                _apply_pod_overlay(pod, pod_overlay)
             pod.metadata.labels.update(
                 pod_labels(
                     app=app,
