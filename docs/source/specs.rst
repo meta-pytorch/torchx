@@ -83,6 +83,14 @@ Overlays
 .. automodule:: torchx.specs.overlays
    :members:
 
+.. fbcode::
+
+   MAST/MSL Overlays
+   ^^^^^^^^^^^^^^^^^^^^
+
+   .. automodule:: torchx.specs.fb.overlay_mast
+      :members:
+
 Component Linter
 -----------------
 .. automodule:: torchx.specs.file_linter

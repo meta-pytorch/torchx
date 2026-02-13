@@ -105,7 +105,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING, TypedDict
+from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
@@ -116,6 +116,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
@@ -134,6 +135,7 @@ from torchx.specs.api import (
     runopts,
     VolumeMount,
 )
+from torchx.specs.overlays import apply_overlay, get_overlay
 from torchx.util.strings import normalize_str
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
@@ -158,33 +160,31 @@ RESERVED_MILLICPU = 100
 RESERVED_MEMMB = 1024
 
 
-def _apply_pod_overlay(pod: "V1Pod", overlay: dict[str, Any]) -> None:
+def _apply_pod_overlay(
+    pod: "V1Pod",
+    overlay: dict[str, Any],
+) -> None:
     """Apply overlay dict to V1Pod object, merging nested fields.
 
-    Merge semantics:
-    - dict: upsert (recursive merge)
-    - list: append by default, replace if tuple
-    - primitives: replace
+    Uses :py:func:`~torchx.specs.overlays.apply_overlay` with operator support:
+
+    - Default: dicts merge recursively, lists append, primitives overwrite.
+    - Use :py:func:`~torchx.specs.overlays.PUT` to replace a value entirely.
+    - Use :py:func:`~torchx.specs.overlays.JOIN` for strategic merge of list
+      items by key field.
+    - Use :py:func:`~torchx.specs.overlays.DEL` to remove a key.
+
+    .. note:: Only ``pod.spec`` and ``pod.metadata`` are updated from the
+        merged result. Other top-level V1Pod fields (e.g., ``apiVersion``,
+        ``kind``, ``status``) in the overlay are applied during merging but
+        not copied back to the pod object.
     """
     from kubernetes import client
 
     api = client.ApiClient()
     pod_dict = api.sanitize_for_serialization(pod)
 
-    def deep_merge(base: dict[str, Any], overlay: dict[str, Any]) -> None:
-        for key, value in overlay.items():
-            if isinstance(value, dict) and key in base and isinstance(base[key], dict):
-                deep_merge(base[key], value)
-            elif isinstance(value, tuple):
-                base[key] = list(value)
-            elif (
-                isinstance(value, list) and key in base and isinstance(base[key], list)
-            ):
-                base[key].extend(value)
-            else:
-                base[key] = value
-
-    deep_merge(pod_dict, overlay)
+    apply_overlay(pod_dict, overlay)
 
     merged_pod = api._ApiClient__deserialize(pod_dict, "V1Pod")
     pod.spec = merged_pod.spec
@@ -526,17 +526,8 @@ def app_to_resource(
                 reserved_memmb,
                 efa_device_count,
             )
-            if k8s_metadata := role.metadata.get("kubernetes"):
-                if isinstance(k8s_metadata, str):
-                    import fsspec
-
-                    with fsspec.open(k8s_metadata, "r") as f:
-                        k8s_metadata = yaml.unsafe_load(f)
-                elif not isinstance(k8s_metadata, dict):
-                    raise ValueError(
-                        f"metadata['kubernetes'] must be a dict or resource URI, got {type(k8s_metadata)}"
-                    )
-                _apply_pod_overlay(pod, k8s_metadata)
+            if pod_overlay := get_overlay(role, "kubernetes", "V1Pod"):
+                _apply_pod_overlay(pod, pod_overlay)
             pod.metadata.labels.update(
                 pod_labels(
                     app=app,
@@ -600,19 +591,42 @@ class KubernetesJob:
         return str(self)
 
 
-class KubernetesOpts(TypedDict, total=False):
-    namespace: str | None
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for KubernetesScheduler."""
+
     queue: str
-    image_repo: str | None
-    service_account: str | None
-    priority_class: str | None
-    validate_spec: bool | None
-    reserved_millicpu: int | None
-    reserved_memmb: int | None
-    efa_device_count: int | None
+    """Volcano queue to schedule job in."""
+
+    namespace: str = "default"
+    """Kubernetes namespace to schedule job in."""
+
+    service_account: str | None = None
+    """The service account name to set on the pod specs."""
+
+    priority_class: str | None = None
+    """The name of the PriorityClass to set on the job specs."""
+
+    validate_spec: bool = True
+    """Validate job spec using Kubernetes API dry-run before submission."""
+
+    reserved_millicpu: int = RESERVED_MILLICPU
+    """Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)."""
+
+    reserved_memmb: int = RESERVED_MEMMB
+    """Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)."""
+
+    image_repo: str | None = None
+    """The image repository to use when pushing patched images, must have push access."""
+
+    efa_device_count: int | None = None
+    """EFA device count override: None/unset=use resource spec, 0=remove EFA, N>0=set EFA count to N."""
 
 
-class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
+KubernetesOpts = Opts
+
+
+class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     KubernetesScheduler is a TorchX scheduling interface to Kubernetes.
 
@@ -789,9 +803,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
         return f"{namespace}:{resp['metadata']['name']}"
 
-    def _submit_dryrun(
-        self, app: AppDef, cfg: KubernetesOpts
-    ) -> AppDryRunInfo[KubernetesJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[KubernetesJob]:
         queue = cfg.get("queue")
         if not isinstance(queue, str):
             raise TypeError(f"config value 'queue' must be a string, got {queue}")
@@ -809,10 +821,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             priority_class, str
         ), "priority_class must be a str"
 
-        reserved_millicpu = cfg.get("reserved_millicpu", RESERVED_MILLICPU)
+        reserved_millicpu = cfg.get("reserved_millicpu")
+        if reserved_millicpu is None:
+            reserved_millicpu = RESERVED_MILLICPU
         assert isinstance(reserved_millicpu, int), "reserved_millicpu must be an int"
 
-        reserved_memmb = cfg.get("reserved_memmb", RESERVED_MEMMB)
+        reserved_memmb = cfg.get("reserved_memmb")
+        if reserved_memmb is None:
+            reserved_memmb = RESERVED_MEMMB
         assert isinstance(reserved_memmb, int), "reserved_memmb must be an int"
 
         efa_device_count = cfg.get("efa_device_count")
@@ -865,7 +881,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         )
         return AppDryRunInfo(req, repr)
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: KubernetesOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step
         pass
 
@@ -905,55 +921,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         )
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "namespace",
-            type_=str,
-            help="Kubernetes namespace to schedule job in",
-            default="default",
-        )
-        opts.add(
-            "queue",
-            type_=str,
-            help="Volcano queue to schedule job in",
-            required=True,
-        )
-        opts.add(
-            "service_account",
-            type_=str,
-            help="The service account name to set on the pod specs",
-        )
-        opts.add(
-            "priority_class",
-            type_=str,
-            help="The name of the PriorityClass to set on the job specs",
-        )
-        opts.add(
-            "validate_spec",
-            type_=bool,
-            help="Validate job spec using Kubernetes API dry-run before submission",
-            default=True,
-        )
-        opts.add(
-            "reserved_millicpu",
-            type_=int,
-            help="Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)",
-            default=RESERVED_MILLICPU,
-        )
-        opts.add(
-            "reserved_memmb",
-            type_=int,
-            help="Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)",
-            default=RESERVED_MEMMB,
-        )
-        opts.add(
-            "efa_device_count",
-            type_=int,
-            help="EFA device count override: None/unset=use resource spec, "
-            "0=remove EFA, N>0=set EFA count to N",
-            default=None,
-        )
-        return opts
+        return Opts.as_runopts()
 
     def describe(self, app_id: str) -> DescribeAppResponse | None:
         from kubernetes import client
