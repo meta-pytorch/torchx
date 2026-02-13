@@ -9,7 +9,7 @@
 import inspect
 import re
 from types import UnionType
-from typing import Any, Callable, TypeVar, Union
+from typing import Annotated, Any, Callable, get_args, get_origin, TypeVar, Union
 
 
 def to_list(arg: str) -> list[str]:
@@ -163,9 +163,12 @@ def _decode_string_to_list(
 def decode(encoded_value: Any, annotation: Any):
     if encoded_value is None:
         return None
-    if is_bool(annotation):
+    actual_type = annotation
+    if get_origin(annotation) == Annotated:
+        actual_type = get_args(annotation)[0]
+    if is_bool(actual_type):
         return encoded_value and encoded_value.lower() == "true"
-    if not is_primitive(annotation) and type(encoded_value) == str:
+    if not is_primitive(actual_type) and type(encoded_value) == str:
         return decode_from_string(encoded_value, annotation)
     return encoded_value
 
@@ -197,6 +200,8 @@ def decode_from_string(
     if not encoded_value:
         return None
     value_type = annotation
+    if get_origin(annotation) == Annotated:
+        value_type = get_args(annotation)[0]
     if hasattr(value_type, "__origin__"):
         value_origin = value_type.__origin__
         if value_origin is dict:
@@ -257,8 +262,11 @@ def decode_optional(param_type: Any) -> Any:
 
 
 def get_argparse_param_type(parameter: inspect.Parameter) -> Callable[[str], object]:
-    if is_primitive(parameter.annotation):
-        return parameter.annotation
+    annotation = parameter.annotation
+    if get_origin(annotation) == Annotated:
+        annotation = get_args(annotation)[0]
+    if is_primitive(annotation):
+        return annotation
     else:
         return str
 

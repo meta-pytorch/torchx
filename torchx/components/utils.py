@@ -15,6 +15,7 @@ meaningful stages in a workflow.
 
 import os
 import shlex
+from typing import Annotated
 
 import torchx
 import torchx.specs as specs
@@ -312,3 +313,65 @@ def booth(
             )
         ],
     )
+
+
+def hydra(
+    *overrides: str,
+    config_name: Annotated[str, "-cn"],
+    config_dir: Annotated[str, "-cd"] = ".torchx",
+) -> specs.AppDef:
+    """Build AppDef from Hydra configuration.
+
+    Config should have an 'app' key with _target_: torchx.specs.AppDef.
+    Other top-level keys (like 'role') can be used for config groups and interpolation.
+
+    Example:
+        defaults:
+          - role: python
+
+        app:
+          _target_: torchx.specs.AppDef
+          name: my_job
+          roles:
+            - ${role}
+
+    Args:
+        overrides: Hydra config overrides (e.g., role.num_replicas=2)
+        config_name: Config file name in config_dir
+        config_dir: Directory containing configs (default: .torchx)
+
+    Returns:
+        AppDef instantiated from configuration
+    """
+    from hydra import compose, initialize_config_dir
+    from hydra.utils import instantiate
+    from omegaconf import OmegaConf
+
+    # Register TorchX resolvers - return escaped strings so they're not re-resolved
+    # The backslash escape tells OmegaConf to store the literal ${...} string
+    OmegaConf.register_new_resolver(
+        "torchx.app_id", lambda: f"\\{specs.macros.app_id}", replace=True
+    )
+    OmegaConf.register_new_resolver(
+        "torchx.replica_id", lambda: f"\\{specs.macros.replica_id}", replace=True
+    )
+    OmegaConf.register_new_resolver(
+        "torchx.rank0_env", lambda: f"\\{specs.macros.rank0_env}", replace=True
+    )
+    OmegaConf.register_new_resolver(
+        "torchx.img_root", lambda: f"\\{specs.macros.img_root}", replace=True
+    )
+    config_dir = (
+        config_dir if os.path.isabs(config_dir) else os.path.abspath(config_dir)
+    )
+    initialize_config_dir(config_dir=config_dir, version_base="1.3")
+    cfg = compose(config_name=config_name, overrides=list(overrides))
+
+    if os.environ.get("TORCHX_DEBUG"):
+        print("=" * 80)
+        print("TORCHX DEBUG: Configuration")
+        print("=" * 80)
+        print(OmegaConf.to_yaml(cfg))
+        print("=" * 80)
+
+    return instantiate(cfg.app, _convert_="all")

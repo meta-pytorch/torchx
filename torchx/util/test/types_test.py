@@ -8,7 +8,7 @@
 
 import inspect
 import unittest
-from typing import cast, Optional, Union
+from typing import Annotated, cast, Optional, Union
 
 from torchx.util.types import (
     decode,
@@ -229,6 +229,25 @@ class TypesTest(unittest.TestCase):
         self.assertEqual(str, get_argparse_param_type(params["l"]))
         self.assertEqual(str, get_argparse_param_type(params["m"]))
         self.assertEqual(str, get_argparse_param_type(params["o"]))
+
+    def test_get_argparse_param_type_annotated(self) -> None:
+        def fake_component(
+            s: Annotated[str, "-s"],
+            i: Annotated[int, "-i"],
+            l: Annotated[list[str], "-l"],
+        ) -> None:
+            pass
+
+        params = inspect.signature(fake_component).parameters
+        self.assertEqual(str, get_argparse_param_type(params["s"]))
+        self.assertEqual(int, get_argparse_param_type(params["i"]))
+        self.assertEqual(str, get_argparse_param_type(params["l"]))
+
+    def test_decode_annotated(self) -> None:
+        self.assertEqual("test", decode("test", Annotated[str, "-s"]))
+        self.assertTrue(decode("true", Annotated[bool, "-b"]))
+        self.assertFalse(decode("false", Annotated[bool, "-b"]))
+        self.assertEqual(["a", "b"], decode("a,b", Annotated[list[str], "-l"]))
 
     def test_none_throws(self) -> None:
         self.assertEqual(none_throws(10), 10)

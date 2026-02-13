@@ -197,16 +197,26 @@ class ArgTypeValidator(ComponentFunctionValidator):
         if not arg_type:
             return err("Missing type annotation")
 
-        # Case 1: optional
+        # Case 1: Annotated - extract the actual type
+        if (
+            isinstance(arg_type, ast.Subscript)
+            and hasattr(arg_type.value, "id")
+            and arg_type.value.id == "Annotated"
+        ):
+            generic_type = get_generic_type(arg_type)
+            if isinstance(generic_type, ast.Tuple) and len(generic_type.elts) > 0:
+                arg_type = generic_type.elts[0]
+
+        # Case 2: optional
         if T := get_optional_type(arg_type):
             # NOTE: optional types can be primitives or any of the allowed container types
             #   so check if arg is an optional, and if so, run the rest of the validation with the unpacked type
             arg_type = T
 
-        # Case 2: int, float, str, bool
+        # Case 3: int, float, str, bool
         if is_primitive(arg_type):
             return ok()
-        # Case 3: Containers (Dict, List, Tuple)
+        # Case 4: Containers (Dict, List, Tuple)
         elif isinstance(arg_type, ast.Subscript):
             container_type = arg_type.value.id
 
