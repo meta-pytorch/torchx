@@ -42,17 +42,7 @@ import threading
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import auto, Enum
-from typing import (
-    Any,
-    Callable,
-    cast,
-    Iterable,
-    List,
-    Mapping,
-    TYPE_CHECKING,
-    TypedDict,
-    TypeVar,
-)
+from typing import Any, Callable, Iterable, List, Mapping, TYPE_CHECKING, TypeVar
 
 import torchx
 import yaml
@@ -62,6 +52,7 @@ from torchx.schedulers.api import (
     ListAppResponse,
     Scheduler,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.devices import get_device_mounts
 from torchx.schedulers.ids import make_unique
@@ -383,19 +374,42 @@ def _local_session() -> "boto3.session.Session":  # noqa: F821
     return boto3.session.Session()
 
 
-class AWSBatchOpts(TypedDict, total=False):
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for AWSBatchScheduler."""
+
     queue: str
-    user: str
-    image_repo: str | None
-    privileged: bool
-    share_id: str | None
-    priority: int
-    job_role_arn: str | None
-    execution_role_arn: str | None
-    ulimits: list[str] | None
+    """Queue to schedule job in."""
+
+    user: str = getpass.getuser()
+    """The username to tag the job with. `getpass.getuser()` if not specified."""
+
+    image_repo: str | None = None
+    """The image repository to use when pushing patched images, must have push access."""
+
+    privileged: bool = False
+    """If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`."""
+
+    share_id: str | None = None
+    """The share identifier for the job. This must be set if and only if the job queue has a scheduling policy."""
+
+    priority: int = 0
+    """The scheduling priority for the job within the context of share_id. Higher number (between 0 and 9999) means higher priority. This will only take effect if the job queue has a scheduling policy."""
+
+    job_role_arn: str | None = None
+    """The Amazon Resource Name (ARN) of the IAM role that the container can assume for AWS permissions."""
+
+    execution_role_arn: str | None = None
+    """The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions."""
+
+    ulimits: list[str] | None = None
+    """Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)."""
 
 
-class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
+AWSBatchOpts = Opts
+
+
+class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     AWSBatchScheduler is a TorchX scheduling interface to AWS Batch.
 
@@ -502,15 +516,10 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
 
         return f"{req.queue}:{req.name}"
 
-    def _submit_dryrun(self, app: AppDef, cfg: AWSBatchOpts) -> AppDryRunInfo[BatchJob]:
-        queue = cfg.get("queue")
-        if not isinstance(queue, str):
-            raise TypeError(f"config value 'queue' must be a string, got {queue}")
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[BatchJob]:
+        opts = Opts.from_cfg(cfg)
 
-        share_id = cfg.get("share_id")
-        priority = cfg["priority"]
-
-        name_suffix = f"-{share_id}" if share_id is not None else ""
+        name_suffix = f"-{opts.share_id}" if opts.share_id is not None else ""
         name = make_unique(f"{app.name}{name_suffix}")
 
         assert len(app.roles) <= 5, (
@@ -519,7 +528,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         )
 
         # map any local images to the remote image
-        images_to_push = self.dryrun_push_images(app, cast(Mapping[str, CfgVal], cfg))
+        images_to_push = self.dryrun_push_images(app, opts)
 
         nodes = []
         node_idx = 0
@@ -542,10 +551,10 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
                 _role_to_node_properties(
                     role,
                     start_idx=node_idx,
-                    privileged=cfg["privileged"],
-                    job_role_arn=cfg.get("job_role_arn"),
-                    execution_role_arn=cfg.get("execution_role_arn"),
-                    ulimits=parse_ulimits(cfg.get("ulimits") or []),
+                    privileged=opts.privileged,
+                    job_role_arn=opts.job_role_arn,
+                    execution_role_arn=opts.execution_role_arn,
+                    ulimits=parse_ulimits(opts.ulimits or []),
                 )
             )
             node_idx += role.num_replicas
@@ -568,17 +577,21 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
                 "tags": {
                     TAG_TORCHX_VER: torchx.__version__,
                     TAG_TORCHX_APPNAME: app.name,
-                    TAG_TORCHX_USER: cfg.get("user"),
+                    TAG_TORCHX_USER: opts.user,
                     **app.metadata,
                 },
             },
-            **({"schedulingPriority": priority} if share_id is not None else {}),
+            **(
+                {"schedulingPriority": opts.priority}
+                if opts.share_id is not None
+                else {}
+            ),
         }
 
         req = BatchJob(
             name=name,
-            queue=queue,
-            share_id=share_id,
+            queue=opts.queue,
+            share_id=opts.share_id,
             job_def=job_def,
             images_to_push=images_to_push,
         )
@@ -592,51 +605,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[AWSBatchOpts]):
         )
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add("queue", type_=str, help="queue to schedule job in", required=True)
-        opts.add(
-            "user",
-            type_=str,
-            default=getpass.getuser(),
-            help="The username to tag the job with. `getpass.getuser()` if not specified.",
-        )
-        opts.add(
-            "privileged",
-            type_=bool,
-            default=False,
-            help="If true runs the container with elevated permissions."
-            " Equivalent to running with `docker run --privileged`.",
-        )
-        opts.add(
-            "share_id",
-            type_=str,
-            help="The share identifier for the job. "
-            "This must be set if and only if the job queue has a scheduling policy.",
-        )
-        opts.add(
-            "priority",
-            type_=int,
-            default=0,
-            help="The scheduling priority for the job within the context of share_id. "
-            "Higher number (between 0 and 9999) means higher priority. "
-            "This will only take effect if the job queue has a scheduling policy.",
-        )
-        opts.add(
-            "job_role_arn",
-            type_=str,
-            help="The Amazon Resource Name (ARN) of the IAM role that the container can assume for AWS permissions.",
-        )
-        opts.add(
-            "execution_role_arn",
-            type_=str,
-            help="The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.",
-        )
-        opts.add(
-            "ulimits",
-            type_=list[str],
-            help="Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)",
-        )
-        return opts
+        return Opts.as_runopts()
 
     def _get_job_id(self, app_id: str) -> str | None:
         queue, name = app_id.split(":")

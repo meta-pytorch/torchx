@@ -11,7 +11,7 @@ import importlib
 import sys
 import unittest
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import torchx
@@ -26,7 +26,6 @@ from torchx.schedulers.kubernetes_scheduler import (
     app_to_resource,
     create_scheduler,
     KubernetesJob,
-    KubernetesOpts,
     KubernetesScheduler,
     LABEL_APP_NAME,
     LABEL_INSTANCE_TYPE,
@@ -37,10 +36,12 @@ from torchx.schedulers.kubernetes_scheduler import (
     LABEL_ROLE_NAME,
     LABEL_UNIQUE_NAME,
     LABEL_VERSION,
+    Opts,
     PLACEHOLDER_FIELD_PATH,
     role_to_pod,
 )
 from torchx.specs import AppDryRunInfo, AppState
+from torchx.specs.overlays import JOIN, PUT, set_overlay
 from torchx.util.strings import normalize_str
 
 SKIP_DOCKER: bool = not has_docker()
@@ -272,7 +273,7 @@ class KubernetesSchedulerTest(unittest.TestCase):
     def test_submit_dryrun(self) -> None:
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -590,7 +591,7 @@ spec:
 
         scheduler = create_scheduler("test")
         app = _test_app(num_replicas=2)
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -617,12 +618,7 @@ spec:
         scheduler = create_scheduler("test")
         app = _test_app()
         app.roles[0].image = "sha256:testhash"
-        cfg = KubernetesOpts(
-            {
-                "queue": "testqueue",
-                "image_repo": "example.com/some/repo",
-            }
-        )
+        cfg = Opts(queue="testqueue", image_repo="example.com/some/repo")
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
@@ -647,16 +643,11 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("service_account", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "queue": "testqueue",
-                "service_account": "srvacc",
-            }
-        )
+        cfg = Opts(queue="testqueue", service_account="srvacc")
         info = scheduler.submit_dryrun(app, cfg)
         self.assertIn("'service_account_name': 'srvacc'", str(info.request.resource))
 
-        del cfg["service_account"]
+        cfg = Opts(queue="testqueue")
         info = scheduler.submit_dryrun(app, cfg)
         self.assertIn("service_account_name': None", str(info.request.resource))
 
@@ -668,17 +659,12 @@ spec:
         scheduler = create_scheduler("test")
         self.assertIn("priority_class", scheduler.run_opts()._opts)
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "queue": "testqueue",
-                "priority_class": "high",
-            }
-        )
+        cfg = Opts(queue="testqueue", priority_class="high")
 
         info = scheduler.submit_dryrun(app, cfg)
         self.assertIn("'priorityClassName': 'high'", str(info.request.resource))
 
-        del cfg["priority_class"]
+        cfg = Opts(queue="testqueue")
         info = scheduler.submit_dryrun(app, cfg)
         self.assertNotIn("'priorityClassName'", str(info.request.resource))
 
@@ -693,12 +679,7 @@ spec:
         }
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "namespace": "testnamespace",
-                "queue": "testqueue",
-            }
-        )
+        cfg = Opts(namespace="testnamespace", queue="testqueue")
 
         info = scheduler.submit_dryrun(app, cfg)
         id = scheduler.schedule(info)
@@ -723,12 +704,7 @@ spec:
 
         scheduler = create_scheduler("test")
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "namespace": "testnamespace",
-                "queue": "testqueue",
-            }
-        )
+        cfg = Opts(namespace="testnamespace", queue="testqueue")
         info = scheduler.submit_dryrun(app, cfg)
         with self.assertRaises(ValueError):
             scheduler.schedule(info)
@@ -1261,7 +1237,7 @@ spec:
             reason="Invalid",
         )
 
-        cfg = cast(KubernetesOpts, {"queue": "testqueue", "validate_spec": True})
+        cfg = Opts(queue="testqueue", validate_spec=True)
 
         with self.assertRaises(ValueError) as ctx:
             scheduler.submit_dryrun(app, cfg)
@@ -1275,7 +1251,7 @@ spec:
         scheduler = create_scheduler("test")
         app = _test_app()
 
-        cfg = KubernetesOpts({"queue": "testqueue", "validate_spec": False})
+        cfg = Opts(queue="testqueue", validate_spec=False)
 
         info = scheduler.submit_dryrun(app, cfg)
 
@@ -1295,12 +1271,13 @@ spec:
             reason="Invalid",
         )
 
-        cfg = cast(KubernetesOpts, {"queue": "testqueue", "validate_spec": True})
+        cfg = Opts(queue="testqueue", validate_spec=True)
         with self.assertRaises(ValueError) as ctx:
             scheduler.submit_dryrun(app, cfg)
             self.assertIn("Invalid job spec", str(ctx.exception))
 
-    def test_apply_pod_overlay(self) -> None:
+    def test_apply_pod_overlay_dict_merge(self) -> None:
+        """Overlay merges nodeSelector, adds tolerations and affinity."""
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
@@ -1312,30 +1289,6 @@ spec:
             metadata=V1ObjectMeta(name="test-pod"),
         )
 
-        overlay = {
-            "spec": {
-                "nodeSelector": {"gpu": "true"},
-                "tolerations": [{"key": "nvidia.com/gpu", "operator": "Exists"}],
-            }
-        }
-
-        _apply_pod_overlay(pod, overlay)
-
-        self.assertEqual(pod.spec.node_selector, {"existing": "label", "gpu": "true"})
-        self.assertEqual(len(pod.spec.tolerations), 1)
-        self.assertEqual(pod.spec.tolerations[0].key, "nvidia.com/gpu")
-
-    def test_apply_pod_overlay_new_fields(self) -> None:
-        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
-        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
-
-        # Pod without nodeSelector or tolerations
-        pod = V1Pod(
-            spec=V1PodSpec(containers=[V1Container(name="test", image="test:latest")]),
-            metadata=V1ObjectMeta(name="test-pod"),
-        )
-
-        # Overlay adds fields not present in original
         overlay = {
             "spec": {
                 "nodeSelector": {"gpu": "true"},
@@ -1362,24 +1315,31 @@ spec:
 
         _apply_pod_overlay(pod, overlay)
 
-        self.assertEqual(pod.spec.node_selector, {"gpu": "true"})
+        # Existing + new nodeSelector merged
+        self.assertEqual(pod.spec.node_selector, {"existing": "label", "gpu": "true"})
+        # New fields added
         self.assertEqual(len(pod.spec.tolerations), 1)
+        self.assertEqual(pod.spec.tolerations[0].key, "nvidia.com/gpu")
         self.assertIsNotNone(pod.spec.affinity)
         self.assertIsNotNone(pod.spec.affinity.node_affinity)
 
     def test_submit_dryrun_with_pod_overlay(self) -> None:
         scheduler = create_scheduler("test")
 
-        # Create app with metadata
         trainer_role = specs.Role(
             name="trainer",
             image="pytorch/torchx:latest",
             entrypoint="main",
             resource=specs.Resource(cpu=1, memMB=1000, gpu=0),
-            metadata={"kubernetes": {"spec": {"nodeSelector": {"gpu": "true"}}}},
+        )
+        set_overlay(
+            trainer_role,
+            "kubernetes",
+            "V1Pod",
+            {"spec": {"nodeSelector": {"gpu": "true"}}},
         )
         app = specs.AppDef("test", roles=[trainer_role])
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
 
         info = scheduler.submit_dryrun(app, cfg)
         resource = info.request.resource
@@ -1414,7 +1374,7 @@ spec:
                 metadata={"kubernetes": f"file://{overlay_path}"},
             )
             app = specs.AppDef("test", roles=[trainer_role])
-            cfg = KubernetesOpts({"queue": "testqueue"})
+            cfg = Opts(queue="testqueue")
 
             info = scheduler.submit_dryrun(app, cfg)
             resource = info.request.resource
@@ -1491,10 +1451,259 @@ spec:
         self.assertEqual(len(pod.spec.tolerations), 1)
         self.assertEqual(pod.spec.tolerations[0].key, "nvidia.com/gpu")
 
+    def test_apply_pod_overlay_container_new_name_appends(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="trainer-0", image="pytorch:latest")],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {
+            "spec": {
+                JOIN("containers", on="name"): [
+                    {
+                        "name": "sidecar",
+                        "image": "sidecar:latest",
+                    },
+                ],
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.containers), 2, "expected 2 containers after append"
+        )
+        self.assertEqual(pod.spec.containers[0].name, "trainer-0")
+        self.assertEqual(pod.spec.containers[1].name, "sidecar")
+        self.assertEqual(pod.spec.containers[1].image, "sidecar:latest")
+
+    def test_apply_pod_overlay_container_merge_does_not_mutate_overlay(self) -> None:
+        import copy
+
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="trainer-0", image="pytorch:latest")],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {
+            "spec": {
+                JOIN("containers", on="name"): [
+                    {
+                        "name": "trainer-0",
+                        "livenessProbe": {
+                            "httpGet": {"path": "/health", "port": 8080},
+                        },
+                    },
+                ],
+                "nodeSelector": {"gpu": "true"},
+            }
+        }
+        overlay_before = copy.deepcopy(overlay)
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            overlay,
+            overlay_before,
+            "overlay dict should not be mutated by _apply_pod_overlay",
+        )
+
+    def test_apply_pod_overlay_container_replace_tuple(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[
+                    V1Container(name="app", image="pytorch:latest"),
+                    V1Container(name="log-collector", image="pytorch:latest"),
+                ],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        # Tuple = replace entire list, bypass strategic merge
+        overlay = {
+            "spec": {
+                "containers": ({"name": "only-one", "image": "new:latest"},),
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.containers), 1, "tuple should replace entire list"
+        )
+        self.assertEqual(pod.spec.containers[0].name, "only-one")
+
+    def test_apply_pod_overlay_init_container_merge_by_name(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="main", image="main:latest")],
+                init_containers=[V1Container(name="init", image="init:latest")],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {
+            "spec": {
+                JOIN("initContainers", on="name"): [
+                    {"name": "init", "command": ["/bin/setup"]},
+                ],
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.init_containers),
+            1,
+            "initContainer should be merged, not duplicated",
+        )
+        self.assertEqual(pod.spec.init_containers[0].image, "init:latest")
+        self.assertEqual(pod.spec.init_containers[0].command, ["/bin/setup"])
+
+    def test_apply_pod_overlay_container_mixed_match_and_append(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="trainer-0", image="pytorch:latest")],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {
+            "spec": {
+                JOIN("containers", on="name"): [
+                    {
+                        "name": "trainer-0",
+                        "livenessProbe": {
+                            "httpGet": {"path": "/health", "port": 8080},
+                        },
+                    },
+                    {
+                        "name": "sidecar",
+                        "image": "sidecar:latest",
+                    },
+                ],
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.containers),
+            2,
+            "expected merge + append = 2 containers",
+        )
+        self.assertEqual(pod.spec.containers[0].name, "trainer-0")
+        self.assertEqual(pod.spec.containers[0].image, "pytorch:latest")
+        self.assertIsNotNone(
+            pod.spec.containers[0].liveness_probe,
+            "livenessProbe should be merged into existing container",
+        )
+        self.assertEqual(pod.spec.containers[1].name, "sidecar")
+        self.assertEqual(pod.spec.containers[1].image, "sidecar:latest")
+
+    def test_apply_pod_overlay_container_empty_list(self) -> None:
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="trainer-0", image="pytorch:latest")],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {"spec": {"containers": []}}
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.containers),
+            1,
+            "empty overlay containers should not change base",
+        )
+        self.assertEqual(pod.spec.containers[0].name, "trainer-0")
+
+    def test_apply_pod_overlay_put_replaces_containers(self) -> None:
+        """PUT replaces containers list entirely."""
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[
+                    V1Container(name="app", image="pytorch:latest"),
+                    V1Container(name="log-collector", image="pytorch:latest"),
+                ],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        overlay = {
+            "spec": {
+                PUT("containers"): [{"name": "only-one", "image": "new:latest"}],
+            },
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.containers),
+            1,
+            "PUT should replace containers list entirely",
+        )
+        self.assertEqual(pod.spec.containers[0].name, "only-one")
+        self.assertEqual(pod.spec.containers[0].image, "new:latest")
+
+    def test_apply_pod_overlay_no_join_appends(self) -> None:
+        """Without JOIN, container lists are appended (not merged)."""
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="trainer-0", image="pytorch:latest")],
+            ),
+            metadata=V1ObjectMeta(name="test-pod"),
+        )
+
+        # No JOIN -> append semantics (even for same name)
+        overlay = {
+            "spec": {
+                "containers": [
+                    {"name": "trainer-0", "memory": "1Gi"},
+                ],
+            }
+        }
+
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(
+            len(pod.spec.containers),
+            2,
+            "without JOIN, containers should be appended, not merged",
+        )
+
     def test_submit_dryrun_with_pod_overlay_yaml_replace_tag(self) -> None:
         import tempfile
-
-        import yaml
 
         scheduler = create_scheduler("test")
 
@@ -1517,7 +1726,7 @@ spec:
                 metadata={"kubernetes": f"file://{overlay_path}"},
             )
             app = specs.AppDef("test", roles=[trainer_role])
-            cfg = KubernetesOpts({"queue": "testqueue"})
+            cfg = Opts(queue="testqueue")
 
             info = scheduler.submit_dryrun(app, cfg)
             resource = info.request.resource
@@ -1535,19 +1744,97 @@ spec:
     def test_submit_dryrun_with_pod_overlay_invalid_type(self) -> None:
         scheduler = create_scheduler("test")
 
-        # Create app with invalid metadata type
+        # Non-dict, non-str metadata is silently ignored by get_overlay
         trainer_role = specs.Role(
             name="trainer",
             image="pytorch/torchx:latest",
             entrypoint="main",
             resource=specs.Resource(cpu=1, memMB=1000, gpu=0),
-            metadata={"kubernetes": 123},  # Invalid type
+            metadata={"kubernetes": 123},  # Invalid type, silently skipped
         )
         app = specs.AppDef("test", roles=[trainer_role])
-        cfg = KubernetesOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
 
-        with self.assertRaises(ValueError) as ctx:
-            scheduler.submit_dryrun(app, cfg)
+        # Should not raise — overlay is silently skipped
+        info = scheduler.submit_dryrun(app, cfg)
+        self.assertIsNotNone(
+            info, "dryrun should succeed even with invalid overlay type"
+        )
+
+    def test_submit_dryrun_strategic_merge_probes(self) -> None:
+        """End-to-end: JOIN merges liveness/readiness probes into main container."""
+        scheduler = create_scheduler("test")
+
+        trainer_role = specs.Role(
+            name="trainer",
+            image="pytorch/torchx:latest",
+            entrypoint="main",
+            resource=specs.Resource(cpu=1, memMB=1000, gpu=0),
+        )
+        set_overlay(
+            trainer_role,
+            "kubernetes",
+            "V1Pod",
+            {
+                "spec": {
+                    JOIN("containers", on="name"): [
+                        {
+                            "name": "trainer-0",
+                            "livenessProbe": {
+                                "httpGet": {"path": "/health", "port": 8080},
+                                "initialDelaySeconds": 30,
+                            },
+                            "readinessProbe": {
+                                "httpGet": {"path": "/ready", "port": 8080},
+                            },
+                        }
+                    ],
+                }
+            },
+        )
+        app = specs.AppDef("test", roles=[trainer_role])
+        cfg = Opts(queue="testqueue")
+
+        info = scheduler.submit_dryrun(app, cfg)
+        tasks = info.request.resource["spec"]["tasks"]
+        for task in tasks:
+            pod = task["template"]
+            containers = pod.spec.containers
+            self.assertEqual(len(containers), 1, "should still have 1 container")
+            c = containers[0]
+            self.assertIsNotNone(
+                c.liveness_probe, "livenessProbe should be set from overlay"
+            )
+            self.assertEqual(c.liveness_probe.initial_delay_seconds, 30)
+            self.assertIsNotNone(
+                c.readiness_probe, "readinessProbe should be set from overlay"
+            )
+            self.assertEqual(c.readiness_probe.http_get.path, "/ready")
+
+    def test_submit_dryrun_flat_overlay_bc(self) -> None:
+        """BC: flat metadata["kubernetes"] = {overlay} still applies via get_overlay."""
+        scheduler = create_scheduler("test")
+
+        trainer_role = specs.Role(
+            name="trainer",
+            image="pytorch/torchx:latest",
+            entrypoint="main",
+            resource=specs.Resource(cpu=1, memMB=1000, gpu=0),
+            metadata={"kubernetes": {"spec": {"nodeSelector": {"gpu": "true"}}}},
+        )
+        app = specs.AppDef("test", roles=[trainer_role])
+        cfg = Opts(queue="testqueue")
+
+        info = scheduler.submit_dryrun(app, cfg)
+        tasks = info.request.resource["spec"]["tasks"]
+        for task in tasks:
+            pod = task["template"]
+            self.assertIn(
+                "gpu",
+                pod.spec.node_selector,
+                "flat overlay should still be applied via BC path",
+            )
+            self.assertEqual(pod.spec.node_selector["gpu"], "true")
 
     def test_validate_spec_long_pod_name(self) -> None:
         scheduler = create_scheduler("test")
@@ -1555,7 +1842,7 @@ spec:
         app.name = "x" * 50
         app.roles[0].name = "y" * 20
 
-        cfg = cast(KubernetesOpts, {"queue": "testqueue", "validate_spec": True})
+        cfg = Opts(queue="testqueue", validate_spec=True)
 
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
@@ -1642,12 +1929,7 @@ class KubernetesSchedulerNoImportTest(unittest.TestCase):
     def test_dryrun(self) -> None:
         scheduler = kubernetes_scheduler.create_scheduler("foo")
         app = _test_app()
-        cfg = KubernetesOpts(
-            {
-                "namespace": "testnamespace",
-                "queue": "testqueue",
-            }
-        )
+        cfg = Opts(namespace="testnamespace", queue="testqueue")
 
         with self.assertRaises(ModuleNotFoundError):
             scheduler.submit_dryrun(app, cfg)
