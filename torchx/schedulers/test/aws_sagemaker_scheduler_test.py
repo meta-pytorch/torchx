@@ -16,6 +16,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 from torchx.schedulers.aws_sagemaker_scheduler import (
+    _build_model_trainer,
     _local_session,
     AWSSageMakerJob,
     AWSSageMakerScheduler,
@@ -99,9 +100,12 @@ class AWSSageMakerSchedulerTest(TestCase):
         self.job = AWSSageMakerJob(
             job_name="test-name",
             job_def={
-                "entry_point": "some_entry_point",
-                "image_uri": "some_image_uri",
-                "role_arn": "some_role_arn",
+                "training_image": "some_image_uri",
+                "role": "some_role_arn",
+                "source_code": {
+                    "entry_script": "some_entry_point",
+                    "source_dir": "/some/dir",
+                },
             },
             images_to_push={"image1": ("tag1", "repo1")},
         )
@@ -228,11 +232,41 @@ class AWSSageMakerSchedulerTest(TestCase):
 
         return scheduler
 
-    @patch(f"{MODULE}.PyTorch")
-    def test_schedule(self, mock_pytorch_estimator: MagicMock) -> None:
-        expected_name = "test-name"
+    @patch(f"{MODULE}._build_model_trainer")
+    def test_schedule(self, mock_build_trainer: MagicMock) -> None:
+        mock_trainer = MagicMock()
+        mock_training_job = MagicMock()
+        mock_training_job.get_name.return_value = "test-name-2026-02-12"
+        mock_trainer._latest_training_job = mock_training_job
+        mock_build_trainer.return_value = mock_trainer
+
         returned_name = self.scheduler.schedule(self.dryrun_info)
-        self.assertEqual(returned_name, expected_name)
+
+        mock_build_trainer.assert_called_once_with(self.job.job_def)
+        mock_trainer.train.assert_called_once_with(wait=False)
+        # Should return the actual SageMaker job name, not req.job_name
+        self.assertEqual(
+            returned_name,
+            "test-name-2026-02-12",
+            "schedule() should return the actual SageMaker job name from trainer",
+        )
+
+    @patch(f"{MODULE}._build_model_trainer")
+    def test_schedule_fallback_when_no_training_job(
+        self, mock_build_trainer: MagicMock
+    ) -> None:
+        """When _latest_training_job is None, fall back to req.job_name."""
+        mock_trainer = MagicMock()
+        mock_trainer._latest_training_job = None
+        mock_build_trainer.return_value = mock_trainer
+
+        returned_name = self.scheduler.schedule(self.dryrun_info)
+
+        self.assertEqual(
+            returned_name,
+            "test-name",
+            "should fall back to req.job_name when _latest_training_job is None",
+        )
 
     def test_run_opts(self) -> None:
         scheduler = self._mock_scheduler()
@@ -423,19 +457,19 @@ class AWSSageMakerSchedulerTest(TestCase):
         # pyre-ignore[6]: Testing with raw cfg dict, not AWSSageMakerOpts
         dryrun_info = self.scheduler.submit_dryrun(app, cfg)
 
-        # Verify tags are converted to SageMaker format and merged
+        # Verify tags are converted to SageMaker v3 format and merged
         job_def = dryrun_info.request.job_def
         tags = job_def["tags"]
 
         # Should have 3 tags: 2 from cfg + 1 from app.metadata
         self.assertEqual(len(tags), 3)
 
-        # Verify cfg tags are converted to SageMaker format
-        self.assertIn({"Key": "env", "Value": "prod"}, tags)
-        self.assertIn({"Key": "team", "Value": "ml"}, tags)
+        # Verify cfg tags use lowercase key/value (sagemaker v3 Tag format)
+        self.assertIn({"key": "env", "value": "prod"}, tags)
+        self.assertIn({"key": "team", "value": "ml"}, tags)
 
         # Verify app.metadata is also included
-        self.assertIn({"Key": "app_key", "Value": "app_value"}, tags)
+        self.assertIn({"key": "app_key", "value": "app_value"}, tags)
 
     @patch(f"{MODULE}.make_unique")
     def test_submit_dryrun_tags_empty_cfg(self, mock_make_unique: MagicMock) -> None:
@@ -468,7 +502,435 @@ class AWSSageMakerSchedulerTest(TestCase):
 
         # Should only have the app.metadata tag
         self.assertEqual(len(tags), 1)
-        self.assertIn({"Key": "meta_key", "Value": "meta_value"}, tags)
+        self.assertIn({"key": "meta_key", "value": "meta_value"}, tags)
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_job_def_structure(self, mock_make_unique: MagicMock) -> None:
+        """Test that _submit_dryrun produces correct structured job_def for ModelTrainer."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 2,
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict, not AWSSageMakerOpts
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        # Verify structured fields
+        self.assertEqual(job_def["training_image"], "test-image:latest")
+        self.assertTrue(job_def["distributed"])
+        self.assertEqual(job_def["role"], "arn:aws:iam::123456789:role/test-role")
+
+        # Verify source_code structure
+        source_code = job_def["source_code"]
+        self.assertEqual(source_code["entry_script"], "-m train")
+        self.assertIn("source_dir", source_code)
+
+        # Verify compute structure
+        compute = job_def["compute"]
+        self.assertEqual(compute["instance_type"], "ml.p3.2xlarge")
+        self.assertEqual(compute["instance_count"], 2)
+
+        # Verify hyperparameters were parsed
+        self.assertIn("epochs", job_def["hyperparameters"])
+        self.assertEqual(job_def["hyperparameters"]["epochs"], "10")
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_base_job_name_default(
+        self, mock_make_unique: MagicMock
+    ) -> None:
+        """Verify base_job_name defaults to TorchX-generated job_name."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        self.assertEqual(
+            job_def["base_job_name"],
+            "test-job-42",
+            "base_job_name should default to TorchX job_name when not set in cfg",
+        )
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_base_job_name_from_cfg(
+        self, mock_make_unique: MagicMock
+    ) -> None:
+        """Verify user-provided base_job_name from cfg takes precedence."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "base_job_name": "user-custom-name",
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        self.assertEqual(
+            job_def["base_job_name"],
+            "user-custom-name",
+            "base_job_name from cfg should take precedence over TorchX job_name",
+        )
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_networking_config(self, mock_make_unique: MagicMock) -> None:
+        """Verify networking config is correctly structured in job_def."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "subnets": ["subnet-a", "subnet-b"],
+            "security_group_ids": ["sg-1"],
+            "enable_network_isolation": True,
+            "encrypt_inter_container_traffic": True,
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        networking = job_def["networking"]
+        self.assertEqual(networking["subnets"], ["subnet-a", "subnet-b"])
+        self.assertEqual(networking["security_group_ids"], ["sg-1"])
+        self.assertTrue(networking["enable_network_isolation"])
+        self.assertTrue(networking["enable_inter_container_traffic_encryption"])
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_stopping_condition(
+        self, mock_make_unique: MagicMock
+    ) -> None:
+        """Verify stopping condition config is correctly structured."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "max_run": 86400,
+            "max_wait": 172800,
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        stopping = job_def["stopping_condition"]
+        self.assertEqual(stopping["max_runtime_in_seconds"], 86400)
+        self.assertEqual(stopping["max_wait_time_in_seconds"], 172800)
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_output_data_config(
+        self, mock_make_unique: MagicMock
+    ) -> None:
+        """Verify output data config includes s3_output_path, kms, and compression."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "output_path": "s3://my-bucket/output",
+            "output_kms_key": "arn:aws:kms:us-east-1:123:key/abc",
+            "disable_output_compression": True,
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        output_data = job_def["output_data_config"]
+        self.assertEqual(output_data["s3_output_path"], "s3://my-bucket/output")
+        self.assertEqual(output_data["kms_key_id"], "arn:aws:kms:us-east-1:123:key/abc")
+        self.assertEqual(output_data["compression_type"], "NONE")
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_output_data_no_path_warns(
+        self, mock_make_unique: MagicMock
+    ) -> None:
+        """When output_kms_key is set without output_path, output config is skipped."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "output_kms_key": "arn:aws:kms:us-east-1:123:key/abc",
+        }
+
+        with self.assertLogs(
+            "torchx.schedulers.aws_sagemaker_scheduler", level="WARNING"
+        ) as cm:
+            # pyre-ignore[6]: Testing with raw cfg dict
+            dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+
+        job_def = dryrun_info.request.job_def
+        self.assertNotIn(
+            "output_data_config",
+            job_def,
+            "output_data_config should be skipped when output_path is missing",
+        )
+        self.assertTrue(
+            any("output_path" in msg for msg in cm.output),
+            "should warn about missing output_path",
+        )
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_checkpoint_config(self, mock_make_unique: MagicMock) -> None:
+        """Verify checkpoint config is correctly structured."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "checkpoint_s3_uri": "s3://my-bucket/checkpoints",
+            "checkpoint_local_path": "/opt/ml/checkpoints",
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        job_def = dryrun_info.request.job_def
+
+        ckpt = job_def["checkpoint_config"]
+        self.assertEqual(ckpt["s3_uri"], "s3://my-bucket/checkpoints")
+        self.assertEqual(ckpt["local_path"], "/opt/ml/checkpoints")
+
+    @patch(f"{MODULE}.make_unique")
+    def test_submit_dryrun_compute_optional_fields(
+        self, mock_make_unique: MagicMock
+    ) -> None:
+        """Verify optional compute fields (volume_size, spot, etc.) are mapped."""
+        mock_make_unique.return_value = "test-job-42"
+
+        role = Role(
+            name="trainer",
+            image="test-image:latest",
+            args=["-m", "train", "--epochs=10"],
+        )
+        app = AppDef(name="test-app", roles=[role])
+
+        cfg: dict[str, CfgVal] = {
+            "role": "arn:aws:iam::123456789:role/test-role",
+            "instance_type": "ml.p3.2xlarge",
+            "instance_count": 1,
+            "volume_size": 100,
+            "volume_kms_key": "arn:aws:kms:key",
+            "keep_alive_period_in_seconds": 3600,
+            "use_spot_instances": True,
+        }
+
+        # pyre-ignore[6]: Testing with raw cfg dict
+        dryrun_info = self.scheduler.submit_dryrun(app, cfg)
+        compute = dryrun_info.request.job_def["compute"]
+
+        self.assertEqual(compute["volume_size_in_gb"], 100)
+        self.assertEqual(compute["volume_kms_key_id"], "arn:aws:kms:key")
+        self.assertEqual(compute["keep_alive_period_in_seconds"], 3600)
+        self.assertTrue(compute["enable_managed_spot_training"])
+
+
+try:
+    # pyre-fixme[21]: Could not find module `sagemaker.train`.
+    import sagemaker.train  # noqa: F401
+
+    _HAS_SAGEMAKER_V3 = True
+except ImportError:
+    _HAS_SAGEMAKER_V3 = False
+
+
+@unittest.skipUnless(_HAS_SAGEMAKER_V3, "requires sagemaker>=3.2")
+class BuildModelTrainerTest(TestCase):
+    """Tests for the _build_model_trainer function."""
+
+    @patch("sagemaker.train.ModelTrainer")
+    def test_minimal_job_def(self, mock_model_trainer_cls: MagicMock) -> None:
+        """Test with only required fields."""
+        mock_trainer = MagicMock()
+        mock_model_trainer_cls.return_value = mock_trainer
+
+        job_def = {
+            "training_image": "my-image:latest",
+            "role": "arn:aws:iam::123:role/test",
+        }
+
+        result = _build_model_trainer(job_def)
+
+        mock_model_trainer_cls.assert_called_once()
+        call_kwargs = mock_model_trainer_cls.call_args[1]
+        self.assertEqual(call_kwargs["training_image"], "my-image:latest")
+        self.assertEqual(call_kwargs["role"], "arn:aws:iam::123:role/test")
+        self.assertIs(result, mock_trainer)
+
+    @patch("sagemaker.train.ModelTrainer")
+    def test_distributed_flag(self, mock_model_trainer_cls: MagicMock) -> None:
+        """Test that distributed=True creates a Torchrun instance."""
+        mock_trainer = MagicMock()
+        mock_model_trainer_cls.return_value = mock_trainer
+
+        job_def = {
+            "training_image": "my-image:latest",
+            "distributed": True,
+        }
+
+        _build_model_trainer(job_def)
+
+        call_kwargs = mock_model_trainer_cls.call_args[1]
+        # Verify Torchrun was passed (it's imported from sagemaker)
+        # pyre-fixme[21]: Could not find module `sagemaker.train.distributed`.
+        from sagemaker.train.distributed import Torchrun
+
+        self.assertIsInstance(call_kwargs["distributed"], Torchrun)
+
+    @patch("sagemaker.train.ModelTrainer")
+    def test_tags_converted_to_tag_objects(
+        self, mock_model_trainer_cls: MagicMock
+    ) -> None:
+        """Test that tag dicts are converted to Tag objects."""
+        mock_trainer = MagicMock()
+        mock_model_trainer_cls.return_value = mock_trainer
+
+        job_def = {
+            "training_image": "my-image:latest",
+            "tags": [
+                {"key": "env", "value": "prod"},
+                {"key": "team", "value": "ml"},
+            ],
+        }
+
+        _build_model_trainer(job_def)
+
+        call_kwargs = mock_model_trainer_cls.call_args[1]
+        tags = call_kwargs["tags"]
+        self.assertEqual(len(tags), 2)
+
+        # pyre-fixme[21]: Could not find module `sagemaker.core.shapes.shapes`.
+        from sagemaker.core.shapes.shapes import Tag
+
+        self.assertIsInstance(tags[0], Tag)
+        self.assertEqual(tags[0].key, "env")
+        self.assertEqual(tags[0].value, "prod")
+
+    @patch("sagemaker.train.ModelTrainer")
+    def test_metric_definitions_builder(
+        self, mock_model_trainer_cls: MagicMock
+    ) -> None:
+        """Test that metric_definitions uses the builder method."""
+        mock_trainer = MagicMock()
+        mock_trainer.with_metric_definitions.return_value = mock_trainer
+        mock_model_trainer_cls.return_value = mock_trainer
+
+        job_def = {
+            "training_image": "my-image:latest",
+            "metric_definitions": [("loss", "Loss: (\\S+)"), ("acc", "Acc: (\\S+)")],
+        }
+
+        result = _build_model_trainer(job_def)
+
+        mock_trainer.with_metric_definitions.assert_called_once()
+        self.assertIs(result, mock_trainer)
+
+    @patch("sagemaker.train.ModelTrainer")
+    def test_retry_strategy_builder(self, mock_model_trainer_cls: MagicMock) -> None:
+        """Test that max_retry_attempts uses the builder method."""
+        mock_trainer = MagicMock()
+        mock_trainer.with_retry_strategy.return_value = mock_trainer
+        mock_model_trainer_cls.return_value = mock_trainer
+
+        job_def = {
+            "training_image": "my-image:latest",
+            "max_retry_attempts": 3,
+        }
+
+        _build_model_trainer(job_def)
+
+        mock_trainer.with_retry_strategy.assert_called_once()
+
+    @patch("sagemaker.train.ModelTrainer")
+    def test_infra_check_builder(self, mock_model_trainer_cls: MagicMock) -> None:
+        """Test that enable_infra_check uses the builder method."""
+        mock_trainer = MagicMock()
+        mock_trainer.with_infra_check_config.return_value = mock_trainer
+        mock_model_trainer_cls.return_value = mock_trainer
+
+        job_def = {
+            "training_image": "my-image:latest",
+            "enable_infra_check": True,
+        }
+
+        _build_model_trainer(job_def)
+
+        mock_trainer.with_infra_check_config.assert_called_once()
 
 
 if __name__ == "__main__":
