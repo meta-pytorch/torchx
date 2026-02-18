@@ -109,6 +109,7 @@ from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
+from torchx.cli.colors import BLUE, ENDC
 from torchx.schedulers.api import (
     DescribeAppResponse,
     filter_regex,
@@ -264,6 +265,18 @@ LABEL_UNIQUE_NAME = "app.kubernetes.io/instance"
 ANNOTATION_ISTIO_SIDECAR = "sidecar.istio.io/inject"
 
 LABEL_INSTANCE_TYPE = "node.kubernetes.io/instance-type"
+
+
+def prefix_container_name(container_name: str, role_name: str, replica_id: int) -> str:
+    """
+    Generate a prefix for a container name.
+    Returns empty string for default container (role_name-replica_id), name for others.
+    """
+    default_container = f"{role_name}-{replica_id}"
+    if container_name == default_container:
+        return ""
+    return f"{BLUE}{container_name}{ENDC} "
+
 
 # role.env translates to static env variables in the yaml
 # {"FOO" : "bar"}               =====>      - name: FOO
@@ -1019,6 +1032,9 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         namespace, name = app_id.split(":")
 
         pod_name = normalize_str(f"{name}-{role_name}-{k}-0")
+        core_api = client.CoreV1Api(self._api_client())
+
+        pod = core_api.read_namespaced_pod(name=pod_name, namespace=namespace)
 
         args: dict[str, object] = {
             "name": pod_name,
@@ -1028,21 +1044,24 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         if since is not None:
             args["since_seconds"] = (datetime.now() - since).total_seconds()
 
-        core_api = client.CoreV1Api(self._api_client())
-        if should_tail:
-            w = watch.Watch()
-            iterator = (
-                f"{line}\n"
-                for line in w.stream(core_api.read_namespaced_pod_log, **args)
-            )
-        else:
-            resp = core_api.read_namespaced_pod_log(**args)
-            iterator = split_lines(resp)
+        for container in pod.spec.containers:
+            args["container"] = container.name
 
-        if regex:
-            return filter_regex(regex, iterator)
-        else:
-            return iterator
+            if should_tail:
+                w = watch.Watch()
+                iterator = (
+                    f"{line}\n"
+                    for line in w.stream(core_api.read_namespaced_pod_log, **args)
+                )
+            else:
+                resp = core_api.read_namespaced_pod_log(**args)
+                iterator = split_lines(resp)
+
+            if regex:
+                iterator = filter_regex(regex, iterator)
+
+            for line in iterator:
+                yield f"{prefix_container_name(container.name, role_name, k)}{line}"
 
     def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         active_context = self._get_active_context()
