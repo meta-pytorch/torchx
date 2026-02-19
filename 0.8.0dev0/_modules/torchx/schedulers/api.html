@@ -461,6 +461,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">types</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">MISSING</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
@@ -500,10 +501,19 @@
 <span class="c1"># STRUCTURED OPTIONS BASE CLASS</span>
 <span class="c1"># =============================================================================</span>
 
-<span class="n">_CfgValType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;_CfgValType&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">CfgVal</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert snake_case to camelCase.&quot;&quot;&quot;</span>
+    <span class="n">components</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">StructuredOpts</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_to_snake_case</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert to snake_case.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([a-z0-9])([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1_\2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StructuredOpts</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for typed scheduler configuration options.</span>
 
 <span class="sd">    Provides a type-safe way to define scheduler run options as dataclass fields</span>
@@ -540,12 +550,6 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert snake_case to camelCase.&quot;&quot;&quot;</span>
-        <span class="n">components</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_cfg</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an instance from a raw config dict.</span>
@@ -560,7 +564,7 @@
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">camel_case</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">camel_case</span> <span class="o">=</span> <span class="n">_snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">camel_case</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
                     <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">camel_case</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -577,18 +581,23 @@
     <span class="c1"># StructuredOpts field access instead of dict-like access.</span>
     <span class="c1"># -------------------------------------------------------------------------</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">_CfgValType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_CfgValType</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a config value by key, returning default if not found or None.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">value</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default</span>
-        <span class="k">return</span> <span class="n">default</span>
+    <span class="c1"># pyre-fixme[14]: Inconsistent override - Mapping.get accepts a default parameter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a config value by key, returning None if not found.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a config value by key. Raises KeyError if not found.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a config value by key. Raises KeyError if not found.</span>
+
+<span class="sd">        Transparently handles camelCase keys by converting to snake_case.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">snake_key</span> <span class="o">=</span> <span class="n">_to_snake_case</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snake_key</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snake_key</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of config fields.&quot;&quot;&quot;</span>
@@ -599,9 +608,38 @@
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
 
+    <span class="c1"># pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a config key exists.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if a config key exists.</span>
+
+<span class="sd">        camelCase keys are normalized to snake_case prior to lookup.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            .. doctest::</span>
+
+<span class="sd">                &gt;&gt;&gt; from dataclasses import dataclass</span>
+<span class="sd">                &gt;&gt;&gt; @dataclass</span>
+<span class="sd">                ... class Opt(StructuredOpts):</span>
+<span class="sd">                ...     job_queue_name: str = &quot;default&quot;</span>
+
+<span class="sd">                &gt;&gt;&gt; cfg = Opt()</span>
+<span class="sd">                &gt;&gt;&gt; &quot;job_queue_name&quot; in cfg</span>
+<span class="sd">                True</span>
+<span class="sd">                &gt;&gt;&gt; &quot;jobQueueName&quot; in cfg</span>
+<span class="sd">                True</span>
+<span class="sd">                &gt;&gt;&gt; &quot;queue_name&quot; in cfg</span>
+<span class="sd">                False</span>
+<span class="sd">                &gt;&gt;&gt; &quot;queueName&quot; in cfg</span>
+<span class="sd">                False</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_docstrings</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -639,7 +677,7 @@
             <span class="n">name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
 
             <span class="c1"># Generate camelCase alias for snake_case field names</span>
-            <span class="n">camel_case</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">camel_case</span> <span class="o">=</span> <span class="n">_snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">camel_case</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
                 <span class="n">aliases</span> <span class="o">=</span> <span class="p">[</span><span class="n">camel_case</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
@@ -651,8 +689,15 @@
             <span class="c1"># Get type: extract base type from Union (e.g., int | None -&gt; int)</span>
             <span class="n">field_type</span> <span class="o">=</span> <span class="n">type_hints</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">origin</span> <span class="o">=</span> <span class="n">get_origin</span><span class="p">(</span><span class="n">field_type</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="n">Union</span><span class="p">:</span>
-                <span class="c1"># For Union[X, None], get the non-None type</span>
+            <span class="c1"># Handle Union types to extract the base type for runopts.</span>
+            <span class="c1"># This logic handles field declarations like:</span>
+            <span class="c1">#   * foo: str | None = None  (types.UnionType without __future__.annotations)</span>
+            <span class="c1">#   * foo: Union[str, None] = None</span>
+            <span class="c1">#   * foo: Optional[str] = None  (equivalent to Union[str, None])</span>
+            <span class="c1"># Note: With `from __future__ import annotations`, get_type_hints() returns</span>
+            <span class="c1"># typing.Union for all syntaxes. The UnionType check handles the case</span>
+            <span class="c1"># without __future__.annotations where `str | None` creates types.UnionType.</span>
+            <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="n">Union</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_type</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">UnionType</span><span class="p">):</span>
                 <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">get_args</span><span class="p">(</span><span class="n">field_type</span><span class="p">)</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span>
                 <span class="n">field_type</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span> <span class="k">else</span> <span class="nb">str</span>
             <span class="n">type_</span> <span class="o">=</span> <span class="n">field_type</span>

@@ -455,7 +455,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.aws_sagemaker_scheduler.</span></span><span class="sig-name descname"><span class="pre">AWSSageMakerScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DockerClient</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchx/schedulers/aws_sagemaker_scheduler.html#AWSSageMakerScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">AWSSageMakerOpts</span></code>]</p>
+<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Opts</span></code>]</p>
 <p>AWSSageMakerScheduler is a TorchX scheduling interface to AWS SageMaker.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>-s<span class="w"> </span>aws_sagemaker<span class="w"> </span>utils.echo<span class="w"> </span>--image<span class="w"> </span>alpine:latest<span class="w"> </span>--msg<span class="w"> </span>hello
 aws_batch://torchx_user/1234
@@ -467,89 +467,69 @@ $<span class="w"> </span>torchx<span class="w"> </span>status<span class="w"> </
 handling.</p>
 <p><strong>Config Options</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    usage:
-        role=ROLE,instance_type=INSTANCE_TYPE,[instance_count=INSTANCE_COUNT],[user=USER],[keep_alive_period_in_seconds=KEEP_ALIVE_PERIOD_IN_SECONDS],[volume_size=VOLUME_SIZE],[volume_kms_key=VOLUME_KMS_KEY],[max_run=MAX_RUN],[input_mode=INPUT_MODE],[output_path=OUTPUT_PATH],[output_kms_key=OUTPUT_KMS_KEY],[base_job_name=BASE_JOB_NAME],[tags=TAGS],[subnets=SUBNETS],[security_group_ids=SECURITY_GROUP_IDS],[model_uri=MODEL_URI],[model_channel_name=MODEL_CHANNEL_NAME],[metric_definitions=METRIC_DEFINITIONS],[encrypt_inter_container_traffic=ENCRYPT_INTER_CONTAINER_TRAFFIC],[use_spot_instances=USE_SPOT_INSTANCES],[max_wait=MAX_WAIT],[checkpoint_s3_uri=CHECKPOINT_S3_URI],[checkpoint_local_path=CHECKPOINT_LOCAL_PATH],[debugger_hook_config=DEBUGGER_HOOK_CONFIG],[enable_sagemaker_metrics=ENABLE_SAGEMAKER_METRICS],[enable_network_isolation=ENABLE_NETWORK_ISOLATION],[disable_profiler=DISABLE_PROFILER],[environment=ENVIRONMENT],[max_retry_attempts=MAX_RETRY_ATTEMPTS],[source_dir=SOURCE_DIR],[git_config=GIT_CONFIG],[hyperparameters=HYPERPARAMETERS],[container_log_level=CONTAINER_LOG_LEVEL],[code_location=CODE_LOCATION],[dependencies=DEPENDENCIES],[training_repository_access_mode=TRAINING_REPOSITORY_ACCESS_MODE],[training_repository_credentials_provider_arn=TRAINING_REPOSITORY_CREDENTIALS_PROVIDER_ARN],[disable_output_compression=DISABLE_OUTPUT_COMPRESSION],[enable_infra_check=ENABLE_INFRA_CHECK],[image_repo=IMAGE_REPO],[quiet=QUIET]
+        role=ROLE,instance_type=INSTANCE_TYPE,[instance_count=INSTANCE_COUNT],[keep_alive_period_in_seconds=KEEP_ALIVE_PERIOD_IN_SECONDS],[volume_size=VOLUME_SIZE],[volume_kms_key=VOLUME_KMS_KEY],[max_run=MAX_RUN],[input_mode=INPUT_MODE],[output_path=OUTPUT_PATH],[output_kms_key=OUTPUT_KMS_KEY],[base_job_name=BASE_JOB_NAME],[tags=TAGS],[subnets=SUBNETS],[security_group_ids=SECURITY_GROUP_IDS],[metric_definitions=METRIC_DEFINITIONS],[encrypt_inter_container_traffic=ENCRYPT_INTER_CONTAINER_TRAFFIC],[use_spot_instances=USE_SPOT_INSTANCES],[max_wait=MAX_WAIT],[checkpoint_s3_uri=CHECKPOINT_S3_URI],[checkpoint_local_path=CHECKPOINT_LOCAL_PATH],[enable_network_isolation=ENABLE_NETWORK_ISOLATION],[environment=ENVIRONMENT],[max_retry_attempts=MAX_RETRY_ATTEMPTS],[source_dir=SOURCE_DIR],[hyperparameters=HYPERPARAMETERS],[training_repository_access_mode=TRAINING_REPOSITORY_ACCESS_MODE],[training_repository_credentials_provider_arn=TRAINING_REPOSITORY_CREDENTIALS_PROVIDER_ARN],[disable_output_compression=DISABLE_OUTPUT_COMPRESSION],[enable_infra_check=ENABLE_INFRA_CHECK],[image_repo=IMAGE_REPO],[quiet=QUIET]
 
     required arguments:
         role=ROLE (str)
-            an AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.
+            An AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.
         instance_type=INSTANCE_TYPE (str)
-            type of EC2 instance to use for training, for example, &#39;ml.c4.xlarge&#39;
+            Type of EC2 instance to use for training, for example, &#39;ml.c4.xlarge&#39;.
 
     optional arguments:
         instance_count=INSTANCE_COUNT (int, 1)
-            number of Amazon EC2 instances to use for training. Required if instance_groups is not set.
-        user=USER (str, runner)
-            the username to tag the job with. `getpass.getuser()` if not specified.
+            Number of Amazon EC2 instances to use for training. Required if instance_groups is not set.
         keep_alive_period_in_seconds=KEEP_ALIVE_PERIOD_IN_SECONDS (int, None)
-            the duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs.
+            The duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs.
         volume_size=VOLUME_SIZE (int, None)
-            size in GB of the storage volume to use for storing input and output data during training (default: 30).
+            Size in GB of the storage volume to use for storing input and output data during training (default: 30).
         volume_kms_key=VOLUME_KMS_KEY (str, None)
             KMS key ID for encrypting EBS volume attached to the training instance.
         max_run=MAX_RUN (int, None)
-            timeout in seconds for training (default: 24 * 60 * 60).
+            Timeout in seconds for training (default: 24 * 60 * 60).
         input_mode=INPUT_MODE (str, None)
-            the input mode that the algorithm supports (default: ‘File’).
+            The input mode that the algorithm supports (default: &#39;File&#39;).
         output_path=OUTPUT_PATH (str, None)
-            S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket. If the bucket with the specific name does not exist, the estimator creates the bucket during the fit() method execution.
+            S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket.
         output_kms_key=OUTPUT_KMS_KEY (str, None)
-            KMS key ID for encrypting the training output (default: Your IAM role’s KMS key for Amazon S3).
+            KMS key ID for encrypting the training output (default: Your IAM role&#39;s KMS key for Amazon S3).
         base_job_name=BASE_JOB_NAME (str, None)
-            prefix for training job name when the fit() method launches. If not specified, the estimator generates a default job name based on the training image name and current timestamp.
-        tags=TAGS (dict, {})
-            dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).
+            Prefix for training job name when the train() method launches. If not specified, the trainer generates a default job name based on the training image name and current timestamp.
+        tags=TAGS (dict, None)
+            Dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).
         subnets=SUBNETS (list, None)
-            list of subnet ids. If not specified training job will be created without VPC config.
+            List of subnet ids. If not specified training job will be created without VPC config.
         security_group_ids=SECURITY_GROUP_IDS (list, None)
-            list of security group ids. If not specified training job will be created without VPC config.
-        model_uri=MODEL_URI (str, None)
-            URI where a pre-trained model is stored, either locally or in S3.
-        model_channel_name=MODEL_CHANNEL_NAME (str, None)
-            name of the channel where ‘model_uri’ will be downloaded (default: ‘model’).
+            List of security group ids. If not specified training job will be created without VPC config.
         metric_definitions=METRIC_DEFINITIONS (dict, None)
-            dictionary that defines the metric(s) used to evaluate the training jobs. Each key is the metric name and the value is the regular expression used to extract the metric from the logs (e.g., metric_name:regex_pattern,other_metric:other_regex).
+            Dictionary that defines the metric(s) used to evaluate the training jobs. Each key is the metric name and the value is the regular expression used to extract the metric from the logs (e.g., metric_name:regex_pattern,other_metric:other_regex).
         encrypt_inter_container_traffic=ENCRYPT_INTER_CONTAINER_TRAFFIC (bool, None)
-            specifies whether traffic between training containers is encrypted for the training job (default: False).
+            Specifies whether traffic between training containers is encrypted for the training job (default: False).
         use_spot_instances=USE_SPOT_INSTANCES (bool, None)
-            specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set.
+            Specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set.
         max_wait=MAX_WAIT (int, None)
-            timeout in seconds waiting for spot training job.
+            Timeout in seconds waiting for spot training job.
         checkpoint_s3_uri=CHECKPOINT_S3_URI (str, None)
             S3 URI in which to persist checkpoints that the algorithm persists (if any) during training.
         checkpoint_local_path=CHECKPOINT_LOCAL_PATH (str, None)
-            local path that the algorithm writes its checkpoints to.
-        debugger_hook_config=DEBUGGER_HOOK_CONFIG (bool, None)
-            configuration for how debugging information is emitted with SageMaker Debugger. If not specified, a default one is created using the estimator’s output_path, unless the region does not support SageMaker Debugger. To disable SageMaker Debugger, set this parameter to False.
-        enable_sagemaker_metrics=ENABLE_SAGEMAKER_METRICS (bool, None)
-            enable SageMaker Metrics Time Series.
+            Local path that the algorithm writes its checkpoints to.
         enable_network_isolation=ENABLE_NETWORK_ISOLATION (bool, None)
-            specifies whether container will run in network isolation mode (default: False).
-        disable_profiler=DISABLE_PROFILER (bool, None)
-            specifies whether Debugger monitoring and profiling will be disabled (default: False).
+            Specifies whether container will run in network isolation mode (default: False).
         environment=ENVIRONMENT (dict, None)
-            environment variables to be set for use during training job
+            Environment variables to be set for use during training job.
         max_retry_attempts=MAX_RETRY_ATTEMPTS (int, None)
-            number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts.
+            Number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts.
         source_dir=SOURCE_DIR (str, None)
-            absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory)
-        git_config=GIT_CONFIG (dict, None)
-            git configurations used for cloning files, including repo, branch, commit, 2FA_enabled, username, password, and token.
+            Absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory).
         hyperparameters=HYPERPARAMETERS (dict, None)
-            dictionary containing the hyperparameters to initialize this estimator with.
-        container_log_level=CONTAINER_LOG_LEVEL (int, None)
-            log level to use within the container (default: logging.INFO).
-        code_location=CODE_LOCATION (str, None)
-            S3 prefix URI where custom code is uploaded.
-        dependencies=DEPENDENCIES (list, None)
-            list of absolute or relative paths to directories with any additional libraries that should be exported to the container.
+            Dictionary containing the hyperparameters to initialize this estimator with.
         training_repository_access_mode=TRAINING_REPOSITORY_ACCESS_MODE (str, None)
-            specifies how SageMaker accesses the Docker image that contains the training algorithm.
+            Specifies how SageMaker accesses the Docker image that contains the training algorithm.
         training_repository_credentials_provider_arn=TRAINING_REPOSITORY_CREDENTIALS_PROVIDER_ARN (str, None)
             Amazon Resource Name (ARN) of an AWS Lambda function that provides credentials to authenticate to the private Docker registry where your training image is hosted.
         disable_output_compression=DISABLE_OUTPUT_COMPRESSION (bool, None)
-            when set to true, Model is uploaded to Amazon S3 without compression after training finishes.
+            When set to true, Model is uploaded to Amazon S3 without compression after training finishes.
         enable_infra_check=ENABLE_INFRA_CHECK (bool, None)
-            specifies whether it is running Sagemaker built-in infra check jobs.
+            Specifies whether it is running Sagemaker built-in infra check jobs.
         image_repo=IMAGE_REPO (str, None)
             (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
         quiet=QUIET (bool, False)

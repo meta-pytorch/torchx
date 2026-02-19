@@ -492,17 +492,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">auto</span><span class="p">,</span> <span class="n">Enum</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Any</span><span class="p">,</span>
-    <span class="n">Callable</span><span class="p">,</span>
-    <span class="n">cast</span><span class="p">,</span>
-    <span class="n">Iterable</span><span class="p">,</span>
-    <span class="n">List</span><span class="p">,</span>
-    <span class="n">Mapping</span><span class="p">,</span>
-    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
-    <span class="n">TypedDict</span><span class="p">,</span>
-    <span class="n">TypeVar</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
@@ -512,6 +502,7 @@
     <span class="n">ListAppResponse</span><span class="p">,</span>
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.devices</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_mounts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
@@ -833,19 +824,42 @@
     <span class="k">return</span> <span class="n">boto3</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">AWSBatchOpts</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Opts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed configuration options for AWSBatchScheduler.&quot;&quot;&quot;</span>
+
     <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">user</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">image_repo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">privileged</span><span class="p">:</span> <span class="nb">bool</span>
-    <span class="n">share_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">job_role_arn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">execution_role_arn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">ulimits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue to schedule job in.&quot;&quot;&quot;</span>
+
+    <span class="n">user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The username to tag the job with. `getpass.getuser()` if not specified.&quot;&quot;&quot;</span>
+
+    <span class="n">image_repo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The image repository to use when pushing patched images, must have push access.&quot;&quot;&quot;</span>
+
+    <span class="n">privileged</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`.&quot;&quot;&quot;</span>
+
+    <span class="n">share_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The share identifier for the job. This must be set if and only if the job queue has a scheduling policy.&quot;&quot;&quot;</span>
+
+    <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The scheduling priority for the job within the context of share_id. Higher number (between 0 and 9999) means higher priority. This will only take effect if the job queue has a scheduling policy.&quot;&quot;&quot;</span>
+
+    <span class="n">job_role_arn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Amazon Resource Name (ARN) of the IAM role that the container can assume for AWS permissions.&quot;&quot;&quot;</span>
+
+    <span class="n">execution_role_arn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.&quot;&quot;&quot;</span>
+
+    <span class="n">ulimits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas).&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="AWSBatchScheduler"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AWSBatchScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">AWSBatchOpts</span><span class="p">]):</span>
+<span class="n">AWSBatchOpts</span> <span class="o">=</span> <span class="n">Opts</span>
+
+
+<div class="viewcode-block" id="AWSBatchScheduler"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AWSBatchScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    AWSBatchScheduler is a TorchX scheduling interface to AWS Batch.</span>
 
@@ -952,15 +966,10 @@
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">queue</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">AWSBatchOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">BatchJob</span><span class="p">]:</span>
-        <span class="n">queue</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;queue&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;config value &#39;queue&#39; must be a string, got </span><span class="si">{</span><span class="n">queue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">BatchJob</span><span class="p">]:</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">Opts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
-        <span class="n">share_id</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;share_id&quot;</span><span class="p">)</span>
-        <span class="n">priority</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;priority&quot;</span><span class="p">]</span>
-
-        <span class="n">name_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="n">share_id</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">share_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">name_suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;-</span><span class="si">{</span><span class="n">opts</span><span class="o">.</span><span class="n">share_id</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">share_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">make_unique</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">name_suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">,</span> <span class="p">(</span>
@@ -969,7 +978,7 @@
         <span class="p">)</span>
 
         <span class="c1"># map any local images to the remote image</span>
-        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="n">cfg</span><span class="p">))</span>
+        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
 
         <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">node_idx</span> <span class="o">=</span> <span class="mi">0</span>
@@ -992,10 +1001,10 @@
                 <span class="n">_role_to_node_properties</span><span class="p">(</span>
                     <span class="n">role</span><span class="p">,</span>
                     <span class="n">start_idx</span><span class="o">=</span><span class="n">node_idx</span><span class="p">,</span>
-                    <span class="n">privileged</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;privileged&quot;</span><span class="p">],</span>
-                    <span class="n">job_role_arn</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_role_arn&quot;</span><span class="p">),</span>
-                    <span class="n">execution_role_arn</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;execution_role_arn&quot;</span><span class="p">),</span>
-                    <span class="n">ulimits</span><span class="o">=</span><span class="n">parse_ulimits</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ulimits&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]),</span>
+                    <span class="n">privileged</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">privileged</span><span class="p">,</span>
+                    <span class="n">job_role_arn</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">job_role_arn</span><span class="p">,</span>
+                    <span class="n">execution_role_arn</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">execution_role_arn</span><span class="p">,</span>
+                    <span class="n">ulimits</span><span class="o">=</span><span class="n">parse_ulimits</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">ulimits</span> <span class="ow">or</span> <span class="p">[]),</span>
                 <span class="p">)</span>
             <span class="p">)</span>
             <span class="n">node_idx</span> <span class="o">+=</span> <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span>
@@ -1018,17 +1027,21 @@
                 <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="n">TAG_TORCHX_VER</span><span class="p">:</span> <span class="n">torchx</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
                     <span class="n">TAG_TORCHX_APPNAME</span><span class="p">:</span> <span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">TAG_TORCHX_USER</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">),</span>
+                    <span class="n">TAG_TORCHX_USER</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
                     <span class="o">**</span><span class="n">app</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span>
                 <span class="p">},</span>
             <span class="p">},</span>
-            <span class="o">**</span><span class="p">({</span><span class="s2">&quot;schedulingPriority&quot;</span><span class="p">:</span> <span class="n">priority</span><span class="p">}</span> <span class="k">if</span> <span class="n">share_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}),</span>
+            <span class="o">**</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;schedulingPriority&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">priority</span><span class="p">}</span>
+                <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">share_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="p">{}</span>
+            <span class="p">),</span>
         <span class="p">}</span>
 
         <span class="n">req</span> <span class="o">=</span> <span class="n">BatchJob</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
-            <span class="n">share_id</span><span class="o">=</span><span class="n">share_id</span><span class="p">,</span>
+            <span class="n">queue</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+            <span class="n">share_id</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">share_id</span><span class="p">,</span>
             <span class="n">job_def</span><span class="o">=</span><span class="n">job_def</span><span class="p">,</span>
             <span class="n">images_to_push</span><span class="o">=</span><span class="n">images_to_push</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1042,51 +1055,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;queue&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;queue to schedule job in&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">(),</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The username to tag the job with. `getpass.getuser()` if not specified.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;privileged&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If true runs the container with elevated permissions.&quot;</span>
-            <span class="s2">&quot; Equivalent to running with `docker run --privileged`.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;share_id&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The share identifier for the job. &quot;</span>
-            <span class="s2">&quot;This must be set if and only if the job queue has a scheduling policy.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;priority&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The scheduling priority for the job within the context of share_id. &quot;</span>
-            <span class="s2">&quot;Higher number (between 0 and 9999) means higher priority. &quot;</span>
-            <span class="s2">&quot;This will only take effect if the job queue has a scheduling policy.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;job_role_arn&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The Amazon Resource Name (ARN) of the IAM role that the container can assume for AWS permissions.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;execution_role_arn&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;ulimits&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">opts</span>
+        <span class="k">return</span> <span class="n">Opts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">queue</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>

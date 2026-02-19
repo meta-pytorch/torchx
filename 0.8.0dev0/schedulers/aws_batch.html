@@ -475,7 +475,7 @@ for how to create a image repository.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.aws_batch_scheduler.</span></span><span class="sig-name descname"><span class="pre">AWSBatchScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DockerClient</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchx/schedulers/aws_batch_scheduler.html#AWSBatchScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">AWSBatchOpts</span></code>]</p>
+<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Opts</span></code>]</p>
 <p>AWSBatchScheduler is a TorchX scheduling interface to AWS Batch.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>torchx<span class="o">[</span>kubernetes<span class="o">]</span>
 $<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>aws_batch<span class="w"> </span>--scheduler_args<span class="w"> </span><span class="nv">queue</span><span class="o">=</span>torchx<span class="w"> </span>utils.echo<span class="w"> </span>--image<span class="w"> </span>alpine:latest<span class="w"> </span>--msg<span class="w"> </span>hello
@@ -488,15 +488,17 @@ $<span class="w"> </span>torchx<span class="w"> </span>status<span class="w"> </
 handling.</p>
 <p><strong>Config Options</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    usage:
-        queue=QUEUE,[user=USER],[privileged=PRIVILEGED],[share_id=SHARE_ID],[priority=PRIORITY],[job_role_arn=JOB_ROLE_ARN],[execution_role_arn=EXECUTION_ROLE_ARN],[ulimits=ULIMITS],[image_repo=IMAGE_REPO],[quiet=QUIET]
+        queue=QUEUE,[user=USER],[image_repo=IMAGE_REPO],[privileged=PRIVILEGED],[share_id=SHARE_ID],[priority=PRIORITY],[job_role_arn=JOB_ROLE_ARN],[execution_role_arn=EXECUTION_ROLE_ARN],[ulimits=ULIMITS],[quiet=QUIET]
 
     required arguments:
         queue=QUEUE (str)
-            queue to schedule job in
+            Queue to schedule job in.
 
     optional arguments:
         user=USER (str, runner)
             The username to tag the job with. `getpass.getuser()` if not specified.
+        image_repo=IMAGE_REPO (str, None)
+            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
         privileged=PRIVILEGED (bool, False)
             If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`.
         share_id=SHARE_ID (str, None)
@@ -508,9 +510,7 @@ handling.</p>
         execution_role_arn=EXECUTION_ROLE_ARN (str, None)
             The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.
         ulimits=ULIMITS (list, None)
-            Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas)
-        image_repo=IMAGE_REPO (str, None)
-            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
+            Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas).
         quiet=QUIET (bool, False)
             whether to suppress verbose output for image building. Defaults to ``False``.
 </pre></div>

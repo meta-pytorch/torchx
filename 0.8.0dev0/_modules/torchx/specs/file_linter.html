@@ -647,16 +647,26 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">arg_type</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">err</span><span class="p">(</span><span class="s2">&quot;Missing type annotation&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Case 1: optional</span>
+        <span class="c1"># Case 1: Annotated - extract the actual type</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_type</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">arg_type</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">arg_type</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s2">&quot;Annotated&quot;</span>
+        <span class="p">):</span>
+            <span class="n">generic_type</span> <span class="o">=</span> <span class="n">get_generic_type</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">generic_type</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">generic_type</span><span class="o">.</span><span class="n">elts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">arg_type</span> <span class="o">=</span> <span class="n">generic_type</span><span class="o">.</span><span class="n">elts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Case 2: optional</span>
         <span class="k">if</span> <span class="n">T</span> <span class="o">:=</span> <span class="n">get_optional_type</span><span class="p">(</span><span class="n">arg_type</span><span class="p">):</span>
             <span class="c1"># NOTE: optional types can be primitives or any of the allowed container types</span>
             <span class="c1">#   so check if arg is an optional, and if so, run the rest of the validation with the unpacked type</span>
             <span class="n">arg_type</span> <span class="o">=</span> <span class="n">T</span>
 
-        <span class="c1"># Case 2: int, float, str, bool</span>
+        <span class="c1"># Case 3: int, float, str, bool</span>
         <span class="k">if</span> <span class="n">is_primitive</span><span class="p">(</span><span class="n">arg_type</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">ok</span><span class="p">()</span>
-        <span class="c1"># Case 3: Containers (Dict, List, Tuple)</span>
+        <span class="c1"># Case 4: Containers (Dict, List, Tuple)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_type</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">):</span>
             <span class="n">container_type</span> <span class="o">=</span> <span class="n">arg_type</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span>
 

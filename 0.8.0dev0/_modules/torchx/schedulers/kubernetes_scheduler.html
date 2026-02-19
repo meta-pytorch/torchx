@@ -555,10 +555,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.cli.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">BLUE</span><span class="p">,</span> <span class="n">ENDC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
     <span class="n">filter_regex</span><span class="p">,</span>
@@ -566,6 +567,7 @@
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">split_lines</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -584,6 +586,7 @@
     <span class="n">runopts</span><span class="p">,</span>
     <span class="n">VolumeMount</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">get_overlay</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.strings</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_str</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
 
@@ -608,33 +611,31 @@
 <span class="n">RESERVED_MEMMB</span> <span class="o">=</span> <span class="mi">1024</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_apply_pod_overlay</span><span class="p">(</span><span class="n">pod</span><span class="p">:</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="n">overlay</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_pod_overlay</span><span class="p">(</span>
+    <span class="n">pod</span><span class="p">:</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span>
+    <span class="n">overlay</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply overlay dict to V1Pod object, merging nested fields.</span>
 
-<span class="sd">    Merge semantics:</span>
-<span class="sd">    - dict: upsert (recursive merge)</span>
-<span class="sd">    - list: append by default, replace if tuple</span>
-<span class="sd">    - primitives: replace</span>
+<span class="sd">    Uses :py:func:`~torchx.specs.overlays.apply_overlay` with operator support:</span>
+
+<span class="sd">    - Default: dicts merge recursively, lists append, primitives overwrite.</span>
+<span class="sd">    - Use :py:func:`~torchx.specs.overlays.PUT` to replace a value entirely.</span>
+<span class="sd">    - Use :py:func:`~torchx.specs.overlays.JOIN` for strategic merge of list</span>
+<span class="sd">      items by key field.</span>
+<span class="sd">    - Use :py:func:`~torchx.specs.overlays.DEL` to remove a key.</span>
+
+<span class="sd">    .. note:: Only ``pod.spec`` and ``pod.metadata`` are updated from the</span>
+<span class="sd">        merged result. Other top-level V1Pod fields (e.g., ``apiVersion``,</span>
+<span class="sd">        ``kind``, ``status``) in the overlay are applied during merging but</span>
+<span class="sd">        not copied back to the pod object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes</span><span class="w"> </span><span class="kn">import</span> <span class="n">client</span>
 
     <span class="n">api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ApiClient</span><span class="p">()</span>
     <span class="n">pod_dict</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">sanitize_for_serialization</span><span class="p">(</span><span class="n">pod</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">overlay</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="p">(</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
-            <span class="p">):</span>
-                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-
-    <span class="n">deep_merge</span><span class="p">(</span><span class="n">pod_dict</span><span class="p">,</span> <span class="n">overlay</span><span class="p">)</span>
+    <span class="n">apply_overlay</span><span class="p">(</span><span class="n">pod_dict</span><span class="p">,</span> <span class="n">overlay</span><span class="p">)</span>
 
     <span class="n">merged_pod</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">_ApiClient__deserialize</span><span class="p">(</span><span class="n">pod_dict</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">)</span>
     <span class="n">pod</span><span class="o">.</span><span class="n">spec</span> <span class="o">=</span> <span class="n">merged_pod</span><span class="o">.</span><span class="n">spec</span>
@@ -714,6 +715,18 @@
 <span class="n">ANNOTATION_ISTIO_SIDECAR</span> <span class="o">=</span> <span class="s2">&quot;sidecar.istio.io/inject&quot;</span>
 
 <span class="n">LABEL_INSTANCE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;node.kubernetes.io/instance-type&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prefix_container_name</span><span class="p">(</span><span class="n">container_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">replica_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a prefix for a container name.</span>
+<span class="sd">    Returns empty string for default container (role_name-replica_id), name for others.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">default_container</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">role_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">replica_id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">container_name</span> <span class="o">==</span> <span class="n">default_container</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">BLUE</span><span class="si">}{</span><span class="n">container_name</span><span class="si">}{</span><span class="n">ENDC</span><span class="si">}</span><span class="s2"> &quot;</span>
+
 
 <span class="c1"># role.env translates to static env variables in the yaml</span>
 <span class="c1"># {&quot;FOO&quot; : &quot;bar&quot;}               =====&gt;      - name: FOO</span>
@@ -976,17 +989,8 @@
                 <span class="n">reserved_memmb</span><span class="p">,</span>
                 <span class="n">efa_device_count</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="k">if</span> <span class="n">k8s_metadata</span> <span class="o">:=</span> <span class="n">role</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
-
-                    <span class="k">with</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                        <span class="n">k8s_metadata</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">unsafe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;metadata[&#39;kubernetes&#39;] must be a dict or resource URI, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">k8s_metadata</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
-                <span class="n">_apply_pod_overlay</span><span class="p">(</span><span class="n">pod</span><span class="p">,</span> <span class="n">k8s_metadata</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pod_overlay</span> <span class="o">:=</span> <span class="n">get_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">):</span>
+                <span class="n">_apply_pod_overlay</span><span class="p">(</span><span class="n">pod</span><span class="p">,</span> <span class="n">pod_overlay</span><span class="p">)</span>
             <span class="n">pod</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
                 <span class="n">pod_labels</span><span class="p">(</span>
                     <span class="n">app</span><span class="o">=</span><span class="n">app</span><span class="p">,</span>
@@ -1050,19 +1054,42 @@
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">KubernetesOpts</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Opts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed configuration options for KubernetesScheduler.&quot;&quot;&quot;</span>
+
     <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">image_repo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">service_account</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">priority_class</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">validate_spec</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">reserved_millicpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">reserved_memmb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">efa_device_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Volcano queue to schedule job in.&quot;&quot;&quot;</span>
+
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kubernetes namespace to schedule job in.&quot;&quot;&quot;</span>
+
+    <span class="n">service_account</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The service account name to set on the pod specs.&quot;&quot;&quot;</span>
+
+    <span class="n">priority_class</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The name of the PriorityClass to set on the job specs.&quot;&quot;&quot;</span>
+
+    <span class="n">validate_spec</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate job spec using Kubernetes API dry-run before submission.&quot;&quot;&quot;</span>
+
+    <span class="n">reserved_millicpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">RESERVED_MILLICPU</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100).&quot;&quot;&quot;</span>
+
+    <span class="n">reserved_memmb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">RESERVED_MEMMB</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024).&quot;&quot;&quot;</span>
+
+    <span class="n">image_repo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The image repository to use when pushing patched images, must have push access.&quot;&quot;&quot;</span>
+
+    <span class="n">efa_device_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;EFA device count override: None/unset=use resource spec, 0=remove EFA, N&gt;0=set EFA count to N.&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="KubernetesScheduler"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KubernetesScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">KubernetesOpts</span><span class="p">]):</span>
+<span class="n">KubernetesOpts</span> <span class="o">=</span> <span class="n">Opts</span>
+
+
+<div class="viewcode-block" id="KubernetesScheduler"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KubernetesScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    KubernetesScheduler is a TorchX scheduling interface to Kubernetes.</span>
 
@@ -1239,9 +1266,7 @@
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">resp</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">KubernetesOpts</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">]:</span>
         <span class="n">queue</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;queue&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;config value &#39;queue&#39; must be a string, got </span><span class="si">{</span><span class="n">queue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1259,10 +1284,14 @@
             <span class="n">priority_class</span><span class="p">,</span> <span class="nb">str</span>
         <span class="p">),</span> <span class="s2">&quot;priority_class must be a str&quot;</span>
 
-        <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">,</span> <span class="n">RESERVED_MILLICPU</span><span class="p">)</span>
+        <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reserved_millicpu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">RESERVED_MILLICPU</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_millicpu</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_millicpu must be an int&quot;</span>
 
-        <span class="n">reserved_memmb</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_memmb&quot;</span><span class="p">,</span> <span class="n">RESERVED_MEMMB</span><span class="p">)</span>
+        <span class="n">reserved_memmb</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_memmb&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reserved_memmb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reserved_memmb</span> <span class="o">=</span> <span class="n">RESERVED_MEMMB</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_memmb</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_memmb must be an int&quot;</span>
 
         <span class="n">efa_device_count</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;efa_device_count&quot;</span><span class="p">)</span>
@@ -1315,7 +1344,7 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">AppDryRunInfo</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">KubernetesOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Skip validation step</span>
         <span class="k">pass</span>
 
@@ -1355,55 +1384,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;namespace&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Kubernetes namespace to schedule job in&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;queue&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Volcano queue to schedule job in&quot;</span><span class="p">,</span>
-            <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;service_account&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The service account name to set on the pod specs&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;priority_class&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The name of the PriorityClass to set on the job specs&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;validate_spec&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Validate job spec using Kubernetes API dry-run before submission&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="n">RESERVED_MILLICPU</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;reserved_memmb&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="n">RESERVED_MEMMB</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;efa_device_count&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;EFA device count override: None/unset=use resource spec, &quot;</span>
-            <span class="s2">&quot;0=remove EFA, N&gt;0=set EFA count to N&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">opts</span>
+        <span class="k">return</span> <span class="n">Opts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
 
 <div class="viewcode-block" id="KubernetesScheduler.describe"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes</span><span class="w"> </span><span class="kn">import</span> <span class="n">client</span>
@@ -1501,6 +1482,9 @@
         <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
 
         <span class="n">pod_name</span> <span class="o">=</span> <span class="n">normalize_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">role_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">-0&quot;</span><span class="p">)</span>
+        <span class="n">core_api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">CoreV1Api</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_client</span><span class="p">())</span>
+
+        <span class="n">pod</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pod_name</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">)</span>
 
         <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">pod_name</span><span class="p">,</span>
@@ -1510,21 +1494,24 @@
         <span class="k">if</span> <span class="n">since</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">args</span><span class="p">[</span><span class="s2">&quot;since_seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">since</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
 
-        <span class="n">core_api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">CoreV1Api</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_client</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">should_tail</span><span class="p">:</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">watch</span><span class="o">.</span><span class="n">Watch</span><span class="p">()</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">resp</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="n">split_lines</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="n">pod</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">containers</span><span class="p">:</span>
+            <span class="n">args</span><span class="p">[</span><span class="s2">&quot;container&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span>
 
-        <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">filter_regex</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">iterator</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">iterator</span></div>
+            <span class="k">if</span> <span class="n">should_tail</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">watch</span><span class="o">.</span><span class="n">Watch</span><span class="p">()</span>
+                <span class="n">iterator</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+                <span class="n">iterator</span> <span class="o">=</span> <span class="n">split_lines</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
+                <span class="n">iterator</span> <span class="o">=</span> <span class="n">filter_regex</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">iterator</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_container_name</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">role_name</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">)</span><span class="si">}{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 <div class="viewcode-block" id="KubernetesScheduler.list"><a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="n">active_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_active_context</span><span class="p">()</span>

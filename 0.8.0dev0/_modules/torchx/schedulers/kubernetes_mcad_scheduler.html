@@ -485,7 +485,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
@@ -496,6 +496,7 @@
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">split_lines</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -1222,18 +1223,39 @@
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">KubernetesMCADOpts</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">image_repo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">service_account</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">priority_class_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">image_secret</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">coscheduler_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">network</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Opts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed configuration options for KubernetesMCADScheduler.&quot;&quot;&quot;</span>
+
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kubernetes namespace to schedule job in.&quot;&quot;&quot;</span>
+
+    <span class="n">image_repo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The image repository to use when pushing patched images, must have push access.&quot;&quot;&quot;</span>
+
+    <span class="n">service_account</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The service account name to set on the pod specs.&quot;&quot;&quot;</span>
+
+    <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The priority level to set on the job specs. Higher integer value means higher priority.&quot;&quot;&quot;</span>
+
+    <span class="n">priority_class_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pod specific priority level. Check with your Kubernetes cluster admin if Priority classes are defined on your system.&quot;&quot;&quot;</span>
+
+    <span class="n">image_secret</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The name of the Kubernetes/OpenShift secret set up for private images.&quot;&quot;&quot;</span>
+
+    <span class="n">coscheduler_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Option to run TorchX-MCAD with a co-scheduler. User must provide the co-scheduler name.&quot;&quot;&quot;</span>
+
+    <span class="n">network</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of additional pod-to-pod network beyond default Kubernetes network.&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="KubernetesMCADScheduler"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KubernetesMCADScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">KubernetesMCADOpts</span><span class="p">]):</span>
+<span class="n">KubernetesMCADOpts</span> <span class="o">=</span> <span class="n">Opts</span>
+
+
+<div class="viewcode-block" id="KubernetesMCADScheduler"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KubernetesMCADScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    KubernetesMCADScheduler is a TorchX scheduling interface to Kubernetes.</span>
 
@@ -1407,24 +1429,26 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">resp</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">KubernetesMCADOpts</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesMCADJob</span><span class="p">]:</span>
         <span class="c1"># map any local images to the remote image</span>
         <span class="c1"># images_to_push = self._update_app_images(app, cfg.get(&quot;image_repo&quot;))</span>
         <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="n">cfg</span><span class="p">))</span>
 
         <span class="n">service_account</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service_account&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">service_account</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">service_account</span><span class="p">,</span> <span class="nb">str</span>
-        <span class="p">),</span> <span class="s2">&quot;service_account must be a str&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">service_account</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="p">),</span> <span class="s2">&quot;service_account must be a str or None&quot;</span>
 
         <span class="n">priority</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">priority</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;priority must be a int&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">priority</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="p">),</span> <span class="s2">&quot;priority must be an int or None&quot;</span>
 
         <span class="n">image_secret</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;image_secret&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">image_secret</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">image_secret</span><span class="p">,</span> <span class="nb">str</span>
-        <span class="p">),</span> <span class="s2">&quot;image_secret must be a str&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">image_secret</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="p">),</span> <span class="s2">&quot;image_secret must be a str or None&quot;</span>
 
         <span class="k">if</span> <span class="n">image_secret</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">service_account</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Service Account and Image Secret names are both provided.</span>
@@ -1436,17 +1460,17 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s2">&quot;namespace must be a str&quot;</span>
 
         <span class="n">coscheduler_name</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;coscheduler_name&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">coscheduler_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">coscheduler_name</span><span class="p">,</span> <span class="nb">str</span>
-        <span class="p">),</span> <span class="s2">&quot;coscheduler_name must be a string&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">coscheduler_name</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="p">),</span> <span class="s2">&quot;coscheduler_name must be a str or None&quot;</span>
 
         <span class="n">priority_class_name</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority_class_name&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">priority_class_name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">priority_class_name</span><span class="p">,</span> <span class="nb">str</span>
-        <span class="p">),</span> <span class="s2">&quot;priority_class_name must be a string&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">priority_class_name</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="p">),</span> <span class="s2">&quot;priority_class_name must be a str or None&quot;</span>
 
         <span class="n">network</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;network&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">network</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s2">&quot;network must be a string&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))),</span> <span class="s2">&quot;network must be a str or None&quot;</span>
 
         <span class="n">resource</span> <span class="o">=</span> <span class="n">app_to_resource</span><span class="p">(</span>
             <span class="n">app</span><span class="o">=</span><span class="n">app</span><span class="p">,</span>
@@ -1466,11 +1490,10 @@
 
         <span class="n">info</span> <span class="o">=</span> <span class="n">AppDryRunInfo</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
         <span class="n">info</span><span class="o">.</span><span class="n">_app</span> <span class="o">=</span> <span class="n">app</span>
-        <span class="c1"># pyre-fixme</span>
         <span class="n">info</span><span class="o">.</span><span class="n">_cfg</span> <span class="o">=</span> <span class="n">cfg</span>
         <span class="k">return</span> <span class="n">info</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">KubernetesMCADOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Skip validation step</span>
         <span class="k">pass</span>
 
@@ -1484,50 +1507,8 @@
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="KubernetesMCADScheduler.run_opts"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler.run_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;namespace&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Kubernetes namespace to schedule job in&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;image_repo&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The image repository to use when pushing patched images, must have push access. Ex: example.com/your/container&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;service_account&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The service account name to set on the pod specs&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;priority&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The priority level to set on the job specs. Higher integer value means higher priority&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;priority_class_name&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Pod specific priority level. Check with your Kubernetes cluster admin if Priority classes are defined on your system&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;image_secret&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The name of the Kubernetes/OpenShift secret set up for private images&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;coscheduler_name&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Option to run TorchX-MCAD with a co-scheduler. User must provide the co-scheduler name.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;network&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of additional pod-to-pod network beyond default Kubernetes network&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">opts</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Opts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
 
 <div class="viewcode-block" id="KubernetesMCADScheduler.describe"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
@@ -1625,10 +1606,14 @@
             <span class="p">)</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes</span><span class="w"> </span><span class="kn">import</span> <span class="n">client</span><span class="p">,</span> <span class="n">watch</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.kubernetes_scheduler</span><span class="w"> </span><span class="kn">import</span> <span class="n">prefix_container_name</span>
 
         <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
 
         <span class="n">pod_name</span> <span class="o">=</span> <span class="n">cleanup_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">core_api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">CoreV1Api</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_client</span><span class="p">())</span>
+
+        <span class="n">pod</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pod_name</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">)</span>
 
         <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">pod_name</span><span class="p">,</span>
@@ -1638,18 +1623,21 @@
         <span class="k">if</span> <span class="n">since</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">args</span><span class="p">[</span><span class="s2">&quot;since_seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">since</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
 
-        <span class="n">core_api</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">CoreV1Api</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api_client</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">should_tail</span><span class="p">:</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">watch</span><span class="o">.</span><span class="n">Watch</span><span class="p">()</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">resp</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
-            <span class="n">iterator</span> <span class="o">=</span> <span class="n">split_lines</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="n">pod</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">containers</span><span class="p">:</span>
+            <span class="n">args</span><span class="p">[</span><span class="s2">&quot;container&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span>
 
-        <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">filter_regex</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">iterator</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">iterator</span></div>
+            <span class="k">if</span> <span class="n">should_tail</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">watch</span><span class="o">.</span><span class="n">Watch</span><span class="p">()</span>
+                <span class="n">iterator</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">core_api</span><span class="o">.</span><span class="n">read_namespaced_pod_log</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+                <span class="n">iterator</span> <span class="o">=</span> <span class="n">split_lines</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
+                <span class="n">iterator</span> <span class="o">=</span> <span class="n">filter_regex</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">iterator</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_container_name</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">role_name</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">)</span><span class="si">}{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 <div class="viewcode-block" id="KubernetesMCADScheduler.list"><a class="viewcode-back" href="../../../schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.KubernetesMCADScheduler.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="n">active_context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_active_context</span><span class="p">()</span>

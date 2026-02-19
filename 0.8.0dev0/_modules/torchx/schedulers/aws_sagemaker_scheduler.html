@@ -457,34 +457,24 @@
 
 <span class="c1"># pyre-strict</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">getpass</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span> <span class="k">as</span> <span class="n">OrdDict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Any</span><span class="p">,</span>
-    <span class="n">Callable</span><span class="p">,</span>
-    <span class="n">cast</span><span class="p">,</span>
-    <span class="n">Iterable</span><span class="p">,</span>
-    <span class="n">Mapping</span><span class="p">,</span>
-    <span class="n">OrderedDict</span><span class="p">,</span>
-    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
-    <span class="n">TypedDict</span><span class="p">,</span>
-    <span class="n">TypeVar</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.pytorch</span><span class="w"> </span><span class="kn">import</span> <span class="n">PyTorch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.components.structured_arg</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuredNameArgument</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
     <span class="n">ListAppResponse</span><span class="p">,</span>
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">AppDryRunInfo</span><span class="p">,</span> <span class="n">AppState</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">runopts</span>
@@ -493,6 +483,11 @@
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">docker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerClient</span>  <span class="c1"># pragma: no cover</span>
+
+    <span class="c1"># pyre-fixme[21]: Could not find module `sagemaker.train`.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.train</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelTrainer</span>  <span class="c1"># pragma: no cover</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">JOB_STATE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AppState</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;InProgress&quot;</span><span class="p">:</span> <span class="n">AppState</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
@@ -503,49 +498,99 @@
 <span class="p">}</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">AWSSageMakerOpts</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Opts where we can get from .torchxconfig or user command args</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Opts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed configuration options for AWSSageMakerScheduler.&quot;&quot;&quot;</span>
 
     <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">instance_count</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.&quot;&quot;&quot;</span>
+
     <span class="n">instance_type</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">keep_alive_period_in_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">volume_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">volume_kms_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">max_run</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">input_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">output_kms_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">base_job_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
-    <span class="n">subnets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">security_group_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">model_uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">model_channel_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">metric_definitions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">encrypt_inter_container_traffic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">use_spot_instances</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">checkpoint_s3_uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">checkpoint_local_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">debugger_hook_config</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">enable_sagemaker_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">enable_network_isolation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">disable_profiler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">environment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">max_retry_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">source_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">git_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">hyperparameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">container_log_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">code_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">dependencies</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">training_repository_access_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">training_repository_credentials_provider_arn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">disable_output_compression</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">enable_infra_check</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of EC2 instance to use for training, for example, &#39;ml.c4.xlarge&#39;.&quot;&quot;&quot;</span>
+
+    <span class="n">instance_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of Amazon EC2 instances to use for training. Required if instance_groups is not set.&quot;&quot;&quot;</span>
+
+    <span class="n">keep_alive_period_in_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs.&quot;&quot;&quot;</span>
+
+    <span class="n">volume_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Size in GB of the storage volume to use for storing input and output data during training (default: 30).&quot;&quot;&quot;</span>
+
+    <span class="n">volume_kms_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;KMS key ID for encrypting EBS volume attached to the training instance.&quot;&quot;&quot;</span>
+
+    <span class="n">max_run</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Timeout in seconds for training (default: 24 * 60 * 60).&quot;&quot;&quot;</span>
+
+    <span class="n">input_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The input mode that the algorithm supports (default: &#39;File&#39;).&quot;&quot;&quot;</span>
+
+    <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket.&quot;&quot;&quot;</span>
+
+    <span class="n">output_kms_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;KMS key ID for encrypting the training output (default: Your IAM role&#39;s KMS key for Amazon S3).&quot;&quot;&quot;</span>
+
+    <span class="n">base_job_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prefix for training job name when the train() method launches. If not specified, the trainer generates a default job name based on the training image name and current timestamp.&quot;&quot;&quot;</span>
+
+    <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).&quot;&quot;&quot;</span>
+
+    <span class="n">subnets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List of subnet ids. If not specified training job will be created without VPC config.&quot;&quot;&quot;</span>
+
+    <span class="n">security_group_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List of security group ids. If not specified training job will be created without VPC config.&quot;&quot;&quot;</span>
+
+    <span class="n">metric_definitions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary that defines the metric(s) used to evaluate the training jobs. Each key is the metric name and the value is the regular expression used to extract the metric from the logs (e.g., metric_name:regex_pattern,other_metric:other_regex).&quot;&quot;&quot;</span>
+
+    <span class="n">encrypt_inter_container_traffic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Specifies whether traffic between training containers is encrypted for the training job (default: False).&quot;&quot;&quot;</span>
+
+    <span class="n">use_spot_instances</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set.&quot;&quot;&quot;</span>
+
+    <span class="n">max_wait</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Timeout in seconds waiting for spot training job.&quot;&quot;&quot;</span>
+
+    <span class="n">checkpoint_s3_uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;S3 URI in which to persist checkpoints that the algorithm persists (if any) during training.&quot;&quot;&quot;</span>
+
+    <span class="n">checkpoint_local_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Local path that the algorithm writes its checkpoints to.&quot;&quot;&quot;</span>
+
+    <span class="n">enable_network_isolation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Specifies whether container will run in network isolation mode (default: False).&quot;&quot;&quot;</span>
+
+    <span class="n">environment</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Environment variables to be set for use during training job.&quot;&quot;&quot;</span>
+
+    <span class="n">max_retry_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts.&quot;&quot;&quot;</span>
+
+    <span class="n">source_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory).&quot;&quot;&quot;</span>
+
+    <span class="n">hyperparameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary containing the hyperparameters to initialize this estimator with.&quot;&quot;&quot;</span>
+
+    <span class="n">training_repository_access_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Specifies how SageMaker accesses the Docker image that contains the training algorithm.&quot;&quot;&quot;</span>
+
+    <span class="n">training_repository_credentials_provider_arn</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Amazon Resource Name (ARN) of an AWS Lambda function that provides credentials to authenticate to the private Docker registry where your training image is hosted.&quot;&quot;&quot;</span>
+
+    <span class="n">disable_output_compression</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;When set to true, Model is uploaded to Amazon S3 without compression after training finishes.&quot;&quot;&quot;</span>
+
+    <span class="n">enable_infra_check</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Specifies whether it is running Sagemaker built-in infra check jobs.&quot;&quot;&quot;</span>
+
+
+<span class="n">AWSSageMakerOpts</span> <span class="o">=</span> <span class="n">Opts</span>
 
 
 <div class="viewcode-block" id="AWSSageMakerJob"><a class="viewcode-back" href="../../../schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerJob">[docs]</a><span class="nd">@dataclass</span>
@@ -601,9 +646,161 @@
     <span class="k">return</span> <span class="n">merged</span>
 
 
+<span class="c1"># pyre-fixme[11]: Annotation `ModelTrainer` is not defined as a type.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_model_trainer</span><span class="p">(</span><span class="n">job_def</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;ModelTrainer&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a ModelTrainer from a serializable job_def dict.&quot;&quot;&quot;</span>
+    <span class="c1"># Lazy imports: sagemaker v3 modules are unavailable in fbcode third-party</span>
+    <span class="c1"># (which bundles sagemaker v2). This scheduler is OSS-only, so we defer</span>
+    <span class="c1"># the imports to runtime when actually building a trainer.</span>
+    <span class="c1"># pyre-fixme[21]: Could not find module `sagemaker.core.shapes.shapes`.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.core.shapes.shapes</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">CheckpointConfig</span><span class="p">,</span>
+        <span class="n">InfraCheckConfig</span><span class="p">,</span>
+        <span class="n">MetricDefinition</span><span class="p">,</span>
+        <span class="n">OutputDataConfig</span><span class="p">,</span>
+        <span class="n">RetryStrategy</span><span class="p">,</span>
+        <span class="n">StoppingCondition</span><span class="p">,</span>
+        <span class="n">Tag</span><span class="p">,</span>
+        <span class="n">TrainingImageConfig</span><span class="p">,</span>
+        <span class="n">TrainingRepositoryAuthConfig</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># pyre-fixme[21]: Could not find module `sagemaker.core.training.configs`.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.core.training.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Compute</span><span class="p">,</span> <span class="n">Networking</span><span class="p">,</span> <span class="n">SourceCode</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.train</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelTrainer</span>
+
+    <span class="c1"># pyre-fixme[21]: Could not find module `sagemaker.train.distributed`.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sagemaker.train.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">Torchrun</span>
+
+    <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Required fields</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;training_image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;training_image&quot;</span><span class="p">]</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;role&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span>
+
+    <span class="c1"># SourceCode</span>
+    <span class="n">source_code_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_code&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">source_code_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;source_code&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SourceCode</span><span class="p">(</span>
+            <span class="n">entry_script</span><span class="o">=</span><span class="n">source_code_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entry_script&quot;</span><span class="p">),</span>
+            <span class="n">source_dir</span><span class="o">=</span><span class="n">source_code_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_dir&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Compute</span>
+    <span class="n">compute_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compute&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">compute_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;compute&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Compute</span><span class="p">(</span>
+            <span class="n">instance_type</span><span class="o">=</span><span class="n">compute_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instance_type&quot;</span><span class="p">),</span>
+            <span class="n">instance_count</span><span class="o">=</span><span class="n">compute_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instance_count&quot;</span><span class="p">),</span>
+            <span class="n">volume_size_in_gb</span><span class="o">=</span><span class="n">compute_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volume_size_in_gb&quot;</span><span class="p">),</span>
+            <span class="n">volume_kms_key_id</span><span class="o">=</span><span class="n">compute_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volume_kms_key_id&quot;</span><span class="p">),</span>
+            <span class="n">keep_alive_period_in_seconds</span><span class="o">=</span><span class="n">compute_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;keep_alive_period_in_seconds&quot;</span>
+            <span class="p">),</span>
+            <span class="n">enable_managed_spot_training</span><span class="o">=</span><span class="n">compute_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;enable_managed_spot_training&quot;</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Distributed</span>
+    <span class="k">if</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;distributed&quot;</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;distributed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Torchrun</span><span class="p">()</span>
+
+    <span class="c1"># Networking</span>
+    <span class="n">networking_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;networking&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">networking_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;networking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Networking</span><span class="p">(</span>
+            <span class="n">subnets</span><span class="o">=</span><span class="n">networking_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subnets&quot;</span><span class="p">),</span>
+            <span class="n">security_group_ids</span><span class="o">=</span><span class="n">networking_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;security_group_ids&quot;</span><span class="p">),</span>
+            <span class="n">enable_network_isolation</span><span class="o">=</span><span class="n">networking_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_network_isolation&quot;</span><span class="p">),</span>
+            <span class="n">enable_inter_container_traffic_encryption</span><span class="o">=</span><span class="n">networking_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;enable_inter_container_traffic_encryption&quot;</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># StoppingCondition</span>
+    <span class="n">stopping_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stopping_condition&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stopping_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;stopping_condition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">StoppingCondition</span><span class="p">(</span>
+            <span class="n">max_runtime_in_seconds</span><span class="o">=</span><span class="n">stopping_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_runtime_in_seconds&quot;</span><span class="p">),</span>
+            <span class="n">max_wait_time_in_seconds</span><span class="o">=</span><span class="n">stopping_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_wait_time_in_seconds&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># OutputDataConfig</span>
+    <span class="n">output_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_data_config&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">output_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;output_data_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">OutputDataConfig</span><span class="p">(</span>
+            <span class="n">s3_output_path</span><span class="o">=</span><span class="n">output_def</span><span class="p">[</span><span class="s2">&quot;s3_output_path&quot;</span><span class="p">],</span>
+            <span class="n">kms_key_id</span><span class="o">=</span><span class="n">output_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kms_key_id&quot;</span><span class="p">),</span>
+            <span class="n">compression_type</span><span class="o">=</span><span class="n">output_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;compression_type&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># CheckpointConfig</span>
+    <span class="n">checkpoint_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checkpoint_config&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">checkpoint_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;checkpoint_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CheckpointConfig</span><span class="p">(</span>
+            <span class="n">s3_uri</span><span class="o">=</span><span class="n">checkpoint_def</span><span class="p">[</span><span class="s2">&quot;s3_uri&quot;</span><span class="p">],</span>
+            <span class="n">local_path</span><span class="o">=</span><span class="n">checkpoint_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;local_path&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="c1"># TrainingImageConfig</span>
+    <span class="n">image_config_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_image_config&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">image_config_def</span><span class="p">:</span>
+        <span class="n">auth_config</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">auth_arn</span> <span class="o">=</span> <span class="n">image_config_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_repository_auth_config_arn&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">auth_arn</span><span class="p">:</span>
+            <span class="n">auth_config</span> <span class="o">=</span> <span class="n">TrainingRepositoryAuthConfig</span><span class="p">(</span>
+                <span class="n">training_repository_credentials_provider_arn</span><span class="o">=</span><span class="n">auth_arn</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;training_image_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TrainingImageConfig</span><span class="p">(</span>
+            <span class="n">training_repository_access_mode</span><span class="o">=</span><span class="n">image_config_def</span><span class="p">[</span>
+                <span class="s2">&quot;training_repository_access_mode&quot;</span>
+            <span class="p">],</span>
+            <span class="n">training_repository_auth_config</span><span class="o">=</span><span class="n">auth_config</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Simple pass-through fields</span>
+    <span class="k">if</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_input_mode&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;training_input_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;training_input_mode&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;environment&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;environment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;environment&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_job_name&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;base_job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;base_job_name&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Tags</span>
+    <span class="n">tags_def</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tags&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tags_def</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Tag</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tags_def</span><span class="p">]</span>
+
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">ModelTrainer</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Post-construction configuration via builder methods</span>
+    <span class="n">metric_defs</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metric_definitions&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">metric_defs</span><span class="p">:</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">with_metric_definitions</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">MetricDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="n">regex</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">regex</span> <span class="ow">in</span> <span class="n">metric_defs</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="n">retry_attempts</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_retry_attempts&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">retry_attempts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">with_retry_strategy</span><span class="p">(</span>
+            <span class="n">RetryStrategy</span><span class="p">(</span><span class="n">maximum_retry_attempts</span><span class="o">=</span><span class="n">retry_attempts</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">enable_infra_check</span> <span class="o">=</span> <span class="n">job_def</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_infra_check&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">enable_infra_check</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">with_infra_check_config</span><span class="p">(</span>
+            <span class="n">InfraCheckConfig</span><span class="p">(</span><span class="n">enable_infra_check</span><span class="o">=</span><span class="n">enable_infra_check</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trainer</span>
+
+
 <div class="viewcode-block" id="AWSSageMakerScheduler"><a class="viewcode-back" href="../../../schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AWSSageMakerScheduler</span><span class="p">(</span>
     <span class="n">DockerWorkspaceMixin</span><span class="p">,</span>
-    <span class="n">Scheduler</span><span class="p">[</span><span class="n">AWSSageMakerOpts</span><span class="p">],</span>
+    <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    AWSSageMakerScheduler is a TorchX scheduling interface to AWS SageMaker.</span>
@@ -664,19 +861,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">push_images</span><span class="p">(</span><span class="n">images_to_push</span><span class="p">)</span>
 
         <span class="n">req</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
-        <span class="n">pt_estimator</span> <span class="o">=</span> <span class="n">PyTorch</span><span class="p">(</span><span class="o">**</span><span class="n">req</span><span class="o">.</span><span class="n">job_def</span><span class="p">)</span>
-        <span class="n">pt_estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">job_name</span><span class="p">)</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">_build_model_trainer</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">job_def</span><span class="p">)</span>
+        <span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
+        <span class="c1"># ModelTrainer generates the actual job name from base_job_name + timestamp.</span>
+        <span class="c1"># Read back the real name so describe()/cancel() work correctly.</span>
+        <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">_latest_training_job</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">trainer</span><span class="o">.</span><span class="n">_latest_training_job</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">req</span><span class="o">.</span><span class="n">job_name</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">AWSSageMakerOpts</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">AWSSageMakerJob</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">AWSSageMakerJob</span><span class="p">]:</span>
         <span class="n">role</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">entrypoint</span><span class="p">,</span> <span class="n">hyperparameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_args</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
 
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">Opts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
         <span class="c1"># map any local images to the remote image</span>
-        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="n">cfg</span><span class="p">))</span>
+        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
         <span class="n">structured_name_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">entrypoint</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;-m&quot;</span><span class="p">):</span>
             <span class="n">structured_name_kwargs</span><span class="p">[</span><span class="s2">&quot;m&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entrypoint</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -689,42 +890,171 @@
 
         <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;TORCHX_JOB_ID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_name</span>
 
-        <span class="c1"># see https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase</span>
+        <span class="c1"># Merge environment and hyperparameters with role values</span>
+        <span class="n">env_val</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;environment&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">env_val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">env_val</span><span class="p">,</span> <span class="nb">dict</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected environment to be a dict or None, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">env_val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">merged_env</span> <span class="o">=</span> <span class="n">_merge_ordered</span><span class="p">(</span><span class="n">env_val</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">)</span>
+
+        <span class="n">hp_val</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">hp_val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">hp_val</span><span class="p">,</span> <span class="nb">dict</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected hyperparameters to be a dict or None, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">hp_val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">merged_hp</span> <span class="o">=</span> <span class="n">_merge_ordered</span><span class="p">(</span><span class="n">hp_val</span><span class="p">,</span> <span class="n">hyperparameters</span><span class="p">)</span>
+
+        <span class="n">source_dir_val</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_dir&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">source_dir_val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">source_dir_val</span><span class="p">,</span> <span class="nb">str</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected source_dir to be a str or None, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">source_dir_val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">resolved_source_dir</span> <span class="o">=</span> <span class="n">source_dir_val</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+        <span class="c1"># Build structured job_def for ModelTrainer</span>
         <span class="n">job_def</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;entry_point&quot;</span><span class="p">:</span> <span class="n">entrypoint</span><span class="p">,</span>
-            <span class="s2">&quot;image_uri&quot;</span><span class="p">:</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span>
-            <span class="s2">&quot;distribution&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;torch_distributed&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}},</span>
+            <span class="s2">&quot;training_image&quot;</span><span class="p">:</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span>
+            <span class="s2">&quot;source_code&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;entry_script&quot;</span><span class="p">:</span> <span class="n">entrypoint</span><span class="p">,</span>
+                <span class="s2">&quot;source_dir&quot;</span><span class="p">:</span> <span class="n">resolved_source_dir</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="c1"># Torchrun distribution is always enabled, matching the v2 behavior</span>
+            <span class="c1"># (distribution={&quot;torch_distributed&quot;: {&quot;enabled&quot;: True}}). Even for</span>
+            <span class="c1"># single-instance jobs, the entrypoint is launched via torchrun.</span>
+            <span class="s2">&quot;distributed&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;environment&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">merged_env</span><span class="p">),</span>
+            <span class="s2">&quot;hyperparameters&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">merged_hp</span><span class="p">),</span>
         <span class="p">}</span>
 
-        <span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;environment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_merge_ordered</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;environment&quot;</span><span class="p">),</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">)</span>
-        <span class="c1"># hyperparameters are used for both script/module entrypoint args and the values from .torchxconfig</span>
-        <span class="c1"># order matters, adding script args last to handle wildcard parameters</span>
-        <span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_merge_ordered</span><span class="p">(</span>
-            <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">),</span> <span class="n">hyperparameters</span>
-        <span class="p">)</span>
-        <span class="c1"># following the principle of least astonishment defaulting source_dir to current working directory</span>
+        <span class="c1"># Compute config</span>
+        <span class="n">compute</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;instance_type&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instance_type&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;instance_count&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;instance_count&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="n">volume_size</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volume_size&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">volume_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compute</span><span class="p">[</span><span class="s2">&quot;volume_size_in_gb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">volume_size</span>
+        <span class="n">volume_kms_key</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;volume_kms_key&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">volume_kms_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compute</span><span class="p">[</span><span class="s2">&quot;volume_kms_key_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">volume_kms_key</span>
+        <span class="n">keep_alive</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;keep_alive_period_in_seconds&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep_alive</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compute</span><span class="p">[</span><span class="s2">&quot;keep_alive_period_in_seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">keep_alive</span>
+        <span class="n">use_spot</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_spot_instances&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_spot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compute</span><span class="p">[</span><span class="s2">&quot;enable_managed_spot_training&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">use_spot</span>
+        <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;compute&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute</span>
 
-        <span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;source_dir&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_dir&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="c1"># Role</span>
+        <span class="n">role_arn</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;role&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">role_arn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;role&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">role_arn</span>
 
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span>
-                <span class="c1"># tags are used for AppDef metadata and the values from .torchxconfig</span>
-                <span class="c1"># Convert dict[str, str] to SageMaker&#39;s list[dict[str, str]] format</span>
-                <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="o">*</span><span class="p">(</span>
-                        <span class="p">{</span><span class="s2">&quot;Key&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span>
-                        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tags&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-                    <span class="p">),</span>
-                    <span class="o">*</span><span class="p">({</span><span class="s2">&quot;Key&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
-                <span class="p">]</span>
+        <span class="c1"># Networking config</span>
+        <span class="n">networking</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">subnets</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subnets&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">subnets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">networking</span><span class="p">[</span><span class="s2">&quot;subnets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">subnets</span>
+        <span class="n">sg_ids</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;security_group_ids&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sg_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">networking</span><span class="p">[</span><span class="s2">&quot;security_group_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sg_ids</span>
+        <span class="n">net_isolation</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_network_isolation&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">net_isolation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">networking</span><span class="p">[</span><span class="s2">&quot;enable_network_isolation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">net_isolation</span>
+        <span class="n">encrypt_traffic</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;encrypt_inter_container_traffic&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">encrypt_traffic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">networking</span><span class="p">[</span><span class="s2">&quot;enable_inter_container_traffic_encryption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encrypt_traffic</span>
+        <span class="k">if</span> <span class="n">networking</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;networking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">networking</span>
+
+        <span class="c1"># Stopping condition</span>
+        <span class="n">stopping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">max_run</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_run&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stopping</span><span class="p">[</span><span class="s2">&quot;max_runtime_in_seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_run</span>
+        <span class="n">max_wait</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_wait&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_wait</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">stopping</span><span class="p">[</span><span class="s2">&quot;max_wait_time_in_seconds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_wait</span>
+        <span class="k">if</span> <span class="n">stopping</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;stopping_condition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stopping</span>
+
+        <span class="c1"># Output data config</span>
+        <span class="n">output_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_path&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_data</span><span class="p">[</span><span class="s2">&quot;s3_output_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_path</span>
+        <span class="n">output_kms</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output_kms_key&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_kms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_data</span><span class="p">[</span><span class="s2">&quot;kms_key_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_kms</span>
+        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;disable_output_compression&quot;</span><span class="p">):</span>
+            <span class="n">output_data</span><span class="p">[</span><span class="s2">&quot;compression_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;NONE&quot;</span>
+        <span class="k">if</span> <span class="n">output_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;s3_output_path&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_data</span><span class="p">:</span>
+                <span class="c1"># s3_output_path is required by OutputDataConfig; skip config</span>
+                <span class="c1"># and warn instead of passing an empty string</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;`output_kms_key` or `disable_output_compression` set without&quot;</span>
+                    <span class="s2">&quot; `output_path`; ignoring output data config&quot;</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">job_def</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> is controlled by aws_sagemaker_scheduler and is set to </span><span class="si">{</span><span class="n">job_def</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
-                <span class="n">value</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">job_def</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>  <span class="c1"># type: ignore</span>
+                <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;output_data_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_data</span>
+
+        <span class="c1"># Checkpoint config</span>
+        <span class="n">ckpt_s3</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checkpoint_s3_uri&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ckpt_s3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">checkpoint</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;s3_uri&quot;</span><span class="p">:</span> <span class="n">ckpt_s3</span><span class="p">}</span>
+            <span class="n">ckpt_local</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checkpoint_local_path&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ckpt_local</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;local_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ckpt_local</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;checkpoint_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checkpoint</span>
+
+        <span class="c1"># Training image config</span>
+        <span class="n">repo_access_mode</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_repository_access_mode&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">repo_access_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;training_repository_access_mode&quot;</span><span class="p">:</span> <span class="n">repo_access_mode</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">repo_creds_arn</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training_repository_credentials_provider_arn&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">repo_creds_arn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">image_config</span><span class="p">[</span><span class="s2">&quot;training_repository_auth_config_arn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">repo_creds_arn</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;training_image_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_config</span>
+
+        <span class="c1"># Training input mode</span>
+        <span class="n">input_mode</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input_mode&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">input_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;training_input_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_mode</span>
+
+        <span class="c1"># Base job name: use cfg override or TorchX-generated name</span>
+        <span class="n">base_job_name</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_job_name&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">job_name</span>
+        <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;base_job_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_job_name</span>
+
+        <span class="c1"># Tags: convert dict[str, str] to list of {key, value} dicts</span>
+        <span class="n">tags_val</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tags&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">tags_val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">tags_val</span><span class="p">,</span> <span class="nb">dict</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected tags to be a dict or None, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">tags_val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">tag_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="o">*</span><span class="p">({</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tags_val</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
+            <span class="o">*</span><span class="p">({</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">tag_list</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tag_list</span>
+
+        <span class="c1"># Metric definitions: stored as list of [name, regex] pairs</span>
+        <span class="n">metric_defs</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metric_definitions&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">metric_defs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">metric_defs</span><span class="p">,</span> <span class="nb">dict</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected metric_definitions to be a dict or None, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">metric_defs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;metric_definitions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">metric_defs</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+
+        <span class="c1"># Retry strategy</span>
+        <span class="n">retry_attempts</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_retry_attempts&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">retry_attempts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;max_retry_attempts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">retry_attempts</span>
+
+        <span class="c1"># Infra check</span>
+        <span class="n">infra_check</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enable_infra_check&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">infra_check</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">job_def</span><span class="p">[</span><span class="s2">&quot;enable_infra_check&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">infra_check</span>
 
         <span class="n">req</span> <span class="o">=</span> <span class="n">AWSSageMakerJob</span><span class="p">(</span>
             <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">,</span>
@@ -764,247 +1094,7 @@
         <span class="k">return</span> <span class="n">entrypoint</span><span class="p">,</span> <span class="n">hyperparameters</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;role&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;an AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.&quot;</span><span class="p">,</span>
-            <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;instance_count&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;number of Amazon EC2 instances to use for training. Required if instance_groups is not set.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;instance_type&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;type of EC2 instance to use for training, for example, &#39;ml.c4.xlarge&#39;&quot;</span><span class="p">,</span>
-            <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="n">getpass</span><span class="o">.</span><span class="n">getuser</span><span class="p">(),</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the username to tag the job with. `getpass.getuser()` if not specified.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;keep_alive_period_in_seconds&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;volume_size&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;size in GB of the storage volume to use for storing input and output data during training (default: 30).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;volume_kms_key&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;KMS key ID for encrypting EBS volume attached to the training instance.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;max_run&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;timeout in seconds for training (default: 24 * 60 * 60).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;input_mode&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the input mode that the algorithm supports (default: ‘File’).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;output_path&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket. If the bucket with the specific name does not exist, the estimator creates the bucket during the fit() method execution.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;output_kms_key&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;KMS key ID for encrypting the training output (default: Your IAM role’s KMS key for Amazon S3).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;base_job_name&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;prefix for training job name when the fit() method launches. If not specified, the estimator generates a default job name based on the training image name and current timestamp.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;tags&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;subnets&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;list of subnet ids. If not specified training job will be created without VPC config.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;security_group_ids&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;list of security group ids. If not specified training job will be created without VPC config.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;model_uri&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;URI where a pre-trained model is stored, either locally or in S3.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;model_channel_name&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;name of the channel where ‘model_uri’ will be downloaded (default: ‘model’).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;metric_definitions&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="p">(</span>
-                <span class="s2">&quot;dictionary that defines the metric(s) used to evaluate the &quot;</span>
-                <span class="s2">&quot;training jobs. Each key is the metric name and the value is the &quot;</span>
-                <span class="s2">&quot;regular expression used to extract the metric from the logs &quot;</span>
-                <span class="s2">&quot;(e.g., metric_name:regex_pattern,other_metric:other_regex).&quot;</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;encrypt_inter_container_traffic&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;specifies whether traffic between training containers is encrypted for the training job (default: False).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;use_spot_instances&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;max_wait&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;timeout in seconds waiting for spot training job.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;checkpoint_s3_uri&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;S3 URI in which to persist checkpoints that the algorithm persists (if any) during training.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;checkpoint_local_path&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;local path that the algorithm writes its checkpoints to.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;debugger_hook_config&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;configuration for how debugging information is emitted with SageMaker Debugger. If not specified, a default one is created using the estimator’s output_path, unless the region does not support SageMaker Debugger. To disable SageMaker Debugger, set this parameter to False.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;enable_sagemaker_metrics&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;enable SageMaker Metrics Time Series.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;enable_network_isolation&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;specifies whether container will run in network isolation mode (default: False).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;disable_profiler&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;specifies whether Debugger monitoring and profiling will be disabled (default: False).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;environment&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;environment variables to be set for use during training job&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;max_retry_attempts&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;source_dir&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory)&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;git_config&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;git configurations used for cloning files, including repo, branch, commit, 2FA_enabled, username, password, and token.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;hyperparameters&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;dictionary containing the hyperparameters to initialize this estimator with.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;container_log_level&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;log level to use within the container (default: logging.INFO).&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;code_location&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;S3 prefix URI where custom code is uploaded.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;dependencies&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;list of absolute or relative paths to directories with any additional libraries that should be exported to the container.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;training_repository_access_mode&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;specifies how SageMaker accesses the Docker image that contains the training algorithm.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;training_repository_credentials_provider_arn&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Amazon Resource Name (ARN) of an AWS Lambda function that provides credentials to authenticate to the private Docker registry where your training image is hosted.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;disable_output_compression&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;when set to true, Model is uploaded to Amazon S3 without compression after training finishes.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;enable_infra_check&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;specifies whether it is running Sagemaker built-in infra check jobs.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">opts</span>
+        <span class="k">return</span> <span class="n">Opts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
 
 <div class="viewcode-block" id="AWSSageMakerScheduler.describe"><a class="viewcode-back" href="../../../schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>

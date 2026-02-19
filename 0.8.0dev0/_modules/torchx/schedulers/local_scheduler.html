@@ -479,16 +479,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrameType</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Any</span><span class="p">,</span>
-    <span class="n">BinaryIO</span><span class="p">,</span>
-    <span class="n">Callable</span><span class="p">,</span>
-    <span class="n">Iterable</span><span class="p">,</span>
-    <span class="n">Mapping</span><span class="p">,</span>
-    <span class="n">Protocol</span><span class="p">,</span>
-    <span class="n">TextIO</span><span class="p">,</span>
-    <span class="n">TypedDict</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">BinaryIO</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">TextIO</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
@@ -497,6 +488,7 @@
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">split_lines_iterator</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.streams</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tee</span>
@@ -632,10 +624,33 @@
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">img_root</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">entrypoint</span><span class="p">)</span></div></div>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">LocalOpts</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">prepend_cwd</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">auto_set_cuda_visible_devices</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Opts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed configuration options for LocalScheduler.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        .. doctest::</span>
+
+<span class="sd">            &gt;&gt;&gt; from torchx.schedulers.local_scheduler import Opts</span>
+<span class="sd">            &gt;&gt;&gt; opts = Opts(log_dir=&quot;/tmp/logs&quot;, prepend_cwd=True)</span>
+<span class="sd">            &gt;&gt;&gt; opts[&quot;log_dir&quot;]</span>
+<span class="sd">            &#39;/tmp/logs&#39;</span>
+<span class="sd">            &gt;&gt;&gt; opts[&quot;prepend_cwd&quot;]</span>
+<span class="sd">            True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Directory to write stdout/stderr log files of replicas.&quot;&quot;&quot;</span>
+
+    <span class="n">prepend_cwd</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If set, prepends CWD to replica&#39;s PATH env var making binaries in CWD take precedence.&quot;&quot;&quot;</span>
+
+    <span class="n">auto_set_cuda_visible_devices</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets CUDA_VISIBLE_DEVICES for roles that request GPU resources.&quot;&quot;&quot;</span>
+
+
+<span class="c1"># Type alias for backwards compatibility with existing code</span>
+<span class="n">LocalOpts</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="LocalDirectoryImageProvider"><a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalDirectoryImageProvider">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">LocalDirectoryImageProvider</span><span class="p">(</span><span class="n">ImageProvider</span><span class="p">):</span>
@@ -797,7 +812,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
-        <span class="c1"># cfg.get(&quot;log_dir&quot;)/&lt;session_name&gt;/&lt;app_id&gt; or /tmp/torchx/&lt;session_name&gt;/&lt;app_id&gt;</span>
+        <span class="c1"># opts.log_dir/&lt;session_name&gt;/&lt;app_id&gt; or /tmp/torchx/&lt;session_name&gt;/&lt;app_id&gt;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span> <span class="o">=</span> <span class="n">log_dir</span>
         <span class="c1"># role name -&gt; [replicas, ...]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">role_replicas</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">RoleName</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">_LocalReplica</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1062,30 +1077,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_created_tmp_log_dir</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;log_dir&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;dir to write stdout/stderr log files of replicas&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;prepend_cwd&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, prepends CWD to replica&#39;s PATH env var&quot;</span>
-            <span class="s2">&quot; making any binaries in CWD take precedence over those in PATH&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;auto_set_cuda_visible_devices&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;sets the `CUDA_AVAILABLE_DEVICES` for roles that request GPU resources.&quot;</span>
-            <span class="s2">&quot; Each role replica will be assigned one GPU. Does nothing if the device count is less than replicas.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">opts</span>
+        <span class="k">return</span> <span class="n">Opts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">LocalOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Skip validation step for local application</span>
         <span class="k">pass</span>
 
@@ -1226,16 +1220,16 @@
 
         <span class="k">return</span> <span class="n">env</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_app_log_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">LocalOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_app_log_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the log dir. We redirect stdout/err</span>
-<span class="sd">        to a log file ONLY if the log_dir is user-provided in the cfg</span>
+<span class="sd">        to a log file ONLY if the log_dir is user-provided in the cfg.</span>
 
-<span class="sd">        1. if cfg.get(&quot;log_dir&quot;) -&gt; (user-specified log dir, True)</span>
-<span class="sd">        2. if not cfg.get(&quot;log_dir&quot;) -&gt; (autogen tmp log dir, False)</span>
+<span class="sd">        1. if cfg.log_dir -&gt; (user-specified log dir, True)</span>
+<span class="sd">        2. if not cfg.log_dir -&gt; (autogen tmp log dir, False)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_dir&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">log_dir</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;torchx_&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_created_tmp_log_dir</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1312,7 +1306,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">role_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReplicaParam</span><span class="p">]],</span>
         <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
-        <span class="n">cfg</span><span class="p">:</span> <span class="n">LocalOpts</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        If the run option ``auto_set_cuda_visible_devices = True``, then</span>
@@ -1353,7 +1347,7 @@
             <span class="n">gpus</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">*</span> <span class="n">role</span><span class="o">.</span><span class="n">resource</span><span class="o">.</span><span class="n">gpu</span>
             <span class="n">total_requested_gpus</span> <span class="o">+=</span> <span class="n">gpus</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;auto_set_cuda_visible_devices&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">total_requested_gpus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">auto_set_cuda_visible_devices</span> <span class="ow">or</span> <span class="n">total_requested_gpus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">total_requested_gpus</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
 <span class="w">                    </span><span class="sd">&quot;&quot;&quot;\n</span>
@@ -1408,10 +1402,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts the application and cfg into a ``PopenRequest``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert to typed Opts for attribute access; keep original cfg for image_provider</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">cfg</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">Opts</span><span class="p">)</span> <span class="k">else</span> <span class="n">Opts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
         <span class="n">app_id</span> <span class="o">=</span> <span class="n">make_unique</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="n">image_provider</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image_provider_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-        <span class="n">app_log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_app_log_dir</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="n">app_log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_app_log_dir</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
 
         <span class="n">role_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReplicaParam</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">role_log_dirs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1431,9 +1427,7 @@
                 <span class="c1"># making binaries in cwd take precedence to those in PATH</span>
                 <span class="c1"># otherwise append cwd to PATH so that the binaries in PATH</span>
                 <span class="c1"># precede over those in cwd</span>
-                <span class="n">prepend_cwd</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prepend_cwd&quot;</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">prepend_cwd</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">prepend_cwd</span><span class="p">:</span>
                     <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">),</span> <span class="n">cwd</span><span class="p">)</span>
@@ -1474,7 +1468,7 @@
                     <span class="p">)</span>
                 <span class="p">)</span>
                 <span class="n">replica_log_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">replica_log_dir</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_CUDA_VISIBLE_DEVICES</span><span class="p">(</span><span class="n">role_params</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_CUDA_VISIBLE_DEVICES</span><span class="p">(</span><span class="n">role_params</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">PopenRequest</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">app_log_dir</span><span class="p">,</span> <span class="n">role_params</span><span class="p">,</span> <span class="n">role_log_dirs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LocalScheduler.describe"><a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>

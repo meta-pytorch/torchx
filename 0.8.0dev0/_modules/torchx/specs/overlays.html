@@ -457,103 +457,662 @@
 <span class="c1"># pyre-strict</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Overlays are JSON structs applied to :py:class:`~torchx.specs.AppDef` and :py:class:`~torchx.specs.Role`</span>
-<span class="sd">to specify attributes of the scheduler&#39;s submit-job request that are not currently representable</span>
-<span class="sd">as attributes of :py:class:`~torchx.specs.AppDef` and :py:class:`~torchx.specs.Role`.</span>
+<span class="sd">Overlays patch the scheduler&#39;s submit-job request with fields not representable</span>
+<span class="sd">in :py:class:`~torchx.specs.AppDef` or :py:class:`~torchx.specs.Role`.</span>
 
-<span class="sd">For end-uses, here are a few use-cases of overlays:</span>
+<span class="sd">Use :py:func:`set_overlay` / :py:func:`get_overlay` to store and retrieve overlays,</span>
+<span class="sd">and :py:func:`apply_overlay` to apply them.</span>
 
-<span class="sd">1. A new version of the scheduler has concepts/features that have not yet been added to TorchX.</span>
-<span class="sd">2. A bespoke internal scheduler has custom features that do not generalize hence not in TorchX.</span>
-<span class="sd">3. Re-using a pre-built ``AppDef`` but need to make a small change to the resulting scheduler request.</span>
+<span class="sd">For Users</span>
+<span class="sd">---------</span>
 
-<span class="sd">And for scheduler authors:</span>
+<span class="sd">Use :py:func:`set_overlay` to attach scheduler-specific fields to a</span>
+<span class="sd">:py:class:`~torchx.specs.Role` or :py:class:`~torchx.specs.AppDef`:</span>
 
-<span class="sd">1. Scheduler setting needs to be applied to a ``Role``, which makes it hard to add as ``runopts``</span>
-<span class="sd">   since ``runopts`` apply at the ``AppDef`` level.</span>
-<span class="sd">2. Scheduler setting cannot be represented naturally as the types supported by ``runopts``.</span>
-<span class="sd">3. Exposing the setting as a ``runopts`` obfuscates things.</span>
+<span class="sd">.. doctest::</span>
 
-<span class="sd">See :py:func:`~torchx.specs.overlays.apply_overlay` for rules on how overlays are applied.</span>
+<span class="sd">    &gt;&gt;&gt; from torchx.specs import Role</span>
+<span class="sd">    &gt;&gt;&gt; from torchx.specs.overlays import set_overlay, get_overlay</span>
+
+<span class="sd">    &gt;&gt;&gt; # Kubernetes: add a node selector to a role</span>
+<span class="sd">    &gt;&gt;&gt; role = Role(name=&quot;trainer&quot;, image=&quot;my-image&quot;, entrypoint=&quot;train.py&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; set_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;, {</span>
+<span class="sd">    ...     &quot;spec&quot;: {&quot;nodeSelector&quot;: {&quot;accelerator&quot;: &quot;a100&quot;}},</span>
+<span class="sd">    ... })</span>
+
+<span class="sd">    &gt;&gt;&gt; # Multiple set_overlay calls merge (dicts upsert, lists append)</span>
+<span class="sd">    &gt;&gt;&gt; set_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;, {</span>
+<span class="sd">    ...     &quot;spec&quot;: {&quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;, &quot;operator&quot;: &quot;Exists&quot;}]},</span>
+<span class="sd">    ... })</span>
+<span class="sd">    &gt;&gt;&gt; get_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;)</span>
+<span class="sd">    {&#39;spec&#39;: {&#39;nodeSelector&#39;: {&#39;accelerator&#39;: &#39;a100&#39;}, &#39;tolerations&#39;: [{&#39;key&#39;: &#39;gpu&#39;, &#39;operator&#39;: &#39;Exists&#39;}]}}</span>
+
+<span class="sd">Operators</span>
+<span class="sd">~~~~~~~~~</span>
+
+<span class="sd">By default, :py:func:`set_overlay` merges dicts and appends lists. Use</span>
+<span class="sd">:py:func:`PUT`, :py:func:`JOIN`, and :py:func:`DEL` as dict keys to override</span>
+<span class="sd">per-field behavior:</span>
+
+<span class="sd">.. doctest::</span>
+
+<span class="sd">    &gt;&gt;&gt; from torchx.specs import Role</span>
+<span class="sd">    &gt;&gt;&gt; from torchx.specs.overlays import set_overlay, PUT, JOIN, DEL</span>
+
+<span class="sd">    &gt;&gt;&gt; role = Role(name=&quot;trainer&quot;, image=&quot;my-image&quot;, entrypoint=&quot;train.py&quot;)</span>
+
+<span class="sd">    &gt;&gt;&gt; # PUT: replace a list instead of appending</span>
+<span class="sd">    &gt;&gt;&gt; set_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;, {</span>
+<span class="sd">    ...     &quot;spec&quot;: {PUT(&quot;containers&quot;): [{&quot;name&quot;: &quot;only&quot;}]},</span>
+<span class="sd">    ... })</span>
+
+<span class="sd">    &gt;&gt;&gt; # JOIN: strategic merge list items by key field</span>
+<span class="sd">    &gt;&gt;&gt; set_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;, {</span>
+<span class="sd">    ...     &quot;spec&quot;: {JOIN(&quot;initContainers&quot;, on=&quot;name&quot;): [</span>
+<span class="sd">    ...         {&quot;name&quot;: &quot;setup&quot;, &quot;image&quot;: &quot;init:v2&quot;},</span>
+<span class="sd">    ...     ]},</span>
+<span class="sd">    ... })</span>
+
+<span class="sd">    &gt;&gt;&gt; # DEL: remove a field (server uses its default)</span>
+<span class="sd">    &gt;&gt;&gt; set_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;, {DEL(&quot;hostNetwork&quot;): None})</span>
+
+<span class="sd">Operators are stored in metadata and resolved automatically when the scheduler</span>
+<span class="sd">calls :py:func:`apply_overlay` at submit time — users don&#39;t need to call</span>
+<span class="sd">:py:func:`apply_overlay` directly.</span>
+
+<span class="sd">.. note:: ``None`` vs ``DEL`` vs missing key</span>
+
+<span class="sd">    These three states produce different results:</span>
+
+<span class="sd">    - **Key missing from overlay**: field is untouched in the base</span>
+<span class="sd">    - ``&quot;field&quot;: None``: field is explicitly set to ``None``/null. In</span>
+<span class="sd">      thrift/protobuf, this means &quot;field present but null&quot; — different from</span>
+<span class="sd">      key is missing (never set).</span>
+<span class="sd">    - ``DEL(&quot;field&quot;): None``: field is **removed** from the base dict. In</span>
+<span class="sd">      thrift/protobuf, this means &quot;field not sent in request&quot;.</span>
+
+<span class="sd">For Scheduler Implementors</span>
+<span class="sd">--------------------------</span>
+
+<span class="sd">To add overlay support to a scheduler, use :py:func:`get_overlay` to retrieve</span>
+<span class="sd">stored overlays, :py:func:`validate_overlay` to guard against user error, and</span>
+<span class="sd">:py:func:`apply_overlay` to apply the overlay onto the scheduler&#39;s base request dict.</span>
+
+<span class="sd">.. code-block:: python</span>
+
+<span class="sd">    from torchx.specs.overlays import apply_overlay, get_overlay, validate_overlay</span>
+
+<span class="sd">    class MyScheduler(Scheduler):</span>
+<span class="sd">        def _submit_dryrun(self, app, cfg):</span>
+<span class="sd">            # Build base request from Role attributes</span>
+<span class="sd">            base_request = build_request_from_role(app.roles[0])</span>
+
+<span class="sd">            # Retrieve and validate the overlay</span>
+<span class="sd">            overlay = get_overlay(app.roles[0], &quot;my_scheduler&quot;, &quot;JobSpec&quot;)</span>
+<span class="sd">            validate_overlay(</span>
+<span class="sd">                overlay,</span>
+<span class="sd">                blocklist=[&quot;command&quot;, &quot;env&quot;],  # fields set via Role attrs</span>
+<span class="sd">                overlay_name=&quot;JobSpec&quot;,</span>
+<span class="sd">            )</span>
+
+<span class="sd">            # Apply overlay onto the base request</span>
+<span class="sd">            apply_overlay(base_request, overlay)</span>
+
+<span class="sd">            # base_request now has user&#39;s overlay fields merged in</span>
+<span class="sd">            return base_request</span>
+
+<span class="sd">:py:func:`apply_overlay` handles operator keys (:py:func:`PUT`, :py:func:`JOIN`,</span>
+<span class="sd">:py:func:`DEL`) automatically — the scheduler doesn&#39;t need to know about them.</span>
+
+<span class="sd">.. fbcode::</span>
+
+<span class="sd">    For MAST/MSL overlays, see :py:mod:`torchx.specs.fb.overlay_mast`.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="n">Json</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">_Overlay</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<span class="c1"># Operator key prefixes. Each function returns a string key for use in overlay</span>
+<span class="c1"># dicts. The prefix encodes the operation; the suffix encodes the field name</span>
+<span class="c1"># (and merge key for JOIN).</span>
+<span class="n">_PUT_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;__put__:&quot;</span>
+<span class="n">_JOIN_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;__join__:&quot;</span>
+<span class="n">_DEL_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;__del__:&quot;</span>
 
 
-<div class="viewcode-block" id="apply_overlay"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.apply_overlay">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="n">Json</span><span class="p">,</span> <span class="n">overlay</span><span class="p">:</span> <span class="n">Json</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies ``overlay`` on ``base``.</span>
+<div class="viewcode-block" id="PUT"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.PUT">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">PUT</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace a value entirely instead of merging/appending.</span>
 
-<span class="sd">    .. note:: this function mutates the ``base``!</span>
-
-<span class="sd">    Overlays follow these rules:</span>
-
-<span class="sd">    1. Dicts, upsert key, value in base with the ones in overlay.</span>
-<span class="sd">    2. Nested dicts, overlay recursively.</span>
-<span class="sd">    3. Lists, append the overlay values to the base values.</span>
-<span class="sd">    4. Nested lists DO NOT append recursively.</span>
-<span class="sd">    5. Primitives (bool, str, int, float), replace base with the value in overlay.</span>
+<span class="sd">    Use as a dict key in overlays. For lists this replaces instead of appending;</span>
+<span class="sd">    for dicts this replaces instead of recursive merge.</span>
 
 <span class="sd">    .. doctest::</span>
 
-<span class="sd">        from torchx.specs.overlays import apply_overlay</span>
-
-<span class="sd">        base = {</span>
-<span class="sd">            &quot;scheduler&quot;: {&quot;policy&quot;: &quot;default&quot;},</span>
-<span class="sd">            &quot;resources&quot;: {&quot;limits&quot;: {&quot;cpu&quot;: &quot;500m&quot;}},</span>
-<span class="sd">            &quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;}],</span>
-<span class="sd">            &quot;nodeSelectorTerms&quot;: [</span>
-<span class="sd">                [{&quot;matchExpressions&quot;: []}]</span>
-<span class="sd">            ],</span>
-<span class="sd">            &quot;maxPods&quot;: 110,</span>
-<span class="sd">        }</span>
-<span class="sd">        overlay = {</span>
-<span class="sd">            &quot;scheduler&quot;: {&quot;policy&quot;: &quot;binpacking&quot;},</span>
-<span class="sd">            &quot;resources&quot;: {&quot;limits&quot;: {&quot;memory&quot;: &quot;1Gi&quot;}},</span>
-<span class="sd">            &quot;tolerations&quot;: [{&quot;key&quot;: &quot;spot&quot;}],</span>
-<span class="sd">            &quot;nodeSelectorTerms&quot;: [</span>
-<span class="sd">                [{&quot;matchExpressions&quot;: [{&quot;key&quot;: &quot;disk&quot;}]}]</span>
-<span class="sd">            ],</span>
-<span class="sd">            &quot;maxPods&quot;: 250,</span>
-<span class="sd">        }</span>
-
-<span class="sd">        apply_overlay(base, overlay)</span>
-
-<span class="sd">        assert {</span>
-<span class="sd">            &quot;scheduler&quot;: {&quot;policy&quot;: &quot;binpacking&quot;},</span>
-<span class="sd">            &quot;resources&quot;: {&quot;limits&quot;: {&quot;cpu&quot;: &quot;500m&quot;, &quot;memory&quot;: &quot;1Gi&quot;}},</span>
-<span class="sd">            &quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;}, {&quot;key&quot;: &quot;spot&quot;}],</span>
-<span class="sd">            &quot;nodeSelectorTerms&quot;: [</span>
-<span class="sd">                [{&quot;matchExpressions&quot;: []}],</span>
-<span class="sd">                [{&quot;matchExpressions&quot;: [{&quot;key&quot;: &quot;disk&quot;}]}],</span>
-<span class="sd">            ],</span>
-<span class="sd">            &quot;maxPods&quot;: 250,</span>
-<span class="sd">        } == base</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs.overlays import apply_overlay, PUT</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;containers&quot;: [{&quot;name&quot;: &quot;old1&quot;}, {&quot;name&quot;: &quot;old2&quot;}]}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {PUT(&quot;containers&quot;): [{&quot;name&quot;: &quot;only&quot;}]})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;containers&#39;: [{&#39;name&#39;: &#39;only&#39;}]}</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_PUT_PREFIX</span><span class="si">}{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">assert_type_equal</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">o1</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">o2</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">o1_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o1</span><span class="p">)</span>
-        <span class="n">o2_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o2</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="p">(</span>
-            <span class="n">o1_type</span> <span class="o">==</span> <span class="n">o2_type</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Type mismatch for attr: `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`. </span><span class="si">{</span><span class="n">o1_type</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">o2_type</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
 
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
-            <span class="n">base_value</span> <span class="o">=</span> <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+<div class="viewcode-block" id="JOIN"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.JOIN">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">JOIN</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">on</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strategic merge list items by key field.</span>
 
-            <span class="n">assert_type_equal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">base_value</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">)</span>
+<span class="sd">    Matched items (same value for ``on`` field) have their fields merged.</span>
+<span class="sd">    Unmatched items are appended. Use as a dict key in overlays.</span>
 
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">apply_overlay</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">base_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs.overlays import apply_overlay, JOIN</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;containers&quot;: [{&quot;name&quot;: &quot;main&quot;, &quot;image&quot;: &quot;v1&quot;, &quot;cpu&quot;: &quot;1&quot;}]}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {JOIN(&quot;containers&quot;, on=&quot;name&quot;): [</span>
+<span class="sd">        ...     {&quot;name&quot;: &quot;main&quot;, &quot;memory&quot;: &quot;1Gi&quot;},</span>
+<span class="sd">        ...     {&quot;name&quot;: &quot;sidecar&quot;, &quot;image&quot;: &quot;proxy&quot;},</span>
+<span class="sd">        ... ]})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;containers&#39;: [{&#39;name&#39;: &#39;main&#39;, &#39;image&#39;: &#39;v1&#39;, &#39;cpu&#39;: &#39;1&#39;, &#39;memory&#39;: &#39;1Gi&#39;}, {&#39;name&#39;: &#39;sidecar&#39;, &#39;image&#39;: &#39;proxy&#39;}]}</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: At apply time, if the base list contains non-dict items.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_JOIN_PREFIX</span><span class="si">}{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">on</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="DEL"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.DEL">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">DEL</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove a key from the base dict.</span>
+
+<span class="sd">    Use as a dict key in overlays. The value is ignored (convention: ``None``).</span>
+
+<span class="sd">    This is different from setting a field to ``None`` — ``DEL`` removes the key</span>
+<span class="sd">    entirely (thrift/protobuf: field not sent, server uses default), while</span>
+<span class="sd">    ``&quot;field&quot;: None`` sets it to null (thrift/protobuf: field present but null).</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs.overlays import apply_overlay, DEL</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;keep&quot;: 1, &quot;remove_me&quot;: &quot;old&quot;}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {DEL(&quot;remove_me&quot;): None})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;keep&#39;: 1}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_DEL_PREFIX</span><span class="si">}{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_field_of</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the logical field name from a possibly-encoded operator key.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_PUT_PREFIX</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_PUT_PREFIX</span><span class="p">)</span> <span class="p">:]</span>
+    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_DEL_PREFIX</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_DEL_PREFIX</span><span class="p">)</span> <span class="p">:]</span>
+    <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">key</span>
+
+
+<span class="c1"># Type alias for metadata that allows nested dicts</span>
+<span class="c1"># Note: AppDef.metadata is typed as dict[str, str] but in practice stores dicts</span>
+<span class="c1"># TODO: Fix AppDef.metadata type to dict[str, Any]</span>
+<span class="n">_Metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Core Overlay Semantics</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_strategic_merge_by_key</span><span class="p">(</span>
+    <span class="n">base_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">overlay_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">merge_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge list items by key field (strategic merge patch semantics).</span>
+
+<span class="sd">    Matched items: overlay fields overwrite base fields (top-level only).</span>
+<span class="sd">    Unmatched items: appended.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">base_by_key</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">item</span><span class="p">[</span><span class="n">merge_key</span><span class="p">]:</span> <span class="n">item</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">base_list</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">merge_key</span> <span class="ow">in</span> <span class="n">item</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">overlay_item</span> <span class="ow">in</span> <span class="n">overlay_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">merge_key</span> <span class="ow">in</span> <span class="n">overlay_item</span><span class="p">:</span>
+            <span class="n">key_value</span> <span class="o">=</span> <span class="n">overlay_item</span><span class="p">[</span><span class="n">merge_key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">key_value</span> <span class="ow">in</span> <span class="n">base_by_key</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overlay_item</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">merge_key</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">base_by_key</span><span class="p">[</span><span class="n">key_value</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">overlay_value</span>
+                <span class="n">base_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_item</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">overlay_value</span></div>
+            <span class="n">base_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_item</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">keep_plain</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove all keys from ``base`` whose logical field name is ``field``.</span>
+
+<span class="sd">    When ``keep_plain`` is True, the plain key (no operator prefix) is kept.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">base</span> <span class="k">if</span> <span class="n">_field_of</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="n">field</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">keep_plain</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">==</span> <span class="n">field</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">del</span> <span class="n">base</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_join</span><span class="p">(</span>
+    <span class="n">base</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">overlay_value</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a JOIN operator key into a strategic merge on ``base``.&quot;&quot;&quot;</span>
+    <span class="n">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">keep_plain</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;malformed JOIN key: `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`, &quot;</span> <span class="sa">f</span><span class="s2">&quot;expected format from JOIN(field, on=key)&quot;</span>
+        <span class="p">)</span>
+    <span class="n">merge_key</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;JOIN requires a list value, got &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> for field `</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">`&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">overlay_value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;JOIN requires a list of dicts as overlay value, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;but `</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">` overlay contains non-dict items&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;JOIN requires base[`</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">`] to be a list, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">])</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;JOIN requires a list of dicts, but `</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">` &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;contains non-dict items&quot;</span>
+            <span class="p">)</span>
+        <span class="n">_strategic_merge_by_key</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">merge_key</span><span class="o">=</span><span class="n">merge_key</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_type_equal</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">o1</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">o2</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raise TypeError if ``o1`` and ``o2`` have different types.&quot;&quot;&quot;</span>
+    <span class="n">o1_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o1</span><span class="p">)</span>
+    <span class="n">o2_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">o1_type</span> <span class="o">!=</span> <span class="n">o2_type</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;type mismatch for attr: `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">o1_type</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">o2_type</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_merge_value</span><span class="p">(</span>
+    <span class="n">base</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">overlay_value</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">_resolve</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge a single overlay value into ``base`` using default rules.</span>
+
+<span class="sd">    - dict → recursive merge</span>
+<span class="sd">    - list → append</span>
+<span class="sd">    - tuple → replace list (legacy BC for YAML ``!!python/tuple``)</span>
+<span class="sd">    - primitive → overwrite</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
+        <span class="n">base_value</span> <span class="o">=</span> <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">apply_overlay</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">_resolve</span><span class="o">=</span><span class="n">_resolve</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="c1"># BC: tuple replaces list (legacy alias for PUT). Supports</span>
+            <span class="c1"># ``!!python/tuple`` tag in YAML overlay files.</span>
+            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">base_value</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base_value</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">overlay_value</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="c1"># Structural type mismatch (e.g., list vs str, dict vs int)</span>
+            <span class="n">_check_type_equal</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">base_value</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Primitive replacement: allows int/str mismatches since some</span>
+            <span class="c1"># serialization formats (e.g., JSON) may represent enums as ints</span>
+            <span class="c1"># while overlays use string names. The deserializer handles both.</span>
+            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">overlay_value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="c1"># BC: convert tuple to list for new keys</span>
+            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="apply_overlay"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.apply_overlay">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">apply_overlay</span><span class="p">(</span>
+    <span class="n">base</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+    <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">_resolve</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge ``overlay`` into ``base`` in-place.</span>
+
+<span class="sd">    Default rules:</span>
+
+<span class="sd">    1. **dict** → recursive merge (upsert keys)</span>
+<span class="sd">    2. **list** → append overlay items</span>
+<span class="sd">    3. **primitive** → overwrite value</span>
+
+<span class="sd">    Operators (use as dict keys in overlays):</span>
+
+<span class="sd">    4. :py:func:`PUT` → replace value entirely (lists, dicts, or primitives)</span>
+<span class="sd">    5. :py:func:`JOIN` → strategic merge list items by key field</span>
+<span class="sd">    6. :py:func:`DEL` → remove key from base</span>
+
+<span class="sd">    During accumulation (multiple :py:func:`set_overlay` calls), operators for</span>
+<span class="sd">    the same field replace earlier operations — last call wins.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs.overlays import apply_overlay, PUT, JOIN, DEL</span>
+
+<span class="sd">        &gt;&gt;&gt; # Dicts merge recursively, lists append, primitives overwrite</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;spec&quot;: {&quot;cpu&quot;: &quot;500m&quot;}, &quot;tags&quot;: [&quot;prod&quot;], &quot;replicas&quot;: 1}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {&quot;spec&quot;: {&quot;memory&quot;: &quot;1Gi&quot;}, &quot;tags&quot;: [&quot;gpu&quot;], &quot;replicas&quot;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;spec&#39;: {&#39;cpu&#39;: &#39;500m&#39;, &#39;memory&#39;: &#39;1Gi&#39;}, &#39;tags&#39;: [&#39;prod&#39;, &#39;gpu&#39;], &#39;replicas&#39;: 3}</span>
+
+<span class="sd">        &gt;&gt;&gt; # PUT replaces a list instead of appending</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;containers&quot;: [{&quot;name&quot;: &quot;old1&quot;}, {&quot;name&quot;: &quot;old2&quot;}]}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {PUT(&quot;containers&quot;): [{&quot;name&quot;: &quot;only&quot;}]})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;containers&#39;: [{&#39;name&#39;: &#39;only&#39;}]}</span>
+
+<span class="sd">        &gt;&gt;&gt; # JOIN: match containers by name, merge their fields</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;containers&quot;: [{&quot;name&quot;: &quot;main&quot;, &quot;image&quot;: &quot;v1&quot;}]}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {JOIN(&quot;containers&quot;, on=&quot;name&quot;): [</span>
+<span class="sd">        ...     {&quot;name&quot;: &quot;main&quot;, &quot;memory&quot;: &quot;1Gi&quot;},</span>
+<span class="sd">        ... ]})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;containers&#39;: [{&#39;name&#39;: &#39;main&#39;, &#39;image&#39;: &#39;v1&#39;, &#39;memory&#39;: &#39;1Gi&#39;}]}</span>
+
+<span class="sd">        &gt;&gt;&gt; # DEL: remove a key from the base</span>
+<span class="sd">        &gt;&gt;&gt; base = {&quot;keep&quot;: 1, &quot;remove&quot;: &quot;old&quot;}</span>
+<span class="sd">        &gt;&gt;&gt; apply_overlay(base, {DEL(&quot;remove&quot;): None})</span>
+<span class="sd">        &gt;&gt;&gt; base</span>
+<span class="sd">        {&#39;keep&#39;: 1}</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        _resolve: **Internal only** — do not pass. When ``True`` (default),</span>
+<span class="sd">            operator keys resolve to their operations on plain field names.</span>
+<span class="sd">            When ``False``, operator keys are stored as-is (used by</span>
+<span class="sd">            :py:func:`set_overlay` for accumulation).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span> <span class="ow">in</span> <span class="n">overlay</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">field</span> <span class="o">=</span> <span class="n">_field_of</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="c1"># --- Resolve operators to their operations (application mode)</span>
+        <span class="k">if</span> <span class="n">_resolve</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_DEL_PREFIX</span><span class="p">):</span>
+                <span class="n">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_PUT_PREFIX</span><span class="p">):</span>
+                <span class="n">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">):</span>
+                <span class="n">_resolve_join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+        <span class="c1"># --- Conflict resolution: remove any existing keys for the same field</span>
+        <span class="c1"># (accumulation mode for operators, always for plain keys)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">base</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">key</span> <span class="ow">and</span> <span class="n">_field_of</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="n">field</span><span class="p">]:</span>
+            <span class="k">del</span> <span class="n">base</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="c1"># --- Default merge behavior</span>
+        <span class="n">_merge_value</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">_resolve</span><span class="o">=</span><span class="n">_resolve</span><span class="p">)</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Overlay Storage API</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_overlay_file</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Overlay</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load overlay dict from a file path or URI.</span>
+
+<span class="sd">    Supports bare paths (``/path/to/overlay.yaml``), ``file://``, ``s3://``,</span>
+<span class="sd">    etc. via ``fsspec``. Tries JSON first, falls back to YAML.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the file contents are not a dict.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
+
+    <span class="c1"># Bare paths (no scheme) are treated as local file paths</span>
+    <span class="k">if</span> <span class="s2">&quot;://&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">uri</span><span class="p">:</span>
+        <span class="n">uri</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;file://</span><span class="si">{</span><span class="n">uri</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">with</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">contents</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="c1"># Try JSON first, fall back to YAML.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+        <span class="c1"># BC: Support ``!!python/tuple`` tag in YAML overlay files.</span>
+        <span class="c1"># Tuples indicate list-replace semantics (legacy alias for PUT).</span>
+        <span class="k">class</span><span class="w"> </span><span class="nc">_TupleSafeLoader</span><span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">SafeLoader</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="n">_TupleSafeLoader</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span>
+            <span class="s2">&quot;tag:yaml.org,2002:python/tuple&quot;</span><span class="p">,</span>
+            <span class="k">lambda</span> <span class="n">loader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">loader</span><span class="o">.</span><span class="n">construct_sequence</span><span class="p">(</span><span class="n">node</span><span class="p">)),</span>
+        <span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">_TupleSafeLoader</span><span class="p">)</span>  <span class="c1"># noqa: S506</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;overlay file `</span><span class="si">{</span><span class="n">uri</span><span class="si">}</span><span class="s2">` must contain a dict, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+
+<div class="viewcode-block" id="set_overlay"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.set_overlay">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">set_overlay</span><span class="p">(</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Store an overlay in ``target.metadata[namespace][kind]``.</span>
+
+<span class="sd">    Multiple calls for the same ``(namespace, kind)`` accumulate via</span>
+<span class="sd">    :py:func:`apply_overlay` (dicts merge, lists append). Use :py:func:`PUT`,</span>
+<span class="sd">    :py:func:`JOIN`, and :py:func:`DEL` operators in the overlay dict to</span>
+<span class="sd">    control per-field behavior.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        namespace: Scheduler namespace (e.g., ``&quot;kubernetes&quot;``, ``&quot;mast&quot;``).</span>
+<span class="sd">        kind: Scheduler struct type (e.g., ``&quot;V1Pod&quot;``,</span>
+<span class="sd">            ``&quot;HpcJobDefinition&quot;``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Cast metadata to allow nested dicts</span>
+    <span class="c1"># Note: AppDef.metadata is typed as dict[str, str] but overlays require nested dicts</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">_Metadata</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+
+    <span class="c1"># Ensure namespace dict exists</span>
+    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="n">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">ns_dict</span> <span class="o">=</span> <span class="n">metadata</span><span class="p">[</span><span class="n">namespace</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ns_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1"># If namespace key exists but isn&#39;t a dict, replace it</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;replacing non-dict value for namespace `</span><span class="si">%s</span><span class="s2">` in metadata with &quot;</span>
+            <span class="s2">&quot;nested overlay format. Previous value was: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="nb">type</span><span class="p">(</span><span class="n">ns_dict</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ns_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="n">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="n">ns_dict</span>
+
+    <span class="c1"># Ensure kind dict exists and merge</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ns_dict</span><span class="p">:</span>
+        <span class="n">ns_dict</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">existing</span> <span class="o">=</span> <span class="n">ns_dict</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ns_dict</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing</span>
+
+    <span class="n">apply_overlay</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="n">overlay</span><span class="p">,</span> <span class="n">_resolve</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_overlay"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.get_overlay">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_overlay</span><span class="p">(</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Overlay</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve overlay from ``target.metadata[namespace][kind]``.</span>
+
+<span class="sd">    Returns ``{}`` if not found. If ``metadata[namespace]`` is a string,</span>
+<span class="sd">    it is loaded as a file URI via ``fsspec`` (JSON or YAML).</span>
+
+<span class="sd">    For backwards compatibility, if ``kind`` is not a key in</span>
+<span class="sd">    ``metadata[namespace]``, the entire namespace dict is returned as a</span>
+<span class="sd">    flat overlay (with a deprecation warning).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="n">ns_value</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">namespace</span><span class="p">]</span>
+
+    <span class="c1"># File URI support: load overlay from file</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ns_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">ns_value</span> <span class="o">=</span> <span class="n">_load_overlay_file</span><span class="p">(</span><span class="n">ns_value</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ns_value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="c1"># New nested format: metadata[namespace][kind]</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">ns_value</span><span class="p">:</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">ns_value</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">overlay</span>
+
+    <span class="c1"># Backwards compat: flat format metadata[namespace] = {overlay} (no kind key).</span>
+    <span class="c1"># Only fall back if ns_value doesn&#39;t look like nested format (multiple</span>
+    <span class="c1"># dict-valued keys = nested, e.g. {&quot;HpcTaskGroupSpec&quot;: {...}, ...}).</span>
+    <span class="n">has_multiple_dict_values</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ns_value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ns_value</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">ns_value</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_multiple_dict_values</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;overlay kind `</span><span class="si">%s</span><span class="s2">` not found in namespace `</span><span class="si">%s</span><span class="s2">` &quot;</span>
+            <span class="s1">&#39;(available kinds: </span><span class="si">%s</span><span class="s1">). Treating `metadata[&quot;</span><span class="si">%s</span><span class="s1">&quot;]` as a flat &#39;</span>
+            <span class="s2">&quot;overlay. Migrate to &quot;</span>
+            <span class="s1">&#39;`torchx.specs.overlays.set_overlay(target, &quot;</span><span class="si">%s</span><span class="s1">&quot;, &quot;</span><span class="si">%s</span><span class="s1">&quot;, overlay)` &#39;</span>
+            <span class="s2">&quot;for the nested format&quot;</span><span class="p">,</span>
+            <span class="n">kind</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">ns_value</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="n">kind</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ns_value</span>
+
+    <span class="k">return</span> <span class="p">{}</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Validation Helpers</span>
+<span class="c1"># =============================================================================</span>
+
+
+<div class="viewcode-block" id="validate_overlay"><a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.validate_overlay">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">validate_overlay</span><span class="p">(</span>
+    <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">blocklist</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">forbidden_keys</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">overlay_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;overlay&quot;</span><span class="p">,</span>
+    <span class="n">suggestion</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that overlay doesn&#39;t contain disallowed keys.</span>
+
+<span class="sd">    Used by scheduler authors to guard against user error. Operator-prefixed</span>
+<span class="sd">    keys (e.g., ``PUT(&quot;env&quot;)``) are resolved to their logical field name</span>
+<span class="sd">    before checking against the blocklist.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        blocklist: Keys that should be set via Role/AppDef attributes.</span>
+<span class="sd">        forbidden_keys: Keys that belong to a different overlay type.</span>
+<span class="sd">        overlay_name: Overlay type name for error messages.</span>
+<span class="sd">        suggestion: Hint appended when ``forbidden_keys`` are found.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If validation fails.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs.overlays import validate_overlay</span>
+
+<span class="sd">        &gt;&gt;&gt; # &quot;env&quot; is blocklisted — should be set via Role.env</span>
+<span class="sd">        &gt;&gt;&gt; try:</span>
+<span class="sd">        ...     validate_overlay(</span>
+<span class="sd">        ...         {&quot;env&quot;: {&quot;FOO&quot;: &quot;bar&quot;}, &quot;nodeSelector&quot;: {&quot;gpu&quot;: &quot;true&quot;}},</span>
+<span class="sd">        ...         blocklist=[&quot;env&quot;, &quot;command&quot;],</span>
+<span class="sd">        ...         overlay_name=&quot;PodSpec&quot;,</span>
+<span class="sd">        ...     )</span>
+<span class="sd">        ... except ValueError as e:</span>
+<span class="sd">        ...     &quot;env&quot; in str(e)</span>
+<span class="sd">        True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">blocklist</span><span class="p">:</span>
+        <span class="n">disallowed</span> <span class="o">=</span> <span class="p">[</span><span class="n">_field_of</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">overlay</span> <span class="k">if</span> <span class="n">_field_of</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">in</span> <span class="n">blocklist</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">disallowed</span><span class="p">:</span>
+            <span class="n">keys_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">overlay_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">`&quot;</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">disallowed</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;disallowed overlay attributes </span><span class="si">{</span><span class="n">keys_str</span><span class="si">}</span><span class="s2"> since &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;they can be set directly on the role&#39;s attributes.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">forbidden_keys</span><span class="p">:</span>
+        <span class="n">misplaced</span> <span class="o">=</span> <span class="p">{</span><span class="n">_field_of</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">overlay</span><span class="p">}</span> <span class="o">&amp;</span> <span class="n">forbidden_keys</span>
+        <span class="k">if</span> <span class="n">misplaced</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">overlay_name</span><span class="si">}</span><span class="s2"> overlay contains misplaced keys: </span><span class="si">{</span><span class="n">misplaced</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="k">if</span> <span class="n">suggestion</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">suggestion</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 </pre></div>
 
      </article>

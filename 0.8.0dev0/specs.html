@@ -1008,76 +1008,283 @@ scheduler.</p>
 </section>
 <section id="module-torchx.specs.overlays">
 <span id="overlays"></span><h2>Overlays<a class="headerlink" href="#module-torchx.specs.overlays" title="Permalink to this heading">¶</a></h2>
-<p>Overlays are JSON structs applied to <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> and <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a>
-to specify attributes of the scheduler’s submit-job request that are not currently representable
-as attributes of <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> and <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a>.</p>
-<p>For end-uses, here are a few use-cases of overlays:</p>
-<ol class="arabic simple">
-<li><p>A new version of the scheduler has concepts/features that have not yet been added to TorchX.</p></li>
-<li><p>A bespoke internal scheduler has custom features that do not generalize hence not in TorchX.</p></li>
-<li><p>Re-using a pre-built <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> but need to make a small change to the resulting scheduler request.</p></li>
-</ol>
-<p>And for scheduler authors:</p>
-<ol class="arabic simple">
-<li><p>Scheduler setting needs to be applied to a <code class="docutils literal notranslate"><span class="pre">Role</span></code>, which makes it hard to add as <code class="docutils literal notranslate"><span class="pre">runopts</span></code>
-since <code class="docutils literal notranslate"><span class="pre">runopts</span></code> apply at the <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> level.</p></li>
-<li><p>Scheduler setting cannot be represented naturally as the types supported by <code class="docutils literal notranslate"><span class="pre">runopts</span></code>.</p></li>
-<li><p>Exposing the setting as a <code class="docutils literal notranslate"><span class="pre">runopts</span></code> obfuscates things.</p></li>
-</ol>
-<p>See <a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> for rules on how overlays are applied.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="torchx.specs.overlays.apply_overlay">
-<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">apply_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#apply_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.apply_overlay" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies <code class="docutils literal notranslate"><span class="pre">overlay</span></code> on <code class="docutils literal notranslate"><span class="pre">base</span></code>.</p>
+<p>Overlays patch the scheduler’s submit-job request with fields not representable
+in <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> or <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a>.</p>
+<p>Use <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> / <a class="reference internal" href="#torchx.specs.overlays.get_overlay" title="torchx.specs.overlays.get_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_overlay()</span></code></a> to store and retrieve overlays,
+and <a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> to apply them.</p>
+<section id="for-users">
+<h3>For Users<a class="headerlink" href="#for-users" title="Permalink to this heading">¶</a></h3>
+<p>Use <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> to attach scheduler-specific fields to a
+<a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> or <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a>:</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_overlay</span><span class="p">,</span> <span class="n">get_overlay</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Kubernetes: add a node selector to a role</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my-image&quot;</span><span class="p">,</span> <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">set_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;nodeSelector&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;accelerator&quot;</span><span class="p">:</span> <span class="s2">&quot;a100&quot;</span><span class="p">}},</span>
+<span class="gp">... </span><span class="p">})</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Multiple set_overlay calls merge (dicts upsert, lists append)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">set_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;tolerations&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;operator&quot;</span><span class="p">:</span> <span class="s2">&quot;Exists&quot;</span><span class="p">}]},</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">get_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">)</span>
+<span class="go">{&#39;spec&#39;: {&#39;nodeSelector&#39;: {&#39;accelerator&#39;: &#39;a100&#39;}, &#39;tolerations&#39;: [{&#39;key&#39;: &#39;gpu&#39;, &#39;operator&#39;: &#39;Exists&#39;}]}}</span>
+</pre></div>
+</div>
+<section id="operators">
+<h4>Operators<a class="headerlink" href="#operators" title="Permalink to this heading">¶</a></h4>
+<p>By default, <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> merges dicts and appends lists. Use
+<a class="reference internal" href="#torchx.specs.overlays.PUT" title="torchx.specs.overlays.PUT"><code class="xref py py-func docutils literal notranslate"><span class="pre">PUT()</span></code></a>, <a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a>, and <a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a> as dict keys to override
+per-field behavior:</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_overlay</span><span class="p">,</span> <span class="n">PUT</span><span class="p">,</span> <span class="n">JOIN</span><span class="p">,</span> <span class="n">DEL</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my-image&quot;</span><span class="p">,</span> <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># PUT: replace a list instead of appending</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">set_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">PUT</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">):</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;only&quot;</span><span class="p">}]},</span>
+<span class="gp">... </span><span class="p">})</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># JOIN: strategic merge list items by key field</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">set_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">JOIN</span><span class="p">(</span><span class="s2">&quot;initContainers&quot;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">):</span> <span class="p">[</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;setup&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;init:v2&quot;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">]},</span>
+<span class="gp">... </span><span class="p">})</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># DEL: remove a field (server uses its default)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">set_overlay</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="s2">&quot;V1Pod&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">DEL</span><span class="p">(</span><span class="s2">&quot;hostNetwork&quot;</span><span class="p">):</span> <span class="kc">None</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Operators are stored in metadata and resolved automatically when the scheduler
+calls <a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> at submit time — users don’t need to call
+<a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> directly.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>this function mutates the <code class="docutils literal notranslate"><span class="pre">base</span></code>!</p>
+<p><code class="docutils literal notranslate"><span class="pre">None</span></code> vs <code class="docutils literal notranslate"><span class="pre">DEL</span></code> vs missing key</p>
+<p>These three states produce different results:</p>
+<ul class="simple">
+<li><p><strong>Key missing from overlay</strong>: field is untouched in the base</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;field&quot;:</span> <span class="pre">None</span></code>: field is explicitly set to <code class="docutils literal notranslate"><span class="pre">None</span></code>/null. In
+thrift/protobuf, this means “field present but null” — different from
+key is missing (never set).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DEL(&quot;field&quot;):</span> <span class="pre">None</span></code>: field is <strong>removed</strong> from the base dict. In
+thrift/protobuf, this means “field not sent in request”.</p></li>
+</ul>
 </div>
-<p>Overlays follow these rules:</p>
-<ol class="arabic simple">
-<li><p>Dicts, upsert key, value in base with the ones in overlay.</p></li>
-<li><p>Nested dicts, overlay recursively.</p></li>
-<li><p>Lists, append the overlay values to the base values.</p></li>
-<li><p>Nested lists DO NOT append recursively.</p></li>
-<li><p>Primitives (bool, str, int, float), replace base with the value in overlay.</p></li>
-</ol>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go">from torchx.specs.overlays import apply_overlay</span>
+</section>
+</section>
+<section id="for-scheduler-implementors">
+<h3>For Scheduler Implementors<a class="headerlink" href="#for-scheduler-implementors" title="Permalink to this heading">¶</a></h3>
+<p>To add overlay support to a scheduler, use <a class="reference internal" href="#torchx.specs.overlays.get_overlay" title="torchx.specs.overlays.get_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_overlay()</span></code></a> to retrieve
+stored overlays, <a class="reference internal" href="#torchx.specs.overlays.validate_overlay" title="torchx.specs.overlays.validate_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">validate_overlay()</span></code></a> to guard against user error, and
+<a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> to apply the overlay onto the scheduler’s base request dict.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">get_overlay</span><span class="p">,</span> <span class="n">validate_overlay</span>
 
-<span class="go">base = {</span>
-<span class="go">    &quot;scheduler&quot;: {&quot;policy&quot;: &quot;default&quot;},</span>
-<span class="go">    &quot;resources&quot;: {&quot;limits&quot;: {&quot;cpu&quot;: &quot;500m&quot;}},</span>
-<span class="go">    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;}],</span>
-<span class="go">    &quot;nodeSelectorTerms&quot;: [</span>
-<span class="go">        [{&quot;matchExpressions&quot;: []}]</span>
-<span class="go">    ],</span>
-<span class="go">    &quot;maxPods&quot;: 110,</span>
-<span class="go">}</span>
-<span class="go">overlay = {</span>
-<span class="go">    &quot;scheduler&quot;: {&quot;policy&quot;: &quot;binpacking&quot;},</span>
-<span class="go">    &quot;resources&quot;: {&quot;limits&quot;: {&quot;memory&quot;: &quot;1Gi&quot;}},</span>
-<span class="go">    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;spot&quot;}],</span>
-<span class="go">    &quot;nodeSelectorTerms&quot;: [</span>
-<span class="go">        [{&quot;matchExpressions&quot;: [{&quot;key&quot;: &quot;disk&quot;}]}]</span>
-<span class="go">    ],</span>
-<span class="go">    &quot;maxPods&quot;: 250,</span>
-<span class="go">}</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyScheduler</span><span class="p">(</span><span class="n">Scheduler</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+        <span class="c1"># Build base request from Role attributes</span>
+        <span class="n">base_request</span> <span class="o">=</span> <span class="n">build_request_from_role</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-<span class="go">apply_overlay(base, overlay)</span>
+        <span class="c1"># Retrieve and validate the overlay</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">get_overlay</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;my_scheduler&quot;</span><span class="p">,</span> <span class="s2">&quot;JobSpec&quot;</span><span class="p">)</span>
+        <span class="n">validate_overlay</span><span class="p">(</span>
+            <span class="n">overlay</span><span class="p">,</span>
+            <span class="n">blocklist</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">,</span> <span class="s2">&quot;env&quot;</span><span class="p">],</span>  <span class="c1"># fields set via Role attrs</span>
+            <span class="n">overlay_name</span><span class="o">=</span><span class="s2">&quot;JobSpec&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 
-<span class="go">assert {</span>
-<span class="go">    &quot;scheduler&quot;: {&quot;policy&quot;: &quot;binpacking&quot;},</span>
-<span class="go">    &quot;resources&quot;: {&quot;limits&quot;: {&quot;cpu&quot;: &quot;500m&quot;, &quot;memory&quot;: &quot;1Gi&quot;}},</span>
-<span class="go">    &quot;tolerations&quot;: [{&quot;key&quot;: &quot;gpu&quot;}, {&quot;key&quot;: &quot;spot&quot;}],</span>
-<span class="go">    &quot;nodeSelectorTerms&quot;: [</span>
-<span class="go">        [{&quot;matchExpressions&quot;: []}],</span>
-<span class="go">        [{&quot;matchExpressions&quot;: [{&quot;key&quot;: &quot;disk&quot;}]}],</span>
-<span class="go">    ],</span>
-<span class="go">    &quot;maxPods&quot;: 250,</span>
-<span class="go">} == base</span>
+        <span class="c1"># Apply overlay onto the base request</span>
+        <span class="n">apply_overlay</span><span class="p">(</span><span class="n">base_request</span><span class="p">,</span> <span class="n">overlay</span><span class="p">)</span>
+
+        <span class="c1"># base_request now has user&#39;s overlay fields merged in</span>
+        <span class="k">return</span> <span class="n">base_request</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> handles operator keys (<a class="reference internal" href="#torchx.specs.overlays.PUT" title="torchx.specs.overlays.PUT"><code class="xref py py-func docutils literal notranslate"><span class="pre">PUT()</span></code></a>, <a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a>,
+<a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a>) automatically — the scheduler doesn’t need to know about them.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.DEL">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">DEL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#DEL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.DEL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a key from the base dict.</p>
+<p>Use as a dict key in overlays. The value is ignored (convention: <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
+<p>This is different from setting a field to <code class="docutils literal notranslate"><span class="pre">None</span></code> — <code class="docutils literal notranslate"><span class="pre">DEL</span></code> removes the key
+entirely (thrift/protobuf: field not sent, server uses default), while
+<code class="docutils literal notranslate"><span class="pre">&quot;field&quot;:</span> <span class="pre">None</span></code> sets it to null (thrift/protobuf: field present but null).</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">DEL</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;keep&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;remove_me&quot;</span><span class="p">:</span> <span class="s2">&quot;old&quot;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">DEL</span><span class="p">(</span><span class="s2">&quot;remove_me&quot;</span><span class="p">):</span> <span class="kc">None</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;keep&#39;: 1}</span>
 </pre></div>
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.JOIN">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">JOIN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#JOIN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.JOIN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strategic merge list items by key field.</p>
+<p>Matched items (same value for <code class="docutils literal notranslate"><span class="pre">on</span></code> field) have their fields merged.
+Unmatched items are appended. Use as a dict key in overlays.</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">JOIN</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;containers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">}]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">JOIN</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">):</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="s2">&quot;memory&quot;</span><span class="p">:</span> <span class="s2">&quot;1Gi&quot;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;sidecar&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;proxy&quot;</span><span class="p">},</span>
+<span class="gp">... </span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;containers&#39;: [{&#39;name&#39;: &#39;main&#39;, &#39;image&#39;: &#39;v1&#39;, &#39;cpu&#39;: &#39;1&#39;, &#39;memory&#39;: &#39;1Gi&#39;}, {&#39;name&#39;: &#39;sidecar&#39;, &#39;image&#39;: &#39;proxy&#39;}]}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – At apply time, if the base list contains non-dict items.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.PUT">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">PUT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#PUT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.PUT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace a value entirely instead of merging/appending.</p>
+<p>Use as a dict key in overlays. For lists this replaces instead of appending;
+for dicts this replaces instead of recursive merge.</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;containers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;old1&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;old2&quot;</span><span class="p">}]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">PUT</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">):</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;only&quot;</span><span class="p">}]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;containers&#39;: [{&#39;name&#39;: &#39;only&#39;}]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.apply_overlay">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">apply_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_resolve</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#apply_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.apply_overlay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge <code class="docutils literal notranslate"><span class="pre">overlay</span></code> into <code class="docutils literal notranslate"><span class="pre">base</span></code> in-place.</p>
+<p>Default rules:</p>
+<ol class="arabic simple">
+<li><p><strong>dict</strong> → recursive merge (upsert keys)</p></li>
+<li><p><strong>list</strong> → append overlay items</p></li>
+<li><p><strong>primitive</strong> → overwrite value</p></li>
+</ol>
+<p>Operators (use as dict keys in overlays):</p>
+<ol class="arabic simple" start="4">
+<li><p><a class="reference internal" href="#torchx.specs.overlays.PUT" title="torchx.specs.overlays.PUT"><code class="xref py py-func docutils literal notranslate"><span class="pre">PUT()</span></code></a> → replace value entirely (lists, dicts, or primitives)</p></li>
+<li><p><a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a> → strategic merge list items by key field</p></li>
+<li><p><a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a> → remove key from base</p></li>
+</ol>
+<p>During accumulation (multiple <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> calls), operators for
+the same field replace earlier operations — last call wins.</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span><span class="p">,</span> <span class="n">JOIN</span><span class="p">,</span> <span class="n">DEL</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Dicts merge recursively, lists append, primitives overwrite</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="s2">&quot;500m&quot;</span><span class="p">},</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;prod&quot;</span><span class="p">],</span> <span class="s2">&quot;replicas&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;memory&quot;</span><span class="p">:</span> <span class="s2">&quot;1Gi&quot;</span><span class="p">},</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;gpu&quot;</span><span class="p">],</span> <span class="s2">&quot;replicas&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;spec&#39;: {&#39;cpu&#39;: &#39;500m&#39;, &#39;memory&#39;: &#39;1Gi&#39;}, &#39;tags&#39;: [&#39;prod&#39;, &#39;gpu&#39;], &#39;replicas&#39;: 3}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># PUT replaces a list instead of appending</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;containers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;old1&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;old2&quot;</span><span class="p">}]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">PUT</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">):</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;only&quot;</span><span class="p">}]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;containers&#39;: [{&#39;name&#39;: &#39;only&#39;}]}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># JOIN: match containers by name, merge their fields</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;containers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">}]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">JOIN</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">):</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="s2">&quot;memory&quot;</span><span class="p">:</span> <span class="s2">&quot;1Gi&quot;</span><span class="p">},</span>
+<span class="gp">... </span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;containers&#39;: [{&#39;name&#39;: &#39;main&#39;, &#39;image&#39;: &#39;v1&#39;, &#39;memory&#39;: &#39;1Gi&#39;}]}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># DEL: remove a key from the base</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;keep&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;remove&quot;</span><span class="p">:</span> <span class="s2">&quot;old&quot;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">DEL</span><span class="p">(</span><span class="s2">&quot;remove&quot;</span><span class="p">):</span> <span class="kc">None</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
+<span class="go">{&#39;keep&#39;: 1}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>_resolve</strong> – <strong>Internal only</strong> — do not pass. When <code class="docutils literal notranslate"><span class="pre">True</span></code> (default),
+operator keys resolve to their operations on plain field names.
+When <code class="docutils literal notranslate"><span class="pre">False</span></code>, operator keys are stored as-is (used by
+<a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> for accumulation).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.get_overlay">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">get_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><span class="pre">AppDef</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">_Overlay</span></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#get_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.get_overlay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve overlay from <code class="docutils literal notranslate"><span class="pre">target.metadata[namespace][kind]</span></code>.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">{}</span></code> if not found. If <code class="docutils literal notranslate"><span class="pre">metadata[namespace]</span></code> is a string,
+it is loaded as a file URI via <code class="docutils literal notranslate"><span class="pre">fsspec</span></code> (JSON or YAML).</p>
+<p>For backwards compatibility, if <code class="docutils literal notranslate"><span class="pre">kind</span></code> is not a key in
+<code class="docutils literal notranslate"><span class="pre">metadata[namespace]</span></code>, the entire namespace dict is returned as a
+flat overlay (with a deprecation warning).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.set_overlay">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">set_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><span class="pre">AppDef</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_Overlay</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#set_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.set_overlay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store an overlay in <code class="docutils literal notranslate"><span class="pre">target.metadata[namespace][kind]</span></code>.</p>
+<p>Multiple calls for the same <code class="docutils literal notranslate"><span class="pre">(namespace,</span> <span class="pre">kind)</span></code> accumulate via
+<a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> (dicts merge, lists append). Use <a class="reference internal" href="#torchx.specs.overlays.PUT" title="torchx.specs.overlays.PUT"><code class="xref py py-func docutils literal notranslate"><span class="pre">PUT()</span></code></a>,
+<a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a>, and <a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a> operators in the overlay dict to
+control per-field behavior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>namespace</strong> – Scheduler namespace (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;kubernetes&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;mast&quot;</span></code>).</p></li>
+<li><p><strong>kind</strong> – Scheduler struct type (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;V1Pod&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;HpcJobDefinition&quot;</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.specs.overlays.validate_overlay">
+<span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">validate_overlay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">overlay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocklist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forbidden_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.14)"><span class="pre">set</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlay_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'overlay'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suggestion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#validate_overlay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.validate_overlay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate that overlay doesn’t contain disallowed keys.</p>
+<p>Used by scheduler authors to guard against user error. Operator-prefixed
+keys (e.g., <code class="docutils literal notranslate"><span class="pre">PUT(&quot;env&quot;)</span></code>) are resolved to their logical field name
+before checking against the blocklist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>blocklist</strong> – Keys that should be set via Role/AppDef attributes.</p></li>
+<li><p><strong>forbidden_keys</strong> – Keys that belong to a different overlay type.</p></li>
+<li><p><strong>overlay_name</strong> – Overlay type name for error messages.</p></li>
+<li><p><strong>suggestion</strong> – Hint appended when <code class="docutils literal notranslate"><span class="pre">forbidden_keys</span></code> are found.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If validation fails.</p>
+</dd>
+</dl>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_overlay</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># &quot;env&quot; is blocklisted — should be set via Role.env</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">validate_overlay</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="p">{</span><span class="s2">&quot;env&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;FOO&quot;</span><span class="p">:</span> <span class="s2">&quot;bar&quot;</span><span class="p">},</span> <span class="s2">&quot;nodeSelector&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;gpu&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">}},</span>
+<span class="gp">... </span>        <span class="n">blocklist</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;env&quot;</span><span class="p">,</span> <span class="s2">&quot;command&quot;</span><span class="p">],</span>
+<span class="gp">... </span>        <span class="n">overlay_name</span><span class="o">=</span><span class="s2">&quot;PodSpec&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="s2">&quot;env&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
 </section>
 <section id="module-torchx.specs.file_linter">
 <span id="component-linter"></span><h2>Component Linter<a class="headerlink" href="#module-torchx.specs.file_linter" title="Permalink to this heading">¶</a></h2>
@@ -1279,7 +1486,14 @@ These functions do not have both required and default arguments.</p>
 <li><a class="reference internal" href="#run-configs">Run Configs</a></li>
 <li><a class="reference internal" href="#run-status">Run Status</a></li>
 <li><a class="reference internal" href="#mounts">Mounts</a></li>
-<li><a class="reference internal" href="#module-torchx.specs.overlays">Overlays</a></li>
+<li><a class="reference internal" href="#module-torchx.specs.overlays">Overlays</a><ul>
+<li><a class="reference internal" href="#for-users">For Users</a><ul>
+<li><a class="reference internal" href="#operators">Operators</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#for-scheduler-implementors">For Scheduler Implementors</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-torchx.specs.file_linter">Component Linter</a></li>
 </ul>
 </li>

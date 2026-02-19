@@ -1120,6 +1120,8 @@
 <span class="sd">        role: The role name</span>
 <span class="sd">        hostname: The hostname where the replica is running</span>
 <span class="sd">        structured_error_msg: Error message if any, None if job succeeded.</span>
+<span class="sd">        hostaddr: DNS resolvable hostname or ipv4 or ipv6 addr of the container</span>
+<span class="sd">            running this replica. Defaults to `hostname` if the scheduler does not set it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
@@ -1127,6 +1129,11 @@
     <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">hostname</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">structured_error_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">NONE</span>
+    <span class="n">hostaddr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostaddr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hostaddr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span>
 
 
 <span class="nd">@dataclass</span>
@@ -1536,7 +1543,7 @@
             <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
                     <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">cfg</span> <span class="ow">or</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">resolved_cfg</span> <span class="ow">or</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">alias</span>
                         <span class="k">break</span>
                 <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">deprecated_aliases</span><span class="p">:</span>
@@ -1554,7 +1561,7 @@
                 <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">cfg_key</span>
                 <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
                     <span class="n">duplicate_val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">cfg</span> <span class="ow">or</span> <span class="n">duplicate_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">resolved_cfg</span> <span class="ow">or</span> <span class="n">duplicate_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
                             <span class="sa">f</span><span class="s2">&quot;Duplicate opt name. runopt: `</span><span class="si">{</span><span class="n">resolved_name</span><span class="si">}</span><span class="s2">``, is an alias of runopt: `</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
                             <span class="n">resolved_name</span><span class="p">,</span>

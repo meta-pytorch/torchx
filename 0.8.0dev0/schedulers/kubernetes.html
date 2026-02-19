@@ -532,7 +532,7 @@ and adding or overriding specified ones.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.kubernetes_scheduler.KubernetesScheduler">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.kubernetes_scheduler.</span></span><span class="sig-name descname"><span class="pre">KubernetesScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ApiClient</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DockerClient</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchx/schedulers/kubernetes_scheduler.html#KubernetesScheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">KubernetesOpts</span></code>]</p>
+<dd><p>Bases: <a class="reference internal" href="../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a>, <a class="reference internal" href="../schedulers.html#torchx.schedulers.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Opts</span></code>]</p>
 <p>KubernetesScheduler is a TorchX scheduling interface to Kubernetes.</p>
 <p>Important: Volcano is required to be installed on the Kubernetes cluster.
 TorchX requires gang scheduling for multi-replica/multi-role execution
@@ -563,29 +563,29 @@ $<span class="w"> </span>torchx<span class="w"> </span>delete<span class="w"> </
 </div>
 <p><strong>Config Options</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    usage:
-        queue=QUEUE,[namespace=NAMESPACE],[service_account=SERVICE_ACCOUNT],[priority_class=PRIORITY_CLASS],[validate_spec=VALIDATE_SPEC],[reserved_millicpu=RESERVED_MILLICPU],[reserved_memmb=RESERVED_MEMMB],[efa_device_count=EFA_DEVICE_COUNT],[image_repo=IMAGE_REPO],[quiet=QUIET]
+        queue=QUEUE,[namespace=NAMESPACE],[service_account=SERVICE_ACCOUNT],[priority_class=PRIORITY_CLASS],[validate_spec=VALIDATE_SPEC],[reserved_millicpu=RESERVED_MILLICPU],[reserved_memmb=RESERVED_MEMMB],[image_repo=IMAGE_REPO],[efa_device_count=EFA_DEVICE_COUNT],[quiet=QUIET]
 
     required arguments:
         queue=QUEUE (str)
-            Volcano queue to schedule job in
+            Volcano queue to schedule job in.
 
     optional arguments:
         namespace=NAMESPACE (str, default)
-            Kubernetes namespace to schedule job in
+            Kubernetes namespace to schedule job in.
         service_account=SERVICE_ACCOUNT (str, None)
-            The service account name to set on the pod specs
+            The service account name to set on the pod specs.
         priority_class=PRIORITY_CLASS (str, None)
-            The name of the PriorityClass to set on the job specs
+            The name of the PriorityClass to set on the job specs.
         validate_spec=VALIDATE_SPEC (bool, True)
-            Validate job spec using Kubernetes API dry-run before submission
+            Validate job spec using Kubernetes API dry-run before submission.
         reserved_millicpu=RESERVED_MILLICPU (int, 100)
-            Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)
+            Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100).
         reserved_memmb=RESERVED_MEMMB (int, 1024)
-            Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)
-        efa_device_count=EFA_DEVICE_COUNT (int, None)
-            EFA device count override: None/unset=use resource spec, 0=remove EFA, N&gt;0=set EFA count to N
+            Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024).
         image_repo=IMAGE_REPO (str, None)
             (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
+        efa_device_count=EFA_DEVICE_COUNT (int, None)
+            EFA device count override: None/unset=use resource spec, 0=remove EFA, N&gt;0=set EFA count to N.
         quiet=QUIET (bool, False)
             whether to suppress verbose output for image building. Defaults to ``False``.
 </pre></div>
