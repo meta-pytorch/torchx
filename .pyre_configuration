@@ -4,19 +4,16 @@
     ".*/docs/.*",
     ".*/setup.py",
     ".*/IPython/core/tests/nonascii.*",
-    ".*/torchx/examples/apps/compute_world_size/.*"
+    ".*/torchx/examples/apps/compute_world_size/.*",
+    ".*/site-packages/sagemaker/.*"
   ],
   "ignore_all_errors": [
-    "./stubs/",
     "./.venv/"
   ],
   "site_package_search_strategy": "all",
   "source_directories": [
     "scripts",
     "."
-  ],
-  "search_path": [
-    "stubs"
   ],
   "strict": true,
   "enable_strict_any_check": true,

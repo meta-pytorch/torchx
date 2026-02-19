@@ -46,9 +46,9 @@ dev = [
     "kubernetes>=11",
     "moto>=5",
     "s3fs",
-    # CVE fixes: https://github.com/meta-pytorch/torchx/security/dependabot/19
-    #            https://github.com/meta-pytorch/torchx/security/dependabot/20
-    "sagemaker>=2.256.0,!=3.0.*,!=3.1.*",
+    # Only sagemaker-train is needed (not the full sagemaker meta-package which
+    # pulls in sagemaker-serve and its heavy onnxruntime dependency)
+    "sagemaker-train",
     # -- torchx.apps deps (examples)
     "ax-platform[mysql]",
     "captum",
@@ -116,7 +116,7 @@ version = { file = "torchx/version.txt" }
 first_party_detection = false
 
 [tool.black]
-target-version = ["py310", "py311", "py312"]
+target-version = ["py311", "py312"]
 
 [tool.ruff]
 line-length = 120
