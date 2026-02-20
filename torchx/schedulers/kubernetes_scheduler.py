@@ -109,7 +109,6 @@ from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
-from torchx.cli.colors import BLUE, ENDC
 from torchx.schedulers.api import (
     DescribeAppResponse,
     filter_regex,
@@ -137,6 +136,7 @@ from torchx.specs.api import (
     VolumeMount,
 )
 from torchx.specs.overlays import apply_overlay, get_overlay
+from torchx.util.colors import BLUE, ENDC
 from torchx.util.strings import normalize_str
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
