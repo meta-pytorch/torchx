@@ -32,6 +32,7 @@ from torchx.specs import (
     AppDef,
     AppDryRunInfo,
     AppState,
+    cases,
     CfgVal,
     NONE,
     NULL_RESOURCE,
@@ -50,17 +51,6 @@ DAYS_IN_2_WEEKS = 14
 # =============================================================================
 # STRUCTURED OPTIONS BASE CLASS
 # =============================================================================
-
-
-def _snake_to_camel(name: str) -> str:
-    """Convert snake_case to camelCase."""
-    components = name.split("_")
-    return components[0] + "".join(x.title() for x in components[1:])
-
-
-def _to_snake_case(name: str) -> str:
-    """Convert to snake_case."""
-    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
 class StructuredOpts(Mapping[str, CfgVal]):
@@ -114,7 +104,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             if name in cfg:
                 kwargs[name] = cfg[name]
             else:
-                camel_case = _snake_to_camel(name)
+                camel_case = cases.snake_to_camel(name)
                 if camel_case in cfg:
                     kwargs[name] = cfg[camel_case]
         return cls(**kwargs)
@@ -144,7 +134,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
         Transparently handles camelCase keys by converting to snake_case.
         """
-        snake_key = _to_snake_case(key)
+        snake_key = cases.camel_to_snake(key)
         if hasattr(self, snake_key):
             return getattr(self, snake_key)
         raise KeyError(key) from None
@@ -226,13 +216,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
         for f in fields(cls):
             name = f.name
 
-            # Generate camelCase alias for snake_case field names
-            camel_case = _snake_to_camel(name)
-            if camel_case != name:
-                aliases = [camel_case]
-            else:
-                aliases = None
-
             # Get help text from field docstring
             help_text = docstrings.get(name, name)
 
@@ -268,7 +251,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
             # Add the option
             opts.add(
                 name,
-                aliases=aliases,
                 type_=type_,
                 default=default,
                 required=required,

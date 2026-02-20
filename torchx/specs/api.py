@@ -15,7 +15,6 @@ import os
 import pathlib
 import re
 import shutil
-import warnings
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum, IntEnum
@@ -932,6 +931,21 @@ def get_type_name(tp: Type[CfgVal]) -> str:
         return str(tp)
 
 
+class cases:
+    """Case conversion utilities."""
+
+    @staticmethod
+    def snake_to_camel(name: str) -> str:
+        """Convert snake_case to camelCase."""
+        components = name.split("_")
+        return components[0] + "".join(x.title() for x in components[1:])
+
+    @staticmethod
+    def camel_to_snake(name: str) -> str:
+        """Convert camelCase to snake_case."""
+        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
+
+
 @dataclass
 class runopt:
     """
@@ -942,8 +956,6 @@ class runopt:
     opt_type: Type[CfgVal]
     is_required: bool
     help: str
-    aliases: list[str] | None = None
-    deprecated_aliases: list[str] | None = None
 
     @property
     def is_type_list_of_str(self) -> bool:
@@ -1035,7 +1047,6 @@ class runopts:
 
     def __init__(self) -> None:
         self._opts: dict[str, runopt] = {}
-        self._alias_to_key: dict[str, str] = {}
 
     def __iter__(self) -> Iterator[tuple[str, runopt]]:
         return self._opts.items().__iter__()
@@ -1062,61 +1073,41 @@ class runopts:
                 return False
 
     def get(self, name: str) -> runopt | None:
-        """
-        Returns option if any was registered, or None otherwise.
-        First searches for the option by ``name``, then falls-back to matching ``name`` with any
-        registered aliases.
+        """Returns option if any was registered, or None otherwise.
 
+        Falls back to snake_case lookup so that camelCase names resolve to
+        snake_case registered keys (e.g., ``get("clusterName")`` finds
+        ``cluster_name``). This is for backwards compatibility with
+        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.
         """
-        if name in self._opts:
-            return self._opts[name]
-        if name in self._alias_to_key:
-            return self._opts[self._alias_to_key[name]]
-        return None
+        # _opts maps names to runopt instances (never None), so a None
+        # result unambiguously means the key does not exist.
+        result = self._opts.get(name)
+        if result is None:
+            snake = cases.camel_to_snake(name)
+            if snake != name:
+                result = self._opts.get(snake)
+        return result
 
     def resolve(self, cfg: Mapping[str, CfgVal]) -> dict[str, CfgVal]:
-        """
-        Checks the given config against this ``runopts`` and sets default configs
-        if not set.
+        """Resolve cfg against registered options, filling defaults.
 
-        .. note:: Extra configs unknown to this run option are ignored.
-
+        Extra configs unknown to this run option are ignored. camelCase cfg
+        keys are accepted for backwards compatibility with
+        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.
         """
 
         resolved_cfg: dict[str, CfgVal] = {**cfg}
 
         for cfg_key, runopt in self._opts.items():
             val = resolved_cfg.get(cfg_key)
-            resolved_name = None
-            aliases = runopt.aliases or []
-            deprecated_aliases = runopt.deprecated_aliases or []
-            if val is None:
-                for alias in aliases:
-                    val = resolved_cfg.get(alias)
-                    if alias in resolved_cfg or val is not None:
-                        resolved_name = alias
-                        break
-                for alias in deprecated_aliases:
-                    val = resolved_cfg.get(alias)
-                    if val is not None:
-                        resolved_name = alias
-                        use_instead = self._alias_to_key.get(alias)
-                        warnings.warn(
-                            f"Run option `{alias}` is deprecated, use `{use_instead}` instead",
-                            UserWarning,
-                            stacklevel=2,
-                        )
-                        break
-            else:
-                resolved_name = cfg_key
-                for alias in aliases:
-                    duplicate_val = resolved_cfg.get(alias)
-                    if alias in resolved_cfg or duplicate_val is not None:
-                        raise InvalidRunConfigException(
-                            f"Duplicate opt name. runopt: `{resolved_name}``, is an alias of runopt: `{alias}`",
-                            resolved_name,
-                            cfg,
-                        )
+
+            # Fallback: try camelCase version of the registered key in cfg
+            if val is None and cfg_key not in resolved_cfg:
+                camel_key = cases.snake_to_camel(cfg_key)
+                if camel_key != cfg_key and camel_key in resolved_cfg:
+                    val = resolved_cfg.pop(camel_key)
+                    resolved_cfg[cfg_key] = val
 
             # check required opt
             if runopt.is_required and val is None:
@@ -1136,7 +1127,7 @@ class runopts:
                 )
 
             # not required and not set, set to default
-            if val is None and resolved_name is None:
+            if val is None and cfg_key not in resolved_cfg:
                 resolved_cfg[cfg_key] = runopt.default
         return resolved_cfg
 
@@ -1236,16 +1227,12 @@ class runopts:
         help: str,
         default: CfgVal = None,
         required: bool = False,
-        aliases: list[str] | None = None,
-        deprecated_aliases: list[str] | None = None,
     ) -> None:
         """
         Adds the ``config`` option with the given help string and ``default``
         value (if any). If the ``default`` is not specified then this option
         is a required option.
         """
-        aliases = aliases or []
-        deprecated_aliases = deprecated_aliases or []
         if required and default is not None:
             raise ValueError(
                 f"Required option: {cfg_key} must not specify default value. Given: {default}"
@@ -1262,18 +1249,11 @@ class runopts:
             type_,
             required,
             help,
-            list(set(aliases)),
-            list(set(deprecated_aliases)),
         )
-        for alias in aliases:
-            self._alias_to_key[alias] = cfg_key
-        for deprecated_alias in deprecated_aliases:
-            self._alias_to_key[deprecated_alias] = cfg_key
         self._opts[cfg_key] = opt
 
     def update(self, other: "runopts") -> None:
         self._opts.update(other._opts)
-        self._alias_to_key.update(other._alias_to_key)
 
     # pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType
     def __or__(self, other: "runopts") -> "runopts":
