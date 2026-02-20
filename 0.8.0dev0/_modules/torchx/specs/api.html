@@ -465,7 +465,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span>
@@ -1382,6 +1381,21 @@
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">cases</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Case conversion utilities.&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert snake_case to camelCase.&quot;&quot;&quot;</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">camel_to_snake</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert camelCase to snake_case.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([a-z0-9])([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1_\2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">runopt</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1392,8 +1406,6 @@
     <span class="n">opt_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">]</span>
     <span class="n">is_required</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">help</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">aliases</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">deprecated_aliases</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_type_list_of_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -1485,7 +1497,6 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">runopt</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">runopt</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">items</span><span class="p">()</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
@@ -1512,61 +1523,41 @@
                 <span class="k">return</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="runopts.get"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.get">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopt</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns option if any was registered, or None otherwise.</span>
-<span class="sd">        First searches for the option by ``name``, then falls-back to matching ``name`` with any</span>
-<span class="sd">        registered aliases.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns option if any was registered, or None otherwise.</span>
 
+<span class="sd">        Falls back to snake_case lookup so that camelCase names resolve to</span>
+<span class="sd">        snake_case registered keys (e.g., ``get(&quot;clusterName&quot;)`` finds</span>
+<span class="sd">        ``cluster_name``). This is for backwards compatibility with</span>
+<span class="sd">        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+        <span class="c1"># _opts maps names to runopt instances (never None), so a None</span>
+        <span class="c1"># result unambiguously means the key does not exist.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">snake</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">camel_to_snake</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">snake</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
 <div class="viewcode-block" id="runopts.resolve"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.resolve">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks the given config against this ``runopts`` and sets default configs</span>
-<span class="sd">        if not set.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve cfg against registered options, filling defaults.</span>
 
-<span class="sd">        .. note:: Extra configs unknown to this run option are ignored.</span>
-
+<span class="sd">        Extra configs unknown to this run option are ignored. camelCase cfg</span>
+<span class="sd">        keys are accepted for backwards compatibility with</span>
+<span class="sd">        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">resolved_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cfg</span><span class="p">}</span>
 
         <span class="k">for</span> <span class="n">cfg_key</span><span class="p">,</span> <span class="n">runopt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">)</span>
-            <span class="n">resolved_name</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">aliases</span> <span class="o">=</span> <span class="n">runopt</span><span class="o">.</span><span class="n">aliases</span> <span class="ow">or</span> <span class="p">[]</span>
-            <span class="n">deprecated_aliases</span> <span class="o">=</span> <span class="n">runopt</span><span class="o">.</span><span class="n">deprecated_aliases</span> <span class="ow">or</span> <span class="p">[]</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">resolved_cfg</span> <span class="ow">or</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">alias</span>
-                        <span class="k">break</span>
-                <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">deprecated_aliases</span><span class="p">:</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">alias</span>
-                        <span class="n">use_instead</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span>
-                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Run option `</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">` is deprecated, use `</span><span class="si">{</span><span class="n">use_instead</span><span class="si">}</span><span class="s2">` instead&quot;</span><span class="p">,</span>
-                            <span class="ne">UserWarning</span><span class="p">,</span>
-                            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-                        <span class="p">)</span>
-                        <span class="k">break</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">cfg_key</span>
-                <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
-                    <span class="n">duplicate_val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">resolved_cfg</span> <span class="ow">or</span> <span class="n">duplicate_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Duplicate opt name. runopt: `</span><span class="si">{</span><span class="n">resolved_name</span><span class="si">}</span><span class="s2">``, is an alias of runopt: `</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
-                            <span class="n">resolved_name</span><span class="p">,</span>
-                            <span class="n">cfg</span><span class="p">,</span>
-                        <span class="p">)</span>
+
+            <span class="c1"># Fallback: try camelCase version of the registered key in cfg</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cfg_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resolved_cfg</span><span class="p">:</span>
+                <span class="n">camel_key</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">camel_key</span> <span class="o">!=</span> <span class="n">cfg_key</span> <span class="ow">and</span> <span class="n">camel_key</span> <span class="ow">in</span> <span class="n">resolved_cfg</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">camel_key</span><span class="p">)</span>
+                    <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
             <span class="c1"># check required opt</span>
             <span class="k">if</span> <span class="n">runopt</span><span class="o">.</span><span class="n">is_required</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1586,7 +1577,7 @@
                 <span class="p">)</span>
 
             <span class="c1"># not required and not set, set to default</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">resolved_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cfg_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resolved_cfg</span><span class="p">:</span>
                 <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">runopt</span><span class="o">.</span><span class="n">default</span>
         <span class="k">return</span> <span class="n">resolved_cfg</span></div>
 
@@ -1686,16 +1677,12 @@
         <span class="n">help</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">default</span><span class="p">:</span> <span class="n">CfgVal</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">aliases</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">deprecated_aliases</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds the ``config`` option with the given help string and ``default``</span>
 <span class="sd">        value (if any). If the ``default`` is not specified then this option</span>
 <span class="sd">        is a required option.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">aliases</span> <span class="o">=</span> <span class="n">aliases</span> <span class="ow">or</span> <span class="p">[]</span>
-        <span class="n">deprecated_aliases</span> <span class="o">=</span> <span class="n">deprecated_aliases</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">required</span> <span class="ow">and</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Required option: </span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2"> must not specify default value. Given: </span><span class="si">{</span><span class="n">default</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1712,18 +1699,11 @@
             <span class="n">type_</span><span class="p">,</span>
             <span class="n">required</span><span class="p">,</span>
             <span class="n">help</span><span class="p">,</span>
-            <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">aliases</span><span class="p">)),</span>
-            <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">deprecated_aliases</span><span class="p">)),</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg_key</span>
-        <span class="k">for</span> <span class="n">deprecated_alias</span> <span class="ow">in</span> <span class="n">deprecated_aliases</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">[</span><span class="n">deprecated_alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_opts</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_alias_to_key</span><span class="p">)</span>
 
     <span class="c1"># pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;runopts&quot;</span><span class="p">:</span>

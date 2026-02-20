@@ -482,6 +482,7 @@
     <span class="n">AppDef</span><span class="p">,</span>
     <span class="n">AppDryRunInfo</span><span class="p">,</span>
     <span class="n">AppState</span><span class="p">,</span>
+    <span class="n">cases</span><span class="p">,</span>
     <span class="n">CfgVal</span><span class="p">,</span>
     <span class="n">NONE</span><span class="p">,</span>
     <span class="n">NULL_RESOURCE</span><span class="p">,</span>
@@ -500,17 +501,6 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># STRUCTURED OPTIONS BASE CLASS</span>
 <span class="c1"># =============================================================================</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert snake_case to camelCase.&quot;&quot;&quot;</span>
-    <span class="n">components</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_to_snake_case</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert to snake_case.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([a-z0-9])([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1_\2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StructuredOpts</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]):</span>
@@ -564,7 +554,7 @@
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
                 <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">camel_case</span> <span class="o">=</span> <span class="n">_snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">camel_case</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">camel_case</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
                     <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">camel_case</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -594,7 +584,7 @@
 
 <span class="sd">        Transparently handles camelCase keys by converting to snake_case.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">snake_key</span> <span class="o">=</span> <span class="n">_to_snake_case</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">snake_key</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">camel_to_snake</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snake_key</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snake_key</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
@@ -676,13 +666,6 @@
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
 
-            <span class="c1"># Generate camelCase alias for snake_case field names</span>
-            <span class="n">camel_case</span> <span class="o">=</span> <span class="n">_snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">camel_case</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">aliases</span> <span class="o">=</span> <span class="p">[</span><span class="n">camel_case</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">aliases</span> <span class="o">=</span> <span class="kc">None</span>
-
             <span class="c1"># Get help text from field docstring</span>
             <span class="n">help_text</span> <span class="o">=</span> <span class="n">docstrings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
@@ -718,7 +701,6 @@
             <span class="c1"># Add the option</span>
             <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
                 <span class="n">name</span><span class="p">,</span>
-                <span class="n">aliases</span><span class="o">=</span><span class="n">aliases</span><span class="p">,</span>
                 <span class="n">type_</span><span class="o">=</span><span class="n">type_</span><span class="p">,</span>
                 <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span>
                 <span class="n">required</span><span class="o">=</span><span class="n">required</span><span class="p">,</span>
