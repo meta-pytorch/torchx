@@ -216,6 +216,17 @@ class CmdLogTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "1"):
             validate("kubernetes://session/queue:name-1234/role/")
 
+    @patch(RUNNER, new_callable=MockRunner)
+    def test_cmd_log_broken_pipe(self, mock_runner: MagicMock) -> None:
+        out = MagicMock(spec=io.StringIO)
+        out.write = MagicMock(side_effect=BrokenPipeError)
+        # should not raise; BrokenPipeError from the output stream is silenced
+        get_logs(
+            out,
+            "local_docker://test-session/SparseNNAppDef/trainer/0",
+            regex=None,
+        )
+
     def test_prefix_line(self) -> None:
         self.assertEqual(_prefix_line("<prefix>", "test\n"), "<prefix>test\n")
         self.assertEqual(_prefix_line("<prefix>", "\rtest\n"), "\r<prefix>test\n")
