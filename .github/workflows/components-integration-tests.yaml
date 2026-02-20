@@ -11,8 +11,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - scheduler: "aws_batch"
-            platform: linux.24_04.4x
+          # Temporarily disabled - real AWS Batch scheduling
+          # - scheduler: "aws_batch"
+          #   platform: linux.24_04.4x
           - scheduler: "aws_batch"
             container_repo: localhost
             extra_args: "--mock"
