@@ -425,35 +425,27 @@ class StructuredOptsTest(unittest.TestCase):
         self.assertFalse(enable_debug_opt.is_required)
         self.assertEqual(enable_debug_opt.default, False)
 
-    def test_as_runopts_generates_camelcase_aliases(self) -> None:
-        """Test as_runopts generates camelCase aliases for snake_case fields."""
+    def test_as_runopts_resolves_camelcase_cfg(self) -> None:
+        """Test as_runopts produces runopts that resolve camelCase cfg keys."""
         opts = SampleOpts.as_runopts()
 
-        # Check that camelCase alias resolves to the option
-        cluster_name_opt = opts.get("clusterName")
-        self.assertIsNotNone(cluster_name_opt)
+        # resolve() normalizes camelCase → snake_case
+        resolved = opts.resolve({"clusterName": "foo"})
+        self.assertEqual(resolved["cluster_name"], "foo")
+        self.assertEqual(resolved["num_retries"], 3, "default should be filled")
 
-        num_retries_opt = opts.get("numRetries")
-        self.assertIsNotNone(num_retries_opt)
-
-    def test_as_runopts_resolve_accepts_aliases_and_adds_defaults(self) -> None:
-        """Test runopts.resolve() accepts alias keys and adds defaults."""
+    def test_as_runopts_resolve_camelcase_with_defaults_and_from_cfg(self) -> None:
+        """Test resolve() with camelCase keys adds defaults and works with from_cfg()."""
         opts = SampleOpts.as_runopts()
 
-        # Pass cfg with camelCase keys (aliases)
-        cfg_with_aliases = {
-            "clusterName": "foo",
-        }
-
-        # resolve() should not raise - aliases are valid
-        resolved_cfg = opts.resolve(cfg_with_aliases)
+        resolved = opts.resolve({"clusterName": "foo"})
 
         # Default values are added with canonical (snake_case) keys
-        self.assertIn("num_retries", resolved_cfg)
-        self.assertEqual(resolved_cfg["num_retries"], 3)
+        self.assertIn("num_retries", resolved)
+        self.assertEqual(resolved["num_retries"], 3)
 
-        # SampleOpts.from_cfg() works with resolved cfg containing alias keys
-        sample_opts = SampleOpts.from_cfg(resolved_cfg)
+        # SampleOpts.from_cfg() works with resolved cfg
+        sample_opts = SampleOpts.from_cfg(resolved)
         self.assertEqual(sample_opts.cluster_name, "foo")
         self.assertEqual(sample_opts.num_retries, 3)
 

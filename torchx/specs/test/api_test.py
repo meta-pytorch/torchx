@@ -13,7 +13,6 @@ import os
 import tempfile
 import time
 import unittest
-import warnings
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Mapping, Union
@@ -28,6 +27,7 @@ from torchx.specs.api import (
     AppState,
     AppStatus,
     AppStatusError,
+    cases,
     CfgVal,
     get_type_name,
     InvalidRunConfigException,
@@ -614,73 +614,6 @@ class RunConfigTest(unittest.TestCase):
         # this print is intentional (demonstrates the intended usecase)
         print(opts)
 
-    def test_runopts_add_with_aliases(self) -> None:
-        opts = runopts()
-        opts.add(
-            "job_priority",
-            aliases=["jobPriority"],
-            type_=str,
-            help="priority for the job",
-        )
-        self.assertEqual(1, len(opts._opts))
-        self.assertIsNotNone(opts.get("job_priority"))
-        self.assertIsNotNone(opts.get("jobPriority"))
-
-    def test_runopts_resolve_with_aliases(self) -> None:
-        opts = runopts()
-        opts.add(
-            "job_priority",
-            aliases=["jobPriority"],
-            type_=str,
-            help="priority for the job",
-        )
-        opts.resolve({"job_priority": "high"})
-        opts.resolve({"jobPriority": "low"})
-        with self.assertRaises(InvalidRunConfigException):
-            opts.resolve({"job_priority": "high", "jobPriority": "low"})
-
-    def test_runopts_resolve_with_none_valued_aliases(self) -> None:
-        opts = runopts()
-        opts.add(
-            "job_priority",
-            aliases=["jobPriority"],
-            type_=str,
-            help="priority for the job",
-        )
-        opts.add(
-            "model_type_name",
-            aliases=["modelTypeName"],
-            type_=Union[str, None],
-            help="ML Hub Model Type to attribute resource utilization for job",
-        )
-        resolved_opts = opts.resolve({"modelTypeName": None, "jobPriority": "low"})
-        self.assertEqual(resolved_opts.get("modelTypeName"), None)
-        self.assertEqual(resolved_opts.get("jobPriority"), "low")
-        self.assertEqual(resolved_opts, {"modelTypeName": None, "jobPriority": "low"})
-
-        with self.assertRaises(InvalidRunConfigException):
-            opts.resolve({"modelTypeName": None, "model_type_name": "low"})
-
-    def test_runopts_add_with_deprecated_aliases(self) -> None:
-        opts = runopts()
-        opts.add(
-            "job_priority",
-            deprecated_aliases=["priority"],
-            type_=str,
-            help="run as user",
-        )
-
-        opts.resolve({"job_priority": "high"})
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            opts.resolve({"priority": "high"})
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertEqual(
-                str(w[0].message),
-                "Run option `priority` is deprecated, use `job_priority` instead",
-            )
-
     def get_runopts(self) -> runopts:
         opts = runopts()
         opts.add("run_as", type_=str, help="run as user", required=True)
@@ -752,6 +685,22 @@ class RunConfigTest(unittest.TestCase):
         self.assertEqual(10, resolved.get("priority"))
         self.assertIsNone(resolved.get("cluster_id"))
         self.assertEqual("baz", resolved.get("some_other_opt"))
+
+    def test_runopts_get_camelcase_fallback(self) -> None:
+        """get() with a camelCase name falls back to the snake_case key."""
+        opts = self.get_runopts()
+        self.assertIsNotNone(opts.get("cluster_id"))
+        self.assertIsNotNone(
+            opts.get("clusterId"),
+            "camelCase lookup should find snake_case key",
+        )
+
+    def test_runopts_resolve_camelcase_cfg(self) -> None:
+        """resolve() accepts camelCase cfg keys for snake_case registered opts."""
+        opts = self.get_runopts()
+        resolved = opts.resolve({"runAs": "foobar"})
+        self.assertEqual("foobar", resolved.get("run_as"))
+        self.assertEqual(10, resolved.get("priority"), "default should be filled")
 
     def test_cfg_from_str(self) -> None:
         opts = runopts()
@@ -923,36 +872,28 @@ class RunConfigTest(unittest.TestCase):
         self.assertIsNotNone(merged.get("baz"))
         self.assertEqual(sorted([key for key, _ in merged]), ["bar", "baz", "foo"])
 
-    def test_runopts_or_merges_aliases(self) -> None:
-        """Test that __or__ correctly merges options with aliases."""
-        opts1 = runopts()
-        opts1.add("job_priority", aliases=["jobPriority"], type_=str, help="priority")
 
-        opts2 = runopts()
-        opts2.add("cluster_name", aliases=["clusterName"], type_=str, help="cluster")
+class CasesTest(unittest.TestCase):
+    def test_snake_to_camel(self) -> None:
+        self.assertEqual(cases.snake_to_camel("cluster_name"), "clusterName")
+        self.assertEqual(cases.snake_to_camel("num_retries"), "numRetries")
+        self.assertEqual(cases.snake_to_camel("hpc_cluster_uuid"), "hpcClusterUuid")
+        self.assertEqual(cases.snake_to_camel("name"), "name")
 
-        merged = opts1 | opts2
+    def test_camel_to_snake(self) -> None:
+        self.assertEqual(cases.camel_to_snake("clusterName"), "cluster_name")
+        self.assertEqual(cases.camel_to_snake("numRetries"), "num_retries")
+        self.assertEqual(cases.camel_to_snake("hpcClusterUuid"), "hpc_cluster_uuid")
+        self.assertEqual(cases.camel_to_snake("name"), "name")
 
-        # Both canonical and alias keys should work
-        self.assertIsNotNone(merged.get("job_priority"))
-        self.assertIsNotNone(merged.get("jobPriority"))
-        self.assertIsNotNone(merged.get("cluster_name"))
-        self.assertIsNotNone(merged.get("clusterName"))
-
-    def test_runopts_update_merges_aliases(self) -> None:
-        """Test that update() merges aliases from the other runopts."""
-        opts1 = runopts()
-        opts1.add("foo", aliases=["fooAlias"], type_=str, help="foo option")
-
-        opts2 = runopts()
-        opts2.add("bar", aliases=["barAlias"], type_=str, help="bar option")
-
-        opts1.update(opts2)
-
-        # Original aliases should still work
-        self.assertIsNotNone(opts1.get("fooAlias"))
-        # New aliases from opts2 should be merged
-        self.assertIsNotNone(opts1.get("barAlias"))
+    def test_roundtrip(self) -> None:
+        """snake → camel → snake preserves the original."""
+        for name in ["cluster_name", "num_retries", "hpc_cluster_uuid", "name"]:
+            self.assertEqual(
+                cases.camel_to_snake(cases.snake_to_camel(name)),
+                name,
+                f"roundtrip failed for `{name}`",
+            )
 
 
 class GetTypeNameTest(unittest.TestCase):
