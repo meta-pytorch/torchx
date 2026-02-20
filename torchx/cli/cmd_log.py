@@ -63,7 +63,10 @@ def print_log_lines(
             streams=streams,
         ):
             prefix = f"{GREEN}{role_name}/{replica_id}{ENDC} "
-            print(_prefix_line(prefix, line), file=file, end="", flush=True)
+            try:
+                print(_prefix_line(prefix, line), file=file, end="", flush=True)
+            except BrokenPipeError:
+                return
     except Exception as e:
         exceptions.put(e)
         raise
