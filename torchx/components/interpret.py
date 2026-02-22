@@ -12,8 +12,4 @@ We recommend creating a custom application and component built using
 `Captum <https://captum.ai/>`_ .
 Captum provides a number of out of the box analyzers and renderers to understand
 your model.
-
-See the
-:ref:`examples_apps/lightning/interpret:Model Interpretability Example`
-for an example of how to use Captum with TorchX.
 """

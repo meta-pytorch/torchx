@@ -24,7 +24,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import subprocess
 import sys
 
 import pytorch_sphinx_theme
@@ -38,7 +37,12 @@ if True:  # stop isort from reordering
     sys.path.append(os.path.abspath("../.."))
     import torchx
 
-FBCODE = "fbcode" in os.getcwd()
+FBCODE = os.environ.get(
+    "TORCHX_DOCS_FBCODE", str("fbcode" in os.getcwd())
+).lower() not in (
+    "0",
+    "false",
+)
 
 # -- General configuration ------------------------------------------------
 
@@ -63,18 +67,16 @@ extensions = [
     "compatibility",
     "runopts",
     "fbcode",
-    "nbsphinx",
-    "IPython.sphinxext.ipython_console_highlighting",
 ]
-if not FBCODE:
+if FBCODE:
+    extensions += [
+        "myst_parser",  # fb/*.md docs
+    ]
+else:
     extensions += [
         "sphinx.ext.intersphinx",
         "sphinxcontrib.katex",
-        "sphinx_gallery.gen_gallery",
     ]
-
-if FBCODE:
-    nbsphinx_execute = "never"
 
 html_context = {"fbcode": FBCODE}
 
@@ -105,7 +107,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst", ".md"] if FBCODE else [".rst"]
 
 # The master toctree document.
 master_doc = "index"
@@ -136,9 +138,11 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = [
-    "examples_*/**/*.ipynb",
-]
+exclude_patterns = []
+if not FBCODE:
+    # fb/ contains Meta-internal .md docs that require a markdown parser
+    # and Meta-internal Sphinx extensions only available in the fbcode build.
+    exclude_patterns += ["fb/**"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -323,58 +327,7 @@ def patched_make_field(self, types, domain, items, **kw):
 TypedField.make_field = patched_make_field
 
 
-# -- Options for Sphinx-Gallery -----
-
-if FBCODE:
-    tags = []
-else:
-    tags_raw = subprocess.check_output(["git", "tag", "-l"])
-    tags = set(tags_raw.decode("utf-8").strip().split("\n"))
-
-if version in tags:
-    notebook_version = version
-    code_url = f"https://github.com/meta-pytorch/torchx/archive/refs/tags/{notebook_version}.tar.gz"
-else:
-    notebook_version = "main"
-    code_url = f"https://github.com/meta-pytorch/torchx/archive/refs/heads/{notebook_version}.tar.gz"
-
-first_notebook_cell = f"""
-!pip install torchx
-!wget --no-clobber {code_url}
-!tar xf {notebook_version}.tar.gz --strip-components=1
-
-NOTEBOOK = True
-""".strip()
-
-sphinx_gallery_conf = {
-    "examples_dirs": [
-        "../../torchx/examples/apps",
-    ],
-    "gallery_dirs": [
-        "examples_apps",
-        "examples_pipelines",
-    ],
-    "first_notebook_cell": first_notebook_cell,
-}
-
 # -- Options for autosectionlabel
 
 # add the document to avoid collisions for common titles
 autosectionlabel_prefix_document = True
-
-
-# Options for nbsphinx
-
-nbsphinx_custom_formats = {
-    ".md": ["jupytext.reads", {"fmt": "markdown"}],
-}
-nbsphinx_epilog = r"""
-.. raw:: html
-
-    <div id="is-nbsphinx"></div>
-"""
-
-nbsphinx_requirejs_path = ""
-
-if os.environ.get("SKIP_NB"):
-    nbsphinx_execute = "never"
