@@ -2,7 +2,7 @@ Basic Concepts
 =======================
 
 This describes the high level concepts behind TorchX and the project structure.
-For how to create and run an app check out the `Quickstart Guide <quickstart.md>`_.
+For how to create and run an app check out the :doc:`Quickstart Guide <quickstart>`.
 
 Project Structure
 -------------------
@@ -203,5 +203,5 @@ through the ``torchx.runtime`` module.
 Next Steps
 ------------------
 
-Check out the `Quickstart Guide <quickstart.md>`_ to learn how to create and
+Check out the :doc:`Quickstart Guide <quickstart>` to learn how to create and
 run components.

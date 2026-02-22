@@ -189,7 +189,7 @@ Running as a Job
 
 You can run a component as a job with the :ref:`torchx cli<cli:CLI>` or programmatically with
 the :ref:`torchx.runner<runner:torchx.runner>`. Both are identical, in fact the
-cli uses the runner under the hood, so the choice is yours. The `quickstart <../quickstart.md>`_
+cli uses the runner under the hood, so the choice is yours. The :doc:`quickstart </quickstart>`
 guide walks though the basics for you to get started.
 
 Programmatic Run
@@ -304,7 +304,7 @@ Additional Resources
 See:
 
 1. Components defined in this module as expository examples
-2. Defining your own component `quick start guide <../quickstart.md>`_
+2. Defining your own component :doc:`quick start guide </quickstart>`
 3. Component best practices :ref:`guide<component_best_practices:Component Best Practices>`
 4. App best practices :ref:`guide<app_best_practices:App Best Practices>`
 

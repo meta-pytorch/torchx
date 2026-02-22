@@ -72,14 +72,8 @@ dev = [
 ]
 docs = [
     "sphinx~=5.0",
-    "sphinx-gallery<1",
     "sphinxcontrib.katex",
-    "matplotlib",
-    "papermill",
-    "ipykernel",
-    "nbsphinx",
-    "jupytext",
-    "ipython_genutils",
+    "pytorch-sphinx-theme @ git+https://github.com/pytorch/pytorch_sphinx_theme.git",
     "jinja2>=3.1.4",
 ]
 

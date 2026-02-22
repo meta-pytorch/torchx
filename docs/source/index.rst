@@ -37,12 +37,12 @@ Documentation
    :maxdepth: 1
    :caption: Usage
 
-   quickstart.md
+   quickstart
    cli
    basics
    runner.config
    advanced
-   custom_components.md
+   custom_components
    tracker
 
 .. fbcode::
@@ -95,15 +95,6 @@ Works With
       :glob:
 
       pipelines/fb/*
-
-
-Examples
-------------
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
-
-   examples_apps/index
 
 
 Components Library
