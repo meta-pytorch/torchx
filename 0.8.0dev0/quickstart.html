@@ -34,10 +34,6 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="_static/gallery-dataframe.css" type="text/css" />
-  <link rel="stylesheet" href="_static/nbsphinx-code-cells.css" type="text/css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
@@ -346,10 +342,6 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="examples_apps/index.html">Application Examples</a></li>
-</ul>
 <p class="caption" role="heading"><span class="caption-text">Components</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
@@ -422,7 +414,7 @@
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="_sources/quickstart.md.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -451,299 +443,77 @@
     <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
-  <section id="Quickstart">
-<h1>Quickstart<a class="headerlink" href="#Quickstart" title="Permalink to this heading">¶</a></h1>
-<p>This is a self contained guide on how to write a simple app and start launching distributed jobs on local and remote clusters.</p>
-<section id="Installation">
-<h2>Installation<a class="headerlink" href="#Installation" title="Permalink to this heading">¶</a></h2>
-<p>First thing we need to do is to install the TorchX python package which includes the CLI and the library.</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># install torchx with all dependencies</span>
-$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;torchx[dev]&quot;</span>
+  <section id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this heading">¶</a></h1>
+<p>This is a self contained guide on how to write a simple app and start launching
+distributed jobs on local and remote clusters.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
+<p>First thing we need to do is to install the TorchX python package which includes
+the CLI and the library.</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;torchx[dev]&quot;</span>
 </pre></div>
 </div>
-<p>See the <a class="reference external" href="https://github.com/meta-pytorch/torchx">README</a> for more information on installation.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<p>See the <a class="reference external" href="https://github.com/meta-pytorch/torchx">README</a> for more
+information on installation.</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>--help
 </pre></div>
-</div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>--help
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-usage: torchx [-h] [--log_level LOG_LEVEL] [--version]
-              {builtins,cancel,configure,delete,describe,list,log,run,runopts,status,tracker}
-              ...
-
-torchx CLI
-
-options:
-  -h, --help            show this help message and exit
-  --log_level LOG_LEVEL
-                        Python logging log level
-  --version             show program&#39;s version number and exit
-
-sub-commands:
-  Use the following commands to run operations, e.g.: torchx run ${JOB_NAME}
-
-  {builtins,cancel,configure,delete,describe,list,log,run,runopts,status,tracker}
-</pre></div></div>
 </div>
 </section>
-<section id="Hello-World">
-<h2>Hello World<a class="headerlink" href="#Hello-World" title="Permalink to this heading">¶</a></h2>
-<p>Lets start off with writing a simple “Hello World” python app. This is just a normal python program and can contain anything you’d like.</p>
-<div class="admonition note"><div class="admonition-title"><p>Note</p>
-</div><p>This example uses Jupyter Notebook <code class="docutils literal notranslate"><span class="pre">%%writefile</span></code> to create local files for example purposes. Under normal usage you would have these as standalone files.</p>
-</div><div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%writefile</span> my_app.py
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<section id="hello-world">
+<h2>Hello World<a class="headerlink" href="#hello-world" title="Permalink to this heading">¶</a></h2>
+<p>Lets start off with writing a simple “Hello World” python app. This is just a
+normal python program and can contain anything you’d like.</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">my_app.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Overwriting my_app.py
-</pre></div></div>
-</div>
 </section>
-<section id="Launching">
-<h2>Launching<a class="headerlink" href="#Launching" title="Permalink to this heading">¶</a></h2>
-<p>We can execute our app via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code>. The <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> scheduler executes the app relative to the current directory.</p>
+<section id="launching">
+<h2>Launching<a class="headerlink" href="#launching" title="Permalink to this heading">¶</a></h2>
+<p>We can execute our app via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> scheduler executes the app relative to the current directory.</p>
 <p>For this we’ll use the <code class="docutils literal notranslate"><span class="pre">utils.python</span></code> component:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--help
 </pre></div>
 </div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--help
+<p>The component takes in the script name and any extra arguments will be passed to
+the script itself.</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
 </pre></div>
 </div>
+<p>We can run the exact same app via the <code class="docutils literal notranslate"><span class="pre">local_docker</span></code> scheduler. This scheduler
+will package up the local workspace as a layer on top of the specified image.
+This provides a very similar environment to the container based remote
+schedulers.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This requires Docker installed and won’t work in environments such as Google
+Colab. See the Docker install instructions:
+<a class="reference external" href="https://docs.docker.com/get-docker/">https://docs.docker.com/get-docker/</a></p>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-usage: torchx run &lt;run args...&gt; python  [--help] [-m str] [-c str]
-                                        [--script str] [--image str]
-                                        [--name str] [--cpu int] [--gpu int]
-                                        [--memMB int] [-h str]
-                                        [--num_replicas int]
-                                        ...
-
-Runs ``python`` with the specified module, command or script on the specified
-image and host. Use ``--`` to separate component args and program args
-(e.g. ``torchx run utils.python --m foo.main -- --args to --main``)
-
-Note: (cpu, gpu, memMB) parameters are mutually exclusive with ``h`` (named resource) where
-      ``h`` takes precedence if specified for setting resource requirements.
-      See `registering named resources &lt;https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources&gt;`_.
-
-positional arguments:
-  str                 arguments passed to the program in sys.argv[1:] (ignored
-                      with `--c`) (required)
-
-options:
-  --help              show this help message and exit
-  -m str, --m str     run library module as a script (default: None)
-  -c str, --c str     program passed as string (may error if scheduler has a
-                      length limit on args) (default: None)
-  --script str        .py script to run (default: None)
-  --image str         image to run on (default:
-                      ghcr.io/pytorch/torchx:0.8.0dev0)
-  --name str          name of the job (default: torchx_utils_python)
-  --cpu int           number of cpus per replica (default: 1)
-  --gpu int           number of gpus per replica (default: 0)
-  --memMB int         cpu memory in MB per replica (default: 1024)
-  -h str, --h str     a registered named resource (if specified takes
-                      precedence over cpu, gpu, memMB) (default: None)
-  --num_replicas int  number of copies to run (each on its own container)
-                      (default: 1)
-</pre></div></div>
-</div>
-<p>The component takes in the script name and any extra arguments will be passed to the script itself.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
 </pre></div>
 </div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-torchx 2026-02-21 22:35:34 INFO     Tracker configurations: {}
-torchx 2026-02-21 22:35:34 INFO     Log directory not set in scheduler cfg. Creating a temporary log dir that will be deleted on exit. To preserve log directory set the `log_dir` cfg option
-torchx 2026-02-21 22:35:34 INFO     Log directory is: /tmp/torchx_bx8kw64k
-torchx 2026-02-21 22:35:34 INFO     Waiting for the app to finish...
-python/0 Hello, your name!
-torchx 2026-02-21 22:35:35 INFO     Job finished: SUCCEEDED
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-local_cwd://torchx/torchx_utils_python-g0dqbf6tvxqcvc
-</pre></div></div>
-</div>
-<p>We can run the exact same app via the <code class="docutils literal notranslate"><span class="pre">local_docker</span></code> scheduler. This scheduler will package up the local workspace as a layer on top of the specified image. This provides a very similar environment to the container based remote schedulers.</p>
-<div class="admonition note"><div class="admonition-title"><p>Note</p>
-</div><p>This requires Docker installed and won’t work in environments such as Google Colab. See the Docker install instructions: <a class="reference external" href="https://docs.docker.com/get-docker/">https://docs.docker.com/get-docker/</a></p>
-</div><div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-torchx 2026-02-21 22:35:37 INFO     Tracker configurations: {}
-torchx 2026-02-21 22:35:37 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
-torchx 2026-02-21 22:35:37 INFO     Building workspace docker image (this may take a while)...
-torchx 2026-02-21 22:35:37 INFO     Step 1/4 : ARG IMAGE
-torchx 2026-02-21 22:35:37 INFO     Step 2/4 : FROM $IMAGE
-torchx 2026-02-21 22:35:37 INFO      ---&gt; da9ca21e8d49
-torchx 2026-02-21 22:35:37 INFO     Step 3/4 : COPY . .
-torchx 2026-02-21 22:35:44 INFO      ---&gt; 901355f93ff6
-torchx 2026-02-21 22:35:44 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
-torchx 2026-02-21 22:35:44 INFO      ---&gt; Running in d345ffd6f066
-torchx 2026-02-21 22:35:50 INFO      ---&gt; Removed intermediate container d345ffd6f066
-torchx 2026-02-21 22:35:50 INFO      ---&gt; d9420d269e7b
-torchx 2026-02-21 22:35:50 INFO     [Warning] One or more build-args [WORKSPACE] were not consumed
-torchx 2026-02-21 22:35:50 INFO     Successfully built d9420d269e7b
-torchx 2026-02-21 22:35:50 INFO     role[0]=python updated with new image to include workspace changes
-torchx 2026-02-21 22:35:50 INFO     Waiting for the app to finish...
-python/0 Hello, your name!
-torchx 2026-02-21 22:35:51 INFO     Job finished: SUCCEEDED
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-local_docker://torchx/torchx_utils_python-l61v1mx99zh3zc
-</pre></div></div>
-</div>
-<p>TorchX defaults to using the <a class="reference external" href="https://ghcr.io/pytorch/torchx">ghcr.io/pytorch/torchx</a> Docker container image which contains the PyTorch libraries, TorchX and related dependencies.</p>
+<p>TorchX defaults to using the
+<a class="reference external" href="https://ghcr.io/pytorch/torchx">ghcr.io/pytorch/torchx</a> Docker container image
+which contains the PyTorch libraries, TorchX and related dependencies.</p>
 </section>
-<section id="Distributed">
-<h2>Distributed<a class="headerlink" href="#Distributed" title="Permalink to this heading">¶</a></h2>
-<p>TorchX’s <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component uses <a class="reference external" href="https://pytorch.org/docs/stable/distributed.elastic.html">TorchElastic</a> to manage the workers. This means you can launch multi-worker and multi-host jobs out of the box on all of the schedulers we support.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<section id="distributed">
+<h2>Distributed<a class="headerlink" href="#distributed" title="Permalink to this heading">¶</a></h2>
+<p>TorchX’s <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component uses
+<a class="reference external" href="https://pytorch.org/docs/stable/distributed.elastic.html">TorchElastic</a>
+to manage the workers. This means you can launch multi-worker and multi-host
+jobs out of the box on all of the schedulers we support.</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>--help
 </pre></div>
 </div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>--help
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-usage: torchx run &lt;run args...&gt; ddp  [--help] [--script str] [-m str]
-                                     [--image str] [--name str] [-h str]
-                                     [--cpu int] [--gpu int] [--memMB int]
-                                     [-j str] [--env str] [--metadata str]
-                                     [--max_retries int] [--rdzv_port int]
-                                     [--rdzv_backend str] [--rdzv_conf str]
-                                     [--mounts str] [--debug str] [--tee int]
-                                     ...
-
-Distributed data parallel style application (one role, multi-replica).
-Uses `torch.distributed.run &lt;https://pytorch.org/docs/stable/distributed.elastic.html&gt;`_
-to launch and coordinate PyTorch worker processes. Defaults to using ``c10d`` rendezvous backend
-on rendezvous_endpoint ``$rank_0_host:$rdzv_port``. Note that ``rdzv_port`` parameter is ignored
-when running on single node, and instead we use port 0 which instructs torchelastic to chose
-a free random port on the host.
-
-Note: (cpu, gpu, memMB) parameters are mutually exclusive with ``h`` (named resource) where
-      ``h`` takes precedence if specified for setting resource requirements.
-      See `registering named resources &lt;https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources&gt;`_.
-
-positional arguments:
-  str                 arguments to the main module (required)
-
-options:
-  --help              show this help message and exit
-  --script str        script or binary to run within the image (default: None)
-  -m str, --m str     the python module path to run (default: None)
-  --image str         image (e.g. docker) (default:
-                      ghcr.io/pytorch/torchx:0.8.0dev0)
-  --name str          job name override in the following format:
-                      ``{experimentname}/{runname}`` or ``{experimentname}/``
-                      or ``/{runname}`` or ``{runname}``. Uses the script or
-                      module name if ``{runname}`` not specified. (default: /)
-  -h str, --h str     a registered named resource (if specified takes
-                      precedence over cpu, gpu, memMB) (default: None)
-  --cpu int           number of cpus per replica (default: 2)
-  --gpu int           number of gpus per replica (default: 0)
-  --memMB int         cpu memory in MB per replica (default: 1024)
-  -j str, --j str     [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts,
-                      nproc_per_node must not exceed num gpus (default: 1x2)
-  --env str           environment varibles to be passed to the run (e.g.
-                      ENV1=v1,ENV2=v2,ENV3=v3) (default: None)
-  --metadata str      metadata to be passed to the scheduler (e.g.
-                      KEY1=v1,KEY2=v2,KEY3=v3) (default: None)
-  --max_retries int   the number of scheduler retries allowed (default: 0)
-  --rdzv_port int     the port on rank0&#39;s host to use for hosting the c10d
-                      store used for rendezvous. Only takes effect when
-                      running multi-node. When running single node, this
-                      parameter is ignored and a random free port is chosen.
-                      (default: 29500)
-  --rdzv_backend str  the rendezvous backend to use. Only takes effect when
-                      running multi-node. (default: c10d)
-  --rdzv_conf str     the additional rendezvous configuration to use (ex.
-                      join_timeout=600,close_timeout=600,timeout=600).
-                      (default: None)
-  --mounts str        mounts to mount into the worker environment/container
-                      (ex. type=&lt;bind/volume&gt;,src=/host,dst=/job[,readonly]).
-                      See scheduler documentation for more info. (default:
-                      None)
-  --debug str         whether to run with preset debug flags enabled (default:
-                      False)
-  --tee int           tees the specified std stream(s) to console + file. 0:
-                      none, 1: stdout, 2: stderr, 3: both (default: 3)
-</pre></div></div>
-</div>
-<p>Lets create a slightly more interesting app to leverage the TorchX distributed support.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%writefile</span> dist_app.py
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<p>Lets create a slightly more interesting app to leverage the TorchX distributed
+support.</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">dist_app.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
 
 <span class="n">dist</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;gloo&quot;</span><span class="p">)</span>
@@ -754,676 +524,103 @@ options:
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;all_reduce output = </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Writing dist_app.py
-</pre></div></div>
-</div>
 <p>Let launch a small job with 2 nodes and 2 worker processes per node:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
-</div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-torchx 2026-02-21 22:35:54 INFO     Tracker configurations: {}
-torchx 2026-02-21 22:35:54 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
-torchx 2026-02-21 22:35:55 INFO     Building workspace docker image (this may take a while)...
-torchx 2026-02-21 22:35:55 INFO     Step 1/4 : ARG IMAGE
-torchx 2026-02-21 22:35:55 INFO     Step 2/4 : FROM $IMAGE
-torchx 2026-02-21 22:35:55 INFO      ---&gt; da9ca21e8d49
-torchx 2026-02-21 22:35:55 INFO     Step 3/4 : COPY . .
-torchx 2026-02-21 22:36:01 INFO      ---&gt; 6aeb2bbade6f
-torchx 2026-02-21 22:36:01 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
-torchx 2026-02-21 22:36:01 INFO      ---&gt; Running in ded9abaf0714
-torchx 2026-02-21 22:36:06 INFO      ---&gt; Removed intermediate container ded9abaf0714
-torchx 2026-02-21 22:36:06 INFO      ---&gt; 7f820d383ba3
-torchx 2026-02-21 22:36:06 INFO     [Warning] One or more build-args [WORKSPACE] were not consumed
-torchx 2026-02-21 22:36:06 INFO     Successfully built 7f820d383ba3
-torchx 2026-02-21 22:36:06 INFO     role[0]=dist_app updated with new image to include workspace changes
-torchx 2026-02-21 22:36:07 INFO     Waiting for the app to finish...
-dist_app/0 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774]
-dist_app/0 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774] *****************************************
-dist_app/0 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed.
-dist_app/0 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774] *****************************************
-dist_app/1 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774]
-dist_app/1 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774] *****************************************
-dist_app/1 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed.
-dist_app/1 W0221 22:36:09.250000 1 site-packages/torch/distributed/run.py:774] *****************************************
-dist_app/1 [1]:[Gloo] Rank 3 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-dist_app/1 [1]:I am worker 3 of 4!
-dist_app/1 [1]:all_reduce output = tensor([6])
-dist_app/1 [0]:[Gloo] Rank 2 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-dist_app/1 [0]:I am worker 2 of 4!
-dist_app/1 [0]:all_reduce output = tensor([6])
-dist_app/0 [1]:[Gloo] Rank 1 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-dist_app/0 [1]:I am worker 1 of 4!
-dist_app/0 [1]:all_reduce output = tensor([6])
-dist_app/0 [0]:[Gloo] Rank 0 is connected to 3 peer ranks. Expected number of connected peer ranks is : 3
-dist_app/0 [0]:I am worker 0 of 4!
-dist_app/0 [0]:all_reduce output = tensor([6])
-torchx 2026-02-21 22:36:14 INFO     Job finished: SUCCEEDED
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-local_docker://torchx/dist_app-b6f6nz42q1n6dc
-</pre></div></div>
 </div>
 </section>
-<section id="Workspaces-/-Patching">
-<h2>Workspaces / Patching<a class="headerlink" href="#Workspaces-/-Patching" title="Permalink to this heading">¶</a></h2>
-<p>For each scheduler there’s a concept of an <code class="docutils literal notranslate"><span class="pre">image</span></code>. For <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> and <code class="docutils literal notranslate"><span class="pre">slurm</span></code> it uses the current working directory. For container based schedulers such as <code class="docutils literal notranslate"><span class="pre">local_docker</span></code>, <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code> and <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code> it uses a docker container.</p>
-<p>To provide the same environment between local and remote jobs, TorchX CLI uses workspaces to automatically patch images for remote jobs on a per scheduler basis.</p>
-<p>When you launch a job via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> it’ll overlay the current directory on top of the provided image so your code is available in the launched job.</p>
-<p>For <code class="docutils literal notranslate"><span class="pre">docker</span></code> based schedulers you’ll need a local docker daemon to build and push the image to your remote docker repository.</p>
+<section id="workspaces-patching">
+<h2>Workspaces / Patching<a class="headerlink" href="#workspaces-patching" title="Permalink to this heading">¶</a></h2>
+<p>For each scheduler there’s a concept of an <code class="docutils literal notranslate"><span class="pre">image</span></code>. For <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> and <code class="docutils literal notranslate"><span class="pre">slurm</span></code>
+it uses the current working directory. For container based schedulers such as
+<code class="docutils literal notranslate"><span class="pre">local_docker</span></code>, <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code> and <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code> it uses a docker container.</p>
+<p>To provide the same environment between local and remote jobs, TorchX CLI uses
+workspaces to automatically patch images for remote jobs on a per scheduler
+basis.</p>
+<p>When you launch a job via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> it’ll overlay the current directory on
+top of the provided image so your code is available in the launched job.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">docker</span></code> based schedulers you’ll need a local docker daemon to build and
+push the image to your remote docker repository.</p>
 </section>
-<section id=".torchxconfig">
-<h2><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code><a class="headerlink" href="#.torchxconfig" title="Permalink to this heading">¶</a></h2>
-<p>Arguments to schedulers can be specified either via a command line flag to <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span> <span class="pre">-s</span> <span class="pre">&lt;scheduler&gt;</span> <span class="pre">-c</span> <span class="pre">&lt;args&gt;</span></code> or on a per scheduler basis via a <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%writefile</span> .torchxconfig
+<section id="torchxconfig">
+<h2><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code><a class="headerlink" href="#torchxconfig" title="Permalink to this heading">¶</a></h2>
+<p>Arguments to schedulers can be specified either via a command line flag to
+<code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span> <span class="pre">-s</span> <span class="pre">&lt;scheduler&gt;</span> <span class="pre">-c</span> <span class="pre">&lt;args&gt;</span></code> or on a per scheduler basis via a
+<code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file.</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[kubernetes]</span>
+<span class="na">queue</span><span class="o">=</span><span class="s">torchx</span>
+<span class="na">image_repo</span><span class="o">=</span><span class="s">&lt;your docker image repository&gt;</span>
 
-<span class="p">[</span><span class="n">kubernetes</span><span class="p">]</span>
-<span class="n">queue</span><span class="o">=</span><span class="n">torchx</span>
-<span class="n">image_repo</span><span class="o">=&lt;</span><span class="n">your</span> <span class="n">docker</span> <span class="n">image</span> <span class="n">repository</span><span class="o">&gt;</span>
-
-<span class="p">[</span><span class="n">slurm</span><span class="p">]</span>
-<span class="n">partition</span><span class="o">=</span><span class="n">torchx</span>
+<span class="k">[slurm]</span>
+<span class="na">partition</span><span class="o">=</span><span class="s">torchx</span>
 </pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Writing .torchxconfig
-</pre></div></div>
 </div>
 </section>
-<section id="Remote-Schedulers">
-<h2>Remote Schedulers<a class="headerlink" href="#Remote-Schedulers" title="Permalink to this heading">¶</a></h2>
-<p>TorchX supports a large number of schedulers. Don’t see yours? <a class="reference external" href="https://github.com/meta-pytorch/torchx/issues/new?assignees=&amp;labels=&amp;template=feature-request.md">Request it!</a></p>
-<p>Remote schedulers operate the exact same way the local schedulers do. The same run command for local works out of the box on remote.</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>slurm<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
-$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
-$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>aws_batch<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
+<section id="remote-schedulers">
+<h2>Remote Schedulers<a class="headerlink" href="#remote-schedulers" title="Permalink to this heading">¶</a></h2>
+<p>TorchX supports a large number of schedulers.
+Don’t see yours?
+<a class="reference external" href="https://github.com/meta-pytorch/torchx/issues/new?assignees=&amp;labels=&amp;template=feature-request.md">Request it!</a></p>
+<p>Remote schedulers operate the exact same way the local schedulers do. The same
+run command for local works out of the box on remote.</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>slurm<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
+<span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
+<span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>aws_batch<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
 </div>
-<p>Depending on the scheduler there may be a few extra configuration parameters so TorchX knows where to run the job and upload built images. These can either be set via <code class="docutils literal notranslate"><span class="pre">-c</span></code> or in the <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file.</p>
+<p>Depending on the scheduler there may be a few extra configuration parameters so
+TorchX knows where to run the job and upload built images. These can either be
+set via <code class="docutils literal notranslate"><span class="pre">-c</span></code> or in the <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file.</p>
 <p>All config options:</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>runopts
 </pre></div>
-</div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>runopts
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-local_docker:
-    usage:
-        [copy_env=COPY_ENV],[env=ENV],[privileged=PRIVILEGED],[image_repo=IMAGE_REPO],[quiet=QUIET]
-
-    optional arguments:
-        copy_env=COPY_ENV (list, None)
-            List of glob patterns of environment variables to copy if not set in AppDef. Ex: FOO_*
-        env=ENV (dict, None)
-            Environment variables to be passed to the run. The separator sign can be either comma or semicolon (e.g. ENV1:v1,ENV2:v2,ENV3:v3 or ENV1:V1;ENV2:V2). Environment variables from env will be applied on top of the ones from copy_env.
-        privileged=PRIVILEGED (bool, False)
-            If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`.
-        image_repo=IMAGE_REPO (str, None)
-            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
-        quiet=QUIET (bool, False)
-            whether to suppress verbose output for image building. Defaults to ``False``.
-
-local_cwd:
-    usage:
-        [log_dir=LOG_DIR],[prepend_cwd=PREPEND_CWD],[auto_set_cuda_visible_devices=AUTO_SET_CUDA_VISIBLE_DEVICES]
-
-    optional arguments:
-        log_dir=LOG_DIR (str, None)
-            Directory to write stdout/stderr log files of replicas.
-        prepend_cwd=PREPEND_CWD (bool, False)
-            If set, prepends CWD to replica&#39;s PATH env var making binaries in CWD take precedence.
-        auto_set_cuda_visible_devices=AUTO_SET_CUDA_VISIBLE_DEVICES (bool, False)
-            Sets CUDA_VISIBLE_DEVICES for roles that request GPU resources.
-
-slurm:
-    usage:
-        [account=ACCOUNT],[partition=PARTITION],[time=TIME],[comment=COMMENT],[constraint=CONSTRAINT],[mail-user=MAIL-USER],[mail-type=MAIL-TYPE],[job_dir=JOB_DIR],[qos=QOS]
-
-    optional arguments:
-        account=ACCOUNT (str, None)
-            The account to use for the slurm job.
-        partition=PARTITION (str, None)
-            The partition to run the job in.
-        time=TIME (str, None)
-            The maximum time the job is allowed to run for. Formats:             &#34;minutes&#34;, &#34;minutes:seconds&#34;, &#34;hours:minutes:seconds&#34;, &#34;days-hours&#34;,             &#34;days-hours:minutes&#34; or &#34;days-hours:minutes:seconds&#34;
-        comment=COMMENT (str, None)
-            Comment to set on the slurm job.
-        constraint=CONSTRAINT (str, None)
-            Constraint to use for the slurm job.
-        mail-user=MAIL-USER (str, None)
-            User to mail on job end.
-        mail-type=MAIL-TYPE (str, None)
-            What events to mail users on.
-        job_dir=JOB_DIR (str, None)
-            The directory to place the job code and outputs. The
-            directory must not exist and will be created. To enable log
-            iteration, jobs will be tracked in ``.torchxslurmjobdirs``.
-
-        qos=QOS (str, None)
-            Quality of Service (QoS) to assign to the job.
-
-kubernetes:
-    usage:
-        queue=QUEUE,[namespace=NAMESPACE],[service_account=SERVICE_ACCOUNT],[priority_class=PRIORITY_CLASS],[validate_spec=VALIDATE_SPEC],[reserved_millicpu=RESERVED_MILLICPU],[reserved_memmb=RESERVED_MEMMB],[image_repo=IMAGE_REPO],[efa_device_count=EFA_DEVICE_COUNT],[quiet=QUIET]
-
-    required arguments:
-        queue=QUEUE (str)
-            Volcano queue to schedule job in.
-
-    optional arguments:
-        namespace=NAMESPACE (str, default)
-            Kubernetes namespace to schedule job in.
-        service_account=SERVICE_ACCOUNT (str, None)
-            The service account name to set on the pod specs.
-        priority_class=PRIORITY_CLASS (str, None)
-            The name of the PriorityClass to set on the job specs.
-        validate_spec=VALIDATE_SPEC (bool, True)
-            Validate job spec using Kubernetes API dry-run before submission.
-        reserved_millicpu=RESERVED_MILLICPU (int, 100)
-            Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100).
-        reserved_memmb=RESERVED_MEMMB (int, 1024)
-            Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024).
-        image_repo=IMAGE_REPO (str, None)
-            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
-        efa_device_count=EFA_DEVICE_COUNT (int, None)
-            EFA device count override: None/unset=use resource spec, 0=remove EFA, N&gt;0=set EFA count to N.
-        quiet=QUIET (bool, False)
-            whether to suppress verbose output for image building. Defaults to ``False``.
-
-kubernetes_mcad:
-    usage:
-        [namespace=NAMESPACE],[image_repo=IMAGE_REPO],[service_account=SERVICE_ACCOUNT],[priority=PRIORITY],[priority_class_name=PRIORITY_CLASS_NAME],[image_secret=IMAGE_SECRET],[coscheduler_name=COSCHEDULER_NAME],[network=NETWORK],[quiet=QUIET]
-
-    optional arguments:
-        namespace=NAMESPACE (str, default)
-            Kubernetes namespace to schedule job in.
-        image_repo=IMAGE_REPO (str, None)
-            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
-        service_account=SERVICE_ACCOUNT (str, None)
-            The service account name to set on the pod specs.
-        priority=PRIORITY (int, None)
-            The priority level to set on the job specs. Higher integer value means higher priority.
-        priority_class_name=PRIORITY_CLASS_NAME (str, None)
-            Pod specific priority level. Check with your Kubernetes cluster admin if Priority classes are defined on your system.
-        image_secret=IMAGE_SECRET (str, None)
-            The name of the Kubernetes/OpenShift secret set up for private images.
-        coscheduler_name=COSCHEDULER_NAME (str, None)
-            Option to run TorchX-MCAD with a co-scheduler. User must provide the co-scheduler name.
-        network=NETWORK (str, None)
-            Name of additional pod-to-pod network beyond default Kubernetes network.
-        quiet=QUIET (bool, False)
-            whether to suppress verbose output for image building. Defaults to ``False``.
-
-aws_batch:
-    usage:
-        queue=QUEUE,[user=USER],[image_repo=IMAGE_REPO],[privileged=PRIVILEGED],[share_id=SHARE_ID],[priority=PRIORITY],[job_role_arn=JOB_ROLE_ARN],[execution_role_arn=EXECUTION_ROLE_ARN],[ulimits=ULIMITS],[quiet=QUIET]
-
-    required arguments:
-        queue=QUEUE (str)
-            Queue to schedule job in.
-
-    optional arguments:
-        user=USER (str, runner)
-            The username to tag the job with. `getpass.getuser()` if not specified.
-        image_repo=IMAGE_REPO (str, None)
-            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
-        privileged=PRIVILEGED (bool, False)
-            If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`.
-        share_id=SHARE_ID (str, None)
-            The share identifier for the job. This must be set if and only if the job queue has a scheduling policy.
-        priority=PRIORITY (int, 0)
-            The scheduling priority for the job within the context of share_id. Higher number (between 0 and 9999) means higher priority. This will only take effect if the job queue has a scheduling policy.
-        job_role_arn=JOB_ROLE_ARN (str, None)
-            The Amazon Resource Name (ARN) of the IAM role that the container can assume for AWS permissions.
-        execution_role_arn=EXECUTION_ROLE_ARN (str, None)
-            The Amazon Resource Name (ARN) of the IAM role that the ECS agent can assume for AWS permissions.
-        ulimits=ULIMITS (list, None)
-            Ulimit settings in format: name:softLimit:hardLimit (multiple separated by commas).
-        quiet=QUIET (bool, False)
-            whether to suppress verbose output for image building. Defaults to ``False``.
-
-aws_sagemaker:
-    usage:
-        role=ROLE,instance_type=INSTANCE_TYPE,[instance_count=INSTANCE_COUNT],[keep_alive_period_in_seconds=KEEP_ALIVE_PERIOD_IN_SECONDS],[volume_size=VOLUME_SIZE],[volume_kms_key=VOLUME_KMS_KEY],[max_run=MAX_RUN],[input_mode=INPUT_MODE],[output_path=OUTPUT_PATH],[output_kms_key=OUTPUT_KMS_KEY],[base_job_name=BASE_JOB_NAME],[tags=TAGS],[subnets=SUBNETS],[security_group_ids=SECURITY_GROUP_IDS],[metric_definitions=METRIC_DEFINITIONS],[encrypt_inter_container_traffic=ENCRYPT_INTER_CONTAINER_TRAFFIC],[use_spot_instances=USE_SPOT_INSTANCES],[max_wait=MAX_WAIT],[checkpoint_s3_uri=CHECKPOINT_S3_URI],[checkpoint_local_path=CHECKPOINT_LOCAL_PATH],[enable_network_isolation=ENABLE_NETWORK_ISOLATION],[environment=ENVIRONMENT],[max_retry_attempts=MAX_RETRY_ATTEMPTS],[source_dir=SOURCE_DIR],[hyperparameters=HYPERPARAMETERS],[training_repository_access_mode=TRAINING_REPOSITORY_ACCESS_MODE],[training_repository_credentials_provider_arn=TRAINING_REPOSITORY_CREDENTIALS_PROVIDER_ARN],[disable_output_compression=DISABLE_OUTPUT_COMPRESSION],[enable_infra_check=ENABLE_INFRA_CHECK],[image_repo=IMAGE_REPO],[quiet=QUIET]
-
-    required arguments:
-        role=ROLE (str)
-            An AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.
-        instance_type=INSTANCE_TYPE (str)
-            Type of EC2 instance to use for training, for example, &#39;ml.c4.xlarge&#39;.
-
-    optional arguments:
-        instance_count=INSTANCE_COUNT (int, 1)
-            Number of Amazon EC2 instances to use for training. Required if instance_groups is not set.
-        keep_alive_period_in_seconds=KEEP_ALIVE_PERIOD_IN_SECONDS (int, None)
-            The duration of time in seconds to retain configured resources in a warm pool for subsequent training jobs.
-        volume_size=VOLUME_SIZE (int, None)
-            Size in GB of the storage volume to use for storing input and output data during training (default: 30).
-        volume_kms_key=VOLUME_KMS_KEY (str, None)
-            KMS key ID for encrypting EBS volume attached to the training instance.
-        max_run=MAX_RUN (int, None)
-            Timeout in seconds for training (default: 24 * 60 * 60).
-        input_mode=INPUT_MODE (str, None)
-            The input mode that the algorithm supports (default: &#39;File&#39;).
-        output_path=OUTPUT_PATH (str, None)
-            S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket.
-        output_kms_key=OUTPUT_KMS_KEY (str, None)
-            KMS key ID for encrypting the training output (default: Your IAM role&#39;s KMS key for Amazon S3).
-        base_job_name=BASE_JOB_NAME (str, None)
-            Prefix for training job name when the train() method launches. If not specified, the trainer generates a default job name based on the training image name and current timestamp.
-        tags=TAGS (dict, None)
-            Dictionary of tags for labeling a training job (e.g., key1:val1,key2:val2).
-        subnets=SUBNETS (list, None)
-            List of subnet ids. If not specified training job will be created without VPC config.
-        security_group_ids=SECURITY_GROUP_IDS (list, None)
-            List of security group ids. If not specified training job will be created without VPC config.
-        metric_definitions=METRIC_DEFINITIONS (dict, None)
-            Dictionary that defines the metric(s) used to evaluate the training jobs. Each key is the metric name and the value is the regular expression used to extract the metric from the logs (e.g., metric_name:regex_pattern,other_metric:other_regex).
-        encrypt_inter_container_traffic=ENCRYPT_INTER_CONTAINER_TRAFFIC (bool, None)
-            Specifies whether traffic between training containers is encrypted for the training job (default: False).
-        use_spot_instances=USE_SPOT_INSTANCES (bool, None)
-            Specifies whether to use SageMaker Managed Spot instances for training. If enabled then the max_wait arg should also be set.
-        max_wait=MAX_WAIT (int, None)
-            Timeout in seconds waiting for spot training job.
-        checkpoint_s3_uri=CHECKPOINT_S3_URI (str, None)
-            S3 URI in which to persist checkpoints that the algorithm persists (if any) during training.
-        checkpoint_local_path=CHECKPOINT_LOCAL_PATH (str, None)
-            Local path that the algorithm writes its checkpoints to.
-        enable_network_isolation=ENABLE_NETWORK_ISOLATION (bool, None)
-            Specifies whether container will run in network isolation mode (default: False).
-        environment=ENVIRONMENT (dict, None)
-            Environment variables to be set for use during training job.
-        max_retry_attempts=MAX_RETRY_ATTEMPTS (int, None)
-            Number of times to move a job to the STARTING status. You can specify between 1 and 30 attempts.
-        source_dir=SOURCE_DIR (str, None)
-            Absolute, relative, or S3 URI Path to a directory with any other training source code dependencies aside from the entry point file (default: current working directory).
-        hyperparameters=HYPERPARAMETERS (dict, None)
-            Dictionary containing the hyperparameters to initialize this estimator with.
-        training_repository_access_mode=TRAINING_REPOSITORY_ACCESS_MODE (str, None)
-            Specifies how SageMaker accesses the Docker image that contains the training algorithm.
-        training_repository_credentials_provider_arn=TRAINING_REPOSITORY_CREDENTIALS_PROVIDER_ARN (str, None)
-            Amazon Resource Name (ARN) of an AWS Lambda function that provides credentials to authenticate to the private Docker registry where your training image is hosted.
-        disable_output_compression=DISABLE_OUTPUT_COMPRESSION (bool, None)
-            When set to true, Model is uploaded to Amazon S3 without compression after training finishes.
-        enable_infra_check=ENABLE_INFRA_CHECK (bool, None)
-            Specifies whether it is running Sagemaker built-in infra check jobs.
-        image_repo=IMAGE_REPO (str, None)
-            (remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container
-        quiet=QUIET (bool, False)
-            whether to suppress verbose output for image building. Defaults to ``False``.
-
-lsf:
-    usage:
-        [lsf_queue=LSF_QUEUE],[jobdir=JOBDIR],[container_workdir=CONTAINER_WORKDIR],[host_network=HOST_NETWORK],[shm_size=SHM_SIZE]
-
-    optional arguments:
-        lsf_queue=LSF_QUEUE (str, None)
-            Queue name to submit jobs.
-        jobdir=JOBDIR (str, None)
-            The directory to place the job code and outputs. The directory must not exist and will be created.
-        container_workdir=CONTAINER_WORKDIR (str, None)
-            Working directory in container jobs.
-        host_network=HOST_NETWORK (bool, False)
-            True if using the host network for jobs.
-        shm_size=SHM_SIZE (str, None)
-            Size of shared memory (/dev/shm) for jobs. Defaults to 64m when used via CLI.
-
-</pre></div></div>
 </div>
 </section>
-<section id="Custom-Images">
-<h2>Custom Images<a class="headerlink" href="#Custom-Images" title="Permalink to this heading">¶</a></h2>
-<section id="Docker-based-Schedulers">
-<h3>Docker-based Schedulers<a class="headerlink" href="#Docker-based-Schedulers" title="Permalink to this heading">¶</a></h3>
-<p>If you want more than the standard PyTorch libraries you can add custom Dockerfile or build your own docker container and use it as the base image for your TorchX jobs.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%writefile</span> timm_app.py
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">timm</span>
+<section id="custom-images">
+<h2>Custom Images<a class="headerlink" href="#custom-images" title="Permalink to this heading">¶</a></h2>
+<section id="docker-based-schedulers">
+<h3>Docker-based Schedulers<a class="headerlink" href="#docker-based-schedulers" title="Permalink to this heading">¶</a></h3>
+<p>If you want more than the standard PyTorch libraries you can add custom
+Dockerfile or build your own docker container and use it as the base image for
+your TorchX jobs.</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">timm_app.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">timm</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">timm</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">resnet18</span><span class="p">())</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Writing timm_app.py
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%writefile</span> Dockerfile.torchx
+<p>Create <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code>:</p>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime</span>
 
-<span class="n">FROM</span> <span class="n">pytorch</span><span class="o">/</span><span class="n">pytorch</span><span class="p">:</span><span class="mf">1.10.0</span><span class="o">-</span><span class="n">cuda11</span><span class="mf">.3</span><span class="o">-</span><span class="n">cudnn8</span><span class="o">-</span><span class="n">runtime</span>
+<span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>timm
 
-<span class="n">RUN</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">timm</span>
-
-<span class="n">COPY</span> <span class="o">.</span> <span class="o">.</span>
+<span class="k">COPY</span><span class="w"> </span>.<span class="w"> </span>.
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Writing Dockerfile.torchx
-</pre></div></div>
-</div>
-<p>Once we have the Dockerfile created we can launch as normal and TorchX will automatically build the image with the newly provided Dockerfile instead of the default one.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<p>Once we have the Dockerfile created we can launch as normal and TorchX will
+automatically build the image with the newly provided Dockerfile instead of the
+default one.</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>timm_app.py
 </pre></div>
-</div>
-<div class="input_area highlight-sh notranslate"><div class="highlight"><pre><span></span>%%sh
-torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>timm_app.py
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-torchx 2026-02-21 22:36:15 INFO     loaded configs from /home/runner/work/torchx/torchx/docs/source/.torchxconfig
-torchx 2026-02-21 22:36:16 INFO     Tracker configurations: {}
-torchx 2026-02-21 22:36:16 INFO     Workspace `/home/runner/work/torchx/torchx/docs/source` resolved to filesystem path `/home/runner/work/torchx/torchx/docs/source`
-torchx 2026-02-21 22:36:17 INFO     Building workspace docker image (this may take a while)...
-torchx 2026-02-21 22:36:17 INFO     Step 1/4 : FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
-torchx 2026-02-21 22:37:24 INFO      ---&gt; c3f17e5ac010
-torchx 2026-02-21 22:37:24 INFO     Step 2/4 : RUN pip install timm
-torchx 2026-02-21 22:37:24 INFO      ---&gt; Running in 5dfc6563d7fd
-torchx 2026-02-21 22:37:24 INFO     Collecting timm
-torchx 2026-02-21 22:37:24 INFO       Downloading timm-0.9.12-py3-none-any.whl (2.2 MB)
-torchx 2026-02-21 22:37:24 INFO     Requirement already satisfied: torchvision in /opt/conda/lib/python3.7/site-packages (from timm) (0.11.0)
-torchx 2026-02-21 22:37:24 INFO     Collecting huggingface-hub
-torchx 2026-02-21 22:37:24 INFO       Downloading huggingface_hub-0.16.4-py3-none-any.whl (268 kB)
-torchx 2026-02-21 22:37:25 INFO     Collecting safetensors
-torchx 2026-02-21 22:37:25 INFO       Downloading safetensors-0.5.3.tar.gz (67 kB)
-torchx 2026-02-21 22:37:25 INFO       Installing build dependencies: started
-torchx 2026-02-21 22:37:27 INFO       Installing build dependencies: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:27 INFO       Getting requirements to build wheel: started
-torchx 2026-02-21 22:37:27 INFO       Getting requirements to build wheel: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:27 INFO       Installing backend dependencies: started
-torchx 2026-02-21 22:37:27 INFO       Installing backend dependencies: finished with status &#39;error&#39;
-torchx 2026-02-21 22:37:27 INFO     <span class="ansi-red-intense-fg">  ERROR: Command errored out with exit status 1:
-   command: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-jmn3i43r/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin
-       cwd: None
-  Complete output (2 lines):
-  ERROR: Could not find a version that satisfies the requirement puccinialin
-  ERROR: No matching distribution found for puccinialin
-  ----------------------------------------
-</span>
-torchx 2026-02-21 22:37:27 INFO     <span class="ansi-red-intense-fg">WARNING: Discarding https://files.pythonhosted.org/packages/71/7e/2d5d6ee7b40c0682315367ec7475693d110f512922d582fef1bd4a63adc3/safetensors-0.5.3.tar.gz#sha256=b6b0d6ecacec39a4fdd99cc19f4576f5219ce858e6fd8dbe7609df0b8dc56965 (from https://pypi.org/simple/safetensors/) (requires-python:&gt;=3.7). Command errored out with exit status 1: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-jmn3i43r/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin Check the logs for full command output.
-</span>
-torchx 2026-02-21 22:37:27 INFO       Downloading safetensors-0.5.2.tar.gz (66 kB)
-torchx 2026-02-21 22:37:27 INFO       Installing build dependencies: started
-torchx 2026-02-21 22:37:29 INFO       Installing build dependencies: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:29 INFO       Getting requirements to build wheel: started
-torchx 2026-02-21 22:37:29 INFO       Getting requirements to build wheel: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:29 INFO       Installing backend dependencies: started
-torchx 2026-02-21 22:37:29 INFO       Installing backend dependencies: finished with status &#39;error&#39;
-torchx 2026-02-21 22:37:29 INFO     <span class="ansi-red-intense-fg">  ERROR: Command errored out with exit status 1:
-   command: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-_h194bhl/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin
-       cwd: None
-  Complete output (2 lines):
-  ERROR: Could not find a version that satisfies the requirement puccinialin
-  ERROR: No matching distribution found for puccinialin
-  ----------------------------------------
-</span>
-torchx 2026-02-21 22:37:29 INFO     <span class="ansi-red-intense-fg">WARNING: Discarding https://files.pythonhosted.org/packages/f4/4f/2ef9ef1766f8c194b01b67a63a444d2e557c8fe1d82faf3ebd85f370a917/safetensors-0.5.2.tar.gz#sha256=cb4a8d98ba12fa016f4241932b1fc5e702e5143f5374bba0bbcf7ddc1c4cf2b8 (from https://pypi.org/simple/safetensors/) (requires-python:&gt;=3.7). Command errored out with exit status 1: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-_h194bhl/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin Check the logs for full command output.
-</span>
-torchx 2026-02-21 22:37:29 INFO       Downloading safetensors-0.5.1.tar.gz (66 kB)
-torchx 2026-02-21 22:37:29 INFO       Installing build dependencies: started
-torchx 2026-02-21 22:37:31 INFO       Installing build dependencies: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:31 INFO       Getting requirements to build wheel: started
-torchx 2026-02-21 22:37:31 INFO       Getting requirements to build wheel: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:31 INFO       Installing backend dependencies: started
-torchx 2026-02-21 22:37:31 INFO       Installing backend dependencies: finished with status &#39;error&#39;
-torchx 2026-02-21 22:37:31 INFO     <span class="ansi-red-intense-fg">  ERROR: Command errored out with exit status 1:
-   command: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-5gtedyn5/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin
-       cwd: None
-  Complete output (2 lines):
-  ERROR: Could not find a version that satisfies the requirement puccinialin
-  ERROR: No matching distribution found for puccinialin
-  ----------------------------------------
-</span>
-torchx 2026-02-21 22:37:31 INFO     <span class="ansi-red-intense-fg">WARNING: Discarding https://files.pythonhosted.org/packages/cd/4b/a45aedf2375cd86314749ad4760545b6e4ec7b306cfa142776daaca6c980/safetensors-0.5.1.tar.gz#sha256=75927919a73b0f34d6943b531d757f724e65797a900d88d8081fe8b4448eadc3 (from https://pypi.org/simple/safetensors/) (requires-python:&gt;=3.7). Command errored out with exit status 1: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-5gtedyn5/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin Check the logs for full command output.
-</span>
-torchx 2026-02-21 22:37:31 INFO       Downloading safetensors-0.5.0.tar.gz (65 kB)
-torchx 2026-02-21 22:37:31 INFO       Installing build dependencies: started
-torchx 2026-02-21 22:37:33 INFO       Installing build dependencies: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:33 INFO       Getting requirements to build wheel: started
-torchx 2026-02-21 22:37:33 INFO       Getting requirements to build wheel: finished with status &#39;done&#39;
-torchx 2026-02-21 22:37:33 INFO       Installing backend dependencies: started
-torchx 2026-02-21 22:37:33 INFO     <span class="ansi-red-intense-fg">  ERROR: Command errored out with exit status 1:
-   command: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-07vi9ebg/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin
-       cwd: None
-  Complete output (2 lines):
-  ERROR: Could not find a version that satisfies the requirement puccinialin
-  ERROR: No matching distribution found for puccinialin
-  ----------------------------------------
-</span>
-torchx 2026-02-21 22:37:33 INFO       Installing backend dependencies: finished with status &#39;error&#39;
-torchx 2026-02-21 22:37:33 INFO     <span class="ansi-red-intense-fg">WARNING: Discarding https://files.pythonhosted.org/packages/5d/b3/1d9000e9d0470499d124ca63c6908f8092b528b48bd95ba11507e14d9dba/safetensors-0.5.0.tar.gz#sha256=c47b34c549fa1e0c655c4644da31332c61332c732c47c8dd9399347e9aac69d1 (from https://pypi.org/simple/safetensors/) (requires-python:&gt;=3.7). Command errored out with exit status 1: /opt/conda/bin/python /opt/conda/lib/python3.7/site-packages/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-07vi9ebg/normal --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- puccinialin Check the logs for full command output.
-</span>
-torchx 2026-02-21 22:37:33 INFO       Downloading safetensors-0.4.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (436 kB)
-torchx 2026-02-21 22:37:33 INFO     Requirement already satisfied: torch&gt;=1.7 in /opt/conda/lib/python3.7/site-packages (from timm) (1.10.0)
-torchx 2026-02-21 22:37:33 INFO     Requirement already satisfied: pyyaml in /opt/conda/lib/python3.7/site-packages (from timm) (5.4.1)
-torchx 2026-02-21 22:37:33 INFO     Requirement already satisfied: typing_extensions in /opt/conda/lib/python3.7/site-packages (from torch&gt;=1.7-&gt;timm) (3.10.0.2)
-torchx 2026-02-21 22:37:33 INFO     Requirement already satisfied: filelock in /opt/conda/lib/python3.7/site-packages (from huggingface-hub-&gt;timm) (3.0.12)
-torchx 2026-02-21 22:37:33 INFO     Requirement already satisfied: requests in /opt/conda/lib/python3.7/site-packages (from huggingface-hub-&gt;timm) (2.25.1)
-torchx 2026-02-21 22:37:33 INFO     Collecting packaging&gt;=20.9
-torchx 2026-02-21 22:37:33 INFO       Downloading packaging-24.0-py3-none-any.whl (53 kB)
-torchx 2026-02-21 22:37:33 INFO     Requirement already satisfied: tqdm&gt;=4.42.1 in /opt/conda/lib/python3.7/site-packages (from huggingface-hub-&gt;timm) (4.61.2)
-torchx 2026-02-21 22:37:34 INFO     Collecting importlib-metadata
-torchx 2026-02-21 22:37:34 INFO       Downloading importlib_metadata-6.7.0-py3-none-any.whl (22 kB)
-torchx 2026-02-21 22:37:34 INFO     Collecting fsspec
-torchx 2026-02-21 22:37:34 INFO       Downloading fsspec-2023.1.0-py3-none-any.whl (143 kB)
-torchx 2026-02-21 22:37:34 INFO     Collecting zipp&gt;=0.5
-torchx 2026-02-21 22:37:34 INFO       Downloading zipp-3.15.0-py3-none-any.whl (6.8 kB)
-torchx 2026-02-21 22:37:34 INFO     Requirement already satisfied: chardet&lt;5,&gt;=3.0.2 in /opt/conda/lib/python3.7/site-packages (from requests-&gt;huggingface-hub-&gt;timm) (4.0.0)
-torchx 2026-02-21 22:37:34 INFO     Requirement already satisfied: idna&lt;3,&gt;=2.5 in /opt/conda/lib/python3.7/site-packages (from requests-&gt;huggingface-hub-&gt;timm) (2.10)
-torchx 2026-02-21 22:37:34 INFO     Requirement already satisfied: certifi&gt;=2017.4.17 in /opt/conda/lib/python3.7/site-packages (from requests-&gt;huggingface-hub-&gt;timm) (2021.10.8)
-torchx 2026-02-21 22:37:34 INFO     Requirement already satisfied: urllib3&lt;1.27,&gt;=1.21.1 in /opt/conda/lib/python3.7/site-packages (from requests-&gt;huggingface-hub-&gt;timm) (1.26.6)
-torchx 2026-02-21 22:37:34 INFO     Requirement already satisfied: numpy in /opt/conda/lib/python3.7/site-packages (from torchvision-&gt;timm) (1.21.2)
-torchx 2026-02-21 22:37:34 INFO     Requirement already satisfied: pillow!=8.3.0,&gt;=5.3.0 in /opt/conda/lib/python3.7/site-packages (from torchvision-&gt;timm) (8.4.0)
-torchx 2026-02-21 22:37:34 INFO     Installing collected packages: zipp, packaging, importlib-metadata, fsspec, safetensors, huggingface-hub, timm
-torchx 2026-02-21 22:37:35 INFO     Successfully installed fsspec-2023.1.0 huggingface-hub-0.16.4 importlib-metadata-6.7.0 packaging-24.0 safetensors-0.4.5 timm-0.9.12 zipp-3.15.0
-torchx 2026-02-21 22:37:38 INFO      ---&gt; Removed intermediate container 5dfc6563d7fd
-torchx 2026-02-21 22:37:38 INFO      ---&gt; bc60832f7b08
-torchx 2026-02-21 22:37:38 INFO     Step 3/4 : COPY . .
-torchx 2026-02-21 22:37:40 INFO      ---&gt; a908ed54a7b9
-torchx 2026-02-21 22:37:40 INFO     Step 4/4 : LABEL torchx.pytorch.org/version=0.8.0dev0
-torchx 2026-02-21 22:37:40 INFO      ---&gt; Running in 12920092edb9
-torchx 2026-02-21 22:37:42 INFO      ---&gt; Removed intermediate container 12920092edb9
-torchx 2026-02-21 22:37:42 INFO      ---&gt; 51e1076e7af6
-torchx 2026-02-21 22:37:42 INFO     [Warning] One or more build-args [IMAGE WORKSPACE] were not consumed
-torchx 2026-02-21 22:37:42 INFO     Successfully built 51e1076e7af6
-torchx 2026-02-21 22:37:42 INFO     role[0]=python updated with new image to include workspace changes
-torchx 2026-02-21 22:37:43 INFO     Waiting for the app to finish...
-python/0 ResNet(
-python/0   (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-python/0   (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0   (act1): ReLU(inplace=True)
-python/0   (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
-python/0   (layer1): Sequential(
-python/0     (0): BasicBlock(
-python/0       (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0     )
-python/0     (1): BasicBlock(
-python/0       (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0     )
-python/0   )
-python/0   (layer2): Sequential(
-python/0     (0): BasicBlock(
-python/0       (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0       (downsample): Sequential(
-python/0         (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
-python/0         (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       )
-python/0     )
-python/0     (1): BasicBlock(
-python/0       (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0     )
-python/0   )
-python/0   (layer3): Sequential(
-python/0     (0): BasicBlock(
-python/0       (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0       (downsample): Sequential(
-python/0         (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
-python/0         (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       )
-python/0     )
-python/0     (1): BasicBlock(
-python/0       (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0     )
-python/0   )
-python/0   (layer4): Sequential(
-python/0     (0): BasicBlock(
-python/0       (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0       (downsample): Sequential(
-python/0         (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
-python/0         (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       )
-python/0     )
-python/0     (1): BasicBlock(
-python/0       (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (drop_block): Identity()
-python/0       (act1): ReLU(inplace=True)
-python/0       (aa): Identity()
-python/0       (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-python/0       (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-python/0       (act2): ReLU(inplace=True)
-python/0     )
-python/0   )
-python/0   (global_pool): SelectAdaptivePool2d(pool_type=avg, flatten=Flatten(start_dim=1, end_dim=-1))
-python/0   (fc): Linear(in_features=512, out_features=1000, bias=True)
-python/0 )
-torchx 2026-02-21 22:37:45 INFO     Job finished: SUCCEEDED
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-local_docker://torchx/torchx_utils_python-gr5ngjst31bwpd
-</pre></div></div>
 </div>
 </section>
-<section id="Slurm">
-<h3>Slurm<a class="headerlink" href="#Slurm" title="Permalink to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">slurm</span></code> and <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> use the current environment so you can use <code class="docutils literal notranslate"><span class="pre">pip</span></code> and <code class="docutils literal notranslate"><span class="pre">conda</span></code> as normal.</p>
+<section id="slurm">
+<h3>Slurm<a class="headerlink" href="#slurm" title="Permalink to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">slurm</span></code> and <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> use the current environment so you can use <code class="docutils literal notranslate"><span class="pre">pip</span></code> and
+<code class="docutils literal notranslate"><span class="pre">conda</span></code> as normal.</p>
 </section>
 </section>
-<section id="Next-Steps">
-<h2>Next Steps<a class="headerlink" href="#Next-Steps" title="Permalink to this heading">¶</a></h2>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Checkout other features of the <a class="reference internal" href="cli.html"><span class="doc">torchx CLI</span></a></p></li>
 <li><p>Take a look at the <a class="reference internal" href="schedulers.html"><span class="doc">list of schedulers</span></a> supported by the runner</p></li>
 <li><p>Browse through the collection of <a class="reference internal" href="components/overview.html"><span class="doc">builtin components</span></a></p></li>
-<li><p>See a <a class="reference internal" href="examples_apps/index.html"><span class="doc">training app example</span></a></p></li>
 </ol>
 </section>
 </section>
-<div id="is-nbsphinx"></div>
+
 
      </article>
      
@@ -1468,19 +665,19 @@ local_docker://torchx/torchx_utils_python-gr5ngjst31bwpd
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
-<li><a class="reference internal" href="#Installation">Installation</a></li>
-<li><a class="reference internal" href="#Hello-World">Hello World</a></li>
-<li><a class="reference internal" href="#Launching">Launching</a></li>
-<li><a class="reference internal" href="#Distributed">Distributed</a></li>
-<li><a class="reference internal" href="#Workspaces-/-Patching">Workspaces / Patching</a></li>
-<li><a class="reference internal" href="#.torchxconfig"><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code></a></li>
-<li><a class="reference internal" href="#Remote-Schedulers">Remote Schedulers</a></li>
-<li><a class="reference internal" href="#Custom-Images">Custom Images</a><ul>
-<li><a class="reference internal" href="#Docker-based-Schedulers">Docker-based Schedulers</a></li>
-<li><a class="reference internal" href="#Slurm">Slurm</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#hello-world">Hello World</a></li>
+<li><a class="reference internal" href="#launching">Launching</a></li>
+<li><a class="reference internal" href="#distributed">Distributed</a></li>
+<li><a class="reference internal" href="#workspaces-patching">Workspaces / Patching</a></li>
+<li><a class="reference internal" href="#torchxconfig"><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code></a></li>
+<li><a class="reference internal" href="#remote-schedulers">Remote Schedulers</a></li>
+<li><a class="reference internal" href="#custom-images">Custom Images</a><ul>
+<li><a class="reference internal" href="#docker-based-schedulers">Docker-based Schedulers</a></li>
+<li><a class="reference internal" href="#slurm">Slurm</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#Next-Steps">Next Steps</a></li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>

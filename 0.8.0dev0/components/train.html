@@ -34,9 +34,6 @@
   <link rel="stylesheet" href="../_static/css/torchx.css" type="text/css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -345,10 +342,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../examples_apps/index.html">Application Examples</a></li>
-</ul>
 <p class="caption" role="heading"><span class="caption-text">Components</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
@@ -456,12 +449,9 @@
 code. As such, we don’t provide an out of the box training loop app. We do
 however have examples for how you can construct your training app as well as
 generic components you can use to run your custom training app.</p>
-<ol class="arabic simple">
-<li><p><a class="reference internal" href="../examples_apps/lightning/train.html#trainer-example"><span class="std std-ref">Trainer Example</span></a></p></li>
-<li><p><a class="reference internal" href="../component_best_practices.html#component-best-practices"><span class="std std-ref">Component Best Practices</span></a></p></li>
-<li><p>See <a class="reference internal" href="overview.html#module-torchx.components" title="torchx.components"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components</span></code></a> to learn more about authoring components</p></li>
-<li><p>For more information on distributed training see <a class="reference internal" href="distributed.html#module-torchx.components.dist" title="torchx.components.dist"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components.dist</span></code></a>.</p></li>
-</ol>
+<p>1. <a class="reference internal" href="../component_best_practices.html#component-best-practices"><span class="std std-ref">Component Best Practices</span></a>
+3. See <a class="reference internal" href="overview.html#module-torchx.components" title="torchx.components"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components</span></code></a> to learn more about authoring components
+4. For more information on distributed training see <a class="reference internal" href="distributed.html#module-torchx.components.dist" title="torchx.components.dist"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components.dist</span></code></a>.</p>
 <section id="embedded-train-script">
 <h2>Embedded Train Script<a class="headerlink" href="#embedded-train-script" title="Permalink to this heading">¶</a></h2>
 <p>For simple apps you can use the <a class="reference internal" href="utils.html#torchx.components.utils.python" title="torchx.components.utils.python"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torchx.components.utils.python()</span></code></a>
