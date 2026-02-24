@@ -13,7 +13,7 @@ from typing import Mapping, Protocol
 from torchx.schedulers.api import Scheduler
 from torchx.util.entrypoints import load_group
 
-DEFAULT_SCHEDULER_MODULES: Mapping[str, str] = {
+BUILTIN_SCHEDULER_MODULES: Mapping[str, str] = {
     "local_docker": "torchx.schedulers.docker_scheduler",
     "local_cwd": "torchx.schedulers.local_scheduler",
     "slurm": "torchx.schedulers.slurm_scheduler",
@@ -39,8 +39,17 @@ def _defer_load_scheduler(path: str) -> SchedulerFactory:
     return run
 
 
+def default_schedulers() -> dict[str, SchedulerFactory]:
+    """Build default schedulers (built-in + extras from torchx.schedulers.extra)."""
+    return {
+        **{s: _defer_load_scheduler(p) for s, p in BUILTIN_SCHEDULER_MODULES.items()},
+        **load_group("torchx.schedulers.extra", default={}),
+    }
+
+
 def get_scheduler_factories(
-    group: str = "torchx.schedulers", skip_defaults: bool = False
+    group: str = "torchx.schedulers",
+    skip_defaults: bool = False,
 ) -> dict[str, SchedulerFactory]:
     """
     get_scheduler_factories returns all the available schedulers names under `group` and the
@@ -48,15 +57,7 @@ def get_scheduler_factories(
 
     The first scheduler in the dictionary is used as the default scheduler.
     """
-
-    if skip_defaults:
-        default_schedulers = {}
-    else:
-        default_schedulers: dict[str, SchedulerFactory] = {}
-        for scheduler, path in DEFAULT_SCHEDULER_MODULES.items():
-            default_schedulers[scheduler] = _defer_load_scheduler(path)
-
-    return load_group(group, default=default_schedulers)
+    return load_group(group, default={} if skip_defaults else default_schedulers())
 
 
 def get_default_scheduler_name() -> str:
