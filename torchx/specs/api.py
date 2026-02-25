@@ -898,9 +898,15 @@ class AppDryRunInfo(Generic[T]):
     readable representation of the underlying request.
     """
 
-    def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
+    def __init__(
+        self,
+        request: T,
+        fmt: Callable[[T], str],
+        to_dict: Callable[[T], Dict[str, Any]] | None = None,
+    ) -> None:
         self.request = request
         self._fmt = fmt
+        self._to_dict = to_dict
 
         # fields below are only meant to be used by
         # Scheduler or Session implementations
@@ -916,6 +922,21 @@ class AppDryRunInfo(Generic[T]):
 
     def __repr__(self) -> str:
         return self._fmt(self.request)
+
+    def request_to_dict(self) -> Dict[str, Any] | None:
+        """
+        Returns a dict representation of the request for JSON serialization.
+
+        If the scheduler provided a ``to_dict`` function, uses that.
+        Otherwise, if the request is a dataclass, uses ``dataclasses.asdict``.
+        Returns None for non-dataclass requests without a ``to_dict`` function.
+        """
+        if self._to_dict is not None:
+            return self._to_dict(self.request)
+        # Default: serialize dataclasses automatically
+        if hasattr(self.request, "__dataclass_fields__"):
+            return asdict(self.request)
+        return None
 
 
 def get_type_name(tp: Type[CfgVal]) -> str:

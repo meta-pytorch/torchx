@@ -16,8 +16,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass, field, fields, MISSING as DATACLASS_MISSING
 from itertools import groupby
 from pathlib import Path
-from pprint import pformat
-from typing import Any
+from typing import Any, Dict
 
 import torchx.specs as specs
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig_run
@@ -278,6 +277,23 @@ class CmdRun(SubCommand):
             nargs=argparse.REMAINDER,
         )
 
+    def _serialize_app_for_dryrun(self, app: specs.AppDef) -> Dict[str, Any]:
+        """
+        Serialize AppDef for dryrun output.
+
+        OSS uses dataclasses.asdict for simple serialization.
+        FB override uses serde.asjson for Thrift round-trip capability.
+        """
+        return asdict(app)
+
+    def _serialize_scheduler_request(
+        self, dryrun_info: specs.AppDryRunInfo[object]
+    ) -> object:
+        """
+        Serialize scheduler request for dryrun output (human-readable display).
+        """
+        return dryrun_info.request_to_dict() or str(dryrun_info.request)
+
     def _run_inner(self, runner: Runner, args: TorchXRunArgs) -> None:
         if args.scheduler == "local":
             logger.warning(LOCAL_SCHEDULER_WARNING_MSG)
@@ -300,12 +316,20 @@ class CmdRun(SubCommand):
                     cfg=args.scheduler_cfg,
                     parent_run_id=args.parent_run_id,
                 )
-                print(
-                    "\n=== APPLICATION ===\n"
-                    f"{pformat(asdict(dryrun_info._app), indent=2, width=80)}"
-                )
+                appdef = dryrun_info._app
+                sched_request = dryrun_info.request
+                assert appdef, "dryrun result always returns an AppDef"
 
-                print("\n=== SCHEDULER REQUEST ===\n" f"{dryrun_info}")
+                def classname(obj: object) -> str:
+                    return type(obj).__name__
+
+                dryrun_output = {
+                    classname(appdef): self._serialize_app_for_dryrun(appdef),
+                    classname(sched_request): self._serialize_scheduler_request(
+                        dryrun_info
+                    ),
+                }
+                print(json.dumps(dryrun_output, indent=2))
             else:
                 app_handle = runner.run_component(
                     args.component_name,
