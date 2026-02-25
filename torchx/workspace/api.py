@@ -15,7 +15,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Any, Generic, Iterable, Mapping, TYPE_CHECKING, TypeVar
 
-from torchx.specs import AppDef, CfgVal, Role, runopts, Workspace
+from torchx.specs import AppDef, CfgVal, Role, runopts
 
 logger: logging.Logger = logging.getLogger(__name__)
 
