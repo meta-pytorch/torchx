@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -442,8 +437,7 @@
 <h1 id="index">Index</h1>
 
 <div class="genindex-jumpbox">
- <a href="#_"><strong>_</strong></a>
- | <a href="#A"><strong>A</strong></a>
+ <a href="#A"><strong>A</strong></a>
  | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
@@ -464,18 +458,48 @@
  | <a href="#W"><strong>W</strong></a>
  
 </div>
-<h2 id="_">_</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="components/distributed.html#torchx.components.dist._TORCH_DEBUG_FLAGS">_TORCH_DEBUG_FLAGS (in module torchx.components.dist)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.runopts.add">add() (torchx.specs.runopts method)</a>
+</li>
+      <li><a href="cli.html#torchx.cli.cmd_base.SubCommand.add_arguments">add_arguments() (torchx.cli.cmd_base.SubCommand method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.cli.cmd_tracker.CmdTracker.add_arguments">(torchx.cli.cmd_tracker.CmdTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.add_artifact">add_artifact() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.AppRun.add_artifact">(torchx.tracker.AppRun method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.add_artifact">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.add_artifact">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.add_metadata">add_metadata() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.AppRun.add_metadata">(torchx.tracker.AppRun method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.add_metadata">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.add_metadata">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.add_source">add_source() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.AppRun.add_source">(torchx.tracker.AppRun method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.add_source">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.add_source">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="specs.html#torchx.specs.ParsedAppHandle.app_id">app_id (torchx.specs.ParsedAppHandle attribute)</a>
 </li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.app_to_resource">app_to_resource() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
 
@@ -483,8 +507,22 @@
         <li><a href="schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.app_to_resource">(in module torchx.schedulers.kubernetes_scheduler)</a>
 </li>
       </ul></li>
-      <li><a href="specs.html#torchx.specs.AppDef">AppDef (class in torchx.specs)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="basics.html#term-AppDef"><strong>AppDef</strong></a>
+
+      <ul>
+        <li><a href="specs.html#torchx.specs.AppDef">(class in torchx.specs)</a>
 </li>
+      </ul></li>
+      <li><a href="specs.html#torchx.specs.AppDryRunInfo">AppDryRunInfo (class in torchx.specs)</a>
+</li>
+      <li><a href="basics.html#term-AppHandle"><strong>AppHandle</strong></a>
+
+      <ul>
+        <li><a href="specs.html#torchx.specs.AppHandle">(in module torchx.specs)</a>
+</li>
+      </ul></li>
       <li><a href="runner.config.html#torchx.runner.config.apply">apply() (in module torchx.runner.config)</a>
 
       <ul>
@@ -497,21 +535,19 @@
 </li>
       <li><a href="specs.html#torchx.specs.AppState">AppState (class in torchx.specs)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.AppStatus">AppStatus (class in torchx.specs)</a>
 </li>
-      <li><a href="specs.html#torchx.specs.file_linter.ArgTypeValidator">ArgTypeValidator (class in torchx.specs.file_linter)</a>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.artifacts">artifacts() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.artifacts">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.artifacts">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="schedulers.html#torchx.schedulers.api.StructuredOpts.as_runopts">as_runopts() (torchx.schedulers.api.StructuredOpts class method)</a>
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.auto_set_CUDA_VISIBLE_DEVICES">auto_set_CUDA_VISIBLE_DEVICES() (torchx.schedulers.local_scheduler.LocalScheduler method)</a>
-</li>
-      <li><a href="specs.html#torchx.specs.named_resources_aws.aws_m5_2xlarge">aws_m5_2xlarge() (in module torchx.specs.named_resources_aws)</a>
-</li>
-      <li><a href="specs.html#torchx.specs.named_resources_aws.aws_p3_2xlarge">aws_p3_2xlarge() (in module torchx.specs.named_resources_aws)</a>
-</li>
-      <li><a href="specs.html#torchx.specs.named_resources_aws.aws_p3_8xlarge">aws_p3_8xlarge() (in module torchx.specs.named_resources_aws)</a>
-</li>
-      <li><a href="specs.html#torchx.specs.named_resources_aws.aws_t3_medium">aws_t3_medium() (in module torchx.specs.named_resources_aws)</a>
 </li>
       <li><a href="schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">AWSBatchScheduler (class in torchx.schedulers.aws_batch_scheduler)</a>
 </li>
@@ -538,7 +574,7 @@
       <li><a href="workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin.build_workspace_and_update_role">build_workspace_and_update_role() (torchx.workspace.dir_workspace.DirWorkspaceMixin method)</a>
 
       <ul>
-        <li><a href="workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.build_workspace_and_update_role">(torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
+        <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.build_workspace_and_update_role">(torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 </li>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role">(torchx.workspace.WorkspaceMixin method)</a>
 </li>
@@ -556,9 +592,11 @@
       <li><a href="runner.html#torchx.runner.Runner.cancel">cancel() (torchx.runner.Runner method)</a>
 
       <ul>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.cancel">(torchx.schedulers.Scheduler method)</a>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.cancel">(torchx.schedulers.api.Scheduler method)</a>
 </li>
       </ul></li>
+      <li><a href="specs.html#torchx.specs.runopt.cast_to_type">cast_to_type() (torchx.specs.runopt method)</a>
+</li>
       <li><a href="specs.html#torchx.specs.runopts.cfg_from_json_repr">cfg_from_json_repr() (torchx.specs.runopts method)</a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.cfg_from_str">cfg_from_str() (torchx.runner.Runner method)</a>
@@ -567,22 +605,22 @@
         <li><a href="specs.html#torchx.specs.runopts.cfg_from_str">(torchx.specs.runopts method)</a>
 </li>
       </ul></li>
+      <li><a href="specs.html#torchx.specs.CfgVal">CfgVal (in module torchx.specs)</a>
+</li>
       <li><a href="runner.html#torchx.runner.Runner.close">close() (torchx.runner.Runner method)</a>
 
       <ul>
-        <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.close">(torchx.schedulers.local_scheduler.LocalScheduler method)</a>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.close">(torchx.schedulers.api.Scheduler method)</a>
 </li>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.close">(torchx.schedulers.Scheduler method)</a>
+        <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.close">(torchx.schedulers.local_scheduler.LocalScheduler method)</a>
 </li>
       </ul></li>
       <li><a href="tracker.html#torchx.cli.cmd_tracker.CmdTracker">CmdTracker (class in torchx.cli.cmd_tracker)</a>
 </li>
-      <li><a href="specs.html#torchx.specs.file_linter.ComponentFnVisitor">ComponentFnVisitor (class in torchx.specs.file_linter)</a>
-</li>
-      <li><a href="specs.html#torchx.specs.file_linter.ComponentFunctionValidator">ComponentFunctionValidator (class in torchx.specs.file_linter)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="basics.html#term-Component"><strong>Component</strong></a>
+</li>
       <li><a href="component_best_practices.html#torchx.components.component_test_base.ComponentTestCase">ComponentTestCase (class in torchx.components.component_test_base)</a>
 </li>
       <li><a href="components/utils.html#torchx.components.utils.copy">copy() (in module torchx.components.utils)</a>
@@ -624,12 +662,14 @@
       <li><a href="runner.html#torchx.runner.Runner.delete">delete() (torchx.runner.Runner method)</a>
 
       <ul>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.delete">(torchx.schedulers.Scheduler method)</a>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.delete">(torchx.schedulers.api.Scheduler method)</a>
 </li>
       </ul></li>
       <li><a href="runner.html#torchx.runner.Runner.describe">describe() (torchx.runner.Runner method)</a>
 
       <ul>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.describe">(torchx.schedulers.api.Scheduler method)</a>
+</li>
         <li><a href="schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.describe">(torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler method)</a>
 </li>
         <li><a href="schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler.describe">(torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler method)</a>
@@ -643,8 +683,6 @@
         <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.describe">(torchx.schedulers.local_scheduler.LocalScheduler method)</a>
 </li>
         <li><a href="schedulers/lsf.html#torchx.schedulers.lsf_scheduler.LsfScheduler.describe">(torchx.schedulers.lsf_scheduler.LsfScheduler method)</a>
-</li>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.describe">(torchx.schedulers.Scheduler method)</a>
 </li>
         <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.describe">(torchx.schedulers.slurm_scheduler.SlurmScheduler method)</a>
 </li>
@@ -663,13 +701,15 @@
 </li>
       <li><a href="schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler">DockerScheduler (class in torchx.schedulers.docker_scheduler)</a>
 </li>
-      <li><a href="workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin">DockerWorkspaceMixin (class in torchx.workspace.docker_workspace)</a>
+      <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin">DockerWorkspaceMixin (class in torchx.workspace.docker_workspace)</a>
+</li>
+      <li><a href="basics.html#term-Dryrun"><strong>Dryrun</strong></a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.dryrun">dryrun() (torchx.runner.Runner method)</a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.dryrun_component">dryrun_component() (torchx.runner.Runner method)</a>
 </li>
-      <li><a href="workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images">dryrun_push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
+      <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images">dryrun_push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 
       <ul>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.dryrun_push_images">(torchx.workspace.WorkspaceMixin method)</a>
@@ -687,7 +727,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="schedulers.html#torchx.schedulers.Scheduler.exists">exists() (torchx.schedulers.Scheduler method)</a>
+      <li><a href="basics.html#term-Entry-Point"><strong>Entry Point</strong></a>
 </li>
   </ul></td>
 </tr></table>
@@ -705,11 +745,13 @@
       </ul></li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ImageProvider.fetch_role">fetch_role() (torchx.schedulers.local_scheduler.ImageProvider method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="runner.config.html#torchx.runner.config.find_configs">find_configs() (in module torchx.runner.config)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.AppStatus.format">format() (torchx.specs.AppStatus method)</a>
+</li>
+      <li><a href="schedulers.html#torchx.schedulers.api.StructuredOpts.from_cfg">from_cfg() (torchx.schedulers.api.StructuredOpts class method)</a>
 </li>
       <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmReplicaRequest.from_role">from_role() (torchx.schedulers.slurm_scheduler.SlurmReplicaRequest class method)</a>
 </li>
@@ -723,8 +765,12 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="specs.html#torchx.specs.runopts.get">get() (torchx.specs.runopts method)</a>
+      <li><a href="schedulers.html#torchx.schedulers.api.StructuredOpts.get">get() (torchx.schedulers.api.StructuredOpts method)</a>
+
+      <ul>
+        <li><a href="specs.html#torchx.specs.runopts.get">(torchx.specs.runopts method)</a>
 </li>
+      </ul></li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.get_appwrapper_status">get_appwrapper_status() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
 </li>
       <li><a href="runner.config.html#torchx.runner.config.get_config">get_config() (in module torchx.runner.config)</a>
@@ -753,8 +799,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.file_linter.get_fn_docstring">get_fn_docstring() (in module torchx.specs.file_linter)</a>
 </li>
-      <li><a href="specs.html#torchx.specs.get_named_resources">get_named_resources() (in module torchx.specs)</a>
-</li>
       <li><a href="specs.html#torchx.specs.overlays.get_overlay">get_overlay() (in module torchx.specs.overlays)</a>
 </li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.get_port_for_service">get_port_for_service() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
@@ -762,6 +806,10 @@
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ImageProvider.get_replica_param">get_replica_param() (torchx.schedulers.local_scheduler.ImageProvider method)</a>
 </li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.get_role_information">get_role_information() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
+</li>
+      <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run">get_run() (torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run_id">get_run_id() (torchx.tracker.mlflow.MLflowTracker method)</a>
 </li>
       <li><a href="runner.html#torchx.runner.get_runner">get_runner() (in module torchx.runner)</a>
 </li>
@@ -778,22 +826,34 @@
       <li><a href="schedulers/docker.html#torchx.schedulers.docker_scheduler.has_docker">has_docker() (in module torchx.schedulers.docker_scheduler)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="components/utils.html#torchx.components.utils.hydra">hydra() (in module torchx.components.utils)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="basics.html#term-Image"><strong>Image</strong></a>
+</li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ImageProvider">ImageProvider (class in torchx.schedulers.local_scheduler)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.runopts.is_type">is_type() (torchx.specs.runopts static method)</a>
 </li>
+      <li><a href="specs.html#torchx.specs.Workspace.is_unmapped_single_project">is_unmapped_single_project() (torchx.specs.Workspace method)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="J">J</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tracker.html#torchx.tracker.AppRun.job_id">job_id() (torchx.tracker.AppRun method)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.overlays.JOIN">JOIN() (in module torchx.specs.overlays)</a>
 </li>
@@ -819,11 +879,21 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.lineage">lineage() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.lineage">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.lineage">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
       <li><a href="specs.html#torchx.specs.file_linter.LinterMessage">LinterMessage (class in torchx.specs.file_linter)</a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.list">list() (torchx.runner.Runner method)</a>
 
       <ul>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.list">(torchx.schedulers.api.Scheduler method)</a>
+</li>
         <li><a href="schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.list">(torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler method)</a>
 </li>
         <li><a href="schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler.list">(torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler method)</a>
@@ -838,8 +908,6 @@
 </li>
         <li><a href="schedulers/lsf.html#torchx.schedulers.lsf_scheduler.LsfScheduler.list">(torchx.schedulers.lsf_scheduler.LsfScheduler method)</a>
 </li>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.list">(torchx.schedulers.Scheduler method)</a>
-</li>
         <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.list">(torchx.schedulers.slurm_scheduler.SlurmScheduler method)</a>
 </li>
       </ul></li>
@@ -847,17 +915,19 @@
 </li>
       <li><a href="runner.config.html#torchx.runner.config.load">load() (in module torchx.runner.config)</a>
 </li>
-      <li><a href="runner.config.html#torchx.runner.config.load_sections">load_sections() (in module torchx.runner.config)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="runner.config.html#torchx.runner.config.load_sections">load_sections() (in module torchx.runner.config)</a>
+</li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LocalDirectoryImageProvider">LocalDirectoryImageProvider (class in torchx.schedulers.local_scheduler)</a>
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler">LocalScheduler (class in torchx.schedulers.local_scheduler)</a>
 </li>
-      <li><a href="schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.log_iter">log_iter() (torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler method)</a>
+      <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.log_iter">log_iter() (torchx.schedulers.api.Scheduler method)</a>
 
       <ul>
+        <li><a href="schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.log_iter">(torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler method)</a>
+</li>
         <li><a href="schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler.log_iter">(torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler method)</a>
 </li>
         <li><a href="schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.log_iter">(torchx.schedulers.docker_scheduler.DockerScheduler method)</a>
@@ -870,12 +940,12 @@
 </li>
         <li><a href="schedulers/lsf.html#torchx.schedulers.lsf_scheduler.LsfScheduler.log_iter">(torchx.schedulers.lsf_scheduler.LsfScheduler method)</a>
 </li>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.log_iter">(torchx.schedulers.Scheduler method)</a>
-</li>
         <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.log_iter">(torchx.schedulers.slurm_scheduler.SlurmScheduler method)</a>
 </li>
       </ul></li>
       <li><a href="runner.html#torchx.runner.Runner.log_lines">log_lines() (torchx.runner.Runner method)</a>
+</li>
+      <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.log_params_flat">log_params_flat() (torchx.tracker.mlflow.MLflowTracker method)</a>
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.LogIterator">LogIterator (class in torchx.schedulers.local_scheduler)</a>
 </li>
@@ -900,6 +970,18 @@
 </li>
       </ul></li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.mcad_svc">mcad_svc() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
+</li>
+      <li><a href="specs.html#torchx.specs.Workspace.merge_into">merge_into() (torchx.specs.Workspace method)</a>
+</li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.metadata">metadata() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.metadata">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.metadata">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker">MLflowTracker (class in torchx.tracker.mlflow)</a>
 </li>
       <li>
     module
@@ -955,15 +1037,15 @@
 </li>
         <li><a href="specs.html#module-torchx.specs.named_resources_aws">torchx.specs.named_resources_aws</a>
 </li>
+        <li><a href="specs.html#module-torchx.specs.named_resources_generic">torchx.specs.named_resources_generic</a>
+</li>
         <li><a href="specs.html#module-torchx.specs.overlays">torchx.specs.overlays</a>
 </li>
         <li><a href="tracker.html#module-torchx.tracker">torchx.tracker</a>
 </li>
-        <li><a href="workspace.html#module-torchx.workspace">torchx.workspace</a>
-</li>
         <li><a href="workspace.html#module-torchx.workspace.dir_workspace">torchx.workspace.dir_workspace</a>
 </li>
-        <li><a href="workspace.html#module-torchx.workspace.docker_workspace">torchx.workspace.docker_workspace</a>
+        <li><a href="workspaces/docker.html#module-torchx.workspace.docker_workspace">torchx.workspace.docker_workspace</a>
 </li>
       </ul></li>
   </ul></td>
@@ -972,7 +1054,11 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="specs.html#torchx.specs.parse_app_handle">parse_app_handle() (in module torchx.specs)</a>
+</li>
       <li><a href="specs.html#torchx.specs.parse_mounts">parse_mounts() (in module torchx.specs)</a>
+</li>
+      <li><a href="specs.html#torchx.specs.ParsedAppHandle">ParsedAppHandle (class in torchx.specs)</a>
 </li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.pod_labels">pod_labels() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
 
@@ -980,13 +1066,13 @@
         <li><a href="schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.pod_labels">(in module torchx.schedulers.kubernetes_scheduler)</a>
 </li>
       </ul></li>
-      <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.PopenRequest">PopenRequest (class in torchx.schedulers.local_scheduler)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.PopenRequest">PopenRequest (class in torchx.schedulers.local_scheduler)</a>
+</li>
       <li><a href="specs.html#torchx.specs.Role.pre_proc">pre_proc() (torchx.specs.Role method)</a>
 </li>
-      <li><a href="workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
+      <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 
       <ul>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.push_images">(torchx.workspace.WorkspaceMixin method)</a>
@@ -1010,37 +1096,65 @@
 </li>
       <li><a href="specs.html#torchx.specs.runopts.resolve">resolve() (torchx.specs.runopts method)</a>
 </li>
-      <li><a href="specs.html#torchx.specs.Resource">Resource (class in torchx.specs)</a>
+      <li><a href="basics.html#term-Resource"><strong>Resource</strong></a>
+
+      <ul>
+        <li><a href="specs.html#torchx.specs.Resource">(class in torchx.specs)</a>
 </li>
+      </ul></li>
       <li><a href="specs.html#torchx.specs.resource">resource() (in module torchx.specs)</a>
 </li>
       <li><a href="runtime/tracking.html#torchx.runtime.tracking.ResultTracker">ResultTracker (class in torchx.runtime.tracking)</a>
 </li>
       <li><a href="specs.html#torchx.specs.RetryPolicy">RetryPolicy (class in torchx.specs)</a>
 </li>
-      <li><a href="specs.html#torchx.specs.file_linter.ReturnTypeValidator">ReturnTypeValidator (class in torchx.specs.file_linter)</a>
+      <li><a href="basics.html#term-Role"><strong>Role</strong></a>
+
+      <ul>
+        <li><a href="specs.html#torchx.specs.Role">(class in torchx.specs)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="specs.html#torchx.specs.Role">Role (class in torchx.specs)</a>
-</li>
+      </ul></li>
       <li><a href="schedulers/kubernetes_mcad.html#torchx.schedulers.kubernetes_mcad_scheduler.role_to_pod">role_to_pod() (in module torchx.schedulers.kubernetes_mcad_scheduler)</a>
 
       <ul>
         <li><a href="schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.role_to_pod">(in module torchx.schedulers.kubernetes_scheduler)</a>
 </li>
       </ul></li>
-      <li><a href="runner.html#torchx.runner.Runner.run">run() (torchx.runner.Runner method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="cli.html#torchx.cli.cmd_base.SubCommand.run">run() (torchx.cli.cmd_base.SubCommand method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.cli.cmd_tracker.CmdTracker.run">(torchx.cli.cmd_tracker.CmdTracker method)</a>
 </li>
+        <li><a href="runner.html#torchx.runner.Runner.run">(torchx.runner.Runner method)</a>
+</li>
+      </ul></li>
       <li><a href="component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.run_component">run_component() (torchx.components.component_test_base.ComponentTestCase method)</a>
 
       <ul>
         <li><a href="runner.html#torchx.runner.Runner.run_component">(torchx.runner.Runner method)</a>
 </li>
       </ul></li>
-      <li><a href="schedulers.html#torchx.schedulers.Scheduler.run_opts">run_opts() (torchx.schedulers.Scheduler method)</a>
+      <li><a href="tracker.html#torchx.tracker.AppRun.run_from_env">run_from_env() (torchx.tracker.AppRun static method)</a>
 </li>
-      <li><a href="runner.html#torchx.runner.Runner">Runner (class in torchx.runner)</a>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.run_ids">run_ids() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.run_ids">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.run_ids">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.run_opts">run_opts() (torchx.schedulers.api.Scheduler method)</a>
+</li>
+      <li><a href="basics.html#term-Runner"><strong>Runner</strong></a>
+
+      <ul>
+        <li><a href="runner.html#torchx.runner.Runner">(class in torchx.runner)</a>
+</li>
+      </ul></li>
+      <li><a href="specs.html#torchx.specs.runopt">runopt (class in torchx.specs)</a>
 </li>
       <li><a href="specs.html#torchx.specs.runopts">runopts (class in torchx.specs)</a>
 </li>
@@ -1059,6 +1173,8 @@
       <li><a href="runner.html#torchx.runner.Runner.schedule">schedule() (torchx.runner.Runner method)</a>
 
       <ul>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.schedule">(torchx.schedulers.api.Scheduler method)</a>
+</li>
         <li><a href="schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.schedule">(torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler method)</a>
 </li>
         <li><a href="schedulers/aws_sagemaker.html#torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler.schedule">(torchx.schedulers.aws_sagemaker_scheduler.AWSSageMakerScheduler method)</a>
@@ -1073,23 +1189,27 @@
 </li>
         <li><a href="schedulers/lsf.html#torchx.schedulers.lsf_scheduler.LsfScheduler.schedule">(torchx.schedulers.lsf_scheduler.LsfScheduler method)</a>
 </li>
-        <li><a href="schedulers.html#torchx.schedulers.Scheduler.schedule">(torchx.schedulers.Scheduler method)</a>
-</li>
         <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.schedule">(torchx.schedulers.slurm_scheduler.SlurmScheduler method)</a>
 </li>
       </ul></li>
-      <li><a href="schedulers.html#torchx.schedulers.Scheduler">Scheduler (class in torchx.schedulers)</a>
+      <li><a href="basics.html#term-Scheduler"><strong>Scheduler</strong></a>
+
+      <ul>
+        <li><a href="schedulers.html#torchx.schedulers.api.Scheduler">(class in torchx.schedulers.api)</a>
+</li>
+      </ul></li>
+      <li><a href="specs.html#torchx.specs.ParsedAppHandle.scheduler_backend">scheduler_backend (torchx.specs.ParsedAppHandle attribute)</a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.scheduler_backends">scheduler_backends() (torchx.runner.Runner method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="runner.html#torchx.runner.Runner.scheduler_run_opts">scheduler_run_opts() (torchx.runner.Runner method)</a>
 </li>
-      <li><a href="schedulers.html#torchx.schedulers.SchedulerFactory">SchedulerFactory (class in torchx.schedulers)</a>
+      <li><a href="specs.html#torchx.specs.ParsedAppHandle.session_name">session_name (torchx.specs.ParsedAppHandle attribute)</a>
 </li>
       <li><a href="specs.html#torchx.specs.overlays.set_overlay">set_overlay() (in module torchx.specs.overlays)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.setUp">setUp() (torchx.components.component_test_base.ComponentTestCase method)</a>
 </li>
       <li><a href="components/utils.html#torchx.components.utils.sh">sh() (in module torchx.components.utils)</a>
@@ -1102,13 +1222,31 @@
 </li>
       <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler">SlurmScheduler (class in torchx.schedulers.slurm_scheduler)</a>
 </li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerBase.sources">sources() (torchx.tracker.api.TrackerBase method)</a>
+
+      <ul>
+        <li><a href="tracker.html#torchx.tracker.AppRun.sources">(torchx.tracker.AppRun method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.sources">(torchx.tracker.backend.fsspec.FsspecTracker method)</a>
+</li>
+        <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.sources">(torchx.tracker.mlflow.MLflowTracker method)</a>
+</li>
+      </ul></li>
+      <li><a href="components/distributed.html#torchx.components.dist.spmd">spmd() (in module torchx.components.dist)</a>
+</li>
       <li><a href="runner.html#torchx.runner.Runner.status">status() (torchx.runner.Runner method)</a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.stop">stop() (torchx.runner.Runner method)</a>
 </li>
-      <li><a href="schedulers.html#torchx.schedulers.Scheduler.submit">submit() (torchx.schedulers.Scheduler method)</a>
+      <li><a href="schedulers.html#torchx.schedulers.api.Stream">Stream (class in torchx.schedulers.api)</a>
 </li>
-      <li><a href="schedulers.html#torchx.schedulers.Scheduler.submit_dryrun">submit_dryrun() (torchx.schedulers.Scheduler method)</a>
+      <li><a href="schedulers.html#torchx.schedulers.api.StructuredOpts">StructuredOpts (class in torchx.schedulers.api)</a>
+</li>
+      <li><a href="cli.html#torchx.cli.cmd_base.SubCommand">SubCommand (class in torchx.cli.cmd_base)</a>
+</li>
+      <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.submit">submit() (torchx.schedulers.api.Scheduler method)</a>
+</li>
+      <li><a href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun">submit_dryrun() (torchx.schedulers.api.Scheduler method)</a>
 </li>
       <li><a href="specs.html#torchx.specs.macros.Values.substitute">substitute() (torchx.specs.macros.Values method)</a>
 </li>
@@ -1122,7 +1260,7 @@
 </li>
       <li><a href="components/metrics.html#torchx.components.metrics.tensorboard">tensorboard() (in module torchx.components.metrics)</a>
 </li>
-      <li><a href="specs.html#torchx.specs.AppStatus.to_json">to_json() (torchx.specs.AppStatus method)</a>
+      <li><a href="specs.html#torchx.specs.macros.Values.to_dict">to_dict() (torchx.specs.macros.Values method)</a>
 </li>
       <li><a href="components/serve.html#torchx.components.serve.torchserve">torchserve() (in module torchx.components.serve)</a>
 </li>
@@ -1304,6 +1442,13 @@
 </li>
       </ul></li>
       <li>
+    torchx.specs.named_resources_generic
+
+      <ul>
+        <li><a href="specs.html#module-torchx.specs.named_resources_generic">module</a>
+</li>
+      </ul></li>
+      <li>
     torchx.specs.overlays
 
       <ul>
@@ -1318,13 +1463,6 @@
 </li>
       </ul></li>
       <li>
-    torchx.workspace
-
-      <ul>
-        <li><a href="workspace.html#module-torchx.workspace">module</a>
-</li>
-      </ul></li>
-      <li>
     torchx.workspace.dir_workspace
 
       <ul>
@@ -1335,14 +1473,16 @@
     torchx.workspace.docker_workspace
 
       <ul>
-        <li><a href="workspace.html#module-torchx.workspace.docker_workspace">module</a>
+        <li><a href="workspaces/docker.html#module-torchx.workspace.docker_workspace">module</a>
 </li>
       </ul></li>
-      <li><a href="specs.html#torchx.specs.file_linter.TorchXArgumentHelpFormatter">TorchXArgumentHelpFormatter (class in torchx.specs.file_linter)</a>
-</li>
       <li><a href="components/utils.html#torchx.components.utils.touch">touch() (in module torchx.components.utils)</a>
 </li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerArtifact">TrackerArtifact (class in torchx.tracker.api)</a>
+</li>
       <li><a href="tracker.html#torchx.tracker.api.TrackerBase">TrackerBase (class in torchx.tracker.api)</a>
+</li>
+      <li><a href="tracker.html#torchx.tracker.api.TrackerSource">TrackerSource (class in torchx.tracker.api)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1355,18 +1495,10 @@
       <ul>
         <li><a href="component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.validate">(torchx.components.component_test_base.ComponentTestCase method)</a>
 </li>
-        <li><a href="specs.html#torchx.specs.file_linter.ArgTypeValidator.validate">(torchx.specs.file_linter.ArgTypeValidator method)</a>
-</li>
-        <li><a href="specs.html#torchx.specs.file_linter.ComponentFunctionValidator.validate">(torchx.specs.file_linter.ComponentFunctionValidator method)</a>
-</li>
-        <li><a href="specs.html#torchx.specs.file_linter.ReturnTypeValidator.validate">(torchx.specs.file_linter.ReturnTypeValidator method)</a>
-</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.overlays.validate_overlay">validate_overlay() (in module torchx.specs.overlays)</a>
-</li>
-      <li><a href="specs.html#torchx.specs.file_linter.ComponentFnVisitor.visit_FunctionDef">visit_FunctionDef() (torchx.specs.file_linter.ComponentFnVisitor method)</a>
 </li>
       <li><a href="specs.html#torchx.specs.VolumeMount">VolumeMount (class in torchx.specs)</a>
 </li>
@@ -1380,9 +1512,15 @@
 </li>
       <li><a href="workspace.html#torchx.workspace.walk_workspace">walk_workspace() (in module torchx.workspace)</a>
 </li>
+      <li><a href="basics.html#term-Workspace"><strong>Workspace</strong></a>
+
+      <ul>
+        <li><a href="specs.html#torchx.specs.Workspace">(class in torchx.specs)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts">workspace_opts() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
+      <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts">workspace_opts() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 
       <ul>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.workspace_opts">(torchx.workspace.WorkspaceMixin method)</a>

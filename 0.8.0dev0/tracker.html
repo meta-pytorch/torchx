@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Local" href="schedulers/local.html" />
-    <link rel="prev" title="Custom Components" href="custom_components.html" />
+    <link rel="next" title="Docker" href="workspaces/docker.html" />
+    <link rel="prev" title=".torchxconfig" href="runner.config.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -445,6 +440,15 @@
       
   <section id="torchx-tracker">
 <h1>torchx.tracker<a class="headerlink" href="#torchx-tracker" title="Permalink to this heading">¶</a></h1>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Trackers record artifacts, metadata, and lineage for training runs. Use
+<a class="reference internal" href="#torchx.tracker.AppRun" title="torchx.tracker.api.AppRun"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppRun</span></code></a> inside your job and register custom
+backends via <a class="reference internal" href="basics.html#term-Entry-Point"><span class="xref std std-term">entry points</span></a>.</p>
+</div>
+<p><strong>Prerequisites:</strong> <a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a> (core concepts). For registering custom
+tracker backends, see <a class="reference internal" href="advanced.html#registering-custom-trackers"><span class="std std-ref">Registering Custom Trackers</span></a> in the
+<a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a> guide.</p>
 <section id="module-torchx.tracker">
 <span id="overview-usage"></span><h2>Overview &amp; Usage<a class="headerlink" href="#module-torchx.tracker" title="Permalink to this heading">¶</a></h2>
 <div class="admonition note">
@@ -580,38 +584,443 @@ configure and use it in user application.</p>
 <li><p>Alternatively, backend implementations may expose UI for user consumption.</p></li>
 </ul>
 </section>
+<p>Trackers operate at two levels:</p>
+<ul class="simple">
+<li><p><strong>Backend level</strong> (<a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>) – the storage
+implementation. TorchX ships with
+<a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a> (filesystem-based)
+and <a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker" title="torchx.tracker.mlflow.MLflowTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a>. You can implement your
+own backend.</p></li>
+<li><p><strong>Job level</strong> (<a class="reference internal" href="#torchx.tracker.AppRun" title="torchx.tracker.api.AppRun"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppRun</span></code></a>) – the user-facing API
+that delegates to one or more <code class="docutils literal notranslate"><span class="pre">TrackerBase</span></code> backends. <code class="docutils literal notranslate"><span class="pre">AppRun</span></code> is
+constructed automatically from environment variables set by the TorchX
+runner (<code class="docutils literal notranslate"><span class="pre">TORCHX_JOB_ID</span></code>, <code class="docutils literal notranslate"><span class="pre">TORCHX_TRACKERS</span></code>).</p></li>
+</ul>
+<p><strong>Typical usage inside a training job:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
+
+<span class="c1"># Singleton created from TORCHX_JOB_ID and TORCHX_TRACKERS env vars</span>
+<span class="n">run</span> <span class="o">=</span> <span class="n">AppRun</span><span class="o">.</span><span class="n">run_from_env</span><span class="p">()</span>
+
+<span class="c1"># Store metadata (key-value pairs)</span>
+<span class="n">run</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">&quot;resnet50&quot;</span><span class="p">)</span>
+
+<span class="c1"># Store an artifact (named path + optional metadata)</span>
+<span class="n">run</span><span class="o">.</span><span class="n">add_artifact</span><span class="p">(</span><span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span> <span class="s2">&quot;s3://bucket/checkpoints/epoch_10.pt&quot;</span><span class="p">)</span>
+
+<span class="c1"># Link a parent run for lineage tracking</span>
+<span class="n">run</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span><span class="s2">&quot;local_cwd://torchx/parent_job_123&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="implementing-a-custom-tracker">
+<h3>Implementing a Custom Tracker<a class="headerlink" href="#implementing-a-custom-tracker" title="Permalink to this heading">¶</a></h3>
+<p>Subclass <a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a> and implement its eight
+abstract methods. Then provide a factory function and register it as a
+<code class="docutils literal notranslate"><span class="pre">torchx.tracker</span></code> entry point. See
+<a class="reference internal" href="advanced.html#registering-custom-trackers"><span class="std std-ref">Registering Custom Trackers</span></a> for the full walkthrough.</p>
+<section id="testing-your-tracker">
+<h4>Testing Your Tracker<a class="headerlink" href="#testing-your-tracker" title="Permalink to this heading">¶</a></h4>
+<p>Study <code class="docutils literal notranslate"><span class="pre">torchx/tracker/test/api_test.py</span></code> for a complete in-memory example. A
+minimal test writes metadata and artifacts, then reads them back:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyTrackerTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_round_trip_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tracker</span> <span class="o">=</span> <span class="n">MyTracker</span><span class="p">(</span><span class="n">connection_str</span><span class="o">=</span><span class="s2">&quot;test://localhost&quot;</span><span class="p">)</span>
+        <span class="n">tracker</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="s2">&quot;run-1&quot;</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">md</span> <span class="o">=</span> <span class="n">tracker</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="s2">&quot;run-1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">md</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">],</span> <span class="mf">0.01</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">md</span><span class="p">[</span><span class="s2">&quot;epochs&quot;</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_round_trip_artifact</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tracker</span> <span class="o">=</span> <span class="n">MyTracker</span><span class="p">(</span><span class="n">connection_str</span><span class="o">=</span><span class="s2">&quot;test://localhost&quot;</span><span class="p">)</span>
+        <span class="n">tracker</span><span class="o">.</span><span class="n">add_artifact</span><span class="p">(</span><span class="s2">&quot;run-1&quot;</span><span class="p">,</span> <span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span> <span class="s2">&quot;/path/to/ckpt.pt&quot;</span><span class="p">)</span>
+        <span class="n">arts</span> <span class="o">=</span> <span class="n">tracker</span><span class="o">.</span><span class="n">artifacts</span><span class="p">(</span><span class="s2">&quot;run-1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIn</span><span class="p">(</span><span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span> <span class="n">arts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">arts</span><span class="p">[</span><span class="s2">&quot;checkpoint&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;/path/to/ckpt.pt&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Test factory wiring with <code class="docutils literal notranslate"><span class="pre">patch.dict</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span>
+
+<span class="nd">@patch</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">&quot;TORCHX_TRACKERS&quot;</span><span class="p">:</span> <span class="s2">&quot;my_tracker&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TORCHX_TRACKER_MY_TRACKER_CONFIG&quot;</span><span class="p">:</span> <span class="s2">&quot;test://localhost&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TORCHX_JOB_ID&quot;</span><span class="p">:</span> <span class="s2">&quot;test-run-1&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_tracker_from_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">trackers_from_environ</span>
+    <span class="n">trackers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trackers_from_environ</span><span class="p">())</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">trackers</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="common-pitfalls">
+<h4>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permalink to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Entry point targets the class, not the factory</strong>: The entry point must
+reference a factory function <code class="docutils literal notranslate"><span class="pre">(config:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None)</span> <span class="pre">-&gt;</span> <span class="pre">TrackerBase</span></code>, not
+the class itself.</p></li>
+<li><p><strong>Factory signature mismatch</strong>: The factory receives <code class="docutils literal notranslate"><span class="pre">config:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code>,
+not keyword arguments. Parse connection strings or JSON inside the factory.</p></li>
+<li><p><strong>Forgetting to handle ``None`` config</strong>: When no
+<code class="docutils literal notranslate"><span class="pre">TORCHX_TRACKER_&lt;NAME&gt;_CONFIG</span></code> env var is set, <code class="docutils literal notranslate"><span class="pre">config</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+Provide a sensible default or raise a clear error.</p></li>
+</ul>
+</section>
+</section>
+<section id="api-reference">
+<h3>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.tracker.AppRun">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.</span></span><span class="sig-name descname"><span class="pre">AppRun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">backends</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><span class="pre">TrackerBase</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun" title="Permalink to this definition">¶</a></dt>
-<dd><p>Exposes tracker API to at the job level and should the only API that encapsulates that module implementation.</p>
-<p>This API is stil experimental and may change in the future.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – identity of the job used by tracker API</p></li>
-<li><p><strong>backends</strong> (<em>Iterable</em><em>[</em><a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><em>TrackerBase</em></a><em>]</em>) – list of TrackerBase implementations that will be used to persist the data.</p></li>
-</ul>
-</dd>
-</dl>
+<dd><p>Job-level tracker API that delegates to one or more <code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code> backends.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This API is experimental and may change significantly.</p>
+</div>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">run</span> <span class="o">=</span> <span class="n">AppRun</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;my_job_123&quot;</span><span class="p">,</span> <span class="n">backends</span><span class="o">=</span><span class="p">[])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">run</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># no-op with empty backends</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">run</span><span class="o">.</span><span class="n">job_id</span><span class="p">()</span>
+<span class="go">&#39;my_job_123&#39;</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.AppRun.add_artifact">
+<span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store an artifact (name, path, optional metadata) for this run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.AppRun.add_metadata">
+<span class="sig-name descname"><span class="pre">add_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun.add_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun.add_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store key-value metadata for this run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.AppRun.add_source">
+<span class="sig-name descname"><span class="pre">add_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun.add_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun.add_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Link a source (TorchX run or external entity) to this run for lineage tracking.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.AppRun.job_id">
+<span class="sig-name descname"><span class="pre">job_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun.job_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun.job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the run ID.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.AppRun.run_from_env">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run_from_env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.tracker.AppRun" title="torchx.tracker.api.AppRun"><span class="pre">AppRun</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun.run_from_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun.run_from_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a singleton <a class="reference internal" href="#torchx.tracker.AppRun" title="torchx.tracker.AppRun"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppRun</span></code></a> from environment variables.</p>
+<p>Reads <code class="docutils literal notranslate"><span class="pre">TORCHX_JOB_ID</span></code> and <code class="docutils literal notranslate"><span class="pre">TORCHX_TRACKERS</span></code> (set by the torchx runner).
+Returns a cached singleton so all callers share the same tracker backends.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When not launched via torchx, returns an empty <code class="docutils literal notranslate"><span class="pre">AppRun</span></code> with
+<code class="docutils literal notranslate"><span class="pre">job_id=&quot;&lt;UNDEFINED&gt;&quot;</span></code> and no backends (write methods become no-ops).</p>
+</div>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apprun</span> <span class="o">=</span> <span class="n">AppRun</span><span class="o">.</span><span class="n">run_from_env</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apprun</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">md_1</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">md_2</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.AppRun.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><span class="pre">AppRunTrackableSource</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#AppRun.sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.AppRun.sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return source links for this run (queries the first backend).</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.api.</span></span><span class="sig-name descname"><span class="pre">TrackerBase</span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Abstraction of tracking solution implementations/services.</p>
-<p>This API is stil experimental and may change in the future to a large extend.</p>
+<dd><p>Abstract base for tracker backend implementations.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This API is experimental and may change significantly.</p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.add_artifact">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an artifact with the given name, path, and optional metadata.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.add_metadata">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.add_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.add_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store arbitrary key-value metadata for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.add_source">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.add_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.add_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Link a source run (lineage) to the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.artifacts">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">artifacts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#torchx.tracker.api.TrackerArtifact" title="torchx.tracker.api.TrackerArtifact"><span class="pre">TrackerArtifact</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.artifacts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.artifacts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all artifacts for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.lineage">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lineage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Lineage</span></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.lineage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.lineage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return full lineage (parents and consumers) for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.metadata">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return metadata for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.run_ids">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.run_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.run_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return run IDs, optionally filtered by keyword arguments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerBase.sources">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.tracker.api.TrackerSource" title="torchx.tracker.api.TrackerSource"><span class="pre">TrackerSource</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerBase.sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerBase.sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return sources for the given run, optionally filtered by <code class="docutils literal notranslate"><span class="pre">artifact_name</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<section id="data-types">
+<h4>Data Types<a class="headerlink" href="#data-types" title="Permalink to this heading">¶</a></h4>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerArtifact">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.api.</span></span><span class="sig-name descname"><span class="pre">TrackerArtifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerArtifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerArtifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>An artifact stored by a backend tracker (name, path, and optional metadata).</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="torchx.tracker.api.TrackerSource">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.api.</span></span><span class="sig-name descname"><span class="pre">TrackerSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/tracker/api.html#TrackerSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.api.TrackerSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>A source link at the backend tracker level.</p>
+<p><code class="docutils literal notranslate"><span class="pre">source_run_id</span></code> is a TorchX handle or external entity ID.
+<code class="docutils literal notranslate"><span class="pre">artifact_name</span></code> classifies the relationship (used for filtering).</p>
+</dd></dl>
+
+</section>
+<section id="built-in-backends">
+<h4>Built-in Backends<a class="headerlink" href="#built-in-backends" title="Permalink to this heading">¶</a></h4>
+<dl class="py class">
 <dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.backend.fsspec.</span></span><span class="sig-name descname"><span class="pre">FsspecTracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AbstractFileSystem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implements <cite>TrackerBase</cite> using Fsspec abstraction and has an advantage of
+<dd><p>Bases: <a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a></p>
+<p>Implements <cite>TrackerBase</cite> using Fsspec abstraction and has an advantage of
 using various storage options for persisting the data.</p>
 <p>Important: <cite>torchx.tracker.api</cite> API is still experimental, hence there
 are no backwards compatibility gurantees with future releases yet.</p>
 <p>Each run will have a directory with subdirs for metadata, artifact, source and descendants data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.add_artifact">
+<span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an artifact with the given name, path, and optional metadata.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.add_metadata">
+<span class="sig-name descname"><span class="pre">add_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.add_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.add_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store arbitrary key-value metadata for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.add_source">
+<span class="sig-name descname"><span class="pre">add_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.add_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.add_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Link a source run (lineage) to the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.artifacts">
+<span class="sig-name descname"><span class="pre">artifacts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#torchx.tracker.api.TrackerArtifact" title="torchx.tracker.api.TrackerArtifact"><span class="pre">TrackerArtifact</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.artifacts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.artifacts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all artifacts for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.lineage">
+<span class="sig-name descname"><span class="pre">lineage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Lineage</span></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.lineage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.lineage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return full lineage (parents and consumers) for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return metadata for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.run_ids">
+<span class="sig-name descname"><span class="pre">run_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.run_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.run_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return run IDs, optionally filtered by keyword arguments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.backend.fsspec.FsspecTracker.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.tracker.api.TrackerSource" title="torchx.tracker.api.TrackerSource"><span class="pre">TrackerSource</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/backend/fsspec.html#FsspecTracker.sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.backend.fsspec.FsspecTracker.sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return sources for the given run, optionally filtered by <code class="docutils literal notranslate"><span class="pre">artifact_name</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.mlflow.</span></span><span class="sig-name descname"><span class="pre">MLflowTracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracking_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'file:///tmp/torchx/mlruns'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_location</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a></p>
+<p>An implementation of a <code class="docutils literal notranslate"><span class="pre">Tracker</span></code> that uses mlflow as the backend.
+Don’t forget to call the <code class="docutils literal notranslate"><span class="pre">close()</span></code> method for orderly shutdown.
+This ensures that the run state in mlflow is properly marked as <code class="docutils literal notranslate"><span class="pre">FINISHED</span></code>,
+otherwise the run will remain in <code class="docutils literal notranslate"><span class="pre">UNFINISHED</span></code> status.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>TorchX’s run_id is used as mlflow’s run_name! The run_id in TorchX
+is the job name. The job name in TorchX is made unique by adding
+a short random hash to the user-provided job name prefix. This is
+done because certain job schedulers supported by TorchX requires
+that the job name on the submitted job definition is globally unique
+(rather than the scheduler returning a unique job id as the return result
+of the job submission API).</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>APIs on this class may only be called with the same <code class="docutils literal notranslate"><span class="pre">run_name</span></code>.
+Typically the user does not have to worry about manually setting
+the run_name as it is picked up by default from the environment variable
+<code class="docutils literal notranslate"><span class="pre">TORCHX_APP_NAME</span></code>.</p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_artifact">
+<span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an artifact with the given name, path, and optional metadata.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_metadata">
+<span class="sig-name descname"><span class="pre">add_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.add_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.add_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store arbitrary key-value metadata for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_source">
+<span class="sig-name descname"><span class="pre">add_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.add_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.add_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Link a source run (lineage) to the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.artifacts">
+<span class="sig-name descname"><span class="pre">artifacts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#torchx.tracker.api.TrackerArtifact" title="torchx.tracker.api.TrackerArtifact"><span class="pre">TrackerArtifact</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.artifacts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.artifacts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all artifacts for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.get_run">
+<span class="sig-name descname"><span class="pre">get_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Run</span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.get_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.get_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets mlflow’s <code class="docutils literal notranslate"><span class="pre">Run</span></code> object for the given <code class="docutils literal notranslate"><span class="pre">run_name</span></code> in the current experiment.
+If no such run exists, this method creates a new run under
+this experiment and starts the run so that subsequent calls to
+mlflow logs metadata, metrics, artifacts to the newly created run.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This method should only be called with the same run_name!
+This is because of the way mlflow
+APIs work is by setting an “active run” for which subsequent
+mlflow logging APIs are made against the current active run
+in the stack. If you call <code class="docutils literal notranslate"><span class="pre">mlflow.start_run()</span></code> directly
+or pass different run names, then you may be logging into two different
+mlflow runs from the same job!</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>run_name</strong> – equal to torchx’s run_id</p>
+</dd>
+</dl>
+<p>Returns: mlflow’s <code class="docutils literal notranslate"><span class="pre">Run</span></code> object for the <code class="docutils literal notranslate"><span class="pre">run_name</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.get_run_id">
+<span class="sig-name descname"><span class="pre">get_run_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.get_run_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.get_run_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the mlflow run’s run_id for the given <code class="docutils literal notranslate"><span class="pre">run_name</span></code> and additionally sets
+this run as the active run. Hence this method has a side-effect where all subsequent
+calls to mlflow log APIs are against the run for the given <code class="docutils literal notranslate"><span class="pre">run_name</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.lineage">
+<span class="sig-name descname"><span class="pre">lineage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Lineage</span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.lineage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.lineage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return full lineage (parents and consumers) for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.log_params_flat">
+<span class="sig-name descname"><span class="pre">log_params_flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.log_params_flat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.log_params_flat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Designed to be primarily used with hydra-style config objects (e.g. dataclasses),
+logs the given <code class="docutils literal notranslate"><span class="pre">cfg</span></code>, which is one of: <code class="docutils literal notranslate"><span class="pre">&#64;dataclass</span></code>, <code class="docutils literal notranslate"><span class="pre">Sequence</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">tuple</span></code>, <code class="docutils literal notranslate"><span class="pre">set</span></code>),
+or <code class="docutils literal notranslate"><span class="pre">Mapping</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">dict</span></code>), where the fields of <code class="docutils literal notranslate"><span class="pre">cfg</span></code> are flattened recursively and logged as
+the the run’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> in mlflow.</p>
+<p>For example if <code class="docutils literal notranslate"><span class="pre">cfg</span></code> is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config2</span><span class="p">:</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bar&quot;</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+    <span class="n">i</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">f</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.1</span>
+    <span class="n">s</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+    <span class="n">l</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="p">:[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
+    <span class="n">cfg_list</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Config2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="p">:</span> <span class="p">[</span><span class="n">Config2</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">),</span> <span class="n">Config2</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s2">&quot;world&quot;</span><span class="p">)])</span>
+    <span class="n">cfg2</span><span class="p">:</span> <span class="n">Config2</span> <span class="o">=</span> <span class="n">Config2</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Then this function logs the following parameters</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span>
+<span class="n">f</span><span class="p">:</span> <span class="s2">&quot;2.1&quot;</span>
+<span class="n">s</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+<span class="n">l</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
+<span class="n">cfg_list</span><span class="o">.</span><span class="n">_0</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">cfg_list</span><span class="o">.</span><span class="n">_1</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">cfg2</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;bar&quot;</span>
+</pre></div>
+</div>
+<p>As shown above, primitive sequence containers are logged directly (e.g. <code class="docutils literal notranslate"><span class="pre">l:</span> <span class="pre">[&quot;a&quot;,</span> <span class="pre">&quot;b&quot;,</span> <span class="pre">&quot;c&quot;]</span></code>)
+whereas nested sequence containers will be logged per element where the key is suffixed with
+<code class="docutils literal notranslate"><span class="pre">_{INDEX}</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">cfg_list._0.foo</span> <span class="pre">=</span> <span class="pre">&quot;hello&quot;</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return metadata for the given run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.run_ids">
+<span class="sig-name descname"><span class="pre">run_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.run_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.run_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return run IDs, optionally filtered by keyword arguments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.tracker.api.TrackerSource" title="torchx.tracker.api.TrackerSource"><span class="pre">TrackerSource</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return sources for the given run, optionally filtered by <code class="docutils literal notranslate"><span class="pre">artifact_name</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="cli-command">
+<h4>CLI Command<a class="headerlink" href="#cli-command" title="Permalink to this heading">¶</a></h4>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.cli.cmd_tracker.CmdTracker">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.cli.cmd_tracker.</span></span><span class="sig-name descname"><span class="pre">CmdTracker</span></span><a class="reference internal" href="_modules/torchx/cli/cmd_tracker.html#CmdTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_tracker.CmdTracker" title="Permalink to this definition">¶</a></dt>
@@ -626,8 +1035,65 @@ interacting with tracker implementation.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.cli.cmd_tracker.CmdTracker.add_arguments">
+<span class="sig-name descname"><span class="pre">add_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.14)"><span class="pre">ArgumentParser</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/cli/cmd_tracker.html#CmdTracker.add_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_tracker.CmdTracker.add_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the arguments to this sub command</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.cli.cmd_tracker.CmdTracker.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.14)"><span class="pre">Namespace</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/cli/cmd_tracker.html#CmdTracker.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_tracker.CmdTracker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the sub command. Parsed arguments are available as <code class="docutils literal notranslate"><span class="pre">args</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="environment-variables">
+<h4>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this heading">¶</a></h4>
+<p>Set automatically by the runner when trackers are configured.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TORCHX_JOB_ID</span></code></p></td>
+<td><p>The <a class="reference internal" href="specs.html#torchx.specs.AppHandle" title="torchx.specs.AppHandle"><code class="xref py py-data docutils literal notranslate"><span class="pre">AppHandle</span></code></a> for the current job. Set by
+the runner and used by <a class="reference internal" href="#torchx.tracker.AppRun.run_from_env" title="torchx.tracker.AppRun.run_from_env"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AppRun.run_from_env()</span></code></a> to identify the run.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TORCHX_TRACKERS</span></code></p></td>
+<td><p>Comma-separated list of tracker entry-point keys to activate
+(e.g. <code class="docutils literal notranslate"><span class="pre">fsspec,my_tracker</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TORCHX_TRACKER_&lt;NAME&gt;_CONFIG</span></code></p></td>
+<td><p>Per-tracker configuration string passed to the factory function.
+<code class="docutils literal notranslate"><span class="pre">&lt;NAME&gt;</span></code> is the upper-cased entry-point key.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TORCHX_PARENT_RUN_ID</span></code></p></td>
+<td><p>Optional parent run ID for lineage tracking. Set by the runner;
+read by <a class="reference internal" href="#torchx.tracker.AppRun.run_from_env" title="torchx.tracker.AppRun.run_from_env"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AppRun.run_from_env()</span></code></a> which automatically calls
+<code class="docutils literal notranslate"><span class="pre">tracker.add_source()</span></code> on each backend to record the lineage link.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Entry-point registration for custom trackers, schedulers, and components.</p>
+</dd>
+<dt><a class="reference internal" href="runtime/tracking.html"><span class="doc">Tracking</span></a></dt><dd><p>Runtime tracking utilities for use within applications.</p>
+</dd>
+</dl>
+</div>
+</section>
+</section>
 </section>
 </section>
 
@@ -639,10 +1105,10 @@ interacting with tracker implementation.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="schedulers/local.html" class="btn btn-neutral float-right" title="Local" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="workspaces/docker.html" class="btn btn-neutral float-right" title="Docker" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="custom_components.html" class="btn btn-neutral" title="Custom Components" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="runner.config.html" class="btn btn-neutral" title=".torchxconfig" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -685,6 +1151,18 @@ interacting with tracker implementation.</p>
 <li><a class="reference internal" href="#acquiring-apprun-instance">Acquiring <code class="xref py py-class docutils literal notranslate"><span class="pre">AppRun</span></code> instance</a></li>
 <li><a class="reference internal" href="#reference-trackerbase-implementation">Reference <code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code> implementation</a></li>
 <li><a class="reference internal" href="#querying-data">Querying data</a></li>
+<li><a class="reference internal" href="#implementing-a-custom-tracker">Implementing a Custom Tracker</a><ul>
+<li><a class="reference internal" href="#testing-your-tracker">Testing Your Tracker</a></li>
+<li><a class="reference internal" href="#common-pitfalls">Common Pitfalls</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#data-types">Data Types</a></li>
+<li><a class="reference internal" href="#built-in-backends">Built-in Backends</a></li>
+<li><a class="reference internal" href="#cli-command">CLI Command</a></li>
+<li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

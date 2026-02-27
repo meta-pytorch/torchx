@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -466,45 +461,30 @@
 <span class="n">ENV_TORCHX_JOB_ID</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_JOB_ID&quot;</span>
 
 
-<span class="nd">@dataclass</span>
+<div class="viewcode-block" id="TrackerSource"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerSource">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TrackerSource</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Dataclass to represent sources at backend tracker level</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A source link at the backend tracker level.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        source_run_id(str): source ID that can be either other TorchX handle or ID of external entity such as experiment</span>
-<span class="sd">        artifact_name(Optional[str]): type of of source. Can be interpreted as type of relationship that can be used for filtering.</span>
+<span class="sd">    ``source_run_id`` is a TorchX handle or external entity ID.</span>
+<span class="sd">    ``artifact_name`` classifies the relationship (used for filtering).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">source_run_id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span></div>
 
 
-<span class="nd">@dataclass</span>
+<div class="viewcode-block" id="TrackerArtifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerArtifact">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TrackerArtifact</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Dataclass to represent artifacts at backend tracker level</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        name(str): Name of the artifact</span>
-<span class="sd">        path(str): Path to actual artifact</span>
-<span class="sd">        metadata(Optional[Mapping[str, object]]): Additional metadata to store about artifact</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An artifact stored by a backend tracker (name, path, and optional metadata).&quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span></div>
 
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppRunTrackableSource</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Dataclass to represent sources at user API level</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        parent(AppRun): source AppRun that current run is derived from.</span>
-<span class="sd">        artifact_name(Optional[str]): type of artifact represening parent AppRun.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A source link at the user API level (wraps :py:class:`AppRun` parent).&quot;&quot;&quot;</span>
 
     <span class="n">parent</span><span class="p">:</span> <span class="n">AppRun</span>
     <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
@@ -514,13 +494,14 @@
 
 
 <div class="viewcode-block" id="TrackerBase"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TrackerBase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstraction of tracking solution implementations/services.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base for tracker backend implementations.</span>
 
-<span class="sd">    This API is stil experimental and may change in the future to a large extend.</span>
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        This API is experimental and may change significantly.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.add_artifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_artifact">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -528,75 +509,56 @@
         <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds an artifact to the tracker with the specified name, path and any arbitrary metadata.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an artifact with the given name, path, and optional metadata.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
 
-    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.artifacts"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.artifacts">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">artifacts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Fetches all of the artifacts for the specified run or the current one if not specified.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all artifacts for the given run.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
 
-    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.add_metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_metadata">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds any arbitrary metadata values to the specified experiment.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store arbitrary key-value metadata for the given run.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
 
-    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.metadata">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Fetches the metadata for the specified experiment.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return metadata for the given run.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
 
-    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.add_source"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_source">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds a link to a different job identifying the lineage of the current experiment</span>
-<span class="sd">        and the specific artifact that&#39;s being used.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Link a source run (lineage) to the given run.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
 
-    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.sources"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.sources">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TrackerSource</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns sources for the specified run. Artifact name can be used to filter the sources.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
-
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the lineage for the specified experiment. The lineage includes all</span>
-<span class="sd">        parent jobs and artifacts this job depends on as well as any jobs that are consuming</span>
-<span class="sd">        artifacts from this job.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="o">...</span>
-
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns list of experiment run ids. Optionally includes filter parameters.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return sources for the given run, optionally filtered by ``artifact_name``.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
+
+<div class="viewcode-block" id="TrackerBase.lineage"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.lineage">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return full lineage (parents and consumers) for the given run.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
+
+<div class="viewcode-block" id="TrackerBase.run_ids"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.run_ids">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return run IDs, optionally filtered by keyword arguments.&quot;&quot;&quot;</span>
+        <span class="o">...</span></div></div>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">tracker_config_env_var_name</span><span class="p">(</span><span class="n">entrypoint_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility method to derive tracker config env variable name given tracker name&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``TORCHX_TRACKER_&lt;NAME&gt;_CONFIG`` env var name for a tracker.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;TORCHX_TRACKER_</span><span class="si">{</span><span class="n">entrypoint_key</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">_CONFIG&quot;</span>
 
 
@@ -645,14 +607,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">trackers_from_environ</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TrackerBase</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Builds list of Trackers that will be used to persist tracking information and will be used by AppRun</span>
-<span class="sd">        to delegate calls to the each instance.</span>
-<span class="sd">    Expects `TORCHX_TRACKERS` env variable to contain list of entry-point factory keys, separated by comma.</span>
-<span class="sd">    Optionally, for each tracker key user can pass config string value under `TORCHX_TRACKER_&lt;ENTRYPOINT_NAME&gt;_CONFIG` env variable.</span>
-<span class="sd">        It is up to each implementation to interpret the value, eg it can an encoded data or path to richer config properties file.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build trackers from ``TORCHX_TRACKERS`` env var (comma-separated entry-point keys).</span>
 
-<span class="sd">    Entry-points(factory methods) must exist in runtime when job is running since this runs within user-job space.</span>
+<span class="sd">    Per-tracker config is read from ``TORCHX_TRACKER_&lt;NAME&gt;_CONFIG`` env vars.</span>
+<span class="sd">    Entry-point factories must be importable at runtime (runs in user-job space).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">entrypoint_and_config</span> <span class="o">=</span> <span class="n">_extract_tracker_name_and_config_from_environ</span><span class="p">()</span>
@@ -663,51 +621,43 @@
 
 <div class="viewcode-block" id="AppRun"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppRun</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Exposes tracker API to at the job level and should the only API that encapsulates that module implementation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Job-level tracker API that delegates to one or more :py:class:`TrackerBase` backends.</span>
 
-<span class="sd">    This API is stil experimental and may change in the future.</span>
+<span class="sd">    .. warning::</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        id(str): identity of the job used by tracker API</span>
-<span class="sd">        backends(Iterable[TrackerBase]): list of TrackerBase implementations that will be used to persist the data.</span>
+<span class="sd">        This API is experimental and may change significantly.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.tracker.api import AppRun</span>
+<span class="sd">        &gt;&gt;&gt; run = AppRun(id=&quot;my_job_123&quot;, backends=[])</span>
+<span class="sd">        &gt;&gt;&gt; run.add_metadata(lr=0.01, epochs=10)  # no-op with empty backends</span>
+<span class="sd">        &gt;&gt;&gt; run.job_id()</span>
+<span class="sd">        &#39;my_job_123&#39;</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">backends</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TrackerBase</span><span class="p">]</span>
 
-    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AppRun.run_from_env"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.run_from_env">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># noqa: B019</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_from_env</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AppRun</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates an :py:class:`AppRun` from environment variables. The environment variables are set by</span>
-<span class="sd">        the torchx runner. Hence if the application is launched via the torchx CLI as:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a singleton :py:class:`AppRun` from environment variables.</span>
 
-<span class="sd">        .. code-block:: shell-session</span>
-
-<span class="sd">            $ torchx run utils_python --script main.py</span>
-
-
-<span class="sd">        And the tracker settings are configured in ``.torchxconfig``, then this function returns an</span>
-<span class="sd">        ``AppRun`` with the configured tracker backends. This function returns a singleton ``AppRun``</span>
-<span class="sd">        hence the same instances of the tracker backend objects.</span>
+<span class="sd">        Reads ``TORCHX_JOB_ID`` and ``TORCHX_TRACKERS`` (set by the torchx runner).</span>
+<span class="sd">        Returns a cached singleton so all callers share the same tracker backends.</span>
 
 <span class="sd">        .. note::</span>
-<span class="sd">                When the application is NOT launched via torchx, this function</span>
-<span class="sd">                will return an &quot;empty&quot; ``AppRun`` with the ``job_id`` set to a constant</span>
-<span class="sd">                ``&lt;UNDEFINED&gt;`` since the app was not &quot;launched&quot; (e.g. submitted as a job)</span>
-<span class="sd">                and hence no canonical ``job_id`` exists.</span>
-<span class="sd">                No trackers are hooked up to the ``AppRun`` hence</span>
-<span class="sd">                calling ``add_*()`` (write) methods on the returned apprun will be a no-op.</span>
 
-<span class="sd">        Usage:</span>
+<span class="sd">            When not launched via torchx, returns an empty ``AppRun`` with</span>
+<span class="sd">            ``job_id=&quot;&lt;UNDEFINED&gt;&quot;`` and no backends (write methods become no-ops).</span>
 
 <span class="sd">        .. doctest::</span>
 
-<span class="sd">            &gt;&gt;&gt; from torchx.mock_tracker.api import AppRun</span>
+<span class="sd">            &gt;&gt;&gt; from torchx.tracker.api import AppRun</span>
 <span class="sd">            &gt;&gt;&gt; apprun = AppRun.run_from_env()</span>
-<span class="sd">            &gt;&gt;&gt; apprun.add_metadata(md_1 = &quot;foo&quot;, md_2 = &quot;bar&quot;)</span>
-
+<span class="sd">            &gt;&gt;&gt; apprun.add_metadata(md_1=&quot;foo&quot;, md_2=&quot;bar&quot;)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -720,49 +670,31 @@
             <span class="k">for</span> <span class="n">tracker</span> <span class="ow">in</span> <span class="n">trackers</span><span class="p">:</span>
                 <span class="n">tracker</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span><span class="n">torchx_job_id</span><span class="p">,</span> <span class="n">parent_run_id</span><span class="p">,</span> <span class="n">artifact_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">AppRun</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">torchx_job_id</span><span class="p">,</span> <span class="n">backends</span><span class="o">=</span><span class="n">trackers</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AppRun</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">torchx_job_id</span><span class="p">,</span> <span class="n">backends</span><span class="o">=</span><span class="n">trackers</span><span class="p">)</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores metadata for the current run&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AppRun.add_metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store key-value metadata for this run.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
-            <span class="n">backend</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">backend</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
+<div class="viewcode-block" id="AppRun.add_artifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_artifact">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores artifacts for the current run</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            name(str): name of the artifact</span>
-<span class="sd">            path(str): path of the artifact that is stored</span>
-<span class="sd">            metadata(Optional[Mapping[str, object]]): optional metadata attached to artifact information</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store an artifact (name, path, optional metadata) for this run.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
-            <span class="n">backend</span><span class="o">.</span><span class="n">add_artifact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+            <span class="n">backend</span><span class="o">.</span><span class="n">add_artifact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Current Id of the run&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+<div class="viewcode-block" id="AppRun.job_id"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.job_id">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the run ID.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Attaches source to this run. Sources can be either other TorchX runs or external entities such as experiments that may</span>
-<span class="sd">        or may not be queriable.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            source_id(str): identity of the source</span>
-<span class="sd">            artifact_name(Optional[str]): optional value of type of source</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AppRun.add_source"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_source">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Link a source (TorchX run or external entity) to this run for lineage tracking.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
-            <span class="n">backend</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">source_id</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">)</span>
+            <span class="n">backend</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">source_id</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">)</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AppRunTrackableSource</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns `AppRunTrackableSource` for the run.</span>
-
-<span class="sd">        Uses first backend to query this information, although it supports list of trackers in order</span>
-<span class="sd">        to persist tracking information.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="AppRun.sources"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.sources">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AppRunTrackableSource</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return source links for this run (queries the first backend).&quot;&quot;&quot;</span>
         <span class="n">model_run_sources</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
             <span class="n">backend</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">))</span>
@@ -772,7 +704,7 @@
                 <span class="n">model_run_source</span> <span class="o">=</span> <span class="n">AppRunTrackableSource</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">source</span><span class="o">.</span><span class="n">artifact_name</span><span class="p">)</span>
                 <span class="n">model_run_sources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_run_source</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">model_run_sources</span>
+        <span class="k">return</span> <span class="n">model_run_sources</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AppRun</span><span class="p">]:</span> <span class="o">...</span></div>
 </pre></div>

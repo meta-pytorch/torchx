@@ -1,21 +1,22 @@
 Quickstart
 ==========
 
-This is a self contained guide on how to write a simple app and start launching
-distributed jobs on local and remote clusters.
+.. tip::
+
+   Install TorchX, write a simple app, and launch it locally and remotely --
+   including distributed jobs. Estimated time: 10--15 minutes.
 
 Installation
 ------------
 
-First thing we need to do is to install the TorchX python package which includes
-the CLI and the library.
+Install TorchX (provides the ``torchx`` CLI and the
+:py:class:`~torchx.runner.Runner` Python API):
 
 .. code:: shell-session
 
     $ pip install "torchx[dev]"
 
-See the `README <https://github.com/meta-pytorch/torchx>`_ for more
-information on installation.
+Verify the installation:
 
 .. code:: shell-session
 
@@ -24,10 +25,7 @@ information on installation.
 Hello World
 -----------
 
-Lets start off with writing a simple "Hello World" python app. This is just a
-normal python program and can contain anything you'd like.
-
-Create ``my_app.py``:
+Create a simple ``my_app.py``:
 
 .. code-block:: python
 
@@ -38,32 +36,75 @@ Create ``my_app.py``:
 Launching
 ---------
 
-We can execute our app via ``torchx run``. The
-``local_cwd`` scheduler executes the app relative to the current directory.
-
-For this we'll use the ``utils.python`` component:
+Launch the app with ``torchx run``. The :term:`scheduler <Scheduler>` is the
+backend that runs the job -- ``local_cwd`` runs it in your current directory.
+You'll use the ``utils.python`` :term:`component <Component>` (a reusable job
+template):
 
 .. code:: shell-session
 
     $ torchx run --scheduler local_cwd utils.python --help
 
-The component takes in the script name and any extra arguments will be passed to
-the script itself.
+The component takes a script name; extra arguments are passed through to the
+script.
 
 .. code:: shell-session
 
     $ torchx run --scheduler local_cwd utils.python --script my_app.py "your name"
 
-We can run the exact same app via the ``local_docker`` scheduler. This scheduler
-will package up the local workspace as a layer on top of the specified image.
-This provides a very similar environment to the container based remote
-schedulers.
+Using the Python API
+^^^^^^^^^^^^^^^^^^^^
+
+The same operations are available via :py:func:`~torchx.runner.get_runner`:
+
+.. code-block:: python
+
+    from torchx.runner import get_runner
+
+    with get_runner() as runner:
+        app_handle = runner.run_component(
+            "utils.python",
+            ["--script", "my_app.py", "your name"],
+            scheduler="local_cwd",
+        )
+        # Wait for the job to complete and print its final status
+        final_status = runner.wait(app_handle, wait_interval=1)
+        print(final_status)
+
+You can also construct an :py:class:`~torchx.specs.AppDef` directly and pass
+it to :py:meth:`~torchx.runner.Runner.run`:
+
+.. code-block:: python
+
+    import torchx.specs as specs
+    from torchx.runner import get_runner
+
+    app = specs.AppDef(
+        name="hello",
+        roles=[
+            specs.Role(
+                name="worker",
+                entrypoint="python",
+                # "image" is the base runtime environment. For local schedulers
+                # it's a filesystem path; for container schedulers it's a Docker
+                # image name (e.g. "my_image:latest").
+                image="/tmp",
+                args=["my_app.py", "your name"],
+            )
+        ],
+    )
+
+    with get_runner() as runner:
+        app_handle = runner.run(app, scheduler="local_cwd")
+
+The ``local_docker`` scheduler packages your local workspace as a layer on top
+of the specified image -- a close approximation of remote container environments.
 
 .. note::
 
-    This requires Docker installed and won't work in environments such as Google
-    Colab. See the Docker install instructions:
-    https://docs.docker.com/get-docker/
+   This requires Docker installed and won't work in environments such as Google
+   Colab. See the Docker install instructions:
+   https://docs.docker.com/get-docker/
 
 .. code:: shell-session
 
@@ -76,17 +117,13 @@ which contains the PyTorch libraries, TorchX and related dependencies.
 Distributed
 -----------
 
-TorchX's ``dist.ddp`` component uses
+The ``dist.ddp`` component (DDP = Distributed Data Parallel) uses
 `TorchElastic <https://pytorch.org/docs/stable/distributed.elastic.html>`_
-to manage the workers. This means you can launch multi-worker and multi-host
-jobs out of the box on all of the schedulers we support.
+to manage workers, enabling multi-node jobs on all supported schedulers.
 
 .. code:: shell-session
 
     $ torchx run --scheduler local_docker dist.ddp --help
-
-Lets create a slightly more interesting app to leverage the TorchX distributed
-support.
 
 Create ``dist_app.py``:
 
@@ -102,7 +139,7 @@ Create ``dist_app.py``:
     dist.all_reduce(a)
     print(f"all_reduce output = {a}")
 
-Let launch a small job with 2 nodes and 2 worker processes per node:
+Launch with 2 nodes and 2 workers per node (``-j 2x2`` = ``<nodes>x<workers_per_node>``):
 
 .. code:: shell-session
 
@@ -111,28 +148,15 @@ Let launch a small job with 2 nodes and 2 worker processes per node:
 Workspaces / Patching
 ---------------------
 
-For each scheduler there's a concept of an ``image``. For ``local_cwd`` and ``slurm``
-it uses the current working directory. For container based schedulers such as
-``local_docker``, ``kubernetes`` and ``aws_batch`` it uses a docker container.
-
-To provide the same environment between local and remote jobs, TorchX CLI uses
-workspaces to automatically patch images for remote jobs on a per scheduler
-basis.
-
-When you launch a job via ``torchx run`` it'll overlay the current directory on
-top of the provided image so your code is available in the launched job.
-
-For ``docker`` based schedulers you'll need a local docker daemon to build and
-push the image to your remote docker repository.
+TorchX uses **workspaces** to automatically overlay your local code onto the
+job's base image, so you don't need to rebuild and push a Docker image after
+every code change. See :doc:`workspace` for details.
 
 ``.torchxconfig``
 -----------------
 
-Arguments to schedulers can be specified either via a command line flag to
-``torchx run -s <scheduler> -c <args>`` or on a per scheduler basis via a
-``.torchxconfig`` file.
-
-Create ``.torchxconfig``:
+Configure scheduler defaults in a ``.torchxconfig`` file instead of passing
+``-cfg`` flags every time:
 
 .. code-block:: ini
 
@@ -146,12 +170,8 @@ Create ``.torchxconfig``:
 Remote Schedulers
 -----------------
 
-TorchX supports a large number of schedulers.
-Don't see yours?
-`Request it! <https://github.com/meta-pytorch/torchx/issues/new?assignees=&labels=&template=feature-request.md>`_
-
-Remote schedulers operate the exact same way the local schedulers do. The same
-run command for local works out of the box on remote.
+The same ``torchx run`` command works on remote schedulers -- only the
+``--scheduler`` flag changes.
 
 .. code:: shell-session
 
@@ -159,11 +179,7 @@ run command for local works out of the box on remote.
     $ torchx run --scheduler kubernetes dist.ddp -j 2x2 --script dist_app.py
     $ torchx run --scheduler aws_batch dist.ddp -j 2x2 --script dist_app.py
 
-Depending on the scheduler there may be a few extra configuration parameters so
-TorchX knows where to run the job and upload built images. These can either be
-set via ``-c`` or in the ``.torchxconfig`` file.
-
-All config options:
+List all scheduler-specific options:
 
 .. code:: shell-session
 
@@ -175,9 +191,7 @@ Custom Images
 Docker-based Schedulers
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want more than the standard PyTorch libraries you can add custom
-Dockerfile or build your own docker container and use it as the base image for
-your TorchX jobs.
+Provide a custom Dockerfile to add libraries beyond the standard PyTorch set.
 
 Create ``timm_app.py``:
 
@@ -191,15 +205,13 @@ Create ``Dockerfile.torchx``:
 
 .. code-block:: dockerfile
 
-    FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime
+    FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
 
     RUN pip install timm
 
     COPY . .
 
-Once we have the Dockerfile created we can launch as normal and TorchX will
-automatically build the image with the newly provided Dockerfile instead of the
-default one.
+TorchX uses this Dockerfile automatically:
 
 .. code:: shell-session
 
@@ -208,12 +220,24 @@ default one.
 Slurm
 ^^^^^
 
-The ``slurm`` and ``local_cwd`` use the current environment so you can use ``pip`` and
-``conda`` as normal.
+The ``slurm`` and ``local_cwd`` schedulers use the current environment, so
+``pip`` and ``conda`` work as usual.
 
 Next Steps
 ----------
 
-1. Checkout other features of the :doc:`torchx CLI <cli>`
-2. Take a look at the :doc:`list of schedulers <schedulers>` supported by the runner
-3. Browse through the collection of :doc:`builtin components <components/overview>`
+1. Explore the :doc:`API Quick Reference <api_reference>` for copy-pasteable recipes
+2. Explore the :doc:`torchx CLI <cli>` and the :doc:`Runner Python API <runner>`
+3. Review :doc:`supported schedulers <schedulers>`
+4. Browse :doc:`builtin components <components/overview>`
+
+.. seealso::
+
+   :doc:`basics`
+      Core concepts behind AppDef, Component, Runner, and Scheduler.
+
+   :doc:`runner.config`
+      Configuring scheduler options via ``.torchxconfig``.
+
+   :doc:`custom_components`
+      Writing and registering your own components.

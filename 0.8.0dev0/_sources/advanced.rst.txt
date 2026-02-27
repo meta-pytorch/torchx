@@ -1,53 +1,88 @@
 Advanced Usage
 ======================
 
-TorchX defines plugin points for you to configure TorchX to best support
-your infrastructure setup. Most of the configuration is done through
-Python's `entry points <https://packaging.python.org/specifications/entry-points/>`__.
+.. tip::
+
+   This guide covers TorchX's extension points: registering custom schedulers,
+   named resources, components, trackers, and CLI commands via Python
+   :term:`entry points <Entry Point>` -- a standard packaging mechanism that
+   lets installed packages advertise plugins.
+
+**Audience:** Platform engineers who want to integrate TorchX with custom
+infrastructure. If you only need to **use** TorchX to launch jobs, the
+:doc:`quickstart`, :doc:`basics`, and :doc:`custom_components` pages are
+sufficient.
+
+**Prerequisites:** :doc:`basics` (core concepts) and :doc:`custom_components`.
+
+.. code-block:: text
+
+   ┌──────────────────────────────────────────────────────────────┐
+   │                     TorchX Extension Points                  │
+   │                                                              │
+   │  Entry-Point Group         What You Register                 │
+   │  ──────────────────────    ──────────────────────────────    │
+   │  torchx.schedulers         Scheduler factory function        │
+   │  torchx.named_resources    Resource factory function         │
+   │  torchx.components         Component module path             │
+   │  torchx.tracker            Tracker factory function          │
+   │  torchx.cli.cmds           SubCommand class                  │
+   │                                                              │
+   │      ┌───────────────────────────┐                           │
+   │      │ setup.py / pyproject.toml │ ◄── register here         │
+   │      └─────────────┬─────────────┘                           │
+   │                    │                                          │
+   │                    ▼                                          │
+   │         ┌───────────────────────┐                            │
+   │         │    pip install .      │  ◄── install package       │
+   │         └───────────┬───────────┘                            │
+   │                     │                                         │
+   │                     ▼                                         │
+   │  ┌────────────────────────────────────────────────────┐      │
+   │  │           TorchX Runtime Discovery                  │      │
+   │  │                                                     │      │
+   │  │  Runner ──► discovers schedulers, resources         │      │
+   │  │  CLI    ──► discovers components, subcommands       │      │
+   │  │  AppRun ──► discovers tracker backends              │      │
+   │  └────────────────────────────────────────────────────┘      │
+   └──────────────────────────────────────────────────────────────┘
+
+Most configuration is done through Python's
+`entry points <https://packaging.python.org/specifications/entry-points/>`__
+-- a standard mechanism that lets installed packages advertise plugins for
+automatic discovery at runtime.
 
 .. note::
 
-  Entry points requires a python package containing them be installed.
-  If you don't have a python package we recommend you make one so you can share
-  your resource definitions, schedulers and components across your team and org.
+   Entry points require an installed Python package.
 
-The entry points described below can be specified in your project's `setup.py`
-file as
+The entry points below can be specified in ``setup.py`` or ``pyproject.toml``.
+Each section shows both formats.
 
-.. testsetup:: setup
+.. code-block:: python
 
-   import sys
-   sys.argv = ["setup.py", "--version"]
+   from setuptools import setup
 
-.. testcode:: setup
-
- from setuptools import setup
-
- setup(
-     name="project foobar",
-     entry_points={
-         "torchx.schedulers": [
-             "my_scheduler = my.custom.scheduler:create_scheduler",
-         ],
-         "torchx.named_resources": [
-             "gpu_x2 = my_module.resources:gpu_x2",
-         ],
-     }
- )
-
-.. testoutput:: setup
-   :hide:
-
-   0.0.0
+   setup(
+       name="project foobar",
+       version="0.0.1",
+       entry_points={
+           "torchx.schedulers": [
+               "my_scheduler = my.custom.scheduler:create_scheduler",
+           ],
+           "torchx.named_resources": [
+               "gpu_x2 = my_module.resources:gpu_x2",
+           ],
+       }
+   )
 
 
 
 Registering Custom Schedulers
 --------------------------------
-You may implement a custom scheduler by implementing the
-.. py::class torchx.schedulers.Scheduler interface.
-
-The ``create_scheduler`` function should have the following function signature:
+Implement the :py:class:`~torchx.schedulers.Scheduler` interface (see
+:ref:`implementing-scheduler` for a full skeleton). The factory function
+signature:
 
 .. testcode::
 
@@ -56,9 +91,7 @@ The ``create_scheduler`` function should have the following function signature:
  def create_scheduler(session_name: str, **kwargs: object) -> Scheduler:
      return MyScheduler(session_name, **kwargs)
 
-You can then register this custom scheduler by adding an entry_points definition
-to your python project.
-
+Register it via entry points:
 
 .. testcode::
 
@@ -66,21 +99,34 @@ to your python project.
    ...
    entry_points={
        "torchx.schedulers": [
-           "my_scheduler = my.custom.scheduler:create_schedule",
+           "my_scheduler = my.custom.scheduler:create_scheduler",
        ],
    }
+
+Or in ``pyproject.toml``:
+
+.. code-block:: toml
+
+   [project.entry-points."torchx.schedulers"]
+   my_scheduler = "my.custom.scheduler:create_scheduler"
+
+Once installed, the scheduler is available everywhere:
+
+.. code-block:: python
+
+   from torchx.runner import get_runner
+
+   with get_runner() as runner:
+       runner.run_component("dist.ddp", ["--script", "train.py"], scheduler="my_scheduler")
 
 
 
 Registering Named Resources
 -------------------------------
 
-A Named Resource is a set of predefined resource specs that are given a
-string name. This is particularly useful
-when your cluster has a fixed set of instance types. For instance if your
-deep learning training kubernetes cluster on AWS is
-comprised only of p3.16xlarge (64 vcpu, 8 gpu, 488GB), then you may want to
-enumerate t-shirt sized resource specs for the containers as:
+A :term:`Named Resource <Resource>` maps a human-readable name (e.g.
+``gpu_x2``) to a :py:class:`~torchx.specs.Resource`. For example, on an AWS
+cluster with p3.16xlarge nodes:
 
 .. testcode:: python
 
@@ -106,8 +152,7 @@ enumerate t-shirt sized resource specs for the containers as:
  gpu_x3()
  gpu_x4()
 
-To make these resource definitions available you then need to register them via
-entry_points:
+Register them via entry points:
 
 .. testcode::
 
@@ -119,9 +164,15 @@ entry_points:
        ],
    }
 
+Or in ``pyproject.toml``:
 
-Once you install the package with the entry_points definitions, the named
-resource can then be used in the following manner:
+.. code-block:: toml
+
+   [project.entry-points."torchx.named_resources"]
+   gpu_x2 = "my_module.resources:gpu_x2"
+
+
+Once installed, use the named resource:
 
 .. testsetup:: role
 
@@ -132,29 +183,29 @@ resource can then be used in the following manner:
 
 .. doctest:: role
 
-   >>> from torchx.specs import get_named_resources
-   >>> get_named_resources("gpu_x2")
+   >>> from torchx.specs import resource
+   >>> resource(h="gpu_x2")
    Resource(cpu=16, gpu=2, memMB=122000, ...)
 
 
 .. testcode:: role
 
   # my_module.component
-  from torchx.specs import AppDef, Role, get_named_resources
+  from torchx.specs import AppDef, Role, resource
 
-  def test_app(resource: str) -> AppDef:
+  def test_app(res: str) -> AppDef:
       return AppDef(name="test_app", roles=[
           Role(
               name="...",
               image="...",
-              resource=get_named_resources(resource),
+              resource=resource(h=res),
           )
       ])
 
   test_app("gpu_x2")
 
-Alternatively, you can define custom named resources in a Python module and point
-to it using the ``TORCHX_CUSTOM_NAMED_RESOURCES`` environment variable:
+Alternatively, define resources in a module and point to it via the
+``TORCHX_CUSTOM_NAMED_RESOURCES`` environment variable:
 
 .. code-block:: python
 
@@ -178,32 +229,39 @@ Then set the environment variable:
 
    export TORCHX_CUSTOM_NAMED_RESOURCES=my_resources
 
-This allows you to use your custom resources without creating a package with entry points.
+This avoids the need for a package with entry points.
+
+**Verifying registration.** After installing your package, confirm the
+resource is discoverable:
+
+.. code-block:: python
+
+   from torchx.specs import resource
+   res = resource(h="gpu_x2")
+   assert res.gpu == 2, f"expected 2 GPUs, got {res.gpu}"
+
+If the name is not found, ``resource()`` raises ``KeyError`` with a
+suggestion of close matches.
 
 
 Registering Custom Components
 -------------------------------
-You can author and register a custom set of components with the
-``torchx`` CLI as builtins to the CLI. This makes it possible to customize
-a set of components most relevant to your team or organization and support
-it as a CLI ``builtin``. This way users will see your custom components
-when they run
+Register custom components as CLI builtins:
 
 .. code-block:: shell-session
 
  $ torchx builtins
 
-Custom components can be registered via ``[torchx.components]`` entrypoints.
-If ``my_project.bar`` had the following directory structure:
+If ``my_project.bar`` has the following directory structure:
 
-::
+.. code-block:: text
 
  $PROJECT_ROOT/my_project/bar/
      |- baz.py
 
-And ``baz.py`` had a single component (function) called ``trainer``:
+And ``baz.py`` has a component function called ``trainer``:
 
-::
+.. code-block:: python
 
  # baz.py
  import torchx.specs as specs
@@ -211,7 +269,7 @@ And ``baz.py`` had a single component (function) called ``trainer``:
  def trainer(...) -> specs.AppDef: ...
 
 
-And the entrypoints were added as:
+Register via entry points:
 
 .. testcode::
 
@@ -223,17 +281,23 @@ And the entrypoints were added as:
        ],
    }
 
-TorchX will search the module ``my_project.bar`` for all defined components and group the found
-components under the ``foo.*`` prefix. In this case, the component ``my_project.bar.baz.trainer``
-would be registered with the name ``foo.baz.trainer``.
+Or in ``pyproject.toml``:
+
+.. code-block:: toml
+
+   [project.entry-points."torchx.components"]
+   foo = "my_project.bar"
+
+TorchX searches ``my_project.bar`` for components and groups them under the
+``foo.*`` prefix. The component ``my_project.bar.baz.trainer`` becomes
+``foo.baz.trainer``.
 
 .. note::
-    Only python packages (those directories with an ``__init__.py`` file)
-    are searched for and TorchX makes no attempt to recurse into namespace packages
-    (directories without a ``__init__.py`` file).
-    However you may register a top level namespace package.
 
-``torchx`` CLI will display registered components via:
+   Only Python packages (directories with ``__init__.py``) are searched.
+   Namespace packages (no ``__init__.py``) are not recursed into.
+
+Verify registration:
 
 .. code-block:: shell-session
 
@@ -241,15 +305,21 @@ would be registered with the name ``foo.baz.trainer``.
  Found 1 builtin components:
  1. foo.baz.trainer
 
-The custom component can then be used as:
+Use from the CLI or Python:
 
 .. code-block:: shell-session
 
  $ torchx run foo.baz.trainer -- --name "test app"
 
+.. code-block:: python
 
-When you register your own components, TorchX will not include its own builtins. To add TorchX's
-builtin components you must specify another entry as:
+ from torchx.runner import get_runner
+
+ with get_runner() as runner:
+     runner.run_component("foo.baz.trainer", ["--name", "test app"], scheduler="local_cwd")
+
+Custom components replace the default builtins. To keep them, add another
+entry:
 
 
 .. testcode::
@@ -263,8 +333,10 @@ builtin components you must specify another entry as:
        ],
    }
 
-This will add back the TorchX builtins but with a ``torchx.*`` component name prefix (e.g. ``torchx.dist.ddp``
-versus the default ``dist.ddp``).
+This adds back TorchX builtins with a ``torchx.*`` prefix (e.g. ``torchx.dist.ddp``
+instead of ``dist.ddp``).
+
+.. _advanced-overlapping-components:
 
 If there are two registry entries pointing to the same component, for instance
 
@@ -280,8 +352,8 @@ If there are two registry entries pointing to the same component, for instance
    }
 
 
-There will be two sets of overlapping components for those components in ``my_project.bar`` with different
-prefix aliases: ``foo.*`` and ``test.bar.*``. Concretely,
+Components in ``my_project.bar`` will appear under both ``foo.*`` and
+``test.bar.*``:
 
 .. code-block:: shell-session
 
@@ -290,8 +362,7 @@ prefix aliases: ``foo.*`` and ``test.bar.*``. Concretely,
  1. foo.baz.trainer
  2. test.bar.baz.trainer
 
-To omit groupings and make the component names shorter, use underscore (e.g ``_`` or ``_0``, ``_1``, etc).
-For example:
+To omit the prefix, use underscore names (``_``, ``_0``, ``_1``, etc.):
 
 .. testcode::
 
@@ -304,8 +375,8 @@ For example:
        ],
    }
 
-This has the effect of exposing the trainer component as ``baz.trainer`` (as opposed to ``foo.baz.trainer``)
-and adds back the builtin components as in the vanilla installation of torchx, without the ``torchx.*`` prefix.
+This exposes ``baz.trainer`` (instead of ``foo.baz.trainer``) and restores
+builtins without the ``torchx.*`` prefix:
 
 .. code-block:: shell-session
 
@@ -315,4 +386,202 @@ and adds back the builtin components as in the vanilla installation of torchx, w
  2. dist.ddp
  3. utils.python
  4. ... <more builtins from torchx.components.* ...>
+
+.. _registering-custom-trackers:
+
+Registering Custom Trackers
+-------------------------------
+
+TorchX ships with :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker` and
+:py:class:`~torchx.tracker.mlflow.MLflowTracker`. Implement your own by
+subclassing :py:class:`~torchx.tracker.api.TrackerBase`.
+
+**The TrackerBase ABC** defines eight abstract methods:
+
+.. code-block:: python
+
+   from torchx.tracker.api import TrackerBase, TrackerArtifact, TrackerSource, Lineage
+   from typing import Iterable, Mapping
+
+   class MyTracker(TrackerBase):
+       def __init__(self, connection_str: str) -> None:
+           self._conn = connection_str
+
+       def add_artifact(
+           self, run_id: str, name: str, path: str,
+           metadata: Mapping[str, object] | None = None,
+       ) -> None: ...
+
+       def artifacts(self, run_id: str) -> Mapping[str, TrackerArtifact]: ...
+
+       def add_metadata(self, run_id: str, **kwargs: object) -> None: ...
+
+       def metadata(self, run_id: str) -> Mapping[str, object]: ...
+
+       def add_source(
+           self, run_id: str, source_id: str,
+           artifact_name: str | None = None,
+       ) -> None: ...
+
+       def sources(
+           self, run_id: str, artifact_name: str | None = None,
+       ) -> Iterable[TrackerSource]: ...
+
+       def lineage(self, run_id: str) -> Lineage: ...
+
+       def run_ids(self, **kwargs: str) -> Iterable[str]: ...
+
+**Factory function.** Each entry point must point to a factory:
+
+.. code-block:: python
+
+   from torchx.tracker.api import TrackerBase
+
+   def create(config: str | None) -> TrackerBase:
+       return MyTracker(connection_str=config or "default://localhost")
+
+**Entry-point registration.** Register the factory under the ``torchx.tracker``
+group:
+
+.. code-block:: python
+
+   # setup.py
+   ...
+   entry_points={
+       "torchx.tracker": [
+           "my_tracker = my_package.tracking:create",
+       ],
+   }
+
+Or in ``pyproject.toml``:
+
+.. code-block:: toml
+
+   [project.entry-points."torchx.tracker"]
+   my_tracker = "my_package.tracking:create"
+
+**Activation via environment variables:**
+
+.. code-block:: bash
+
+   # Comma-separated list of tracker entry-point keys to activate
+   export TORCHX_TRACKERS=my_tracker,fsspec
+
+   # Per-tracker config (optional) — passed as the ``config`` argument to the factory
+   export TORCHX_TRACKER_MY_TRACKER_CONFIG="my_tracker://db-host:5432/runs"
+   export TORCHX_TRACKER_FSSPEC_CONFIG="/tmp/tracker_data"
+
+The naming convention for per-tracker config is ``TORCHX_TRACKER_<NAME>_CONFIG``
+where ``<NAME>`` is the upper-cased entry-point key.
+
+**Alternative: .torchxconfig file.** Declare trackers in ``[torchx:tracker]``
+and configure each in ``[tracker:<name>]``:
+
+.. code-block:: ini
+
+   [torchx:tracker]
+   my_tracker =
+   fsspec =
+
+   [tracker:my_tracker]
+   config = my_tracker://db-host:5432/runs
+
+   [tracker:fsspec]
+   config = /tmp/tracker_data
+
+Environment variables take precedence over ``.torchxconfig`` values.
+
+.. seealso::
+
+   :doc:`tracker`
+      Full tracker API reference (:py:class:`~torchx.tracker.api.TrackerBase`,
+      :py:class:`~torchx.tracker.api.AppRun`).
+
+   :doc:`runtime/tracking`
+      Runtime tracking utilities for use within applications.
+
+
+
+.. _registering-custom-cli-commands:
+
+Registering Custom CLI Commands
+----------------------------------
+
+Extend the ``torchx`` CLI by implementing
+:py:class:`~torchx.cli.cmd_base.SubCommand` and registering via the
+``torchx.cli.cmds`` entry-point group.
+
+**The SubCommand ABC** defines two abstract methods:
+
+.. code-block:: python
+
+   import argparse
+   from torchx.cli.cmd_base import SubCommand
+
+   class CmdMyTool(SubCommand):
+       def add_arguments(self, subparser: argparse.ArgumentParser) -> None:
+           """Register CLI flags and positional arguments."""
+           subparser.add_argument("--config", type=str, help="Path to config file")
+           subparser.add_argument("app_id", type=str, help="Application handle")
+
+       def run(self, args: argparse.Namespace) -> None:
+           """Execute the command with parsed arguments."""
+           print(f"Running my_tool on {args.app_id} with config={args.config}")
+
+**Entry-point registration.** Register the class (not a factory) under
+``torchx.cli.cmds``. The key becomes the subcommand name:
+
+.. code-block:: python
+
+   # setup.py
+   ...
+   entry_points={
+       "torchx.cli.cmds": [
+           "my_tool = my_package.cli:CmdMyTool",
+       ],
+   }
+
+Or in ``pyproject.toml``:
+
+.. code-block:: toml
+
+   [project.entry-points."torchx.cli.cmds"]
+   my_tool = "my_package.cli:CmdMyTool"
+
+Once installed, the command is available as:
+
+.. code-block:: shell-session
+
+   $ torchx my_tool --config config.yaml local://session/my_app
+
+.. note::
+
+   Custom commands **override** built-in commands with the same name.
+
+The default built-in commands are: ``builtins``, ``cancel``, ``configure``,
+``delete``, ``describe``, ``list``, ``log``, ``run``, ``runopts``, ``status``,
+and ``tracker``.
+
+.. seealso::
+
+   :doc:`cli`
+      CLI module API reference.
+
+   :doc:`schedulers`
+      Scheduler API reference and implementation guide.
+
+   :doc:`workspace`
+      Workspace API reference and custom workspace mixin guide.
+
+   :doc:`tracker`
+      Tracker API reference and backend implementations.
+
+   :doc:`basics`
+      Core TorchX concepts and project structure.
+
+   :doc:`custom_components`
+      Step-by-step guide for writing and launching a custom component.
+
+   :doc:`component_best_practices`
+      Best practices for authoring reusable components.
 

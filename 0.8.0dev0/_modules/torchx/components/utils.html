@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -756,7 +751,7 @@
     <span class="p">)</span></div>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">hydra</span><span class="p">(</span>
+<div class="viewcode-block" id="hydra"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.hydra">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">hydra</span><span class="p">(</span>
     <span class="o">*</span><span class="n">overrides</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">config_name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;-cn&quot;</span><span class="p">],</span>
     <span class="n">config_dir</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;-cd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;.torchx&quot;</span><span class="p">,</span>
@@ -766,7 +761,8 @@
 <span class="sd">    Config should have an &#39;app&#39; key with _target_: torchx.specs.AppDef.</span>
 <span class="sd">    Other top-level keys (like &#39;role&#39;) can be used for config groups and interpolation.</span>
 
-<span class="sd">    Example:</span>
+<span class="sd">    Example::</span>
+
 <span class="sd">        defaults:</span>
 <span class="sd">          - role: python</span>
 
@@ -815,7 +811,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">_convert_</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">_convert_</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span></div>
 </pre></div>
 
      </article>

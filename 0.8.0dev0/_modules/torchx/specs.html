@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -448,15 +443,28 @@
 <span class="c1"># pyre-strict</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This contains the TorchX AppDef and related component definitions. These are</span>
-<span class="sd">used by components to define the apps which can then be launched via a TorchX</span>
-<span class="sd">scheduler or pipeline adapter.</span>
+<span class="sd">Core TorchX types for defining distributed applications.</span>
+
+<span class="sd">The main types are :py:class:`AppDef`, :py:class:`Role`, and :py:class:`Resource`.</span>
+<span class="sd">Components are functions that return an ``AppDef`` which can then be launched</span>
+<span class="sd">via a :py:class:`~torchx.schedulers.api.Scheduler`.</span>
+
+<span class="sd">.. doctest::</span>
+
+<span class="sd">    &gt;&gt;&gt; import torchx.specs as specs</span>
+<span class="sd">    &gt;&gt;&gt; app = specs.AppDef(</span>
+<span class="sd">    ...     name=&quot;echo&quot;,</span>
+<span class="sd">    ...     roles=[specs.Role(name=&quot;worker&quot;, image=&quot;/tmp&quot;, entrypoint=&quot;/bin/echo&quot;, args=[&quot;hello&quot;])],</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; app.name</span>
+<span class="sd">    &#39;echo&#39;</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">difflib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401</span>
     <span class="n">ALL</span><span class="p">,</span>
     <span class="n">AppDef</span><span class="p">,</span>
     <span class="n">AppDryRunInfo</span><span class="p">,</span>
@@ -476,6 +484,7 @@
     <span class="n">NONE</span><span class="p">,</span>
     <span class="n">NULL_RESOURCE</span><span class="p">,</span>
     <span class="n">parse_app_handle</span><span class="p">,</span>
+    <span class="n">ParsedAppHandle</span><span class="p">,</span>
     <span class="n">ReplicaState</span><span class="p">,</span>
     <span class="n">ReplicaStatus</span><span class="p">,</span>
     <span class="n">Resource</span><span class="p">,</span>
@@ -579,27 +588,17 @@
     <span class="n">memMB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">h</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convenience method to create a ``Resource`` object from either the</span>
-<span class="sd">    raw resource specs (cpu, gpu, memMB) or the registered named resource (``h``).</span>
-<span class="sd">    Note that the (cpu, gpu, memMB) is mutually exclusive with ``h``</span>
-<span class="sd">    taking predecence if specified.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a :py:class:`Resource` from raw specs or a named resource.</span>
 
-<span class="sd">    If ``h`` is specified then it is used to look up the</span>
-<span class="sd">    resource specs from the list of registered named resources.</span>
-<span class="sd">    See `registering named resource &lt;https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources&gt;`_.</span>
+<span class="sd">    When ``h`` is set, it takes precedence (raw specs are ignored). See</span>
+<span class="sd">    :ref:`advanced:Registering Named Resources` for custom named resources.</span>
 
-<span class="sd">    Otherwise a ``Resource`` object is created from the raw resource specs.</span>
+<span class="sd">    .. doctest::</span>
 
-<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import resource</span>
+<span class="sd">        &gt;&gt;&gt; resource(cpu=4, gpu=1, memMB=8192)</span>
+<span class="sd">        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})</span>
 
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">         resource(cpu=1) # returns Resource(cpu=1)</span>
-<span class="sd">         resource(named_resource=&quot;foobar&quot;) # returns registered named resource &quot;foo&quot;</span>
-<span class="sd">         resource(cpu=1, named_resource=&quot;foobar&quot;) # returns registered named resource &quot;foo&quot; (cpu=1 ignored)</span>
-<span class="sd">         resource() # returns default resource values</span>
-<span class="sd">         resource(cpu=None, gpu=None, memMB=None) # throws</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">h</span><span class="p">:</span>
@@ -619,7 +618,7 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_named_resources"><a class="viewcode-back" href="../../specs.html#torchx.specs.get_named_resources">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_named_resources</span><span class="p">(</span><span class="n">res</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_named_resources</span><span class="p">(</span><span class="n">res</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    .. deprecated::</span>
 <span class="sd">        Use :py:func:`resource(h=name) &lt;resource&gt;` instead.</span>
@@ -631,7 +630,7 @@
         <span class="ne">FutureWarning</span><span class="p">,</span>
         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">named_resources</span><span class="p">[</span><span class="n">res</span><span class="p">]</span></div>
+    <span class="k">return</span> <span class="n">named_resources</span><span class="p">[</span><span class="n">res</span><span class="p">]</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -650,6 +649,7 @@
     <span class="s2">&quot;NONE&quot;</span><span class="p">,</span>
     <span class="s2">&quot;NULL_RESOURCE&quot;</span><span class="p">,</span>
     <span class="s2">&quot;parse_app_handle&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ParsedAppHandle&quot;</span><span class="p">,</span>
     <span class="s2">&quot;ReplicaState&quot;</span><span class="p">,</span>
     <span class="s2">&quot;ReplicaStatus&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Resource&quot;</span><span class="p">,</span>

@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Custom Components" href="custom_components.html" />
-    <link rel="prev" title=".torchxconfig" href="runner.config.html" />
+    <link rel="next" title="CLI" href="cli.html" />
+    <link rel="prev" title="Custom Components" href="custom_components.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -445,21 +440,64 @@
       
   <section id="advanced-usage">
 <h1>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this heading">¶</a></h1>
-<p>TorchX defines plugin points for you to configure TorchX to best support
-your infrastructure setup. Most of the configuration is done through
-Python’s <a class="reference external" href="https://packaging.python.org/specifications/entry-points/">entry points</a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>This guide covers TorchX’s extension points: registering custom schedulers,
+named resources, components, trackers, and CLI commands via Python
+<a class="reference internal" href="basics.html#term-Entry-Point"><span class="xref std std-term">entry points</span></a> – a standard packaging mechanism that
+lets installed packages advertise plugins.</p>
+</div>
+<p><strong>Audience:</strong> Platform engineers who want to integrate TorchX with custom
+infrastructure. If you only need to <strong>use</strong> TorchX to launch jobs, the
+<a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a>, <a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a>, and <a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a> pages are
+sufficient.</p>
+<p><strong>Prerequisites:</strong> <a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a> (core concepts) and <a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a>.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌──────────────────────────────────────────────────────────────┐
+│                     TorchX Extension Points                  │
+│                                                              │
+│  Entry-Point Group         What You Register                 │
+│  ──────────────────────    ──────────────────────────────    │
+│  torchx.schedulers         Scheduler factory function        │
+│  torchx.named_resources    Resource factory function         │
+│  torchx.components         Component module path             │
+│  torchx.tracker            Tracker factory function          │
+│  torchx.cli.cmds           SubCommand class                  │
+│                                                              │
+│      ┌───────────────────────────┐                           │
+│      │ setup.py / pyproject.toml │ ◄── register here         │
+│      └─────────────┬─────────────┘                           │
+│                    │                                          │
+│                    ▼                                          │
+│         ┌───────────────────────┐                            │
+│         │    pip install .      │  ◄── install package       │
+│         └───────────┬───────────┘                            │
+│                     │                                         │
+│                     ▼                                         │
+│  ┌────────────────────────────────────────────────────┐      │
+│  │           TorchX Runtime Discovery                  │      │
+│  │                                                     │      │
+│  │  Runner ──► discovers schedulers, resources         │      │
+│  │  CLI    ──► discovers components, subcommands       │      │
+│  │  AppRun ──► discovers tracker backends              │      │
+│  └────────────────────────────────────────────────────┘      │
+└──────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+<p>Most configuration is done through Python’s
+<a class="reference external" href="https://packaging.python.org/specifications/entry-points/">entry points</a>
+– a standard mechanism that lets installed packages advertise plugins for
+automatic discovery at runtime.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Entry points requires a python package containing them be installed.
-If you don’t have a python package we recommend you make one so you can share
-your resource definitions, schedulers and components across your team and org.</p>
+<p>Entry points require an installed Python package.</p>
 </div>
-<p>The entry points described below can be specified in your project’s <cite>setup.py</cite>
-file as</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">setuptools</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup</span>
+<p>The entry points below can be specified in <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> or <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.
+Each section shows both formats.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">setuptools</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup</span>
 
 <span class="n">setup</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="s2">&quot;project foobar&quot;</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;0.0.1&quot;</span><span class="p">,</span>
     <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;torchx.schedulers&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="s2">&quot;my_scheduler = my.custom.scheduler:create_scheduler&quot;</span><span class="p">,</span>
@@ -473,35 +511,43 @@ file as</p>
 </div>
 <section id="registering-custom-schedulers">
 <h2>Registering Custom Schedulers<a class="headerlink" href="#registering-custom-schedulers" title="Permalink to this heading">¶</a></h2>
-<p>You may implement a custom scheduler by implementing the
-.. py::class torchx.schedulers.Scheduler interface.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">create_scheduler</span></code> function should have the following function signature:</p>
+<p>Implement the <code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code> interface (see
+<a class="reference internal" href="schedulers.html#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> for a full skeleton). The factory function
+signature:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scheduler</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>You can then register this custom scheduler by adding an entry_points definition
-to your python project.</p>
+<p>Register it via entry points:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.schedulers&quot;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="s2">&quot;my_scheduler = my.custom.scheduler:create_schedule&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;my_scheduler = my.custom.scheduler:create_scheduler&quot;</span><span class="p">,</span>
     <span class="p">],</span>
 <span class="p">}</span>
+</pre></div>
+</div>
+<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.schedulers&quot;</span><span class="k">]</span>
+<span class="n">my_scheduler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my.custom.scheduler:create_scheduler&quot;</span>
+</pre></div>
+</div>
+<p>Once installed, the scheduler is available everywhere:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span><span class="s2">&quot;dist.ddp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;my_scheduler&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="registering-named-resources">
 <h2>Registering Named Resources<a class="headerlink" href="#registering-named-resources" title="Permalink to this heading">¶</a></h2>
-<p>A Named Resource is a set of predefined resource specs that are given a
-string name. This is particularly useful
-when your cluster has a fixed set of instance types. For instance if your
-deep learning training kubernetes cluster on AWS is
-comprised only of p3.16xlarge (64 vcpu, 8 gpu, 488GB), then you may want to
-enumerate t-shirt sized resource specs for the containers as:</p>
+<p>A <a class="reference internal" href="basics.html#term-Resource"><span class="xref std std-term">Named Resource</span></a> maps a human-readable name (e.g.
+<code class="docutils literal notranslate"><span class="pre">gpu_x2</span></code>) to a <a class="reference internal" href="specs.html#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a>. For example, on an AWS
+cluster with p3.16xlarge nodes:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gpu_x1</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
@@ -517,8 +563,7 @@ enumerate t-shirt sized resource specs for the containers as:</p>
     <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">488_000</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>To make these resource definitions available you then need to register them via
-entry_points:</p>
+<p>Register them via entry points:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
@@ -528,30 +573,34 @@ entry_points:</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Once you install the package with the entry_points definitions, the named
-resource can then be used in the following manner:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_named_resources</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">get_named_resources</span><span class="p">(</span><span class="s2">&quot;gpu_x2&quot;</span><span class="p">)</span>
+<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.named_resources&quot;</span><span class="k">]</span>
+<span class="n">gpu_x2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_module.resources:gpu_x2&quot;</span>
+</pre></div>
+</div>
+<p>Once installed, use the named resource:</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">resource</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">&quot;gpu_x2&quot;</span><span class="p">)</span>
 <span class="go">Resource(cpu=16, gpu=2, memMB=122000, ...)</span>
 </pre></div>
 </div>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_module.component</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">get_named_resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">resource</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">test_app</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_app</span><span class="p">(</span><span class="n">res</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;test_app&quot;</span><span class="p">,</span> <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
         <span class="n">Role</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
             <span class="n">image</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
-            <span class="n">resource</span><span class="o">=</span><span class="n">get_named_resources</span><span class="p">(</span><span class="n">resource</span><span class="p">),</span>
+            <span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">res</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="p">])</span>
 
 <span class="n">test_app</span><span class="p">(</span><span class="s2">&quot;gpu_x2&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Alternatively, you can define custom named resources in a Python module and point
-to it using the <code class="docutils literal notranslate"><span class="pre">TORCHX_CUSTOM_NAMED_RESOURCES</span></code> environment variable:</p>
+<p>Alternatively, define resources in a module and point to it via the
+<code class="docutils literal notranslate"><span class="pre">TORCHX_CUSTOM_NAMED_RESOURCES</span></code> environment variable:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_resources.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
 
@@ -571,32 +620,36 @@ to it using the <code class="docutils literal notranslate"><span class="pre">TOR
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">TORCHX_CUSTOM_NAMED_RESOURCES</span><span class="o">=</span>my_resources
 </pre></div>
 </div>
-<p>This allows you to use your custom resources without creating a package with entry points.</p>
+<p>This avoids the need for a package with entry points.</p>
+<p><strong>Verifying registration.</strong> After installing your package, confirm the
+resource is discoverable:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">resource</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">&quot;gpu_x2&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">res</span><span class="o">.</span><span class="n">gpu</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;expected 2 GPUs, got </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">gpu</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>If the name is not found, <code class="docutils literal notranslate"><span class="pre">resource()</span></code> raises <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> with a
+suggestion of close matches.</p>
 </section>
 <section id="registering-custom-components">
 <h2>Registering Custom Components<a class="headerlink" href="#registering-custom-components" title="Permalink to this heading">¶</a></h2>
-<p>You can author and register a custom set of components with the
-<code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI as builtins to the CLI. This makes it possible to customize
-a set of components most relevant to your team or organization and support
-it as a CLI <code class="docutils literal notranslate"><span class="pre">builtin</span></code>. This way users will see your custom components
-when they run</p>
+<p>Register custom components as CLI builtins:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
 </pre></div>
 </div>
-<p>Custom components can be registered via <code class="docutils literal notranslate"><span class="pre">[torchx.components]</span></code> entrypoints.
-If <code class="docutils literal notranslate"><span class="pre">my_project.bar</span></code> had the following directory structure:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$PROJECT_ROOT/my_project/bar/
+<p>If <code class="docutils literal notranslate"><span class="pre">my_project.bar</span></code> has the following directory structure:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$PROJECT_ROOT/my_project/bar/
     |- baz.py
 </pre></div>
 </div>
-<p>And <code class="docutils literal notranslate"><span class="pre">baz.py</span></code> had a single component (function) called <code class="docutils literal notranslate"><span class="pre">trainer</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># baz.py</span>
+<p>And <code class="docutils literal notranslate"><span class="pre">baz.py</span></code> has a component function called <code class="docutils literal notranslate"><span class="pre">trainer</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># baz.py</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">trainer</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span> <span class="o">...</span>
 </pre></div>
 </div>
-<p>And the entrypoints were added as:</p>
+<p>Register via entry points:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
@@ -606,28 +659,37 @@ If <code class="docutils literal notranslate"><span class="pre">my_project.bar</
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>TorchX will search the module <code class="docutils literal notranslate"><span class="pre">my_project.bar</span></code> for all defined components and group the found
-components under the <code class="docutils literal notranslate"><span class="pre">foo.*</span></code> prefix. In this case, the component <code class="docutils literal notranslate"><span class="pre">my_project.bar.baz.trainer</span></code>
-would be registered with the name <code class="docutils literal notranslate"><span class="pre">foo.baz.trainer</span></code>.</p>
+<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.components&quot;</span><span class="k">]</span>
+<span class="n">foo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_project.bar&quot;</span>
+</pre></div>
+</div>
+<p>TorchX searches <code class="docutils literal notranslate"><span class="pre">my_project.bar</span></code> for components and groups them under the
+<code class="docutils literal notranslate"><span class="pre">foo.*</span></code> prefix. The component <code class="docutils literal notranslate"><span class="pre">my_project.bar.baz.trainer</span></code> becomes
+<code class="docutils literal notranslate"><span class="pre">foo.baz.trainer</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Only python packages (those directories with an <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file)
-are searched for and TorchX makes no attempt to recurse into namespace packages
-(directories without a <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> file).
-However you may register a top level namespace package.</p>
+<p>Only Python packages (directories with <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>) are searched.
+Namespace packages (no <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>) are not recursed into.</p>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI will display registered components via:</p>
+<p>Verify registration:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
 <span class="go">Found 1 builtin components:</span>
 <span class="go">1. foo.baz.trainer</span>
 </pre></div>
 </div>
-<p>The custom component can then be used as:</p>
+<p>Use from the CLI or Python:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>foo.baz.trainer<span class="w"> </span>--<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;test app&quot;</span>
 </pre></div>
 </div>
-<p>When you register your own components, TorchX will not include its own builtins. To add TorchX’s
-builtin components you must specify another entry as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span><span class="s2">&quot;foo.baz.trainer&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--name&quot;</span><span class="p">,</span> <span class="s2">&quot;test app&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;local_cwd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Custom components replace the default builtins. To keep them, add another
+entry:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
@@ -638,9 +700,9 @@ builtin components you must specify another entry as:</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>This will add back the TorchX builtins but with a <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> component name prefix (e.g. <code class="docutils literal notranslate"><span class="pre">torchx.dist.ddp</span></code>
-versus the default <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code>).</p>
-<p>If there are two registry entries pointing to the same component, for instance</p>
+<p>This adds back TorchX builtins with a <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">torchx.dist.ddp</span></code>
+instead of <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code>).</p>
+<p id="advanced-overlapping-components">If there are two registry entries pointing to the same component, for instance</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
@@ -651,16 +713,15 @@ versus the default <code class="docutils literal notranslate"><span class="pre">
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>There will be two sets of overlapping components for those components in <code class="docutils literal notranslate"><span class="pre">my_project.bar</span></code> with different
-prefix aliases: <code class="docutils literal notranslate"><span class="pre">foo.*</span></code> and <code class="docutils literal notranslate"><span class="pre">test.bar.*</span></code>. Concretely,</p>
+<p>Components in <code class="docutils literal notranslate"><span class="pre">my_project.bar</span></code> will appear under both <code class="docutils literal notranslate"><span class="pre">foo.*</span></code> and
+<code class="docutils literal notranslate"><span class="pre">test.bar.*</span></code>:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
 <span class="go">Found 2 builtin components:</span>
 <span class="go">1. foo.baz.trainer</span>
 <span class="go">2. test.bar.baz.trainer</span>
 </pre></div>
 </div>
-<p>To omit groupings and make the component names shorter, use underscore (e.g <code class="docutils literal notranslate"><span class="pre">_</span></code> or <code class="docutils literal notranslate"><span class="pre">_0</span></code>, <code class="docutils literal notranslate"><span class="pre">_1</span></code>, etc).
-For example:</p>
+<p>To omit the prefix, use underscore names (<code class="docutils literal notranslate"><span class="pre">_</span></code>, <code class="docutils literal notranslate"><span class="pre">_0</span></code>, <code class="docutils literal notranslate"><span class="pre">_1</span></code>, etc.):</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
@@ -671,8 +732,8 @@ For example:</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>This has the effect of exposing the trainer component as <code class="docutils literal notranslate"><span class="pre">baz.trainer</span></code> (as opposed to <code class="docutils literal notranslate"><span class="pre">foo.baz.trainer</span></code>)
-and adds back the builtin components as in the vanilla installation of torchx, without the <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> prefix.</p>
+<p>This exposes <code class="docutils literal notranslate"><span class="pre">baz.trainer</span></code> (instead of <code class="docutils literal notranslate"><span class="pre">foo.baz.trainer</span></code>) and restores
+builtins without the <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> prefix:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
 <span class="go">Found 11 builtin components:</span>
 <span class="go">1. baz.trainer</span>
@@ -680,6 +741,170 @@ and adds back the builtin components as in the vanilla installation of torchx, w
 <span class="go">3. utils.python</span>
 <span class="go">4. ... &lt;more builtins from torchx.components.* ...&gt;</span>
 </pre></div>
+</div>
+</section>
+<section id="registering-custom-trackers">
+<span id="id1"></span><h2>Registering Custom Trackers<a class="headerlink" href="#registering-custom-trackers" title="Permalink to this heading">¶</a></h2>
+<p>TorchX ships with <a class="reference internal" href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a> and
+<a class="reference internal" href="tracker.html#torchx.tracker.mlflow.MLflowTracker" title="torchx.tracker.mlflow.MLflowTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a>. Implement your own by
+subclassing <a class="reference internal" href="tracker.html#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>.</p>
+<p><strong>The TrackerBase ABC</strong> defines eight abstract methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrackerBase</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">,</span> <span class="n">TrackerSource</span><span class="p">,</span> <span class="n">Lineage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyTracker</span><span class="p">(</span><span class="n">TrackerBase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conn</span> <span class="o">=</span> <span class="n">connection_str</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">artifacts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TrackerSource</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p><strong>Factory function.</strong> Each entry point must point to a factory:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrackerBase</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackerBase</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">MyTracker</span><span class="p">(</span><span class="n">connection_str</span><span class="o">=</span><span class="n">config</span> <span class="ow">or</span> <span class="s2">&quot;default://localhost&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Entry-point registration.</strong> Register the factory under the <code class="docutils literal notranslate"><span class="pre">torchx.tracker</span></code>
+group:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<span class="o">...</span>
+<span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;torchx.tracker&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;my_tracker = my_package.tracking:create&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.tracker&quot;</span><span class="k">]</span>
+<span class="n">my_tracker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_package.tracking:create&quot;</span>
+</pre></div>
+</div>
+<p><strong>Activation via environment variables:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Comma-separated list of tracker entry-point keys to activate</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TORCHX_TRACKERS</span><span class="o">=</span>my_tracker,fsspec
+
+<span class="c1"># Per-tracker config (optional) — passed as the ``config`` argument to the factory</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TORCHX_TRACKER_MY_TRACKER_CONFIG</span><span class="o">=</span><span class="s2">&quot;my_tracker://db-host:5432/runs&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TORCHX_TRACKER_FSSPEC_CONFIG</span><span class="o">=</span><span class="s2">&quot;/tmp/tracker_data&quot;</span>
+</pre></div>
+</div>
+<p>The naming convention for per-tracker config is <code class="docutils literal notranslate"><span class="pre">TORCHX_TRACKER_&lt;NAME&gt;_CONFIG</span></code>
+where <code class="docutils literal notranslate"><span class="pre">&lt;NAME&gt;</span></code> is the upper-cased entry-point key.</p>
+<p><strong>Alternative: .torchxconfig file.</strong> Declare trackers in <code class="docutils literal notranslate"><span class="pre">[torchx:tracker]</span></code>
+and configure each in <code class="docutils literal notranslate"><span class="pre">[tracker:&lt;name&gt;]</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[torchx:tracker]</span>
+<span class="na">my_tracker</span><span class="w"> </span><span class="o">=</span>
+<span class="na">fsspec</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[tracker:my_tracker]</span>
+<span class="na">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">my_tracker://db-host:5432/runs</span>
+
+<span class="k">[tracker:fsspec]</span>
+<span class="na">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/tmp/tracker_data</span>
+</pre></div>
+</div>
+<p>Environment variables take precedence over <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> values.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="tracker.html"><span class="doc">torchx.tracker</span></a></dt><dd><p>Full tracker API reference (<a class="reference internal" href="tracker.html#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>,
+<a class="reference internal" href="tracker.html#torchx.tracker.AppRun" title="torchx.tracker.api.AppRun"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppRun</span></code></a>).</p>
+</dd>
+<dt><a class="reference internal" href="runtime/tracking.html"><span class="doc">Tracking</span></a></dt><dd><p>Runtime tracking utilities for use within applications.</p>
+</dd>
+</dl>
+</div>
+</section>
+<section id="registering-custom-cli-commands">
+<span id="id2"></span><h2>Registering Custom CLI Commands<a class="headerlink" href="#registering-custom-cli-commands" title="Permalink to this heading">¶</a></h2>
+<p>Extend the <code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI by implementing
+<a class="reference internal" href="cli.html#torchx.cli.cmd_base.SubCommand" title="torchx.cli.cmd_base.SubCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">SubCommand</span></code></a> and registering via the
+<code class="docutils literal notranslate"><span class="pre">torchx.cli.cmds</span></code> entry-point group.</p>
+<p><strong>The SubCommand ABC</strong> defines two abstract methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.cli.cmd_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubCommand</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CmdMyTool</span><span class="p">(</span><span class="n">SubCommand</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subparser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register CLI flags and positional arguments.&quot;&quot;&quot;</span>
+        <span class="n">subparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--config&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to config file&quot;</span><span class="p">)</span>
+        <span class="n">subparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;app_id&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Application handle&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the command with parsed arguments.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running my_tool on </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">app_id</span><span class="si">}</span><span class="s2"> with config=</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Entry-point registration.</strong> Register the class (not a factory) under
+<code class="docutils literal notranslate"><span class="pre">torchx.cli.cmds</span></code>. The key becomes the subcommand name:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<span class="o">...</span>
+<span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;torchx.cli.cmds&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;my_tool = my_package.cli:CmdMyTool&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.cli.cmds&quot;</span><span class="k">]</span>
+<span class="n">my_tool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_package.cli:CmdMyTool&quot;</span>
+</pre></div>
+</div>
+<p>Once installed, the command is available as:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>my_tool<span class="w"> </span>--config<span class="w"> </span>config.yaml<span class="w"> </span>local://session/my_app
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Custom commands <strong>override</strong> built-in commands with the same name.</p>
+</div>
+<p>The default built-in commands are: <code class="docutils literal notranslate"><span class="pre">builtins</span></code>, <code class="docutils literal notranslate"><span class="pre">cancel</span></code>, <code class="docutils literal notranslate"><span class="pre">configure</span></code>,
+<code class="docutils literal notranslate"><span class="pre">delete</span></code>, <code class="docutils literal notranslate"><span class="pre">describe</span></code>, <code class="docutils literal notranslate"><span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">log</span></code>, <code class="docutils literal notranslate"><span class="pre">run</span></code>, <code class="docutils literal notranslate"><span class="pre">runopts</span></code>, <code class="docutils literal notranslate"><span class="pre">status</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">tracker</span></code>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="cli.html"><span class="doc">CLI</span></a></dt><dd><p>CLI module API reference.</p>
+</dd>
+<dt><a class="reference internal" href="schedulers.html"><span class="doc">torchx.schedulers</span></a></dt><dd><p>Scheduler API reference and implementation guide.</p>
+</dd>
+<dt><a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a></dt><dd><p>Workspace API reference and custom workspace mixin guide.</p>
+</dd>
+<dt><a class="reference internal" href="tracker.html"><span class="doc">torchx.tracker</span></a></dt><dd><p>Tracker API reference and backend implementations.</p>
+</dd>
+<dt><a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a></dt><dd><p>Core TorchX concepts and project structure.</p>
+</dd>
+<dt><a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a></dt><dd><p>Step-by-step guide for writing and launching a custom component.</p>
+</dd>
+<dt><a class="reference internal" href="component_best_practices.html"><span class="doc">Component Best Practices</span></a></dt><dd><p>Best practices for authoring reusable components.</p>
+</dd>
+</dl>
 </div>
 </section>
 </section>
@@ -692,10 +917,10 @@ and adds back the builtin components as in the vanilla installation of torchx, w
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="custom_components.html" class="btn btn-neutral float-right" title="Custom Components" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="cli.html" class="btn btn-neutral float-right" title="CLI" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="runner.config.html" class="btn btn-neutral" title=".torchxconfig" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="custom_components.html" class="btn btn-neutral" title="Custom Components" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -731,6 +956,8 @@ and adds back the builtin components as in the vanilla installation of torchx, w
 <li><a class="reference internal" href="#registering-custom-schedulers">Registering Custom Schedulers</a></li>
 <li><a class="reference internal" href="#registering-named-resources">Registering Named Resources</a></li>
 <li><a class="reference internal" href="#registering-custom-components">Registering Custom Components</a></li>
+<li><a class="reference internal" href="#registering-custom-trackers">Registering Custom Trackers</a></li>
+<li><a class="reference internal" href="#registering-custom-cli-commands">Registering Custom CLI Commands</a></li>
 </ul>
 </li>
 </ul>

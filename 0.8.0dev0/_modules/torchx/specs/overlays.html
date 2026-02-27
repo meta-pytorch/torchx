@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -647,7 +642,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_field_of</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the logical field name from a possibly-encoded operator key.&quot;&quot;&quot;</span>
+    <span class="c1"># Extract the logical field name from a possibly-encoded operator key.</span>
     <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_PUT_PREFIX</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_PUT_PREFIX</span><span class="p">)</span> <span class="p">:]</span>
     <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_DEL_PREFIX</span><span class="p">):</span>
@@ -673,11 +668,9 @@
     <span class="n">overlay_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
     <span class="n">merge_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge list items by key field (strategic merge patch semantics).</span>
-
-<span class="sd">    Matched items: overlay fields overwrite base fields (top-level only).</span>
-<span class="sd">    Unmatched items: appended.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Merge list items by key field (strategic merge patch semantics).</span>
+    <span class="c1"># Matched items: overlay fields overwrite base fields (top-level only).</span>
+    <span class="c1"># Unmatched items: appended.</span>
     <span class="n">base_by_key</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">item</span><span class="p">[</span><span class="n">merge_key</span><span class="p">]:</span> <span class="n">item</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">base_list</span>
@@ -698,10 +691,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">keep_plain</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove all keys from ``base`` whose logical field name is ``field``.</span>
-
-<span class="sd">    When ``keep_plain`` is True, the plain key (no operator prefix) is kept.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Remove all keys from base whose logical field name is field.</span>
+    <span class="c1"># When keep_plain is True, the plain key (no operator prefix) is kept.</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">base</span> <span class="k">if</span> <span class="n">_field_of</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="n">field</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">keep_plain</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">==</span> <span class="n">field</span><span class="p">:</span>
             <span class="k">continue</span>
@@ -714,7 +705,7 @@
     <span class="n">overlay_value</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a JOIN operator key into a strategic merge on ``base``.&quot;&quot;&quot;</span>
+    <span class="c1"># Resolve a JOIN operator key into a strategic merge on base.</span>
     <span class="n">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">keep_plain</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">parts</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
@@ -749,7 +740,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_type_equal</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">o1</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">o2</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raise TypeError if ``o1`` and ``o2`` have different types.&quot;&quot;&quot;</span>
+    <span class="c1"># Raise TypeError if o1 and o2 have different types.</span>
     <span class="n">o1_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o1</span><span class="p">)</span>
     <span class="n">o2_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o2</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">o1_type</span> <span class="o">!=</span> <span class="n">o2_type</span><span class="p">:</span>
@@ -766,13 +757,9 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">_resolve</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge a single overlay value into ``base`` using default rules.</span>
-
-<span class="sd">    - dict → recursive merge</span>
-<span class="sd">    - list → append</span>
-<span class="sd">    - tuple → replace list (legacy BC for YAML ``!!python/tuple``)</span>
-<span class="sd">    - primitive → overwrite</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Merge a single overlay value into base using default rules:</span>
+    <span class="c1"># dict -&gt; recursive merge, list -&gt; append,</span>
+    <span class="c1"># tuple -&gt; replace list (legacy BC for YAML !!python/tuple), primitive -&gt; overwrite</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
         <span class="n">base_value</span> <span class="o">=</span> <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
@@ -895,14 +882,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_load_overlay_file</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Overlay</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load overlay dict from a file path or URI.</span>
-
-<span class="sd">    Supports bare paths (``/path/to/overlay.yaml``), ``file://``, ``s3://``,</span>
-<span class="sd">    etc. via ``fsspec``. Tries JSON first, falls back to YAML.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If the file contents are not a dict.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load overlay dict from a file path or URI.</span>
+    <span class="c1"># Supports bare paths, file://, s3://, etc. via fsspec.</span>
+    <span class="c1"># Tries JSON first, falls back to YAML.</span>
+    <span class="c1"># Raises ValueError if the file contents are not a dict.</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
     <span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>

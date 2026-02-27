@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchx.tracker" href="tracker.html" />
-    <link rel="prev" title="Advanced Usage" href="advanced.html" />
+    <link rel="next" title="Advanced Usage" href="advanced.html" />
+    <link rel="prev" title="Basic Concepts" href="basics.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -445,28 +440,25 @@
       
   <section id="custom-components">
 <h1>Custom Components<a class="headerlink" href="#custom-components" title="Permalink to this heading">¶</a></h1>
-<p>This is a guide on how to build a simple app and custom component spec and
-launch it via two different schedulers.</p>
-<p>See the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> for installation and basic usage.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>This guide covers writing a custom <a class="reference internal" href="basics.html#term-Component"><span class="xref std std-term">component</span></a> (a Python
+function returning an <a class="reference internal" href="basics.html#term-AppDef"><span class="xref std std-term">AppDef</span></a>) and launching it on both local and
+container-based <a class="reference internal" href="basics.html#term-Scheduler"><span class="xref std std-term">schedulers</span></a>.
+Check the <a class="reference internal" href="components/overview.html"><span class="doc">builtins</span></a> first – you may not need a
+custom component.</p>
+</div>
+<p><strong>Prerequisites:</strong> <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> (installation) and <a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a> (core concepts).</p>
 <section id="builtins">
 <h2>Builtins<a class="headerlink" href="#builtins" title="Permalink to this heading">¶</a></h2>
-<p>Before writing a custom component, check if any of the builtin components
-satisfy your needs. TorchX provides a number of builtin components with premade
-images. You can discover them via:</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
-</pre></div>
-</div>
-<p>You can use these either from the CLI, from a pipeline or programmatically like
-you would any other component.</p>
+<p>Discover available builtins with <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">builtins</span></code>:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>utils.echo<span class="w"> </span>--msg<span class="w"> </span><span class="s2">&quot;Hello :)&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="hello-world">
 <h2>Hello World<a class="headerlink" href="#hello-world" title="Permalink to this heading">¶</a></h2>
-<p>Lets start off with writing a simple “Hello World” python app. This is just a
-normal python program and can contain anything you’d like.</p>
-<p>First, create <code class="docutils literal notranslate"><span class="pre">my_app.py</span></code>:</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">my_app.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 
@@ -488,10 +480,7 @@ normal python program and can contain anything you’d like.</p>
     <span class="n">main</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Now that we have an app we can write the component file for it. This function
-allows us to reuse and share our app in a user friendly way.</p>
-<p>We can use this component from the <code class="docutils literal notranslate"><span class="pre">torchx</span></code> cli or programmatically as part of a
-pipeline.</p>
+<p>Next, write a component – a factory function that returns an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>.</p>
 <p>Create <code class="docutils literal notranslate"><span class="pre">my_component.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 
@@ -512,40 +501,65 @@ pipeline.</p>
     <span class="p">)</span>
 </pre></div>
 </div>
-<p>We can execute our component via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code>. The <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> scheduler
-executes the component relative to the current directory.</p>
+<p>Run the component with the <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> scheduler (executes in the current
+directory):</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>my_component.py:greet<span class="w"> </span>--user<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
 </pre></div>
 </div>
-<p>If we want to run in other environments, we can build a Docker container so we
-can run our component in Docker enabled environments such as Kubernetes or via
-the local Docker scheduler.</p>
+<p>The same launch works from Python using the <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="c1"># reference the file:function component, same as the CLI</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span>
+        <span class="s2">&quot;my_component.py:greet&quot;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">&quot;--user&quot;</span><span class="p">,</span> <span class="s2">&quot;your name&quot;</span><span class="p">],</span>
+        <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;local_cwd&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># alternatively, call the component function directly</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">my_component</span><span class="w"> </span><span class="kn">import</span> <span class="n">greet</span>
+
+    <span class="n">app</span> <span class="o">=</span> <span class="n">greet</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="s2">&quot;your name&quot;</span><span class="p">)</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;local_cwd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For container-based schedulers, build a Docker image:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This requires Docker installed and won’t work in environments such as Google
-Colab. If you have not done so already follow the install instructions on:
-<a class="reference external" href="https://docs.docker.com/get-docker/">https://docs.docker.com/get-docker/</a></p>
+<p>Requires Docker: <a class="reference external" href="https://docs.docker.com/get-docker/">https://docs.docker.com/get-docker/</a></p>
 </div>
 <p>Create <code class="docutils literal notranslate"><span class="pre">Dockerfile.custom</span></code>:</p>
-<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">ghcr.io/pytorch/torchx:0.1.0rc1</span>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">ghcr.io/pytorch/torchx:latest</span>
 
 <span class="k">ADD</span><span class="w"> </span>my_app.py<span class="w"> </span>.
 </pre></div>
 </div>
-<p>Once we have the Dockerfile created we can create our docker image.</p>
+<p>Build the image:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>my_app:latest<span class="w"> </span>-f<span class="w"> </span>Dockerfile.custom<span class="w"> </span>.
 </pre></div>
 </div>
-<p>We can then launch it on the local scheduler.</p>
+<p>Launch on the local Docker scheduler:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>my_component.py:greet<span class="w"> </span>--image<span class="w"> </span><span class="s2">&quot;my_app:latest&quot;</span><span class="w"> </span>--user<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
 </pre></div>
 </div>
-<p>If you have a Kubernetes cluster you can use the
-<a class="reference internal" href="schedulers/kubernetes.html"><span class="doc">Kubernetes scheduler</span></a> to launch this on the cluster
-instead.</p>
+<p>Or push and launch on a <a class="reference internal" href="schedulers/kubernetes.html"><span class="doc">Kubernetes</span></a> cluster:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>docker<span class="w"> </span>push<span class="w"> </span>my_app:latest
 <span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>my_component.py:greet<span class="w"> </span>--image<span class="w"> </span><span class="s2">&quot;my_app:latest&quot;</span><span class="w"> </span>--user<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
 </pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="api_reference.html"><span class="doc">Quick Reference</span></a></dt><dd><p>Single-page reference with imports, types, and copy-pasteable recipes.</p>
+</dd>
+<dt><a class="reference internal" href="component_best_practices.html"><span class="doc">Component Best Practices</span></a></dt><dd><p>Best practices for entrypoints, simplicity, named resources, and testing.</p>
+</dd>
+<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Registering custom components as CLI builtins via entry points.</p>
+</dd>
+<dt><a class="reference internal" href="components/overview.html"><span class="doc">Overview</span></a></dt><dd><p>Browse the builtin component library.</p>
+</dd>
+</dl>
 </div>
 </section>
 </section>
@@ -558,10 +572,10 @@ instead.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tracker.html" class="btn btn-neutral float-right" title="torchx.tracker" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="advanced.html" class="btn btn-neutral float-right" title="Advanced Usage" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="advanced.html" class="btn btn-neutral" title="Advanced Usage" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="basics.html" class="btn btn-neutral" title="Basic Concepts" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   

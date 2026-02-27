@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -463,11 +458,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a new temp directory from the workspace. Role image fields will</span>
-<span class="sd">        be set to the ``job_dir``.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies *workspace* to a temp directory and sets ``role.image`` to it.</span>
 
-<span class="sd">        Any files listed in the ``.torchxignore`` folder will be skipped.</span>
+<span class="sd">        Files matching ``.torchxignore`` patterns are skipped.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">job_dir</span> <span class="o">=</span> <span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;torchx_workspace&quot;</span><span class="p">)</span>
         <span class="n">_copy_to_dir</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="n">job_dir</span><span class="p">)</span>
@@ -478,11 +471,10 @@
 <div class="viewcode-block" id="DirWorkspaceMixin.build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin.build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a new directory specified by ``job_dir`` from the workspace. Role</span>
-<span class="sd">        image fields will be set to the ``job_dir``.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies *workspace* into ``cfg[&quot;job_dir&quot;]`` and sets ``role.image`` to it.</span>
 
-<span class="sd">        Any files listed in the ``.torchxignore`` folder will be skipped.</span>
+<span class="sd">        No-op if ``job_dir`` is not set. Files matching ``.torchxignore``</span>
+<span class="sd">        patterns are skipped.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">job_dir</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_dir&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">job_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

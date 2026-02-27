@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -474,7 +469,10 @@
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PkgInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">PackageType</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convenience class used to specify information regarding the built workspace</span>
+<span class="sd">    .. deprecated::</span>
+<span class="sd">        Will be removed in a future release. Fork if your project depends on it.</span>
+
+<span class="sd">    Metadata for a built workspace package.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">img</span><span class="p">:</span> <span class="nb">str</span>
@@ -510,50 +508,34 @@
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sync</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PkgInfo</span><span class="p">[</span><span class="n">PackageType</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Builds the specified ``workspace`` with respect to ``img``.</span>
-<span class="sd">        In the simplest case, this method builds a new image.</span>
-<span class="sd">        Certain (more efficient) implementations build</span>
-<span class="sd">        incremental diff patches that overlay on top of the role&#39;s image.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds the workspace, producing either a new image or an incremental patch.&quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
 
 <div class="viewcode-block" id="WorkspaceMixin"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">WorkspaceMixin</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Note: (Prototype) this interface may change without notice!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scheduler mix-in that auto-builds a local workspace into a deployable image or patch.</span>
 
-<span class="sd">    A mix-in that can be attached to a Scheduler that adds the ability to</span>
-<span class="sd">    builds a workspace. A workspace is the local checkout of the codebase/project</span>
-<span class="sd">    that builds into an image. The workspace scheduler adds capability to</span>
-<span class="sd">    automatically rebuild images or generate diff patches that are</span>
-<span class="sd">    applied to the ``Role``, allowing the user to make local code</span>
-<span class="sd">    changes to the application and having those changes be reflected</span>
-<span class="sd">    (either through a new image or an overlaid patch) at runtime</span>
-<span class="sd">    without a manual image rebuild. The exact semantics of what the</span>
-<span class="sd">    workspace build artifact is, is implementation dependent.</span>
+<span class="sd">    .. warning::</span>
+<span class="sd">        Prototype -- this interface may change without notice.</span>
+
+<span class="sd">    Attach to a :py:class:`~torchx.schedulers.api.Scheduler` so that local code</span>
+<span class="sd">    changes in the workspace are automatically reflected at runtime (via a rebuilt</span>
+<span class="sd">    image or an overlaid diff patch) without a manual image rebuild.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WorkspaceMixin.workspace_opts"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.workspace_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the run configuration options expected by the workspace.</span>
-<span class="sd">        Basically a ``--help`` for the ``run`` API.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the :py:class:`~torchx.specs.api.runopts` accepted by this workspace.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">runopts</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="WorkspaceMixin.build_workspaces"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspaces">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspaces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Role</span><span class="p">],</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        NOTE: this method MUTATES the passed roles!</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds workspaces for each role and updates ``role.image`` in-place.</span>
 
-<span class="sd">        Builds the workspaces (if any) for each role and updates the role to reflect the built workspace.</span>
-<span class="sd">        Typically ``role.image`` is updated with the newly built image that reflects the local workspace.</span>
-<span class="sd">        Some workspace implementations may add extra environment variables to make it easier for other</span>
-<span class="sd">        parts of the program to access the workspace. For example a ``WORKSPACE_DIR`` env var may be added</span>
-<span class="sd">        to ``role.env`` that scripts can use to refert to the workspace directory in the container.</span>
+<span class="sd">        .. important::</span>
+<span class="sd">            Mutates the passed *roles*. May also add env vars (e.g. ``WORKSPACE_DIR``)</span>
+<span class="sd">            to ``role.env``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -576,24 +558,20 @@
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
         <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Same as :py:meth:`build_workspace_and_update_role` but takes</span>
-<span class="sd">        a ``build_cache`` that can be used to cache pointers to build artifacts</span>
-<span class="sd">        between building workspace for each role.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Like :py:meth:`build_workspace_and_update_role` but with a per-call *build_cache*.</span>
 
-<span class="sd">        This is useful when an appdef has multiple roles where the image and workspace</span>
-<span class="sd">        of the roles are the same but other attributes such as entrypoint or args are different.</span>
+<span class="sd">        Subclasses should implement this method instead of</span>
+<span class="sd">        :py:meth:`build_workspace_and_update_role`. The cache avoids redundant</span>
+<span class="sd">        builds when multiple roles share the same image and workspace.</span>
 
-<span class="sd">        NOTE: ``build_cache``&#39;s lifetime is within :py:meth:`build_workspace_and_update_roles`</span>
-<span class="sd">        NOTE: the workspace implementation decides what to cache</span>
+<span class="sd">        .. important::</span>
+<span class="sd">            *build_cache* lifetime is scoped to a single</span>
+<span class="sd">            :py:meth:`build_workspaces` call. What gets cached is up to the</span>
+<span class="sd">            implementation.</span>
 
-<span class="sd">        Workspace subclasses should prefer implementing this method over</span>
-<span class="sd">        :py:meth:`build_workspace_and_update_role`.</span>
-
-<span class="sd">        The default implementation of this method simply calls the (deprecated) non-caching</span>
-<span class="sd">        :py:meth:`build_workspace_and_update_role` and deals with multi-dir workspaces by</span>
-<span class="sd">        merging them into a single tmpdir before passing it down.</span>
-
+<span class="sd">        The default implementation delegates to the (deprecated)</span>
+<span class="sd">        :py:meth:`build_workspace_and_update_role`, merging multi-dir</span>
+<span class="sd">        workspaces into a single tmpdir first.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">workspace</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span>
@@ -617,33 +595,23 @@
         <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        .. note:: DEPRECATED: Workspace subclasses should implement</span>
-<span class="sd">                  :py:meth:`caching_build_workspace_and_update_role` over this method.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build *workspace* and mutate *role* to reference the resulting artifact.</span>
 
-<span class="sd">        Builds the specified ``workspace`` with respect to ``img``</span>
-<span class="sd">        and updates the ``role`` to reflect the built workspace artifacts.</span>
-<span class="sd">        In the simplest case, this method builds a new image and updates</span>
-<span class="sd">        the role&#39;s image. Certain (more efficient) implementations build</span>
-<span class="sd">        incremental diff patches that overlay on top of the role&#39;s image.</span>
-
-<span class="sd">        Note: this method mutates the passed ``role``.</span>
+<span class="sd">        .. deprecated::</span>
+<span class="sd">            Implement :py:meth:`caching_build_workspace_and_update_role` instead.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;implement `caching_build_workspace_and_update_role`&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkspaceMixin.dryrun_push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.dryrun_push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        dryrun_push does a dryrun of the image push and updates the app to have</span>
-<span class="sd">        the final values. Only called for remote jobs.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dry-run the image push: updates *app* with final image names.</span>
 
-<span class="sd">        ``push`` must be called before scheduling the job.</span>
+<span class="sd">        Only called for remote jobs. :py:meth:`push_images` must be called</span>
+<span class="sd">        with the return value before scheduling.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;dryrun_push is not implemented&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WorkspaceMixin.push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        push pushes any images to the remote repo if required.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;push is not implemented&quot;</span><span class="p">)</span></div></div>
 
 
@@ -668,10 +636,8 @@
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">ignore_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TORCHX_IGNORE</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    walk_workspace walks the filesystem path and applies the ignore rules</span>
-<span class="sd">    specified via ``ignore_name``.</span>
-<span class="sd">    This follows the rules for ``.dockerignore``.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Walks *path* on *fs*, filtering entries via ``.dockerignore``-style rules</span>
+<span class="sd">    read from *ignore_name*.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ignore_patterns</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">ignore_path</span> <span class="o">=</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">ignore_name</span><span class="p">)</span>

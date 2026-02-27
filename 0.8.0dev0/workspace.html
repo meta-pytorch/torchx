@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="App Best Practices" href="app_best_practices.html" />
-    <link rel="prev" title="torchx.schedulers" href="schedulers.html" />
+    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="prev" title="Slurm" href="schedulers/slurm.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -443,97 +438,274 @@
     <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
-  <section id="module-torchx.workspace">
-<span id="torchx-workspace"></span><h1>torchx.workspace<a class="headerlink" href="#module-torchx.workspace" title="Permalink to this heading">¶</a></h1>
-<p>Status: Beta</p>
-<p>Workspaces are used to apply local changes on top of existing images so you can
-execute your code on a remote cluster. This module contains the interfaces used
-by workspace implementations.</p>
-<p>These workspaces are defined as an <code class="docutils literal notranslate"><span class="pre">fsspec</span></code> path which the directories and
-files under will be used to generate a patch.</p>
-<p>Example workspace paths:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">file://.</span></code> the current working directory</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">memory://foo-bar/</span></code> an in-memory workspace for notebook/programmatic usage</p></li>
+  <section id="torchx-workspace">
+<h1>torchx.workspace<a class="headerlink" href="#torchx-workspace" title="Permalink to this heading">¶</a></h1>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Workspaces handle automatic image patching – copying local code changes into
+the job’s runtime environment so users don’t need manual image rebuilds.
+Scheduler authors add workspace support by mixing in a <code class="docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code>
+subclass alongside their <code class="docutils literal notranslate"><span class="pre">Scheduler</span></code>.</p>
+</div>
+<p><strong>Why workspaces exist.</strong> Without workspaces, every code change requires
+rebuilding and pushing a Docker image before submitting a remote job.
+Workspaces automate this: TorchX overlays local changes onto the base
+<a class="reference internal" href="basics.html#term-Image"><span class="xref std std-term">image</span></a> and submits the patched image in one step.</p>
+<section id="how-it-works">
+<h2>How It Works<a class="headerlink" href="#how-it-works" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>User&#39;s workspace directory            Scheduler submission
+┌──────────────────────┐
+│  src/                │
+│  train.py            │     build_workspaces()
+│  Dockerfile.torchx   │ ──────────────────────────┐
+│  .torchxignore       │                           │
+└──────────────────────┘                           ▼
+                               ┌──────────────────────────────────┐
+                               │  For each Role with a workspace: │
+                               │                                  │
+                               │  1. Walk workspace               │
+                               │     (respecting .torchxignore)   │
+                               │                                  │
+                               │  2. Build patched artifact       │
+                               │     ┌────────────────────────┐   │
+                               │     │ DockerWorkspaceMixin:  │   │
+                               │     │   docker build + push  │   │
+                               │     │ DirWorkspaceMixin:     │   │
+                               │     │   copy to shared dir   │   │
+                               │     └────────────────────────┘   │
+                               │                                  │
+                               │  3. Mutate role.image in-place   │
+                               │     to reference patched image   │
+                               └──────────────┬───────────────────┘
+                                              │
+                                              ▼
+                               ┌──────────────────────────────────┐
+                               │  Scheduler._submit_dryrun(app)   │
+                               │  uses the patched role.image     │
+                               └──────────────────────────────────┘
+</pre></div>
+</div>
+<p>When <code class="docutils literal notranslate"><span class="pre">workspace=</span></code> is passed to <a class="reference internal" href="runner.html#torchx.runner.Runner.run" title="torchx.runner.Runner.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a> (or
+<code class="docutils literal notranslate"><span class="pre">--workspace</span></code> on the CLI), TorchX patches the image before submission:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspaces" title="torchx.workspace.WorkspaceMixin.build_workspaces"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspaces()</span></code></a> iterates over
+each role’s <code class="xref py py-attr docutils literal notranslate"><span class="pre">workspace</span></code>.</p></li>
+<li><p>For each role with a workspace, it calls
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">caching_build_workspace_and_update_role()</span></code></a>,
+which builds the workspace and mutates <code class="docutils literal notranslate"><span class="pre">role.image</span></code> in-place to
+reference the patched artifact.</p></li>
+<li><p>For remote schedulers,
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.dryrun_push_images" title="torchx.workspace.WorkspaceMixin.dryrun_push_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun_push_images()</span></code></a> and
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.push_images" title="torchx.workspace.WorkspaceMixin.push_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">push_images()</span></code></a> handle pushing
+the built image to a remote registry.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code> uses <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code> from the workspace root
+(if present) instead of the default Dockerfile.</p>
+</div>
+<section id="built-in-mixins">
+<h3>Built-in Mixins<a class="headerlink" href="#built-in-mixins" title="Permalink to this heading">¶</a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Mixin</p></th>
+<th class="head"><p>Strategy</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a></p></td>
+<td><p>Builds a Docker image from a <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code> in the workspace,
+tags it with a content hash, and pushes to the configured
+<code class="docutils literal notranslate"><span class="pre">image_repo</span></code>. Used by <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code>, <code class="docutils literal notranslate"><span class="pre">local_docker</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a></p></td>
+<td><p>Copies workspace files into a shared job directory on the filesystem.
+Used by <code class="docutils literal notranslate"><span class="pre">slurm</span></code>, <code class="docutils literal notranslate"><span class="pre">lsf</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="implementing-a-custom-workspacemixin">
+<h3>Implementing a Custom WorkspaceMixin<a class="headerlink" href="#implementing-a-custom-workspacemixin" title="Permalink to this heading">¶</a></h3>
+<p>Subclass <a class="reference internal" href="#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a> and implement
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">caching_build_workspace_and_update_role()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">runopts</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkspaceMixin</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyWorkspaceMixin</span><span class="p">(</span><span class="n">WorkspaceMixin</span><span class="p">[</span><span class="kc">None</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Patches images by uploading workspace to a custom artifact store.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;artifact_bucket&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;S3 bucket for workspace artifacts&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">opts</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">caching_build_workspace_and_update_role</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
+        <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">workspace</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">workspace</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">bucket</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;artifact_bucket&quot;</span><span class="p">)</span>
+        <span class="c1"># ... upload workspace files to bucket ...</span>
+        <span class="c1"># ... update role.image or role.env to reference the artifact ...</span>
+        <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;WORKSPACE_ARTIFACT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">bucket</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/workspace.tar.gz&quot;</span>
+</pre></div>
+</div>
+<p>Then mix it into your scheduler:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scheduler</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyScheduler</span><span class="p">(</span><span class="n">MyWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;my_backend&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
+    <span class="c1"># ... scheduler methods ...</span>
+</pre></div>
+</div>
+<p>The generic parameter <code class="docutils literal notranslate"><span class="pre">T</span></code> is the type returned by <code class="docutils literal notranslate"><span class="pre">dryrun_push_images</span></code> and
+consumed by <code class="docutils literal notranslate"><span class="pre">push_images</span></code>. Use <code class="docutils literal notranslate"><span class="pre">None</span></code> if no separate push step is needed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <em>build_cache</em> dict is shared across all roles in a single
+<code class="docutils literal notranslate"><span class="pre">build_workspaces</span></code> call. Use it to skip redundant builds when roles share
+the same image and workspace.</p>
+</div>
+</section>
+<section id="testing-your-workspace-mixin">
+<h3>Testing Your Workspace Mixin<a class="headerlink" href="#testing-your-workspace-mixin" title="Permalink to this heading">¶</a></h3>
+<p>Create a <code class="docutils literal notranslate"><span class="pre">Role</span></code> with a workspace and assert the role was mutated correctly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span><span class="p">,</span> <span class="n">Resource</span><span class="p">,</span> <span class="n">Workspace</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyWorkspaceMixinTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_build_updates_role</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mixin</span> <span class="o">=</span> <span class="n">MyWorkspaceMixin</span><span class="p">()</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;base:latest&quot;</span><span class="p">,</span> <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
+            <span class="n">resource</span><span class="o">=</span><span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">512</span><span class="p">),</span>
+            <span class="n">workspace</span><span class="o">=</span><span class="n">Workspace</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="s2">&quot;/tmp/my_workspace&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">mixin</span><span class="o">.</span><span class="n">caching_build_workspace_and_update_role</span><span class="p">(</span>
+            <span class="n">role</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;artifact_bucket&quot;</span><span class="p">:</span> <span class="s2">&quot;my-bucket&quot;</span><span class="p">},</span> <span class="n">build_cache</span><span class="o">=</span><span class="p">{},</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIn</span><span class="p">(</span><span class="s2">&quot;WORKSPACE_ARTIFACT&quot;</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <code class="docutils literal notranslate"><span class="pre">torchx/workspace/test/</span></code> for the built-in mixin tests.</p>
+</section>
+<section id="common-pitfalls">
+<h3>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Implementing the deprecated method</strong>: Override
+<code class="docutils literal notranslate"><span class="pre">caching_build_workspace_and_update_role</span></code> (not the older
+<code class="docutils literal notranslate"><span class="pre">build_workspace_and_update_role</span></code>).</p></li>
+<li><p><strong>MRO</strong>: List the mixin <strong>first</strong> in the base class list:
+<code class="docutils literal notranslate"><span class="pre">class</span> <span class="pre">MyScheduler(MyWorkspaceMixin,</span> <span class="pre">Scheduler[...]):</span></code>. Python’s MRO
+requires cooperative <code class="docutils literal notranslate"><span class="pre">super().__init__()</span></code>.</p></li>
+<li><p><strong>Forgetting to check ``role.workspace``</strong>: Guard with
+<code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">not</span> <span class="pre">role.workspace:</span> <span class="pre">return</span></code> – the method is called for every role.</p></li>
 </ul>
-</div></blockquote>
+</section>
+<section id="torchxignore">
+<h3><code class="docutils literal notranslate"><span class="pre">.torchxignore</span></code><a class="headerlink" href="#torchxignore" title="Permalink to this heading">¶</a></h3>
+<p>Place a <code class="docutils literal notranslate"><span class="pre">.torchxignore</span></code> file (same syntax as <code class="docutils literal notranslate"><span class="pre">.dockerignore</span></code>) at the
+workspace root to exclude files from the job image:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># Exclude version control and IDE files
+.git
+.vscode
+__pycache__
+
+# Exclude data directories
+data/
+*.csv
+
+# But include a specific config file
+!data/config.yaml
+</pre></div>
+</div>
+<p>Lines starting with <code class="docutils literal notranslate"><span class="pre">!</span></code> negate a previous pattern (include the file even if a
+prior rule excluded it). Blank lines and lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code> are ignored.</p>
+</section>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.workspace.</span></span><span class="sig-name descname"><span class="pre">WorkspaceMixin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Note: (Prototype) this interface may change without notice!</p>
-<p>A mix-in that can be attached to a Scheduler that adds the ability to
-builds a workspace. A workspace is the local checkout of the codebase/project
-that builds into an image. The workspace scheduler adds capability to
-automatically rebuild images or generate diff patches that are
-applied to the <code class="docutils literal notranslate"><span class="pre">Role</span></code>, allowing the user to make local code
-changes to the application and having those changes be reflected
-(either through a new image or an overlaid patch) at runtime
-without a manual image rebuild. The exact semantics of what the
-workspace build artifact is, is implementation dependent.</p>
+<dd><p>Scheduler mix-in that auto-builds a local workspace into a deployable image or patch.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Prototype – this interface may change without notice.</p>
+</div>
+<p>Attach to a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a> so that local code
+changes in the workspace are automatically reflected at runtime (via a rebuilt
+image or an overlaid diff patch) without a manual image rebuild.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role">
 <span class="sig-name descname"><span class="pre">build_workspace_and_update_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin.build_workspace_and_update_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="Permalink to this definition">¶</a></dt>
-<dd><div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>DEPRECATED: Workspace subclasses should implement
-<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">caching_build_workspace_and_update_role()</span></code></a> over this method.</p>
+<dd><p>Build <em>workspace</em> and mutate <em>role</em> to reference the resulting artifact.</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version Implement: </span><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">caching_build_workspace_and_update_role()</span></code></a> instead.</p>
 </div>
-<p>Builds the specified <code class="docutils literal notranslate"><span class="pre">workspace</span></code> with respect to <code class="docutils literal notranslate"><span class="pre">img</span></code>
-and updates the <code class="docutils literal notranslate"><span class="pre">role</span></code> to reflect the built workspace artifacts.
-In the simplest case, this method builds a new image and updates
-the role’s image. Certain (more efficient) implementations build
-incremental diff patches that overlay on top of the role’s image.</p>
-<p>Note: this method mutates the passed <code class="docutils literal notranslate"><span class="pre">role</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin.build_workspaces">
 <span class="sig-name descname"><span class="pre">build_workspaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">torchx.specs.api.Role</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin.build_workspaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin.build_workspaces" title="Permalink to this definition">¶</a></dt>
-<dd><p>NOTE: this method MUTATES the passed roles!</p>
-<p>Builds the workspaces (if any) for each role and updates the role to reflect the built workspace.
-Typically <code class="docutils literal notranslate"><span class="pre">role.image</span></code> is updated with the newly built image that reflects the local workspace.
-Some workspace implementations may add extra environment variables to make it easier for other
-parts of the program to access the workspace. For example a <code class="docutils literal notranslate"><span class="pre">WORKSPACE_DIR</span></code> env var may be added
-to <code class="docutils literal notranslate"><span class="pre">role.env</span></code> that scripts can use to refert to the workspace directory in the container.</p>
+<dd><p>Builds workspaces for each role and updates <code class="docutils literal notranslate"><span class="pre">role.image</span></code> in-place.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Mutates the passed <em>roles</em>. May also add env vars (e.g. <code class="docutils literal notranslate"><span class="pre">WORKSPACE_DIR</span></code>)
+to <code class="docutils literal notranslate"><span class="pre">role.env</span></code>.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role">
 <span class="sig-name descname"><span class="pre">caching_build_workspace_and_update_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">build_cache</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin.caching_build_workspace_and_update_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_role()</span></code></a> but takes
-a <code class="docutils literal notranslate"><span class="pre">build_cache</span></code> that can be used to cache pointers to build artifacts
-between building workspace for each role.</p>
-<p>This is useful when an appdef has multiple roles where the image and workspace
-of the roles are the same but other attributes such as entrypoint or args are different.</p>
-<p>NOTE: <code class="docutils literal notranslate"><span class="pre">build_cache</span></code>’s lifetime is within <code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_roles()</span></code>
-NOTE: the workspace implementation decides what to cache</p>
-<p>Workspace subclasses should prefer implementing this method over
-<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_role()</span></code></a>.</p>
-<p>The default implementation of this method simply calls the (deprecated) non-caching
-<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_role()</span></code></a> and deals with multi-dir workspaces by
-merging them into a single tmpdir before passing it down.</p>
+<dd><p>Like <a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_role()</span></code></a> but with a per-call <em>build_cache</em>.</p>
+<p>Subclasses should implement this method instead of
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_role()</span></code></a>. The cache avoids redundant
+builds when multiple roles share the same image and workspace.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p><em>build_cache</em> lifetime is scoped to a single
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspaces" title="torchx.workspace.WorkspaceMixin.build_workspaces"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspaces()</span></code></a> call. What gets cached is up to the
+implementation.</p>
+</div>
+<p>The default implementation delegates to the (deprecated)
+<a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role" title="torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="xref py py-meth docutils literal notranslate"><span class="pre">build_workspace_and_update_role()</span></code></a>, merging multi-dir
+workspaces into a single tmpdir first.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin.dryrun_push_images">
 <span class="sig-name descname"><span class="pre">dryrun_push_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin.dryrun_push_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin.dryrun_push_images" title="Permalink to this definition">¶</a></dt>
-<dd><p>dryrun_push does a dryrun of the image push and updates the app to have
-the final values. Only called for remote jobs.</p>
-<p><code class="docutils literal notranslate"><span class="pre">push</span></code> must be called before scheduling the job.</p>
+<dd><p>Dry-run the image push: updates <em>app</em> with final image names.</p>
+<p>Only called for remote jobs. <a class="reference internal" href="#torchx.workspace.WorkspaceMixin.push_images" title="torchx.workspace.WorkspaceMixin.push_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">push_images()</span></code></a> must be called
+with the return value before scheduling.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin.push_images">
 <span class="sig-name descname"><span class="pre">push_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images_to_push</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin.push_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin.push_images" title="Permalink to this definition">¶</a></dt>
-<dd><p>push pushes any images to the remote repo if required.</p>
+<dd><p>Pushes images (returned by <a class="reference internal" href="#torchx.workspace.WorkspaceMixin.dryrun_push_images" title="torchx.workspace.WorkspaceMixin.dryrun_push_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun_push_images()</span></code></a>) to the remote repo.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.WorkspaceMixin.workspace_opts">
 <span class="sig-name descname"><span class="pre">workspace_opts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><span class="pre">runopts</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#WorkspaceMixin.workspace_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.WorkspaceMixin.workspace_opts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the run configuration options expected by the workspace.
-Basically a <code class="docutils literal notranslate"><span class="pre">--help</span></code> for the <code class="docutils literal notranslate"><span class="pre">run</span></code> API.</p>
+<dd><p>Returns the <a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><code class="xref py py-class docutils literal notranslate"><span class="pre">runopts</span></code></a> accepted by this workspace.</p>
 </dd></dl>
 
 </dd></dl>
@@ -541,85 +713,53 @@ Basically a <code class="docutils literal notranslate"><span class="pre">--help<
 <dl class="py function">
 <dt class="sig sig-object py" id="torchx.workspace.walk_workspace">
 <span class="sig-prename descclassname"><span class="pre">torchx.workspace.</span></span><span class="sig-name descname"><span class="pre">walk_workspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AbstractFileSystem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.torchxignore'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/workspace/api.html#walk_workspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.walk_workspace" title="Permalink to this definition">¶</a></dt>
-<dd><p>walk_workspace walks the filesystem path and applies the ignore rules
-specified via <code class="docutils literal notranslate"><span class="pre">ignore_name</span></code>.
-This follows the rules for <code class="docutils literal notranslate"><span class="pre">.dockerignore</span></code>.</p>
+<dd><p>Walks <em>path</em> on <em>fs</em>, filtering entries via <code class="docutils literal notranslate"><span class="pre">.dockerignore</span></code>-style rules
+read from <em>ignore_name</em>.</p>
 </dd></dl>
 
-<section id="module-torchx.workspace.docker_workspace">
-<span id="torchx-workspace-docker-workspace"></span><h2>torchx.workspace.docker_workspace<a class="headerlink" href="#module-torchx.workspace.docker_workspace" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="torchx-workspace-docker-workspace">
+<h2>torchx.workspace.docker_workspace<a class="headerlink" href="#torchx-workspace-docker-workspace" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="torchx.workspace.docker_workspace.DockerWorkspaceMixin">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.workspace.docker_workspace.</span></span><span class="sig-name descname"><span class="pre">DockerWorkspaceMixin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DockerClient</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="Permalink to this definition">¶</a></dt>
-<dd><p>DockerWorkspaceMixin will build patched docker images from the workspace. These
-patched images are docker images and can be either used locally via the
-docker daemon or pushed using the helper methods to a remote repository for
-remote jobs.</p>
-<p>This requires a running docker daemon locally and for remote pushing
-requires being authenticated to those repositories via <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">login</span></code>.</p>
-<p>If there is a <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code> file present in the workspace that will
-be used instead to build the container.</p>
-<p>The docker build is provided with some extra build arguments that can be
-used in the Dockerfile.torchx:</p>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.workspace.docker_workspace.</span></span><span class="sig-name descname"><span class="pre">DockerWorkspaceMixin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">docker_client</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DockerClient</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#torchx.workspace.WorkspaceMixin" title="torchx.workspace.api.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]]</p>
+<p>Builds patched Docker images from the workspace.</p>
+<p>Requires a local Docker daemon. For remote jobs, authenticate via
+<code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">login</span></code> and set the <code class="docutils literal notranslate"><span class="pre">image_repo</span></code> runopt.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code> exists in the workspace it is used as the
+Dockerfile; otherwise a default <code class="docutils literal notranslate"><span class="pre">COPY</span> <span class="pre">.</span> <span class="pre">.</span></code> Dockerfile is generated.
+Extra <code class="docutils literal notranslate"><span class="pre">--build-arg</span></code> values available in <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code>:</p>
 <ul class="simple">
-<li><p>IMAGE: the image string from the first Role in the AppDef</p></li>
-<li><p>WORKSPACE: the full workspace path</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IMAGE</span></code> – the role’s base image</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WORKSPACE</span></code> – the workspace path</p></li>
 </ul>
-<p>To exclude files from the build context you can use the standard
-<cite>.dockerignore</cite> file.</p>
-<p>See more:</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://docs.docker.com/engine/reference/commandline/login/">https://docs.docker.com/engine/reference/commandline/login/</a></p></li>
-<li><p><a class="reference external" href="https://docs.docker.com/get-docker/">https://docs.docker.com/get-docker/</a></p></li>
-</ul>
+<p>Use <code class="docutils literal notranslate"><span class="pre">.dockerignore</span></code> to exclude files from the build context.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.workspace.docker_workspace.DockerWorkspaceMixin.build_workspace_and_update_role">
-<span class="sig-name descname"><span class="pre">build_workspace_and_update_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.build_workspace_and_update_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.docker_workspace.DockerWorkspaceMixin.build_workspace_and_update_role" title="Permalink to this definition">¶</a></dt>
-<dd><p>Builds a new docker image using the <code class="docutils literal notranslate"><span class="pre">role</span></code>’s image as the base image
-and updates the <code class="docutils literal notranslate"><span class="pre">role</span></code>’s image with this newly built docker image id</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>role</strong> – the role whose image (a Docker image) is to be used as the base image</p></li>
-<li><p><strong>workspace</strong> – a fsspec path to a directory with contents to be overlaid</p></li>
-</ul>
-</dd>
-</dl>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">build_workspace_and_update_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.build_workspace_and_update_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Builds a Docker image from <em>workspace</em> on top of <code class="docutils literal notranslate"><span class="pre">role.image</span></code> and
+updates <code class="docutils literal notranslate"><span class="pre">role.image</span></code> with the resulting image id.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images">
-<span class="sig-name descname"><span class="pre">dryrun_push_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.dryrun_push_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images" title="Permalink to this definition">¶</a></dt>
-<dd><p>_update_app_images replaces the local Docker images (identified via
-<code class="docutils literal notranslate"><span class="pre">sha256:...</span></code>) in the provided <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> with the remote path that they will be uploaded to and
-returns a mapping of local to remote names.</p>
-<p><code class="docutils literal notranslate"><span class="pre">push</span></code> must be called with the returned mapping before
-launching the job.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dict of [local image name, (remote repo, tag)].</p>
-</dd>
-</dl>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">dryrun_push_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.dryrun_push_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Replaces local <code class="docutils literal notranslate"><span class="pre">sha256:...</span></code> images in <em>app</em> with remote paths and
+returns a <code class="docutils literal notranslate"><span class="pre">{local_image:</span> <span class="pre">(repo,</span> <span class="pre">tag)}</span></code> mapping for <a class="reference internal" href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">push_images()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">
-<span class="sig-name descname"><span class="pre">push_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images_to_push</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.push_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images" title="Permalink to this definition">¶</a></dt>
-<dd><p>_push_images pushes the specified images to the remote container
-repository with the specified tag. The docker daemon must be
-authenticated to the remote repository using <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">login</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>images_to_push</strong> – A dict of [local image name, (remote repo, tag)].</p>
-</dd>
-</dl>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">push_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images_to_push</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.push_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Pushes local images to a remote repository.</p>
+<p>Requires <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">login</span></code> authentication to the target repo.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts">
-<span class="sig-name descname"><span class="pre">workspace_opts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><span class="pre">runopts</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.workspace_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the run configuration options expected by the workspace.
-Basically a <code class="docutils literal notranslate"><span class="pre">--help</span></code> for the <code class="docutils literal notranslate"><span class="pre">run</span></code> API.</p>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">workspace_opts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><span class="pre">runopts</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/docker_workspace.html#DockerWorkspaceMixin.workspace_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Returns the <a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><code class="xref py py-class docutils literal notranslate"><span class="pre">runopts</span></code></a> accepted by this workspace.</p>
 </dd></dl>
 
 </dd></dl>
@@ -630,16 +770,26 @@ Basically a <code class="docutils literal notranslate"><span class="pre">--help<
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.workspace.dir_workspace.DirWorkspaceMixin">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.workspace.dir_workspace.</span></span><span class="sig-name descname"><span class="pre">DirWorkspaceMixin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/workspace/dir_workspace.html#DirWorkspaceMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="py method">
+<dd><p>Bases: <a class="reference internal" href="#torchx.workspace.WorkspaceMixin" title="torchx.workspace.api.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]</p>
+<dl class="py method">
 <dt class="sig sig-object py" id="torchx.workspace.dir_workspace.DirWorkspaceMixin.build_workspace_and_update_role">
 <span class="sig-name descname"><span class="pre">build_workspace_and_update_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">Role</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/workspace/dir_workspace.html#DirWorkspaceMixin.build_workspace_and_update_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.workspace.dir_workspace.DirWorkspaceMixin.build_workspace_and_update_role" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a new directory specified by <code class="docutils literal notranslate"><span class="pre">job_dir</span></code> from the workspace. Role
-image fields will be set to the <code class="docutils literal notranslate"><span class="pre">job_dir</span></code>.</p>
-<p>Any files listed in the <code class="docutils literal notranslate"><span class="pre">.torchxignore</span></code> folder will be skipped.</p>
+<dd><p>Copies <em>workspace</em> into <code class="docutils literal notranslate"><span class="pre">cfg[&quot;job_dir&quot;]</span></code> and sets <code class="docutils literal notranslate"><span class="pre">role.image</span></code> to it.</p>
+<p>No-op if <code class="docutils literal notranslate"><span class="pre">job_dir</span></code> is not set. Files matching <code class="docutils literal notranslate"><span class="pre">.torchxignore</span></code>
+patterns are skipped.</p>
 </dd></dl>
 
 </dd></dl>
 
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="schedulers.html"><span class="doc">torchx.schedulers</span></a></dt><dd><p>Scheduler API reference and implementation guide (including workspace integration).</p>
+</dd>
+<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Registering custom schedulers and workspace mixins via entry points.</p>
+</dd>
+</dl>
+</div>
 </section>
 </section>
 
@@ -651,10 +801,10 @@ image fields will be set to the <code class="docutils literal notranslate"><span
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="app_best_practices.html" class="btn btn-neutral float-right" title="App Best Practices" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="schedulers.html" class="btn btn-neutral" title="torchx.schedulers" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="schedulers/slurm.html" class="btn btn-neutral" title="Slurm" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -687,7 +837,16 @@ image fields will be set to the <code class="docutils literal notranslate"><span
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">torchx.workspace</a><ul>
-<li><a class="reference internal" href="#module-torchx.workspace.docker_workspace">torchx.workspace.docker_workspace</a></li>
+<li><a class="reference internal" href="#how-it-works">How It Works</a><ul>
+<li><a class="reference internal" href="#built-in-mixins">Built-in Mixins</a></li>
+<li><a class="reference internal" href="#implementing-a-custom-workspacemixin">Implementing a Custom WorkspaceMixin</a></li>
+<li><a class="reference internal" href="#testing-your-workspace-mixin">Testing Your Workspace Mixin</a></li>
+<li><a class="reference internal" href="#common-pitfalls">Common Pitfalls</a></li>
+<li><a class="reference internal" href="#torchxignore"><code class="docutils literal notranslate"><span class="pre">.torchxignore</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li><a class="reference internal" href="#torchx-workspace-docker-workspace">torchx.workspace.docker_workspace</a></li>
 <li><a class="reference internal" href="#module-torchx.workspace.dir_workspace">torchx.workspace.dir_workspace</a></li>
 </ul>
 </li>

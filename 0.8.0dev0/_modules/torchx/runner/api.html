@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -520,11 +515,17 @@
 
 
 <div class="viewcode-block" id="Runner"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Runner</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    TorchX individual component runner. Has the methods for the user to</span>
-<span class="sd">    act upon ``AppDefs``. The ``Runner`` will cache information about the</span>
-<span class="sd">    launched apps if they were launched locally otherwise it&#39;s up to the</span>
-<span class="sd">    specific scheduler implementation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Submits, monitors, and manages :py:class:`~torchx.specs.AppDef` jobs.</span>
+
+<span class="sd">    Use :py:func:`get_runner` to create an instance with all registered schedulers.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.runner import get_runner</span>
+<span class="sd">        &gt;&gt;&gt; runner = get_runner()</span>
+<span class="sd">        &gt;&gt;&gt; runner.scheduler_backends()  # doctest: +SKIP</span>
+<span class="sd">        [&#39;local_cwd&#39;, &#39;local_docker&#39;, &#39;slurm&#39;, &#39;kubernetes&#39;, ...]</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -534,14 +535,6 @@
         <span class="n">component_defaults</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">scheduler_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a new runner instance.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            name: the human readable name for this session. Jobs launched will</span>
-<span class="sd">                inherit this name.</span>
-<span class="sd">            schedulers: a list of schedulers the runner can use.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_factories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SchedulerFactory</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">scheduler_factories</span> <span class="ow">or</span> <span class="p">{}</span>
@@ -583,14 +576,7 @@
         <span class="k">return</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="Runner.close"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.close">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Closes this runner and frees/cleans up any allocated resources.</span>
-<span class="sd">        Transitively calls the ``close()`` method on all the schedulers.</span>
-<span class="sd">        Once this method is called on the runner, the runner object is deemed</span>
-<span class="sd">        invalid and any methods called on the runner object as well as</span>
-<span class="sd">        the schedulers associated with this runner have undefined behavior.</span>
-<span class="sd">        It is ok to call this method multiple times on the same runner object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Closes the runner and all scheduler instances. Safe to call multiple times.&quot;&quot;&quot;</span>
 
         <span class="k">for</span> <span class="n">scheduler</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_instances</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">scheduler</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
@@ -604,36 +590,13 @@
         <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs a component.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolves and runs a named component.</span>
 
-<span class="sd">        ``component`` has the following resolution order(high to low):</span>
-<span class="sd">            * User-registered components. Users can register components via</span>
-<span class="sd">                https://packaging.python.org/specifications/entry-points/. Method looks for</span>
-<span class="sd">                entrypoints in the group ``torchx.components``.</span>
-<span class="sd">            * Builtin components relative to `torchx.components`. The path to the component should</span>
-<span class="sd">                be module name relative to `torchx.components` and function name in a format:</span>
-<span class="sd">                ``$module.$function``.</span>
-<span class="sd">            * File-based components in format: ``$FILE_PATH:FUNCTION_NAME``. Both relative and</span>
-<span class="sd">                absolute paths supported.</span>
+<span class="sd">        ``component`` resolution order (high → low):</span>
 
-<span class="sd">        Usage:</span>
-
-<span class="sd">        .. code-block:: python</span>
-
-<span class="sd">         # resolved to torchx.components.distributed.ddp()</span>
-<span class="sd">         runner.run_component(&quot;distributed.ddp&quot;, ...)</span>
-
-<span class="sd">         # resolved to my_component() function in ~/home/components.py</span>
-<span class="sd">         runner.run_component(&quot;~/home/components.py:my_component&quot;, ...)</span>
-
-
-<span class="sd">        Returns:</span>
-<span class="sd">            An application handle that is used to call other action APIs on the app</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ComponentValidationException: if component is invalid.</span>
-<span class="sd">            ComponentNotFoundException: if the ``component_path`` is failed to resolve.</span>
+<span class="sd">        1. User-registered ``torchx.components`` entry points</span>
+<span class="sd">        2. Builtins relative to ``torchx.components`` (e.g. ``&quot;dist.ddp&quot;``)</span>
+<span class="sd">        3. File-based ``path/to/file.py:function_name``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;run_component&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
@@ -664,10 +627,7 @@
         <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Dryrun version of :py:func:`run_component`. Will not actually run the</span>
-<span class="sd">        component, but just returns what &quot;would&quot; have run.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Like :py:meth:`run_component` but returns the request without submitting.&quot;&quot;&quot;</span>
         <span class="n">component_def</span> <span class="o">=</span> <span class="n">get_component</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
         <span class="n">args_from_cli</span> <span class="o">=</span> <span class="n">component_args</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_args</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
         <span class="n">args_from_json</span> <span class="o">=</span> <span class="n">component_args</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">component_args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
@@ -693,15 +653,7 @@
         <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs the given application in the specified mode.</span>
-
-<span class="sd">        .. note:: sub-classes of ``Runner`` should implement ``schedule`` method</span>
-<span class="sd">                  rather than overriding this method directly.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            An application handle that is used to call other action APIs on the app.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits an :py:class:`~torchx.specs.AppDef` and returns its :py:data:`~torchx.specs.AppHandle`.&quot;&quot;&quot;</span>
 
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="n">api</span><span class="o">=</span><span class="s2">&quot;run&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
             <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun</span><span class="p">(</span>
@@ -724,34 +676,16 @@
             <span class="k">return</span> <span class="n">handle</span></div>
 
 <div class="viewcode-block" id="Runner.schedule"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.schedule">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Actually runs the application from the given dryrun info.</span>
-<span class="sd">        Useful when one needs to overwrite a parameter in the scheduler</span>
-<span class="sd">        request that is not configurable from one of the object APIs.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits a previously dry-run request, allowing request mutation.</span>
 
-<span class="sd">        .. warning:: Use sparingly since abusing this method to overwrite</span>
-<span class="sd">                     many parameters in the raw scheduler request may</span>
-<span class="sd">                     lead to your usage of TorchX going out of compliance</span>
-<span class="sd">                     in the long term. This method is intended to</span>
-<span class="sd">                     unblock the user from experimenting with certain</span>
-<span class="sd">                     scheduler-specific features in the short term without</span>
-<span class="sd">                     having to wait until TorchX exposes scheduler features</span>
-<span class="sd">                     in its APIs.</span>
+<span class="sd">        .. code-block:: python</span>
 
-<span class="sd">        .. note:: It is recommended that sub-classes of ``Session`` implement</span>
-<span class="sd">                  this method instead of directly implementing the ``run`` method.</span>
+<span class="sd">            dryrun_info = runner.dryrun(app, scheduler=&quot;kubernetes&quot;, cfg)</span>
+<span class="sd">            dryrun_info.request.foo = &quot;bar&quot;  # mutate the raw request</span>
+<span class="sd">            app_handle = runner.schedule(dryrun_info)</span>
 
-<span class="sd">        Usage:</span>
-
-<span class="sd">        ::</span>
-
-<span class="sd">         dryrun_info = session.dryrun(app, scheduler=&quot;default&quot;, cfg)</span>
-
-<span class="sd">         # overwrite parameter &quot;foo&quot; to &quot;bar&quot;</span>
-<span class="sd">         dryrun_info.request.foo = &quot;bar&quot;</span>
-
-<span class="sd">         app_handle = session.submit(dryrun_info)</span>
-
+<span class="sd">        .. warning:: Use sparingly. Overwriting many raw scheduler fields may</span>
+<span class="sd">                     cause your usage to diverge from TorchX&#39;s supported API.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">scheduler</span> <span class="o">=</span> <span class="n">none_throws</span><span class="p">(</span><span class="n">dryrun_info</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">)</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">_cfg</span>
@@ -783,19 +717,10 @@
         <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Dry runs an app on the given scheduler with the provided run configs.</span>
-<span class="sd">        Does not actually submit the app but rather returns what would have been</span>
-<span class="sd">        submitted. The returned ``AppDryRunInfo`` is pretty formatted and can</span>
-<span class="sd">        be printed or logged directly.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns what *would* be submitted without actually submitting.</span>
 
-<span class="sd">        Usage:</span>
-
-<span class="sd">        ::</span>
-
-<span class="sd">         dryrun_info = session.dryrun(app, scheduler=&quot;local&quot;, cfg)</span>
-<span class="sd">         print(dryrun_info)</span>
-
+<span class="sd">        The returned :py:class:`~torchx.specs.AppDryRunInfo` can be</span>
+<span class="sd">        ``print()``-ed for inspection or passed to :py:meth:`schedule`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># input validation</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
@@ -891,19 +816,7 @@
             <span class="k">return</span> <span class="n">dryrun_info</span></div>
 
 <div class="viewcode-block" id="Runner.scheduler_run_opts"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_run_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the ``runopts`` for the supported scheduler backends.</span>
-
-<span class="sd">        Usage:</span>
-
-<span class="sd">        ::</span>
-
-<span class="sd">         local_runopts = session.scheduler_run_opts(&quot;local_cwd&quot;)</span>
-<span class="sd">         print(&quot;local scheduler run options: {local_runopts}&quot;)</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            The ``runopts`` for the specified scheduler type.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the :py:class:`~torchx.specs.runopts` for the given scheduler.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Runner.cfg_from_str"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.cfg_from_str">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">cfg_literal</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
@@ -928,17 +841,11 @@
         <span class="k">return</span> <span class="n">cfg</span></div>
 
 <div class="viewcode-block" id="Runner.scheduler_backends"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_backends">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_backends</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of all supported scheduler backends.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all registered scheduler backend names.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_factories</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
 
 <div class="viewcode-block" id="Runner.status"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.status">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppStatus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            The status of the application, or ``None`` if the app does not exist anymore</span>
-<span class="sd">            (e.g. was stopped in the past and removed from the scheduler&#39;s backend).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns app status, or ``None`` if the app no longer exists.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span>
             <span class="n">app_handle</span><span class="p">,</span> <span class="n">check_session</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
@@ -965,24 +872,10 @@
 <div class="viewcode-block" id="Runner.wait"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.wait">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">wait</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">,</span> <span class="n">wait_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppStatus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Block waits (indefinitely) for the application to complete.</span>
-<span class="sd">        Possible implementation:</span>
-
-<span class="sd">        ::</span>
-
-<span class="sd">         while(True):</span>
-<span class="sd">             app_status = status(app)</span>
-<span class="sd">             if app_status.is_terminal():</span>
-<span class="sd">                 return</span>
-<span class="sd">             sleep(10)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Blocks until the app reaches a terminal state.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            app_handle: the app handle to wait for completion</span>
-<span class="sd">            wait_interval: the minimum interval to wait before polling for status</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            The terminal status of the application, or ``None`` if the app does not exist anymore</span>
+<span class="sd">            wait_interval: seconds between status polls</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span>
             <span class="n">app_handle</span><span class="p">,</span> <span class="n">check_session</span><span class="o">=</span><span class="kc">False</span>
@@ -999,18 +892,7 @@
                     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait_interval</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Runner.cancel"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.cancel">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stops the application, effectively directing the scheduler to cancel</span>
-<span class="sd">        the job. Does nothing if the app does not exist.</span>
-
-<span class="sd">        .. note:: This method returns as soon as the cancel request has been</span>
-<span class="sd">                  submitted to the scheduler. The application will be in a</span>
-<span class="sd">                  ``RUNNING`` state until the scheduler actually terminates</span>
-<span class="sd">                  the job. If the scheduler successfully interrupts the job</span>
-<span class="sd">                  and terminates it the final state will be ``CANCELLED``</span>
-<span class="sd">                  otherwise it will be ``FAILED``.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Requests cancellation. The app transitions to ``CANCELLED`` asynchronously.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;cancel&quot;</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span><span class="p">):</span>
             <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
@@ -1018,9 +900,7 @@
                 <span class="n">scheduler</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Runner.delete"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.delete">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes the application from the scheduler.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes the app from the scheduler.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;delete&quot;</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span><span class="p">):</span>
             <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
@@ -1028,13 +908,7 @@
                 <span class="n">scheduler</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Runner.stop"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.stop">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        See method ``cancel``.</span>
-
-<span class="sd">        .. warning:: This method will be deprecated in the future. It has been</span>
-<span class="sd">                    replaced with ``cancel`` which provides the same functionality.</span>
-<span class="sd">                    The change is to be consistent with the CLI and scheduler API.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;.. deprecated:: Use :py:meth:`cancel` instead.&quot;&quot;&quot;</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s2">&quot;This method will be deprecated in the future, please use `cancel` instead.&quot;</span><span class="p">,</span>
             <span class="ne">PendingDeprecationWarning</span><span class="p">,</span>
@@ -1042,15 +916,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Runner.describe"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reconstructs the application (to the best extent) given the app handle.</span>
-<span class="sd">        Note that the reconstructed application may not be the complete app as</span>
-<span class="sd">        it was submitted via the run API. How much of the app can be reconstructed</span>
-<span class="sd">        is scheduler dependent.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reconstructs the :py:class:`~torchx.specs.AppDef` from the scheduler.</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            AppDef or None if the app does not exist anymore or if the</span>
-<span class="sd">            scheduler does not support describing the app handle</span>
+<span class="sd">        Completeness is scheduler-dependent. Returns ``None`` if the app no longer exists.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span>
             <span class="n">app_handle</span><span class="p">,</span> <span class="n">check_session</span><span class="o">=</span><span class="kc">False</span>
@@ -1076,69 +944,22 @@
         <span class="n">should_tail</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">streams</span><span class="p">:</span> <span class="n">Stream</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns an iterator over the log lines of the specified job container.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns an iterator over log lines for the k-th replica of a role.</span>
 
-<span class="sd">        .. note:: #. ``k`` is the node (host) id NOT the ``rank``.</span>
-<span class="sd">                  #. ``since`` and ``until`` need not always be honored (depends on scheduler).</span>
+<span class="sd">        .. important:: ``k`` is the **node** (host) id, NOT the worker rank.</span>
 
-<span class="sd">        .. warning:: The semantics and guarantees of the returned iterator is highly</span>
-<span class="sd">                     scheduler dependent. See ``torchx.specs.api.Scheduler.log_iter``</span>
-<span class="sd">                     for the high-level semantics of this log iterator. For this reason</span>
-<span class="sd">                     it is HIGHLY DISCOURAGED to use this method for generating output</span>
-<span class="sd">                     to pass to downstream functions/dependencies. This method</span>
-<span class="sd">                     DOES NOT guarantee that 100% of the log lines are returned.</span>
-<span class="sd">                     It is totally valid for this method to return no or partial log lines</span>
-<span class="sd">                     if the scheduler has already totally or partially purged log records</span>
-<span class="sd">                     for the application.</span>
+<span class="sd">        .. warning:: Completeness is scheduler-dependent. Lines may be</span>
+<span class="sd">                     partial or missing if logs have been purged. Do not use</span>
+<span class="sd">                     this for programmatic output parsing.</span>
 
-<span class="sd">        Return lines will include whitespace characters such as ``\\n`` or</span>
-<span class="sd">        ``\\r``. When outputting the lines you should make sure to avoid adding</span>
-<span class="sd">        extra newline characters.</span>
-
-<span class="sd">        Usage:</span>
-
-<span class="sd">        .. code:: python</span>
-
-<span class="sd">            app_handle = session.run(app, scheduler=&quot;local&quot;, cfg=Dict[str, ConfigValue]())</span>
-
-<span class="sd">            print(&quot;== trainer node 0 logs ==&quot;)</span>
-<span class="sd">            for line in session.log_lines(app_handle, &quot;trainer&quot;, k=0):</span>
-<span class="sd">               # for prints newlines will already be present in the line</span>
-<span class="sd">               print(line, end=&quot;&quot;)</span>
-
-<span class="sd">               # when writing to a file nothing extra is necessary</span>
-<span class="sd">               f.write(line)</span>
-
-<span class="sd">        Discouraged anti-pattern:</span>
-
-<span class="sd">        .. code:: python</span>
-
-<span class="sd">            # DO NOT DO THIS!</span>
-<span class="sd">            # parses accuracy metric from log and reports it for this experiment run</span>
-<span class="sd">            accuracy = -1</span>
-<span class="sd">            for line in session.log_lines(app_handle, &quot;trainer&quot;, k=0):</span>
-<span class="sd">               if matches_regex(line, &quot;final model_accuracy:[0-9]*&quot;):</span>
-<span class="sd">                   accuracy = parse_accuracy(line)</span>
-<span class="sd">                   break</span>
-<span class="sd">            report(experiment_name, accuracy)</span>
+<span class="sd">        Lines include trailing whitespace (``\\n``). Use ``print(line, end=&quot;&quot;)``</span>
+<span class="sd">        to avoid double newlines.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            app_handle: application handle</span>
-<span class="sd">            role_name: role within the app (e.g. trainer)</span>
-<span class="sd">            k: k-th replica of the role to fetch the logs for</span>
-<span class="sd">            regex: optional regex filter, returns all lines if left empty</span>
-<span class="sd">            since: datetime based start cursor. If left empty begins from the</span>
-<span class="sd">                    first log line (start of job).</span>
-<span class="sd">            until: datetime based end cursor. If left empty, follows the log output</span>
-<span class="sd">                    until the job completes and all log lines have been consumed.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">             An iterator over the role k-th replica of the specified application.</span>
-
-<span class="sd">        Raise:</span>
-<span class="sd">            UnknownAppException: if the app does not exist in the scheduler</span>
-
+<span class="sd">            k: replica (node) index</span>
+<span class="sd">            regex: optional filter pattern</span>
+<span class="sd">            since: start cursor (scheduler-dependent)</span>
+<span class="sd">            until: end cursor (scheduler-dependent)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span>
             <span class="n">app_handle</span><span class="p">,</span> <span class="n">check_session</span><span class="o">=</span><span class="kc">False</span>
@@ -1163,16 +984,10 @@
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        For apps launched on the scheduler, this API returns a list of ListAppResponse</span>
-<span class="sd">        objects each of which have app id, app handle and its status.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Lists jobs on the scheduler.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            scheduler: name of the scheduler backend.</span>
-<span class="sd">            cfg: scheduler configuration, same as passed to run/dryrun APIs.</span>
-<span class="sd">                Some schedulers may use this for backend routing decisions.</span>
-
-<span class="sd">        Note: This API is in prototype phase and is subject to change.</span>
+<span class="sd">            cfg: scheduler config, used by some schedulers for backend routing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">):</span>
             <span class="n">sched</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span>
@@ -1201,16 +1016,6 @@
         <span class="n">check_session</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="c1"># pyre-fixme[24]: SchedulerOpts is a generic, and we don&#39;t have access to the corresponding type</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Scheduler</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the scheduler and app_id from the app_handle.</span>
-<span class="sd">        Set ``check_session`` to validate that the session name in the app handle</span>
-<span class="sd">        is the same as this session.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: if ``check_session=True`` and the session in the app handle</span>
-<span class="sd">                         does not match this session&#39;s name</span>
-<span class="sd">            KeyError: if no such scheduler backend exists</span>
-<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="n">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="n">scheduler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler_backend</span><span class="p">)</span>
@@ -1225,33 +1030,16 @@
     <span class="n">component_defaults</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">scheduler_params</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Runner</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convenience method to construct and get a Runner object. Usage:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a :py:class:`Runner` with all registered schedulers.</span>
 
 <span class="sd">    .. code-block:: python</span>
 
-<span class="sd">      with get_runner() as runner:</span>
-<span class="sd">        app_handle = runner.run(component(args), scheduler=&quot;kubernetes&quot;, runcfg)</span>
-<span class="sd">        print(runner.status(app_handle))</span>
-
-<span class="sd">    Alternatively,</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">     runner = get_runner()</span>
-<span class="sd">     try:</span>
-<span class="sd">        app_handle = runner.run(component(args), scheduler=&quot;kubernetes&quot;, runcfg)</span>
-<span class="sd">        print(runner.status(app_handle))</span>
-<span class="sd">     finally:</span>
-<span class="sd">        runner.close()</span>
+<span class="sd">        with get_runner() as runner:</span>
+<span class="sd">            app_handle = runner.run(app, scheduler=&quot;kubernetes&quot;, cfg=cfg)</span>
+<span class="sd">            print(runner.status(app_handle))</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name: human readable name that will be included as part of all launched</span>
-<span class="sd">            jobs.</span>
-<span class="sd">        scheduler_params: extra arguments that will be passed to the constructor</span>
-<span class="sd">            of all available schedulers.</span>
-
-
+<span class="sd">        scheduler_params: extra kwargs passed to all scheduler constructors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>

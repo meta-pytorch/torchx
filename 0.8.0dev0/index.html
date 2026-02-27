@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Quickstart" href="quickstart.html" />
+    <link rel="next" title="Quick Reference" href="api_reference.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -320,14 +320,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -341,27 +349,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -449,8 +444,34 @@
       
   <section id="torchx">
 <h1>TorchX<a class="headerlink" href="#torchx" title="Permalink to this heading">¶</a></h1>
-<p>TorchX is a universal job launcher for PyTorch applications.</p>
-<p><strong>GETTING STARTED?</strong> Follow the <a class="reference internal" href="quickstart.html#quickstart"><span class="std std-ref">quickstart guide</span></a>.</p>
+<p>TorchX is a universal job launcher for PyTorch applications. Define your job
+once and run it on any supported backend – from your laptop to Kubernetes to
+Slurm clusters – without rewriting configuration for each environment.</p>
+<p><strong>Why TorchX?</strong></p>
+<ul class="simple">
+<li><p><strong>Write once, run anywhere.</strong> The same <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> command (or
+<a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> call) works across all schedulers. Switch
+from local development to production clusters by changing a single flag.</p></li>
+<li><p><strong>No vendor lock-in.</strong> TorchX abstracts the scheduler, so your job
+definitions stay portable across Kubernetes, Slurm, AWS Batch, and more.</p></li>
+<li><p><strong>Batteries included.</strong> A built-in <a class="reference internal" href="cli.html#components"><span class="std std-ref">components library</span></a>
+provides ready-made launchers for distributed training, inference, and
+common utilities – so you don’t start from scratch.</p></li>
+<li><p><strong>Zero runtime dependency.</strong> Your application has no dependency on TorchX
+at runtime. TorchX is only needed at launch time.</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><strong>New to TorchX?</strong></p>
+<p>Follow the recommended reading order:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> – install, write a simple app, and launch it (10 min)</p></li>
+<li><p><a class="reference internal" href="api_reference.html"><span class="doc">Quick Reference</span></a> – the Python API at a glance (imports, types, recipes)</p></li>
+<li><p><a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a> – core concepts: AppDef, Component, Runner, Scheduler</p></li>
+<li><p><a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a> – write your own reusable component</p></li>
+<li><p><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a> – register plugins and extend TorchX</p></li>
+</ol>
+</div>
 <section id="in-1-2-3">
 <h2>In 1-2-3<a class="headerlink" href="#in-1-2-3" title="Permalink to this heading">¶</a></h2>
 <p>Step 1. Install</p>
@@ -458,25 +479,82 @@
 </pre></div>
 </div>
 <p>Step 2. Run Locally</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>
+    <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;worker&quot;</span><span class="p">,</span>
+            <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+            <span class="n">image</span><span class="o">=</span><span class="s2">&quot;/tmp&quot;</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_app.py&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, localhost!&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;local_cwd&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">runner</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Or from the CLI:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;Hello, localhost!&quot;</span>
 </pre></div>
 </div>
-<p>Step 3. Run Remotely</p>
+<p>Step 3. Run Remotely – only the <code class="docutils literal notranslate"><span class="pre">scheduler</span></code> argument changes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;Hello, Kubernetes!&quot;</span>
 </pre></div>
 </div>
 </section>
+<section id="ecosystem">
+<h2>Ecosystem<a class="headerlink" href="#ecosystem" title="Permalink to this heading">¶</a></h2>
+<p>TorchX is part of the <a class="reference external" href="https://pytorch.org">PyTorch</a> ecosystem. It
+complements – rather than replaces – other PyTorch projects:</p>
+<ul class="simple">
+<li><p><strong>TorchElastic</strong> handles fault-tolerant distributed training <em>within</em> a job.
+TorchX launches the job itself and the built-in <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component
+uses TorchElastic under the hood.</p></li>
+<li><p><strong>TorchServe</strong> serves models in production. TorchX can launch TorchServe
+instances on remote clusters.</p></li>
+<li><p><strong>TorchRec / TorchVision / TorchAudio</strong> provide domain-specific libraries.
+TorchX launches training and inference jobs that use them.</p></li>
+</ul>
+<p>TorchX does <strong>not</strong> prescribe a training framework, model architecture, or data
+pipeline. It operates at the job-launching layer and works with any Python
+application. For workflow orchestration (DAGs of jobs), integrate TorchX with
+<a class="reference external" href="https://airflow.apache.org/">Airflow</a> or
+<a class="reference external" href="https://www.kubeflow.org/docs/components/pipelines/">Kubeflow Pipelines</a>.
+For hyperparameter tuning, use <a class="reference external" href="https://ax.dev/">Ax</a> with TorchX as the
+trial launcher. See <a class="reference internal" href="basics.html#when-to-use-torchx-and-when-not-to"><span class="std std-ref">When to Use TorchX (and When Not To)</span></a> for a
+detailed comparison with alternatives.</p>
+</section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound" id="torchx-api">
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+</div>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 </div>
@@ -496,19 +574,10 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
 </div>
-</section>
-<section id="components-library">
-<h2>Components Library<a class="headerlink" href="#components-library" title="Permalink to this heading">¶</a></h2>
-<div class="toctree-wrapper compound" id="components">
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 </div>
 </section>
@@ -519,18 +588,6 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-</div>
-</section>
-<section id="reference">
-<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this heading">¶</a></h2>
-<div class="toctree-wrapper compound" id="torchx-api">
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -551,7 +608,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quickstart" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="api_reference.html" class="btn btn-neutral float-right" title="Quick Reference" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
     </div>
@@ -586,11 +643,14 @@
               <ul>
 <li><a class="reference internal" href="#">TorchX</a><ul>
 <li><a class="reference internal" href="#in-1-2-3">In 1-2-3</a></li>
-<li><a class="reference internal" href="#documentation">Documentation</a></li>
-<li><a class="reference internal" href="#works-with">Works With</a></li>
-<li><a class="reference internal" href="#components-library">Components Library</a></li>
-<li><a class="reference internal" href="#runtime-library">Runtime Library</a></li>
-<li><a class="reference internal" href="#reference">Reference</a><ul>
+<li><a class="reference internal" href="#ecosystem">Ecosystem</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#works-with">Works With</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#runtime-library">Runtime Library</a><ul>
 </ul>
 </li>
 </ul>

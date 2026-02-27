@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Component Best Practices" href="component_best_practices.html" />
-    <link rel="prev" title="torchx.workspace" href="workspace.html" />
+    <link rel="prev" title="Tracking" href="runtime/tracking.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul class="current">
@@ -445,139 +440,88 @@
       
   <section id="app-best-practices">
 <h1>App Best Practices<a class="headerlink" href="#app-best-practices" title="Permalink to this heading">¶</a></h1>
-<p>TorchX apps can be written using any language as well as with any set of
-libraries to allow for maximum flexibility. However, we do have a standard set
-of recommended libraries and practices to have a starting point for users and to
-provide consistency across the built in components and applications.</p>
-<p>See <a class="reference internal" href="component_best_practices.html#component-best-practices"><span class="std std-ref">Component Best Practices</span></a> for information how to handle component
-management and AppDefs.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>This page covers practical recommendations for TorchX applications:
+portable storage with fsspec, train loop frameworks, checkpointing, metrics,
+and testing. See <a class="reference internal" href="component_best_practices.html#component-best-practices"><span class="std std-ref">Component Best Practices</span></a>
+for component authoring guidance.</p>
+</div>
+<p><strong>Prerequisites:</strong> <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> and <a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a>.</p>
 <section id="data-passing-and-storage">
 <h2>Data Passing and Storage<a class="headerlink" href="#data-passing-and-storage" title="Permalink to this heading">¶</a></h2>
-<p>We recommend
-<a class="reference external" href="https://filesystem-spec.readthedocs.io/en/latest/index.html">fsspec</a>. fsspec
-allows pluggable filesystems so apps can be written once and run on most
-infrastructures just by changing the input and output paths.</p>
-<p>TorchX builtin components use fsspec for all storage access to make it possible
-to run in new environments by using a different fsspec backend or by adding a
-new one.</p>
-<p>Pytorch Lightning supports fsspec out of the box so using fsspec elsewhere makes
-it seamless to integrate in with your trainer.</p>
-<p>Using remote storage also makes it easier to transition your apps to running
-with distributed support via libraries such as
-<a class="reference external" href="https://pytorch.org/docs/stable/distributed.elastic.html">torch.distributed.elastic</a>.</p>
+<p>Use <a class="reference external" href="https://filesystem-spec.readthedocs.io">fsspec (Filesystem Spec)</a> for
+storage access. fsspec provides a unified interface to many storage backends
+(local, S3, GCS, etc.), so apps run on different infrastructures by changing
+paths alone.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
+
+<span class="k">with</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;s3://bucket/data.pt&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
 <section id="train-loops">
 <h2>Train Loops<a class="headerlink" href="#train-loops" title="Permalink to this heading">¶</a></h2>
-<p>There are lots of ways to structure a training loop and it depends a lot on your
-model type and architecture which is why we don’t provide one out of the box.</p>
-<p>Some common choices are:</p>
+<p>Common choices:</p>
 <ul class="simple">
-<li><p>Pure Pytorch</p></li>
-<li><dl class="simple">
-<dt>Use a managed train loop</dt><dd><ul>
-<li><p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/">Pytorch Lighting</a></p></li>
-<li><p><a class="reference external" href="https://github.com/pytorch/ignite">Pytorch Ignite</a></p></li>
-</ul>
-</dd>
-</dl>
-</li>
+<li><p>Pure PyTorch</p></li>
+<li><p><a class="reference external" href="https://lightning.ai/docs/pytorch/stable/">PyTorch Lightning</a></p></li>
+<li><p><a class="reference external" href="https://github.com/pytorch/ignite">PyTorch Ignite</a></p></li>
 </ul>
 <p>See <a class="reference internal" href="components/train.html#module-torchx.components.train"><span class="std std-ref">Train</span></a> for more information.</p>
 </section>
 <section id="metrics">
 <h2>Metrics<a class="headerlink" href="#metrics" title="Permalink to this heading">¶</a></h2>
-<p>For logging metrics and monitoring your job we recommend using standalone
-Tensorboard since it’s supported natively by
-<a class="reference external" href="https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html">Pytorch tensorboard integrations</a>
-and
-<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/extensions/logging.html">Pytorch Lightning logging</a>.</p>
-<p>Since Tensorboard can log to remote storage like s3 or gcs you can view complex
-information about your model while it’s training.</p>
-<p>See <a class="reference internal" href="components/metrics.html#module-torchx.components.metrics"><span class="std std-ref">Metrics</span></a> for more information on metric handling
-within TorchX.</p>
+<p>Use <a class="reference external" href="https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html">TensorBoard</a>
+for logging metrics. TensorBoard supports remote storage (S3, GCS) for viewing
+metrics during training.</p>
+<p>See <a class="reference internal" href="components/metrics.html#module-torchx.components.metrics"><span class="std std-ref">Metrics</span></a> for TorchX metric components.</p>
 </section>
 <section id="checkpointing">
 <h2>Checkpointing<a class="headerlink" href="#checkpointing" title="Permalink to this heading">¶</a></h2>
-<p>Periodic checkpoints allow your application to recover from failures and in some
-cases allow you to restart your trainer with different parameters without losing
-training progress.</p>
-<p><a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/latest/common/checkpointing.html">Pytorch Lighting</a>
-provides a standardized way to checkpoint your models.</p>
+<p>Periodic checkpoints enable failure recovery and training resumption. PyTorch
+Lightning provides
+<a class="reference external" href="https://lightning.ai/docs/pytorch/stable/common/checkpointing.html">standardized checkpointing</a>.</p>
 </section>
 <section id="fine-tuning">
 <h2>Fine Tuning<a class="headerlink" href="#fine-tuning" title="Permalink to this heading">¶</a></h2>
-<p>To support things like transfer learning, fine tuning and resuming from
-checkpoints we recommend having a command line argument to your app that will
-resume from a checkpoint file.</p>
-<p>This will allow you to recover from transient errors, continue train on new
-data, or later adjust the learning rate without losing training progress.</p>
-<p>Having load support allows for less code and better maintainability since you
-can have one app doing a number of similar tasks.</p>
+<p>Provide a command line argument to your app that resumes from a checkpoint file.
+This enables transfer learning, fine tuning, and failure recovery with a single
+application.</p>
 </section>
 <section id="interpretability">
 <h2>Interpretability<a class="headerlink" href="#interpretability" title="Permalink to this heading">¶</a></h2>
-<p>We recommend <a class="reference external" href="https://captum.ai/">captum</a> for model interpretability and
-analysing model results. This can be used interactively from a Jupyter notebook
-or from a component.</p>
-<p>See <a class="reference internal" href="components/interpret.html#module-torchx.components.interpret"><span class="std std-ref">Interpret</span></a> for more information.</p>
+<p>Use <a class="reference external" href="https://captum.ai/">Captum</a> for model interpretability.
+See <a class="reference internal" href="components/interpret.html#module-torchx.components.interpret"><span class="std std-ref">Interpret</span></a> for built-in components.</p>
 </section>
 <section id="model-packaging">
 <h2>Model Packaging<a class="headerlink" href="#model-packaging" title="Permalink to this heading">¶</a></h2>
-<p>The pytorch community hasn’t standardized on one package format. Here’s a couple
-of options and when you might need to use them.</p>
 <section id="python-saved-weights">
 <h3>Python + Saved Weights<a class="headerlink" href="#python-saved-weights" title="Permalink to this heading">¶</a></h3>
-<p>This is the most common format for packaging models. To use you’ll load your
-model definition from a python file and then you’ll load the weights and state
-dict from a <code class="docutils literal notranslate"><span class="pre">.ckpt</span></code> or <code class="docutils literal notranslate"><span class="pre">.pt</span></code> file.</p>
-<p>This is how Pytorch Lightning’s
-<a class="reference external" href="https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.callbacks.ModelCheckpoint.html">ModelCheckpoint</a> hook works.</p>
-<p>This is the most common but makes it harder to make a reusable app since your
-trainer app needs to include the model definition code.</p>
+<p>The most common format. Load a model definition from Python, then load weights
+from a <code class="docutils literal notranslate"><span class="pre">.ckpt</span></code> or <code class="docutils literal notranslate"><span class="pre">.pt</span></code> file.</p>
 </section>
 <section id="torchscript-models">
 <h3>TorchScript Models<a class="headerlink" href="#torchscript-models" title="Permalink to this heading">¶</a></h3>
-<p>TorchScript is a way to create serializable and optimized Pytorch models that
-can be executed without Python. This can be used for inference or training in a
-performant way without relying on Python’s GIL.</p>
-<p>These model files are completely self described but not all pytorch models can
-be automatically converted to TorchScript.</p>
-<p>See the <a class="reference external" href="https://pytorch.org/docs/stable/jit.html">TorchScript documentation</a>.</p>
+<p>Serializable, optimized models executable without Python.
+See the <a class="reference external" href="https://pytorch.org/docs/stable/jit.html">TorchScript docs</a>.</p>
 </section>
-<section id="torchserve-model-archiver-mar">
-<h3>TorchServe Model Archiver (<cite>.mar</cite>)<a class="headerlink" href="#torchserve-model-archiver-mar" title="Permalink to this heading">¶</a></h3>
-<p>If you want to use TorchServe for inference you’ll need to export your model to
-this format. For inference it’s common to use a quantized version of the model
-so it’s best to have your trainer export both a full precision model for fine
-tuning as well as a quantized <code class="docutils literal notranslate"><span class="pre">.mar</span></code> file for TorchServe to consume.</p>
-<p>See the
-<a class="reference external" href="https://github.com/pytorch/serve/blob/master/model-archiver/README.md">Model Archiver documentation</a>.</p>
-</section>
-<section id="torch-package">
-<h3>torch.package<a class="headerlink" href="#torch-package" title="Permalink to this heading">¶</a></h3>
-<p>This is a new format as of pytorch 1.9.0 and can be used to save and load model
-definitions and their weights so you don’t need to manage the model definition
-separately.</p>
-<p>See the <a class="reference external" href="https://pytorch.org/docs/stable/package.html">torch.package documentation</a>.</p>
-<p>It’s quite new and doesn’t have widespread adoption or support.</p>
+<section id="torch-export">
+<h3><code class="docutils literal notranslate"><span class="pre">torch.export</span></code><a class="headerlink" href="#torch-export" title="Permalink to this heading">¶</a></h3>
+<p>PyTorch’s modern export path for production deployment. Produces
+<a class="reference external" href="https://pytorch.org/docs/stable/export.html">ExportedProgram</a> artifacts
+that work with <code class="docutils literal notranslate"><span class="pre">torch.compile</span></code> and inference runtimes.</p>
 </section>
 </section>
 <section id="serving-inference">
 <h2>Serving / Inference<a class="headerlink" href="#serving-inference" title="Permalink to this heading">¶</a></h2>
-<p>For serving and inference we recommend using
-<a class="reference external" href="https://github.com/pytorch/serve">TorchServe</a>
-for common use cases.
-We provide a component that allows you to upload your model to TorchServe via
-the management API.</p>
-<p>See the <a class="reference internal" href="components/serve.html#module-torchx.components.serve"><span class="std std-ref">Serve</span></a> built in components for more information.</p>
-<p>For more complex serving and performance reasons you may need to write your own
-custom inference logic. Torchscript and torch::deploy are some standard
-utilities you can use to build your own inference server.</p>
+<p>Use <a class="reference external" href="https://github.com/pytorch/serve">TorchServe</a> for standard use cases.
+See <a class="reference internal" href="components/serve.html#module-torchx.components.serve"><span class="std std-ref">Serve</span></a> for built-in components.</p>
 </section>
 <section id="testing">
 <h2>Testing<a class="headerlink" href="#testing" title="Permalink to this heading">¶</a></h2>
-<p>Since TorchX apps are typically standard python you can write unit tests for
-them like you would with any other Python code.</p>
+<p>Since TorchX apps are standard Python, test them like any other Python code:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">your.custom.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span>
 
@@ -586,6 +530,15 @@ them like you would with any other Python code.</p>
         <span class="n">main</span><span class="p">([</span><span class="s2">&quot;--src&quot;</span><span class="p">,</span> <span class="s2">&quot;src&quot;</span><span class="p">,</span> <span class="s2">&quot;--dst&quot;</span><span class="p">,</span> <span class="s2">&quot;dst&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="component_best_practices.html"><span class="doc">Component Best Practices</span></a></dt><dd><p>Best practices for authoring reusable TorchX components.</p>
+</dd>
+<dt><a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a></dt><dd><p>Getting started with TorchX from scratch.</p>
+</dd>
+</dl>
 </div>
 </section>
 </section>
@@ -601,7 +554,7 @@ them like you would with any other Python code.</p>
         <a href="component_best_practices.html" class="btn btn-neutral float-right" title="Component Best Practices" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="workspace.html" class="btn btn-neutral" title="torchx.workspace" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="runtime/tracking.html" class="btn btn-neutral" title="Tracking" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -643,8 +596,7 @@ them like you would with any other Python code.</p>
 <li><a class="reference internal" href="#model-packaging">Model Packaging</a><ul>
 <li><a class="reference internal" href="#python-saved-weights">Python + Saved Weights</a></li>
 <li><a class="reference internal" href="#torchscript-models">TorchScript Models</a></li>
-<li><a class="reference internal" href="#torchserve-model-archiver-mar">TorchServe Model Archiver (<cite>.mar</cite>)</a></li>
-<li><a class="reference internal" href="#torch-package">torch.package</a></li>
+<li><a class="reference internal" href="#torch-export"><code class="docutils literal notranslate"><span class="pre">torch.export</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#serving-inference">Serving / Inference</a></li>

@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -478,32 +473,20 @@
 <span class="s2">&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="DockerWorkspaceMixin"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DockerWorkspaceMixin</span><span class="p">(</span><span class="n">WorkspaceMixin</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    DockerWorkspaceMixin will build patched docker images from the workspace. These</span>
-<span class="sd">    patched images are docker images and can be either used locally via the</span>
-<span class="sd">    docker daemon or pushed using the helper methods to a remote repository for</span>
-<span class="sd">    remote jobs.</span>
+<div class="viewcode-block" id="DockerWorkspaceMixin"><a class="viewcode-back" href="../../../workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DockerWorkspaceMixin</span><span class="p">(</span><span class="n">WorkspaceMixin</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds patched Docker images from the workspace.</span>
 
-<span class="sd">    This requires a running docker daemon locally and for remote pushing</span>
-<span class="sd">    requires being authenticated to those repositories via ``docker login``.</span>
+<span class="sd">    Requires a local Docker daemon. For remote jobs, authenticate via</span>
+<span class="sd">    ``docker login`` and set the ``image_repo`` runopt.</span>
 
-<span class="sd">    If there is a ``Dockerfile.torchx`` file present in the workspace that will</span>
-<span class="sd">    be used instead to build the container.</span>
+<span class="sd">    If ``Dockerfile.torchx`` exists in the workspace it is used as the</span>
+<span class="sd">    Dockerfile; otherwise a default ``COPY . .`` Dockerfile is generated.</span>
+<span class="sd">    Extra ``--build-arg`` values available in ``Dockerfile.torchx``:</span>
 
-<span class="sd">    The docker build is provided with some extra build arguments that can be</span>
-<span class="sd">    used in the Dockerfile.torchx:</span>
+<span class="sd">    * ``IMAGE`` -- the role&#39;s base image</span>
+<span class="sd">    * ``WORKSPACE`` -- the workspace path</span>
 
-<span class="sd">    * IMAGE: the image string from the first Role in the AppDef</span>
-<span class="sd">    * WORKSPACE: the full workspace path</span>
-
-<span class="sd">    To exclude files from the build context you can use the standard</span>
-<span class="sd">    `.dockerignore` file.</span>
-
-<span class="sd">    See more:</span>
-
-<span class="sd">    * https://docs.docker.com/engine/reference/commandline/login/</span>
-<span class="sd">    * https://docs.docker.com/get-docker/</span>
+<span class="sd">    Use ``.dockerignore`` to exclude files from the build context.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">LABEL_VERSION</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/version&quot;</span>
@@ -527,7 +510,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">__docker_client</span> <span class="o">=</span> <span class="n">client</span>
         <span class="k">return</span> <span class="n">client</span>
 
-<div class="viewcode-block" id="DockerWorkspaceMixin.workspace_opts"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+<div class="viewcode-block" id="DockerWorkspaceMixin.workspace_opts"><a class="viewcode-back" href="../../../workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
         <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
         <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
             <span class="s2">&quot;image_repo&quot;</span><span class="p">,</span>
@@ -542,16 +525,11 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">opts</span></div>
 
-<div class="viewcode-block" id="DockerWorkspaceMixin.build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
+<div class="viewcode-block" id="DockerWorkspaceMixin.build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Builds a new docker image using the ``role``&#39;s image as the base image</span>
-<span class="sd">        and updates the ``role``&#39;s image with this newly built docker image id</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            role: the role whose image (a Docker image) is to be used as the base image</span>
-<span class="sd">            workspace: a fsspec path to a directory with contents to be overlaid</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds a Docker image from *workspace* on top of ``role.image`` and</span>
+<span class="sd">        updates ``role.image`` with the resulting image id.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">old_imgs</span> <span class="o">=</span> <span class="p">[</span>
@@ -601,19 +579,11 @@
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">context</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="DockerWorkspaceMixin.dryrun_push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span>
+<div class="viewcode-block" id="DockerWorkspaceMixin.dryrun_push_images"><a class="viewcode-back" href="../../../workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        _update_app_images replaces the local Docker images (identified via</span>
-<span class="sd">        ``sha256:...``) in the provided ``AppDef`` with the remote path that they will be uploaded to and</span>
-<span class="sd">        returns a mapping of local to remote names.</span>
-
-<span class="sd">        ``push`` must be called with the returned mapping before</span>
-<span class="sd">        launching the job.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A dict of [local image name, (remote repo, tag)].</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replaces local ``sha256:...`` images in *app* with remote paths and</span>
+<span class="sd">        returns a ``{local_image: (repo, tag)}`` mapping for :py:meth:`push_images`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">HASH_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;sha256:&quot;</span>
         <span class="n">image_repo</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;image_repo&quot;</span><span class="p">)</span>
@@ -636,14 +606,10 @@
                 <span class="n">role</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">remote_image</span>
         <span class="k">return</span> <span class="n">images_to_push</span></div>
 
-<div class="viewcode-block" id="DockerWorkspaceMixin.push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        _push_images pushes the specified images to the remote container</span>
-<span class="sd">        repository with the specified tag. The docker daemon must be</span>
-<span class="sd">        authenticated to the remote repository using ``docker login``.</span>
+<div class="viewcode-block" id="DockerWorkspaceMixin.push_images"><a class="viewcode-back" href="../../../workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pushes local images to a remote repository.</span>
 
-<span class="sd">        Args:</span>
-<span class="sd">            images_to_push: A dict of [local image name, (remote repo, tag)].</span>
+<span class="sd">        Requires ``docker login`` authentication to the target repo.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">images_to_push</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>

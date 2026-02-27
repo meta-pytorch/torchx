@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="CLI" href="cli.html" />
-    <link rel="prev" title="TorchX" href="index.html" />
+    <link rel="next" title="Basic Concepts" href="basics.html" />
+    <link rel="prev" title="torchx.workspace" href="workspace.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -445,26 +440,26 @@
       
   <section id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this heading">¶</a></h1>
-<p>This is a self contained guide on how to write a simple app and start launching
-distributed jobs on local and remote clusters.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Install TorchX, write a simple app, and launch it locally and remotely –
+including distributed jobs. Estimated time: 10–15 minutes.</p>
+</div>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
-<p>First thing we need to do is to install the TorchX python package which includes
-the CLI and the library.</p>
+<p>Install TorchX (provides the <code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI and the
+<a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> Python API):</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;torchx[dev]&quot;</span>
 </pre></div>
 </div>
-<p>See the <a class="reference external" href="https://github.com/meta-pytorch/torchx">README</a> for more
-information on installation.</p>
+<p>Verify the installation:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>--help
 </pre></div>
 </div>
 </section>
 <section id="hello-world">
 <h2>Hello World<a class="headerlink" href="#hello-world" title="Permalink to this heading">¶</a></h2>
-<p>Lets start off with writing a simple “Hello World” python app. This is just a
-normal python program and can contain anything you’d like.</p>
-<p>Create <code class="docutils literal notranslate"><span class="pre">my_app.py</span></code>:</p>
+<p>Create a simple <code class="docutils literal notranslate"><span class="pre">my_app.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hello, </span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
@@ -473,21 +468,60 @@ normal python program and can contain anything you’d like.</p>
 </section>
 <section id="launching">
 <h2>Launching<a class="headerlink" href="#launching" title="Permalink to this heading">¶</a></h2>
-<p>We can execute our app via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code>. The
-<code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> scheduler executes the app relative to the current directory.</p>
-<p>For this we’ll use the <code class="docutils literal notranslate"><span class="pre">utils.python</span></code> component:</p>
+<p>Launch the app with <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code>. The <a class="reference internal" href="basics.html#term-Scheduler"><span class="xref std std-term">scheduler</span></a> is the
+backend that runs the job – <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> runs it in your current directory.
+You’ll use the <code class="docutils literal notranslate"><span class="pre">utils.python</span></code> <a class="reference internal" href="basics.html#term-Component"><span class="xref std std-term">component</span></a> (a reusable job
+template):</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--help
 </pre></div>
 </div>
-<p>The component takes in the script name and any extra arguments will be passed to
-the script itself.</p>
+<p>The component takes a script name; extra arguments are passed through to the
+script.</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>my_app.py<span class="w"> </span><span class="s2">&quot;your name&quot;</span>
 </pre></div>
 </div>
-<p>We can run the exact same app via the <code class="docutils literal notranslate"><span class="pre">local_docker</span></code> scheduler. This scheduler
-will package up the local workspace as a layer on top of the specified image.
-This provides a very similar environment to the container based remote
-schedulers.</p>
+<section id="using-the-python-api">
+<h3>Using the Python API<a class="headerlink" href="#using-the-python-api" title="Permalink to this heading">¶</a></h3>
+<p>The same operations are available via <a class="reference internal" href="runner.html#torchx.runner.get_runner" title="torchx.runner.get_runner"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_runner()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span>
+        <span class="s2">&quot;utils.python&quot;</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;my_app.py&quot;</span><span class="p">,</span> <span class="s2">&quot;your name&quot;</span><span class="p">],</span>
+        <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;local_cwd&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Wait for the job to complete and print its final status</span>
+    <span class="n">final_status</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">app_handle</span><span class="p">,</span> <span class="n">wait_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">final_status</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also construct an <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> directly and pass
+it to <a class="reference internal" href="runner.html#torchx.runner.Runner.run" title="torchx.runner.Runner.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span>
+    <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;worker&quot;</span><span class="p">,</span>
+            <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+            <span class="c1"># &quot;image&quot; is the base runtime environment. For local schedulers</span>
+            <span class="c1"># it&#39;s a filesystem path; for container schedulers it&#39;s a Docker</span>
+            <span class="c1"># image name (e.g. &quot;my_image:latest&quot;).</span>
+            <span class="n">image</span><span class="o">=</span><span class="s2">&quot;/tmp&quot;</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_app.py&quot;</span><span class="p">,</span> <span class="s2">&quot;your name&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;local_cwd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">local_docker</span></code> scheduler packages your local workspace as a layer on top
+of the specified image – a close approximation of remote container environments.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This requires Docker installed and won’t work in environments such as Google
@@ -501,17 +535,15 @@ Colab. See the Docker install instructions:
 <a class="reference external" href="https://ghcr.io/pytorch/torchx">ghcr.io/pytorch/torchx</a> Docker container image
 which contains the PyTorch libraries, TorchX and related dependencies.</p>
 </section>
+</section>
 <section id="distributed">
 <h2>Distributed<a class="headerlink" href="#distributed" title="Permalink to this heading">¶</a></h2>
-<p>TorchX’s <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component uses
+<p>The <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component (DDP = Distributed Data Parallel) uses
 <a class="reference external" href="https://pytorch.org/docs/stable/distributed.elastic.html">TorchElastic</a>
-to manage the workers. This means you can launch multi-worker and multi-host
-jobs out of the box on all of the schedulers we support.</p>
+to manage workers, enabling multi-node jobs on all supported schedulers.</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>--help
 </pre></div>
 </div>
-<p>Lets create a slightly more interesting app to leverage the TorchX distributed
-support.</p>
 <p>Create <code class="docutils literal notranslate"><span class="pre">dist_app.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
@@ -524,30 +556,21 @@ support.</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;all_reduce output = </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Let launch a small job with 2 nodes and 2 worker processes per node:</p>
+<p>Launch with 2 nodes and 2 workers per node (<code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">2x2</span></code> = <code class="docutils literal notranslate"><span class="pre">&lt;nodes&gt;x&lt;workers_per_node&gt;</span></code>):</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
 </div>
 </section>
 <section id="workspaces-patching">
 <h2>Workspaces / Patching<a class="headerlink" href="#workspaces-patching" title="Permalink to this heading">¶</a></h2>
-<p>For each scheduler there’s a concept of an <code class="docutils literal notranslate"><span class="pre">image</span></code>. For <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> and <code class="docutils literal notranslate"><span class="pre">slurm</span></code>
-it uses the current working directory. For container based schedulers such as
-<code class="docutils literal notranslate"><span class="pre">local_docker</span></code>, <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code> and <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code> it uses a docker container.</p>
-<p>To provide the same environment between local and remote jobs, TorchX CLI uses
-workspaces to automatically patch images for remote jobs on a per scheduler
-basis.</p>
-<p>When you launch a job via <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> it’ll overlay the current directory on
-top of the provided image so your code is available in the launched job.</p>
-<p>For <code class="docutils literal notranslate"><span class="pre">docker</span></code> based schedulers you’ll need a local docker daemon to build and
-push the image to your remote docker repository.</p>
+<p>TorchX uses <strong>workspaces</strong> to automatically overlay your local code onto the
+job’s base image, so you don’t need to rebuild and push a Docker image after
+every code change. See <a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a> for details.</p>
 </section>
 <section id="torchxconfig">
 <h2><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code><a class="headerlink" href="#torchxconfig" title="Permalink to this heading">¶</a></h2>
-<p>Arguments to schedulers can be specified either via a command line flag to
-<code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span> <span class="pre">-s</span> <span class="pre">&lt;scheduler&gt;</span> <span class="pre">-c</span> <span class="pre">&lt;args&gt;</span></code> or on a per scheduler basis via a
-<code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file.</p>
-<p>Create <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code>:</p>
+<p>Configure scheduler defaults in a <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file instead of passing
+<code class="docutils literal notranslate"><span class="pre">-cfg</span></code> flags every time:</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[kubernetes]</span>
 <span class="na">queue</span><span class="o">=</span><span class="s">torchx</span>
 <span class="na">image_repo</span><span class="o">=</span><span class="s">&lt;your docker image repository&gt;</span>
@@ -559,20 +582,14 @@ push the image to your remote docker repository.</p>
 </section>
 <section id="remote-schedulers">
 <h2>Remote Schedulers<a class="headerlink" href="#remote-schedulers" title="Permalink to this heading">¶</a></h2>
-<p>TorchX supports a large number of schedulers.
-Don’t see yours?
-<a class="reference external" href="https://github.com/meta-pytorch/torchx/issues/new?assignees=&amp;labels=&amp;template=feature-request.md">Request it!</a></p>
-<p>Remote schedulers operate the exact same way the local schedulers do. The same
-run command for local works out of the box on remote.</p>
+<p>The same <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> command works on remote schedulers – only the
+<code class="docutils literal notranslate"><span class="pre">--scheduler</span></code> flag changes.</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>slurm<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 <span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 <span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>aws_batch<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
 </div>
-<p>Depending on the scheduler there may be a few extra configuration parameters so
-TorchX knows where to run the job and upload built images. These can either be
-set via <code class="docutils literal notranslate"><span class="pre">-c</span></code> or in the <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file.</p>
-<p>All config options:</p>
+<p>List all scheduler-specific options:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>runopts
 </pre></div>
 </div>
@@ -581,9 +598,7 @@ set via <code class="docutils literal notranslate"><span class="pre">-c</span></
 <h2>Custom Images<a class="headerlink" href="#custom-images" title="Permalink to this heading">¶</a></h2>
 <section id="docker-based-schedulers">
 <h3>Docker-based Schedulers<a class="headerlink" href="#docker-based-schedulers" title="Permalink to this heading">¶</a></h3>
-<p>If you want more than the standard PyTorch libraries you can add custom
-Dockerfile or build your own docker container and use it as the base image for
-your TorchX jobs.</p>
+<p>Provide a custom Dockerfile to add libraries beyond the standard PyTorch set.</p>
 <p>Create <code class="docutils literal notranslate"><span class="pre">timm_app.py</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">timm</span>
 
@@ -591,33 +606,43 @@ your TorchX jobs.</p>
 </pre></div>
 </div>
 <p>Create <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code>:</p>
-<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">pytorch/pytorch:1.10.0-cuda11.3-cudnn8-runtime</span>
+<div class="highlight-dockerfile notranslate"><div class="highlight"><pre><span></span><span class="k">FROM</span><span class="w"> </span><span class="s">pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime</span>
 
 <span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>timm
 
 <span class="k">COPY</span><span class="w"> </span>.<span class="w"> </span>.
 </pre></div>
 </div>
-<p>Once we have the Dockerfile created we can launch as normal and TorchX will
-automatically build the image with the newly provided Dockerfile instead of the
-default one.</p>
+<p>TorchX uses this Dockerfile automatically:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>utils.python<span class="w"> </span>--script<span class="w"> </span>timm_app.py
 </pre></div>
 </div>
 </section>
 <section id="slurm">
 <h3>Slurm<a class="headerlink" href="#slurm" title="Permalink to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">slurm</span></code> and <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> use the current environment so you can use <code class="docutils literal notranslate"><span class="pre">pip</span></code> and
-<code class="docutils literal notranslate"><span class="pre">conda</span></code> as normal.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">slurm</span></code> and <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> schedulers use the current environment, so
+<code class="docutils literal notranslate"><span class="pre">pip</span></code> and <code class="docutils literal notranslate"><span class="pre">conda</span></code> work as usual.</p>
 </section>
 </section>
 <section id="next-steps">
 <h2>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
-<li><p>Checkout other features of the <a class="reference internal" href="cli.html"><span class="doc">torchx CLI</span></a></p></li>
-<li><p>Take a look at the <a class="reference internal" href="schedulers.html"><span class="doc">list of schedulers</span></a> supported by the runner</p></li>
-<li><p>Browse through the collection of <a class="reference internal" href="components/overview.html"><span class="doc">builtin components</span></a></p></li>
+<li><p>Explore the <a class="reference internal" href="api_reference.html"><span class="doc">API Quick Reference</span></a> for copy-pasteable recipes</p></li>
+<li><p>Explore the <a class="reference internal" href="cli.html"><span class="doc">torchx CLI</span></a> and the <a class="reference internal" href="runner.html"><span class="doc">Runner Python API</span></a></p></li>
+<li><p>Review <a class="reference internal" href="schedulers.html"><span class="doc">supported schedulers</span></a></p></li>
+<li><p>Browse <a class="reference internal" href="components/overview.html"><span class="doc">builtin components</span></a></p></li>
 </ol>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a></dt><dd><p>Core concepts behind AppDef, Component, Runner, and Scheduler.</p>
+</dd>
+<dt><a class="reference internal" href="runner.config.html"><span class="doc">.torchxconfig</span></a></dt><dd><p>Configuring scheduler options via <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code>.</p>
+</dd>
+<dt><a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a></dt><dd><p>Writing and registering your own components.</p>
+</dd>
+</dl>
+</div>
 </section>
 </section>
 
@@ -629,10 +654,10 @@ default one.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="cli.html" class="btn btn-neutral float-right" title="CLI" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="basics.html" class="btn btn-neutral float-right" title="Basic Concepts" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="TorchX" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="workspace.html" class="btn btn-neutral" title="torchx.workspace" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -667,7 +692,10 @@ default one.</p>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
 <li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#hello-world">Hello World</a></li>
-<li><a class="reference internal" href="#launching">Launching</a></li>
+<li><a class="reference internal" href="#launching">Launching</a><ul>
+<li><a class="reference internal" href="#using-the-python-api">Using the Python API</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#distributed">Distributed</a></li>
 <li><a class="reference internal" href="#workspaces-patching">Workspaces / Patching</a></li>
 <li><a class="reference internal" href="#torchxconfig"><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code></a></li>

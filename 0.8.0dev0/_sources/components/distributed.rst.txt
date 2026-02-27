@@ -6,5 +6,9 @@ Distributed
 
 .. autofunction:: torchx.components.dist.ddp
 
-.. autodata:: torchx.components.dist._TORCH_DEBUG_FLAGS
-   :annotation:
+.. note::
+
+   **SPMD** stands for Single Program, Multiple Data -- a paradigm where every
+   worker runs the same code but on different data partitions.
+
+.. autofunction:: torchx.components.dist.spmd

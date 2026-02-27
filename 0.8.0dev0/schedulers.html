@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="torchx.workspace" href="workspace.html" />
+    <link rel="next" title="AWS Batch" href="schedulers/aws_batch.html" />
     <link rel="prev" title="torchx.runner" href="runner.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -445,12 +440,414 @@
       
   <section id="torchx-schedulers">
 <h1>torchx.schedulers<a class="headerlink" href="#torchx-schedulers" title="Permalink to this heading">¶</a></h1>
-<p>TorchX Schedulers define plugins to existing schedulers. Used with the
-<a class="reference internal" href="runner.html#torchx-runner"><span class="std std-ref">runner</span></a>, they submit components as jobs onto
-the respective scheduler backends. TorchX supports a few <a class="reference internal" href="index.html#schedulers"><span class="std std-ref">schedulers</span></a>
-out-of-the-box. You can add your own by implementing .. py:class::torchx.schedulers
-and <a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">registering</span></a> it in the entrypoint.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Schedulers translate portable AppDefs into backend-specific jobs. This page
+covers the built-in schedulers, the custom scheduler interface, and config
+options (StructuredOpts vs runopts).</p>
+</div>
+<p>Each scheduler translates a scheduler-agnostic
+<a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> into a native job format (Kubernetes Job,
+Slurm sbatch, AWS Batch job, etc.) and manages the job lifecycle. Because the
+interface is pluggable, you switch backends without changing application code.
+TorchX ships with schedulers for:</p>
+<ul class="simple">
+<li><p><strong>Local development:</strong> <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code>, <code class="docutils literal notranslate"><span class="pre">local_docker</span></code></p></li>
+<li><p><strong>HPC (High-Performance Computing) clusters:</strong> <code class="docutils literal notranslate"><span class="pre">slurm</span></code>, <code class="docutils literal notranslate"><span class="pre">lsf</span></code></p></li>
+<li><p><strong>Cloud / container orchestrators:</strong> <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code>,
+<code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></li>
+</ul>
+<p>Need a scheduler that isn’t listed? See
+<a class="reference internal" href="#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> below and
+<a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">Registering Custom Schedulers</span></a> for entry-point registration.</p>
 <img alt="_images/scheduler_diagram.png" src="_images/scheduler_diagram.png" />
+<section id="choosing-a-scheduler">
+<h2>Choosing a Scheduler<a class="headerlink" href="#choosing-a-scheduler" title="Permalink to this heading">¶</a></h2>
+<p>Every scheduler accepts the same <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>; only the <code class="docutils literal notranslate"><span class="pre">--scheduler</span></code> flag
+(CLI) or <code class="docutils literal notranslate"><span class="pre">scheduler=</span></code> argument (Python API) changes.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 20%" />
+<col style="width: 22%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Scheduler</p></th>
+<th class="head"><p>Environment</p></th>
+<th class="head"><p>What it produces</p></th>
+<th class="head"><p>Best for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">local_cwd</span></code></p></td>
+<td><p>Your laptop / devserver</p></td>
+<td><p>Local process (<code class="docutils literal notranslate"><span class="pre">subprocess.Popen</span></code>)</p></td>
+<td><p>Rapid iteration. No containers, no cluster access needed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">local_docker</span></code></p></td>
+<td><p>Local Docker daemon</p></td>
+<td><p>Docker container with patched image</p></td>
+<td><p>Testing container behavior locally before deploying to a cluster.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kubernetes</span></code></p></td>
+<td><p>Kubernetes cluster</p></td>
+<td><p>Kubernetes <code class="docutils literal notranslate"><span class="pre">Job</span></code> resource</p></td>
+<td><p>Production workloads on Kubernetes. Requires cluster access and a
+container registry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kubernetes_mcad</span></code></p></td>
+<td><p>Kubernetes + MCAD</p></td>
+<td><p>MCAD <code class="docutils literal notranslate"><span class="pre">AppWrapper</span></code> resource</p></td>
+<td><p>Gang-scheduled multi-node jobs on Kubernetes with the Multi-Cluster
+Application Dispatcher.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></td>
+<td><p>Slurm HPC cluster</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sbatch</span></code> script</p></td>
+<td><p>Traditional HPC environments. Uses the shared filesystem as the
+workspace (no container build needed).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></td>
+<td><p>AWS</p></td>
+<td><p>AWS Batch job definition + job</p></td>
+<td><p>AWS-native batch compute. Requires a Batch compute environment and
+job queue.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></td>
+<td><p>AWS</p></td>
+<td><p>SageMaker training job</p></td>
+<td><p>Managed training with SageMaker features (spot instances, managed
+infrastructure).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lsf</span></code></p></td>
+<td><p>IBM LSF cluster</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bsub</span></code> script</p></td>
+<td><p>Enterprise HPC environments running IBM Spectrum LSF.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="implementing-a-custom-scheduler">
+<span id="implementing-scheduler"></span><h2>Implementing a Custom Scheduler<a class="headerlink" href="#implementing-a-custom-scheduler" title="Permalink to this heading">¶</a></h2>
+<p>Subclass <a class="reference internal" href="#torchx.schedulers.api.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a> and implement the
+abstract methods. <code class="docutils literal notranslate"><span class="pre">Scheduler</span></code> is generic over a config type <code class="docutils literal notranslate"><span class="pre">T</span></code> (typically
+<code class="docutils literal notranslate"><span class="pre">Mapping[str,</span> <span class="pre">CfgVal]</span></code>) that flows through to <code class="docutils literal notranslate"><span class="pre">_submit_dryrun</span></code>. A
+<a class="reference internal" href="basics.html#term-Dryrun"><span class="xref std std-term">dryrun</span></a> builds the scheduler-native request without submitting
+– returning an <a class="reference internal" href="specs.html#torchx.specs.AppDryRunInfo" title="torchx.specs.AppDryRunInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code></a> wrapping your native
+request type (e.g. a Kubernetes <code class="docutils literal notranslate"><span class="pre">V1Job</span></code>, a Slurm sbatch script).</p>
+<p>The submission flow is:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Runner.run(app, scheduler, cfg)
+    │
+    ▼
+Runner.dryrun(app, scheduler, cfg)
+    │
+    ├── resolve cfg from .torchxconfig + overrides
+    ├── build workspace (if WorkspaceMixin)
+    │
+    ▼
+Scheduler.submit_dryrun(app, cfg)
+    │
+    ├── Scheduler._submit_dryrun(app, cfg)
+    │       └── translate AppDef + cfg ──► native request (e.g. V1Job, sbatch)
+    ├── run Role.pre_proc hooks (per role, in order)
+    │
+    ▼
+AppDryRunInfo[NativeRequest]
+    │
+    ▼
+Runner.schedule(dryrun_info)
+    │
+    ▼
+Scheduler.schedule(dryrun_info)
+    │
+    ├── submit native request to backend
+    │
+    ▼
+app_id (str)
+</pre></div>
+</div>
+<p>After submission, the Runner can query the job via <code class="docutils literal notranslate"><span class="pre">Scheduler.describe</span></code>,
+stream logs via <code class="docutils literal notranslate"><span class="pre">Scheduler.log_iter</span></code>, or cancel via
+<code class="docutils literal notranslate"><span class="pre">Scheduler._cancel_existing</span></code>.</p>
+<section id="method-reference">
+<h3>Method Reference<a class="headerlink" href="#method-reference" title="Permalink to this heading">¶</a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 15%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>Required</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">_submit_dryrun(app,</span> <span class="pre">cfg)</span> <span class="pre">-&gt;</span> <span class="pre">AppDryRunInfo[T]</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Translate an <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> + resolved config into
+your native request type <code class="docutils literal notranslate"><span class="pre">T</span></code>. Do <strong>not</strong> submit — just build the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">schedule(dryrun_info)</span> <span class="pre">-&gt;</span> <span class="pre">str</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Submit the native request and return the scheduler-assigned <code class="docutils literal notranslate"><span class="pre">app_id</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">describe(app_id)</span> <span class="pre">-&gt;</span> <span class="pre">DescribeAppResponse</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Query job status. Return <code class="docutils literal notranslate"><span class="pre">None</span></code> if the job no longer exists.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">list(cfg)</span> <span class="pre">-&gt;</span> <span class="pre">list[ListAppResponse]</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>List jobs visible to this scheduler.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">_cancel_existing(app_id)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
+<td><p>Yes</p></td>
+<td><p>Cancel a running job (called only if the job exists).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">_run_opts()</span> <span class="pre">-&gt;</span> <span class="pre">runopts</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Declare scheduler-specific config options (see
+<a class="reference internal" href="#torchx.schedulers.api.StructuredOpts" title="torchx.schedulers.api.StructuredOpts"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuredOpts</span></code></a>). The public
+<code class="docutils literal notranslate"><span class="pre">run_opts()</span></code> method calls <code class="docutils literal notranslate"><span class="pre">_run_opts()</span></code> and automatically merges
+workspace options if the scheduler inherits from
+<a class="reference internal" href="workspace.html#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">log_iter(app_id,</span> <span class="pre">role_name,</span> <span class="pre">k,</span> <span class="pre">...)</span> <span class="pre">-&gt;</span> <span class="pre">Iterable[str]</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Stream log lines. Default raises <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">_pre_build_validate(app,</span> <span class="pre">scheduler,</span> <span class="pre">cfg)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Pre-workspace-build validation hook. Called before workspace
+building. Override to reject invalid configs early.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">_validate(app,</span> <span class="pre">scheduler,</span> <span class="pre">cfg)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Post-workspace-build validation hook. The default implementation
+checks that every role has a non-null resource.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">_delete_existing(app_id)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Delete a job definition from the scheduler’s data plane. Default
+delegates to <code class="docutils literal notranslate"><span class="pre">_cancel_existing</span></code>. Override for schedulers with
+persistent definitions (e.g. Kubernetes, AWS Batch).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">close()</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Release local resources. Default is a no-op.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="minimal-skeleton">
+<h3>Minimal Skeleton<a class="headerlink" href="#minimal-skeleton" title="Permalink to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DescribeAppResponse</span><span class="p">,</span>
+    <span class="n">ListAppResponse</span><span class="p">,</span>
+    <span class="n">Scheduler</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">AppDryRunInfo</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">runopts</span>
+
+
+<span class="c1"># 1. Define your native request type</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyRequest</span><span class="p">:</span>
+    <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cmd</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">env</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+
+<span class="c1"># 2. (Optional) Define typed config via StructuredOpts</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyOpts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+    <span class="n">cluster</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the cluster to submit to.&quot;&quot;&quot;</span>
+
+    <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue / partition for the job.&quot;&quot;&quot;</span>
+
+
+<span class="c1"># 3. Implement the Scheduler</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyScheduler</span><span class="p">(</span><span class="n">Scheduler</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;my_backend&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">MyOpts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">MyRequest</span><span class="p">]:</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">MyOpts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">role</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">MyRequest</span><span class="p">(</span>
+            <span class="n">job_name</span><span class="o">=</span><span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">cmd</span><span class="o">=</span><span class="p">[</span><span class="n">role</span><span class="o">.</span><span class="n">entrypoint</span><span class="p">,</span> <span class="o">*</span><span class="n">role</span><span class="o">.</span><span class="n">args</span><span class="p">],</span>
+            <span class="n">env</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">AppDryRunInfo</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">MyRequest</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">request</span><span class="p">:</span> <span class="n">MyRequest</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
+        <span class="c1"># ... submit to your backend ...</span>
+        <span class="k">return</span> <span class="s2">&quot;my-backend-job-id-123&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># ... query your backend ...</span>
+        <span class="k">return</span> <span class="n">DescribeAppResponse</span><span class="p">(</span><span class="n">app_id</span><span class="o">=</span><span class="n">app_id</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
+        <span class="c1"># ... list jobs ...</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cancel_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># ... cancel the job ...</span>
+        <span class="k">pass</span>
+
+
+<span class="c1"># 4. Factory function (entry-point target)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MyScheduler</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Register the factory via a <code class="docutils literal notranslate"><span class="pre">torchx.schedulers</span></code> entry point
+(see <a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">Registering Custom Schedulers</span></a>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;torchx.schedulers&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;my_backend = my_package.scheduler:create_scheduler&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.schedulers&quot;</span><span class="k">]</span>
+<span class="n">my_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_package.scheduler:create_scheduler&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-your-scheduler">
+<h3>Testing Your Scheduler<a class="headerlink" href="#testing-your-scheduler" title="Permalink to this heading">¶</a></h3>
+<p>Study <code class="docutils literal notranslate"><span class="pre">torchx/schedulers/test/api_test.py</span></code> for the canonical test patterns.
+A minimal test creates the scheduler, calls <code class="docutils literal notranslate"><span class="pre">submit_dryrun</span></code> with a test
+<code class="docutils literal notranslate"><span class="pre">AppDef</span></code>, and asserts the native request is correct:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">Resource</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MySchedulerTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">app</span> <span class="o">=</span> <span class="n">AppDef</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test_app&quot;</span><span class="p">,</span>
+            <span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;img&quot;</span><span class="p">,</span> <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
+                        <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">],</span> <span class="n">resource</span><span class="o">=</span><span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">512</span><span class="p">))],</span>
+        <span class="p">)</span>
+        <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cluster&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span><span class="p">})</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">job_name</span><span class="p">,</span> <span class="s2">&quot;test_app&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIn</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">})</span>
+</pre></div>
+</div>
+</section>
+<section id="common-pitfalls">
+<h3>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Forgetting ``super().__init__()``</strong>: Always call
+<code class="docutils literal notranslate"><span class="pre">super().__init__(&quot;my_backend&quot;,</span> <span class="pre">session_name)</span></code> in your <code class="docutils literal notranslate"><span class="pre">__init__</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">backend</span></code> string is used by the Runner to construct
+<a class="reference internal" href="specs.html#torchx.specs.AppHandle" title="torchx.specs.AppHandle"><code class="xref py py-data docutils literal notranslate"><span class="pre">AppHandle</span></code></a> strings (<code class="docutils literal notranslate"><span class="pre">my_backend://session/app_id</span></code>).
+Omitting it causes opaque errors when the Runner tries to route calls.</p></li>
+<li><p><strong>Missing the factory function</strong>: The entry point must point to a factory
+function (<code class="docutils literal notranslate"><span class="pre">def</span> <span class="pre">create_scheduler(session_name:</span> <span class="pre">str,</span> <span class="pre">**kwargs:</span> <span class="pre">object)</span> <span class="pre">-&gt;</span> <span class="pre">Scheduler</span></code>),
+not the class itself. The Runner calls this factory with <code class="docutils literal notranslate"><span class="pre">session_name</span></code> and
+optional <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>.</p></li>
+<li><p><strong>Returning the wrong type from ``_submit_dryrun``</strong>: The second argument to
+<code class="docutils literal notranslate"><span class="pre">AppDryRunInfo(request,</span> <span class="pre">repr_fn)</span></code> is a callable that renders the request for
+<code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span> <span class="pre">--dryrun</span></code>. Pass <code class="docutils literal notranslate"><span class="pre">repr</span></code> or a custom formatter – do not omit it.</p></li>
+<li><p><strong>Not handling ``cfg=None`` in ``list()``</strong>: The <code class="docutils literal notranslate"><span class="pre">list</span></code> method receives
+<code class="docutils literal notranslate"><span class="pre">cfg=None</span></code> when called without config. Guard against <code class="docutils literal notranslate"><span class="pre">None</span></code> before
+accessing config keys.</p></li>
+</ul>
+</section>
+<section id="config-options-structuredopts-vs-runopts">
+<h3>Config Options (StructuredOpts vs runopts)<a class="headerlink" href="#config-options-structuredopts-vs-runopts" title="Permalink to this heading">¶</a></h3>
+<p>Two approaches for declaring scheduler config:</p>
+<ol class="arabic">
+<li><p><strong>StructuredOpts</strong> (recommended) — define a <code class="docutils literal notranslate"><span class="pre">&#64;dataclass</span></code> subclass. Fields
+become typed config options with auto-generated help text from docstrings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyOpts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+    <span class="n">cluster</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the cluster to submit to.&quot;&quot;&quot;</span>
+
+    <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpu&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue / partition for the job.&quot;&quot;&quot;</span>
+
+<span class="c1"># In your scheduler:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">MyOpts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+    <span class="n">opts</span> <span class="o">=</span> <span class="n">MyOpts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>  <span class="c1"># typed access: opts.cluster, opts.queue</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Manual runopts</strong> — build the options imperatively:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+    <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
+    <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Cluster name&quot;</span><span class="p">)</span>
+    <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;queue&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Queue / partition&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">opts</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="adding-workspace-support">
+<h3>Adding Workspace Support<a class="headerlink" href="#adding-workspace-support" title="Permalink to this heading">¶</a></h3>
+<p>To support automatic image patching, inherit from a
+<a class="reference internal" href="workspace.html#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a> alongside <code class="docutils literal notranslate"><span class="pre">Scheduler</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;my_backend&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
+    <span class="c1"># ... rest of scheduler methods ...</span>
+</pre></div>
+</div>
+<p>TorchX ships two workspace mixins:
+<a class="reference internal" href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a> (for
+container-based schedulers like Kubernetes and AWS Batch) and
+<a class="reference internal" href="workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a> (for
+shared-filesystem schedulers like Slurm and LSF). You can also subclass
+<a class="reference internal" href="workspace.html#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a> directly for custom strategies.</p>
+<p>See <a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a> for the full workspace API, built-in mixin reference,
+and a guide to implementing your own workspace mixin.</p>
+</section>
+<section id="existing-implementations">
+<h3>Existing Implementations<a class="headerlink" href="#existing-implementations" title="Permalink to this heading">¶</a></h3>
+<p>Study these for real-world patterns:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">torchx.schedulers.local_scheduler</span></code> — uses <code class="docutils literal notranslate"><span class="pre">StructuredOpts</span></code>, no workspace mixin, runs jobs via <code class="docutils literal notranslate"><span class="pre">subprocess.Popen</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">torchx.schedulers.slurm_scheduler</span></code> — uses <code class="docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code>, generates <code class="docutils literal notranslate"><span class="pre">sbatch</span></code> scripts</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">torchx.schedulers.kubernetes_scheduler</span></code> — uses <code class="docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code>, creates Kubernetes <code class="docutils literal notranslate"><span class="pre">V1Job</span></code> resources</p></li>
+</ul>
+</section>
+</section>
 <section id="all-schedulers">
 <h2>All Schedulers<a class="headerlink" href="#all-schedulers" title="Permalink to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
@@ -470,7 +867,7 @@ and <a class="reference internal" href="advanced.html#registering-custom-schedul
 <span id="scheduler-functions"></span><h2>Scheduler Functions<a class="headerlink" href="#module-torchx.schedulers" title="Permalink to this heading">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="torchx.schedulers.get_scheduler_factories">
-<span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">get_scheduler_factories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'torchx.schedulers'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#torchx.schedulers.SchedulerFactory" title="torchx.schedulers.SchedulerFactory"><span class="pre">torchx.schedulers.SchedulerFactory</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers.html#get_scheduler_factories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.get_scheduler_factories" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">get_scheduler_factories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'torchx.schedulers'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torchx.schedulers.SchedulerFactory</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers.html#get_scheduler_factories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.get_scheduler_factories" title="Permalink to this definition">¶</a></dt>
 <dd><p>get_scheduler_factories returns all the available schedulers names under <cite>group</cite> and the
 method to instantiate them.</p>
 <p>The first scheduler in the dictionary is used as the default scheduler.</p>
@@ -487,258 +884,188 @@ get_scheduler_factories.</p>
 <section id="scheduler-classes">
 <h2>Scheduler Classes<a class="headerlink" href="#scheduler-classes" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">Scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>An interface abstracting functionalities of a scheduler.
-Implementers need only implement those methods annotated with
-<code class="docutils literal notranslate"><span class="pre">&#64;abc.abstractmethod</span></code>.</p>
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">Scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base class for job schedulers.</p>
+<p>Implementors must override all <code class="docutils literal notranslate"><span class="pre">&#64;abc.abstractmethod</span></code> methods.
+See <a class="reference internal" href="#torchx.schedulers.api.StructuredOpts" title="torchx.schedulers.api.StructuredOpts"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuredOpts</span></code></a> for typed config and
+<a class="reference internal" href="#module-torchx.schedulers" title="torchx.schedulers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.schedulers</span></code></a> for built-in implementations.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.cancel">
-<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.cancel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Cancels/kills the application. This method is idempotent within the same
-thread and is safe to call on the same application multiple times.
-However when called from multiple threads/processes on the same app
-the exact semantics of this method depends on the idempotency guarantees
-of the underlying scheduler API.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This method does not block for the application to reach a
-cancelled state. To ensure that the application reaches a
-terminal state use the <code class="docutils literal notranslate"><span class="pre">wait</span></code> API.</p>
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the app. Idempotent — safe to call multiple times.</p>
+<p>Does not block. Use <code class="xref py py-meth docutils literal notranslate"><span class="pre">wait()</span></code> to
+await the terminal state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Releases local resources. Safe to call multiple times.</p>
+<p>Only override for schedulers with local state (e.g. <code class="docutils literal notranslate"><span class="pre">local_scheduler</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes the job definition from the scheduler’s data-plane.</p>
+<p>On schedulers with persistent job definitions (e.g. Kubernetes, AWS Batch),
+this purges the definition. On others (e.g. Slurm), this is equivalent to
+<a class="reference internal" href="#torchx.schedulers.api.Scheduler.cancel" title="torchx.schedulers.api.Scheduler.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a>. Calling on a live job cancels it first.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.describe">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">describe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.schedulers.api.DescribeAppResponse" title="torchx.schedulers.api.DescribeAppResponse"><span class="pre">DescribeAppResponse</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.describe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.describe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns app description, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if it no longer exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.list">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">collections.abc.Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.schedulers.api.ListAppResponse" title="torchx.schedulers.api.ListAppResponse"><span class="pre">ListAppResponse</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists jobs on this scheduler.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.log_iter">
+<span class="sig-name descname"><span class="pre">log_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">role_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">since</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><span class="pre">datetime</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">until</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><span class="pre">datetime</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">should_tail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">streams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.schedulers.api.Stream" title="torchx.schedulers.api.Stream"><span class="pre">Stream</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.log_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.log_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an iterator over log lines for the <code class="docutils literal notranslate"><span class="pre">k</span></code>-th replica of <code class="docutils literal notranslate"><span class="pre">role_name</span></code>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Not all schedulers support log iteration, tailing, or
+time-based cursors. Check the specific scheduler docs.</p>
 </div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.close">
-<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Only for schedulers th118at have local state! Closes the scheduler
-freeing any allocated resources. Once closed, the scheduler object
-is deemed to no longer be valid and any method called on the object
-results in undefined behavior.</p>
-<p>This method should not raise exceptions and is allowed to be called
-multiple times on the same object.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Override only for scheduler implementations that have local state
-(<code class="docutils literal notranslate"><span class="pre">torchx/schedulers/local_scheduler.py</span></code>).
-Schedulers simply wrapping a remote scheduler’s client need not
-implement this method.</p>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.delete">
-<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deletes the job information for the specified <code class="docutils literal notranslate"><span class="pre">app_id</span></code> from the
-scheduler’s data-plane. Basically “deep-purging” the job from the
-scheduler’s data-plane. Calling this API on a “live” job (e.g in a
-non-terminal status such as PENDING or RUNNING) cancels the job.</p>
-<p>Note that this API is only relevant for schedulers for which its
-data-plane persistently stores the “JobDefinition” (which is often
-versioned). AWS Batch and Kubernetes are examples of such schedulers.
-On these schedulers, a finished job may fall out of the data-plane
-(e.g. really old finished jobs get deleted) but the JobDefinition is
-typically permanently stored. In this case, calling
-<a class="reference internal" href="#torchx.schedulers.Scheduler.cancel" title="torchx.schedulers.Scheduler.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a> would not delete the job definition.</p>
-<p>In schedulers with no such feature (e.g. SLURM)
-<a class="reference internal" href="#torchx.schedulers.Scheduler.delete" title="torchx.schedulers.Scheduler.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete()</span></code></a> is the same as <a class="reference internal" href="#torchx.schedulers.Scheduler.cancel" title="torchx.schedulers.Scheduler.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a>, which is the
-default implementation. Hence implementors of such schedulers need not
-override this method.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Calling <a class="reference internal" href="#torchx.schedulers.Scheduler.delete" title="torchx.schedulers.Scheduler.delete"><code class="xref py py-meth docutils literal notranslate"><span class="pre">delete()</span></code></a> on an <code class="docutils literal notranslate"><span class="pre">app_id</span></code> that has fallen out of
-the scheduler’s data-plane does nothing. The user is responsible for
-manually tracking down and cleaning up any dangling resources related
-to the job.</p>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.describe">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">describe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.schedulers.api.DescribeAppResponse" title="torchx.schedulers.api.DescribeAppResponse"><span class="pre">DescribeAppResponse</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.describe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.describe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Describes the specified application.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>AppDef description or <code class="docutils literal notranslate"><span class="pre">None</span></code> if the app does not exist.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.exists">
-<span class="sig-name descname"><span class="pre">exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.exists" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the app exists (was submitted), <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.list">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">collections.abc.Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.schedulers.api.ListAppResponse" title="torchx.schedulers.api.ListAppResponse"><span class="pre">ListAppResponse</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.list" title="Permalink to this definition">¶</a></dt>
-<dd><p>For apps launched on the scheduler, this API returns a list of ListAppResponse
-objects each of which have app id and its status.</p>
+<p>Lines include trailing whitespace (<code class="docutils literal notranslate"><span class="pre">\n</span></code>). When <code class="docutils literal notranslate"><span class="pre">should_tail=True</span></code>,
+the iterator blocks until the app reaches a terminal state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>cfg</strong> – scheduler configuration, same as passed to run/dryrun APIs.
-Some schedulers may use this for backend routing decisions.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> – replica (node) index</p></li>
+<li><p><strong>regex</strong> – optional filter pattern</p></li>
+<li><p><strong>since</strong> – start cursor (scheduler-dependent)</p></li>
+<li><p><strong>until</strong> – end cursor (scheduler-dependent)</p></li>
+<li><p><strong>should_tail</strong> – if <code class="docutils literal notranslate"><span class="pre">True</span></code>, follow output like <code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-f</span></code></p></li>
+<li><p><strong>streams</strong> – <code class="docutils literal notranslate"><span class="pre">stdout</span></code>, <code class="docutils literal notranslate"><span class="pre">stderr</span></code>, or <code class="docutils literal notranslate"><span class="pre">combined</span></code></p></li>
+</ul>
 </dd>
-</dl>
-<p>Note: This API is in prototype phase and is subject to change.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.log_iter">
-<span class="sig-name descname"><span class="pre">log_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">role_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">since</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><span class="pre">datetime</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">until</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><span class="pre">datetime</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">should_tail</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">streams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Stream</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.log_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.log_iter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an iterator to the log lines of the <code class="docutils literal notranslate"><span class="pre">k``th</span> <span class="pre">replica</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">``role</span></code>.
-The iterator ends when all qualifying log lines have been read.</p>
-<p>If the scheduler supports time-based cursors fetching log lines
-for custom time ranges, then the <code class="docutils literal notranslate"><span class="pre">since</span></code>, <code class="docutils literal notranslate"><span class="pre">until</span></code> fields are
-honored, otherwise they are ignored. Not specifying <code class="docutils literal notranslate"><span class="pre">since</span></code> and <code class="docutils literal notranslate"><span class="pre">until</span></code>
-is equivalent to getting all available log lines. If the <code class="docutils literal notranslate"><span class="pre">until</span></code> is
-empty, then the iterator behaves like <code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-f</span></code>, following the log output
-until the job reaches a terminal state.</p>
-<p>The exact definition of what constitutes a log is scheduler specific. Some
-schedulers may consider stderr or stdout as the log, others may read the logs
-from a log file.</p>
-<p>Behaviors and assumptions:</p>
-<ol class="arabic simple">
-<li><p>Produces an undefined-behavior if called on an app that does not exist
-The caller should check that the app exists using <code class="docutils literal notranslate"><span class="pre">exists(app_id)</span></code>
-prior to calling this method.</p></li>
-<li><p>Is not stateful, calling this method twice with same parameters
-returns a new iterator. Prior iteration
-progress is lost.</p></li>
-<li><p>Does not always support log-tailing. Not all schedulers support live
-log iteration (e.g. tailing logs while the app is running). Refer to
-the specific scheduler’s documentation for the iterator’s behavior.</p></li>
-</ol>
-<dl class="simple">
-<dt>3.1 If the scheduler supports log-tailing, it should be controlled</dt><dd><p>by <code class="docutils literal notranslate"><span class="pre">should_tail</span></code> parameter.</p>
-</dd>
-</dl>
-<ol class="arabic" start="4">
-<li><p>Does not guarantee log retention. It is possible that by the time this
-method is called, the underlying scheduler may have purged the log records
-for this application. If so this method raises an arbitrary exception.</p></li>
-<li><p>If <code class="docutils literal notranslate"><span class="pre">should_tail</span></code> is True, the method only raises a <code class="docutils literal notranslate"><span class="pre">StopIteration</span></code> exception
-when the accessible log lines have been fully exhausted and the app has reached
-a final state. For instance, if the app gets stuck and does not produce any log lines,
-then the iterator blocks until the app eventually gets killed (either via
-timeout or manually) at which point it raises a <code class="docutils literal notranslate"><span class="pre">StopIteration</span></code>.</p>
-<p>If <code class="docutils literal notranslate"><span class="pre">should_tail</span></code> is False, the method raises <code class="docutils literal notranslate"><span class="pre">StopIteration</span></code>
-when there are no more logs.</p>
-</li>
-<li><p>Need not be supported by all schedulers.</p></li>
-<li><p>Some schedulers may support line cursors by supporting <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code>
-(e.g. <code class="docutils literal notranslate"><span class="pre">iter[50]</span></code> seeks to the 50th log line).</p></li>
-<li><dl class="simple">
-<dt>Whitespace is preserved, each new line should include <code class="docutils literal notranslate"><span class="pre">\n</span></code>. To</dt><dd><p>support interactive progress bars the returned lines don’t need to
-include <code class="docutils literal notranslate"><span class="pre">\n</span></code> but should then be printed without a newline to
-correctly handle <code class="docutils literal notranslate"><span class="pre">\r</span></code> carriage returns.</p>
-</dd>
-</dl>
-</li>
-</ol>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>streams</strong> – The IO output streams to select.
-One of: combined, stdout, stderr.
-If the selected stream isn’t supported by the scheduler it will
-throw an ValueError.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>An <code class="docutils literal notranslate"><span class="pre">Iterator</span></code> over log lines of the specified role replica</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – if the scheduler does not support log iteration</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – if the scheduler does not support log iteration</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.run_opts">
-<span class="sig-name descname"><span class="pre">run_opts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><span class="pre">runopts</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.run_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.run_opts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the run configuration options expected by the scheduler.
-Basically a <code class="docutils literal notranslate"><span class="pre">--help</span></code> for the <code class="docutils literal notranslate"><span class="pre">run</span></code> API.</p>
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.run_opts">
+<span class="sig-name descname"><span class="pre">run_opts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><span class="pre">runopts</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.run_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.run_opts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns accepted run configuration options (<code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">runopts</span> <span class="pre">&lt;scheduler&gt;</span></code>).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.schedule">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dryrun_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AppDryRunInfo</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.schedule" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <code class="docutils literal notranslate"><span class="pre">submit</span></code> except that it takes an <code class="docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code>.
-Implementers are encouraged to implement this method rather than
-directly implementing <code class="docutils literal notranslate"><span class="pre">submit</span></code> since <code class="docutils literal notranslate"><span class="pre">submit</span></code> can be trivially
-implemented by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
-<span class="k">return</span> <span class="n">schedule</span><span class="p">(</span><span class="n">dryrun_info</span><span class="p">)</span>
-</pre></div>
-</div>
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.schedule">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dryrun_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDryRunInfo" title="torchx.specs.api.AppDryRunInfo"><span class="pre">AppDryRunInfo</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.schedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits a previously dry-run request. Returns the app_id.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.submit">
-<span class="sig-name descname"><span class="pre">submit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torchx.specs.api.Workspace</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.submit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.submit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Submits the application to be run by the scheduler.</p>
-<p>WARNING: Mostly used for tests. Users should prefer to use the TorchX runner instead.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The application id that uniquely identifies the submitted app.</p>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.submit">
+<span class="sig-name descname"><span class="pre">submit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="specs.html#torchx.specs.Workspace" title="torchx.specs.api.Workspace"><span class="pre">torchx.specs.api.Workspace</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.submit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.submit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits an app directly. Prefer <code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code> for production use.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="torchx.schedulers.Scheduler.submit_dryrun">
-<span class="sig-name descname"><span class="pre">submit_dryrun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">AppDryRunInfo</span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.submit_dryrun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.Scheduler.submit_dryrun" title="Permalink to this definition">¶</a></dt>
-<dd><p>Rather than submitting the request to run the app, returns the
-request object that would have been submitted to the underlying
-service. The type of the request object is scheduler dependent.
-This method can be used to dry-run an application. Please refer
-to the scheduler implementation’s documentation regarding
-the actual return type.</p>
+<dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.submit_dryrun">
+<span class="sig-name descname"><span class="pre">submit_dryrun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.AppDryRunInfo" title="torchx.specs.api.AppDryRunInfo"><span class="pre">AppDryRunInfo</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.submit_dryrun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.submit_dryrun" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scheduler request without submitting.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="torchx.schedulers.SchedulerFactory">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">SchedulerFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers.html#SchedulerFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.SchedulerFactory" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="torchx.schedulers.api.StructuredOpts">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">StructuredOpts</span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#StructuredOpts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.StructuredOpts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for typed scheduler configuration options.</p>
+<p>Provides a type-safe way to define scheduler run options as dataclass fields
+instead of manually building <a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.runopts"><code class="xref py py-class docutils literal notranslate"><span class="pre">runopts</span></code></a>. Subclasses
+should be <code class="docutils literal notranslate"><span class="pre">&#64;dataclass</span></code> decorated with fields representing config options.</p>
+<dl class="simple">
+<dt>Features:</dt><dd><ul class="simple">
+<li><p>Auto-generates <code class="docutils literal notranslate"><span class="pre">runopts</span></code> from dataclass fields via <a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.as_runopts" title="torchx.schedulers.api.StructuredOpts.as_runopts"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_runopts()</span></code></a></p></li>
+<li><p>Parses raw config dicts into typed instances via <a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.from_cfg" title="torchx.schedulers.api.StructuredOpts.from_cfg"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_cfg()</span></code></a></p></li>
+<li><p>Supports snake_case field names with camelCase aliases</p></li>
+<li><p>Extracts help text from field docstrings</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuredOpts</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@dataclass</span>
+<span class="gp">... </span><span class="k">class</span><span class="w"> </span><span class="nc">MyOpts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">cluster_name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="gp">... </span><span class="w">    </span><span class="sd">&#39;&#39;&#39;Name of the cluster to submit to.&#39;&#39;&#39;</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="n">num_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">... </span><span class="w">    </span><span class="sd">&#39;&#39;&#39;Number of retry attempts.&#39;&#39;&#39;</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Use in scheduler:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># def _run_opts(self) -&gt; runopts:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#     return MyOpts.as_runopts()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># def _submit_dryrun(self, app, cfg):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#     opts = MyOpts.from_cfg(cfg)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#     # opts.cluster_name, opts.num_retries are typed</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.StructuredOpts.as_runopts">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">as_runopts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.api.runopts"><span class="pre">runopts</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#StructuredOpts.as_runopts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.StructuredOpts.as_runopts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build <a class="reference internal" href="specs.html#torchx.specs.runopts" title="torchx.specs.runopts"><code class="xref py py-class docutils literal notranslate"><span class="pre">runopts</span></code></a> from dataclass fields.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.StructuredOpts.from_cfg">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cfg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Self" title="(in Python v3.14)"><span class="pre">Self</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#StructuredOpts.from_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.StructuredOpts.from_cfg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an instance from a raw config dict.</p>
+<p>Fields are snake_case but also accept camelCase aliases (e.g.,
+<code class="docutils literal notranslate"><span class="pre">hpc_identity</span></code> can be set via <code class="docutils literal notranslate"><span class="pre">hpcIdentity</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.schedulers.api.StructuredOpts.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">D[k]</span> <span class="pre">if</span> <span class="pre">k</span> <span class="pre">in</span> <span class="pre">D,</span> <span class="pre">else</span> <span class="pre">d.</span>&#160; <span class="pre">d</span> <span class="pre">defaults</span> <span class="pre">to</span> <span class="pre">None.</span></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#StructuredOpts.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.StructuredOpts.get" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.api.DescribeAppResponse">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">DescribeAppResponse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'&lt;NOT_SET&gt;'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state:</span> <span class="pre">~torchx.specs.api.AppState</span> <span class="pre">=</span> <span class="pre">AppState.UNSUBMITTED</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_restarts:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'&lt;NONE&gt;'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structured_error_msg:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'&lt;NONE&gt;'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ui_url:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roles_statuses:</span> <span class="pre">~typing.List[~torchx.specs.api.RoleStatus]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roles:</span> <span class="pre">~typing.List[~torchx.specs.api.Role]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers/api.html#DescribeAppResponse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.DescribeAppResponse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Response object returned by <code class="docutils literal notranslate"><span class="pre">Scheduler.describe(app)</span></code> API. Contains
-the status and description of the application as known by the scheduler.
-For some schedulers implementations this response object has necessary
-and sufficient information to recreate an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> object. For these types
-of schedulers, the user can re-<code class="docutils literal notranslate"><span class="pre">run()</span></code> the recreated application. Otherwise
-the user can only call non-creating methods (e.g. <code class="docutils literal notranslate"><span class="pre">wait()</span></code>, <code class="docutils literal notranslate"><span class="pre">status()</span></code>,
-etc).</p>
-<p>Since this class is a data class and contains many member variables we
-keep the usage simple and provide a no-args constructor and chose to
-access the member vars directly rather than provide accessors.</p>
-<p>If scheduler returns arbitrary message, the <code class="docutils literal notranslate"><span class="pre">msg</span></code> field should be populated.
-If scheduler returns a structured json, the <code class="docutils literal notranslate"><span class="pre">structured_error_msg</span></code> field should be populated.</p>
+<dd><p>Response from <a class="reference internal" href="#torchx.schedulers.api.Scheduler.describe" title="torchx.schedulers.api.Scheduler.describe"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.describe()</span></code></a>. Contains status, roles, and metadata.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.schedulers.api.ListAppResponse">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">ListAppResponse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppState" title="torchx.specs.api.AppState"><span class="pre">AppState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">app_handle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'&lt;NOT_SET&gt;'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers/api.html#ListAppResponse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.ListAppResponse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Response object returned by <code class="docutils literal notranslate"><span class="pre">scheduler.list()</span></code> and <code class="docutils literal notranslate"><span class="pre">runner.list()</span></code> APIs.
-Contains the app_id, app_handle and status of the application.
-App ID : The unique identifier that identifies apps submitted on the scheduler
-App handle: Identifier for apps run with torchx in a url format like
-{scheduler_backend}://{session_name}/{app_id}, which is created by the runner
-when it submits a job on a scheduler. Handle info in ListAppResponse is filled
-in by <code class="docutils literal notranslate"><span class="pre">runner.list()</span></code>. This handle can be used to further describe the app
-with torchx CLI or a torchx runner instance.</p>
-<p>Since this class is a data class with some member variables we keep the usage
-simple and chose to access the member vars directly rather than provide accessors.</p>
+<dd><p>Response from <a class="reference internal" href="#torchx.schedulers.api.Scheduler.list" title="torchx.schedulers.api.Scheduler.list"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.list()</span></code></a> / <code class="xref py py-meth docutils literal notranslate"><span class="pre">list()</span></code>.</p>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.schedulers.api.Stream">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">Stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Stream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Registering custom schedulers, resources, and components via entry points.</p>
+</dd>
+<dt><a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a></dt><dd><p>Workspace API reference and custom workspace mixin guide.</p>
+</dd>
+<dt><a class="reference internal" href="api_reference.html"><span class="doc">Quick Reference</span></a></dt><dd><p>Single-page reference for users of TorchX (imports, types, and recipes).</p>
+</dd>
+</dl>
+</div>
 </section>
 </section>
 
@@ -750,7 +1077,7 @@ simple and chose to access the member vars directly rather than provide accessor
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="workspace.html" class="btn btn-neutral float-right" title="torchx.workspace" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="schedulers/aws_batch.html" class="btn btn-neutral float-right" title="AWS Batch" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
         <a href="runner.html" class="btn btn-neutral" title="torchx.runner" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
@@ -786,6 +1113,17 @@ simple and chose to access the member vars directly rather than provide accessor
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">torchx.schedulers</a><ul>
+<li><a class="reference internal" href="#choosing-a-scheduler">Choosing a Scheduler</a></li>
+<li><a class="reference internal" href="#implementing-a-custom-scheduler">Implementing a Custom Scheduler</a><ul>
+<li><a class="reference internal" href="#method-reference">Method Reference</a></li>
+<li><a class="reference internal" href="#minimal-skeleton">Minimal Skeleton</a></li>
+<li><a class="reference internal" href="#testing-your-scheduler">Testing Your Scheduler</a></li>
+<li><a class="reference internal" href="#common-pitfalls">Common Pitfalls</a></li>
+<li><a class="reference internal" href="#config-options-structuredopts-vs-runopts">Config Options (StructuredOpts vs runopts)</a></li>
+<li><a class="reference internal" href="#adding-workspace-support">Adding Workspace Support</a></li>
+<li><a class="reference internal" href="#existing-implementations">Existing Implementations</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#all-schedulers">All Schedulers</a></li>
 <li><a class="reference internal" href="#module-torchx.schedulers">Scheduler Functions</a></li>
 <li><a class="reference internal" href="#scheduler-classes">Scheduler Classes</a></li>

@@ -38,8 +38,8 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title=".torchxconfig" href="runner.config.html" />
-    <link rel="prev" title="CLI" href="cli.html" />
+    <link rel="next" title="Custom Components" href="custom_components.html" />
+    <link rel="prev" title="Quickstart" href="quickstart.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -321,14 +321,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -342,27 +350,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -445,191 +440,277 @@
       
   <section id="basic-concepts">
 <h1>Basic Concepts<a class="headerlink" href="#basic-concepts" title="Permalink to this heading">¶</a></h1>
-<p>This describes the high level concepts behind TorchX and the project structure.
-For how to create and run an app check out the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>This page covers the core TorchX abstractions – AppDef, Component,
+Runner, and Scheduler – and how they fit together. For a hands-on
+walkthrough, see the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a>.</p>
+</div>
 <section id="project-structure">
 <h2>Project Structure<a class="headerlink" href="#project-structure" title="Permalink to this heading">¶</a></h2>
-<p>The top level modules in TorchX are:</p>
-<ol class="arabic simple">
-<li><p><a class="reference internal" href="specs.html#module-torchx.specs" title="torchx.specs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.specs</span></code></a>: application spec (job definition) APIs</p></li>
-<li><p><a class="reference internal" href="components/overview.html#module-torchx.components" title="torchx.components"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components</span></code></a>: predefined (builtin) app specs</p></li>
-<li><p><a class="reference internal" href="workspace.html#module-torchx.workspace" title="torchx.workspace"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.workspace</span></code></a>: handles patching images for remote execution</p></li>
-<li><p><a class="reference internal" href="cli.html#module-torchx.cli" title="torchx.cli"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.cli</span></code></a>: CLI tool</p></li>
-<li><p><a class="reference internal" href="runner.html#module-torchx.runner" title="torchx.runner"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runner</span></code></a>: given an app spec, submits the app as a job on a scheduler</p></li>
-<li><p><a class="reference internal" href="schedulers.html#module-torchx.schedulers" title="torchx.schedulers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.schedulers</span></code></a>: backend job schedulers that the runner supports</p></li>
-<li><p><a class="reference internal" href="runtime/overview.html#module-torchx.runtime" title="torchx.runtime"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runtime</span></code></a>: util and abstraction libraries you can use in authoring apps (not app spec)</p></li>
-</ol>
-<p>Below is a UML diagram</p>
+<p>TorchX has three layers: <strong>define</strong> (what to run), <strong>launch</strong> (where to run
+it), and <strong>manage</strong> (monitor, log, cancel):</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="specs.html#module-torchx.specs" title="torchx.specs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.specs</span></code></a></p></td>
+<td><p>Application spec (job definition) APIs</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="components/overview.html#module-torchx.components" title="torchx.components"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components</span></code></a></p></td>
+<td><p>Predefined (builtin) app specs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.workspace</span></code></p></td>
+<td><p>Handles patching images for remote execution</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cli.html#module-torchx.cli" title="torchx.cli"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.cli</span></code></a></p></td>
+<td><p>CLI tool</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="runner.html#module-torchx.runner" title="torchx.runner"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runner</span></code></a></p></td>
+<td><p>Submits app specs as jobs on a scheduler</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="schedulers.html#module-torchx.schedulers" title="torchx.schedulers"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.schedulers</span></code></a></p></td>
+<td><p>Backend job schedulers</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="runtime/overview.html#module-torchx.runtime" title="torchx.runtime"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runtime</span></code></a></p></td>
+<td><p>Utility libraries for authoring apps</p></td>
+</tr>
+</tbody>
+</table>
 <img alt="_images/torchx_module_uml.jpg" src="_images/torchx_module_uml.jpg" />
 </section>
 <section id="concepts">
 <h2>Concepts<a class="headerlink" href="#concepts" title="Permalink to this heading">¶</a></h2>
 <section id="appdefs">
 <h3>AppDefs<a class="headerlink" href="#appdefs" title="Permalink to this heading">¶</a></h3>
-<p>In TorchX an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> is simply a struct with the <em>definition</em> of
-the actual application. In scheduler lingo, this is a <code class="docutils literal notranslate"><span class="pre">JobDefinition</span></code> and a
-similar concept in Kubernetes is the <code class="docutils literal notranslate"><span class="pre">spec.yaml</span></code>. To disambiguate between the
-application binary (logic) and the spec, we typically refer to a TorchX
-<code class="docutils literal notranslate"><span class="pre">AppDef</span></code> as an “app spec” or <code class="docutils literal notranslate"><span class="pre">specs.AppDef</span></code>. It
-is the common interface understood by <code class="docutils literal notranslate"><span class="pre">torchx.runner</span></code> allowing you to run your app as a standalone job
-or as a stage in an ML pipeline.</p>
-<p>Below is a simple example of an <code class="docutils literal notranslate"><span class="pre">specs.AppDef</span></code> that echos “hello world”</p>
+<p>An <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> is a job definition — similar to a
+Kubernetes <code class="docutils literal notranslate"><span class="pre">spec.yaml</span></code> or a scheduler <code class="docutils literal notranslate"><span class="pre">JobDefinition</span></code>. It’s a pure Python
+dataclass understood by <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 
-<span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
-   <span class="n">name</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
-   <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
-       <span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span>
-           <span class="n">name</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
-           <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;/bin/echo&quot;</span><span class="p">,</span>
-           <span class="n">image</span><span class="o">=</span><span class="s2">&quot;/tmp&quot;</span><span class="p">,</span>
-           <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hello world&quot;</span><span class="p">],</span>
-           <span class="n">num_replicas</span><span class="o">=</span><span class="mi">1</span>
-       <span class="p">)</span>
-   <span class="p">]</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
+    <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
+            <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;/bin/echo&quot;</span><span class="p">,</span>
+            <span class="n">image</span><span class="o">=</span><span class="s2">&quot;/tmp&quot;</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hello world&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>As you can see, <code class="docutils literal notranslate"><span class="pre">specs.AppDef</span></code> is a pure python dataclass that
-simply encodes the name of the main binary (entrypoint), arguments to
-pass to it, and a few other runtime parameters such as <code class="docutils literal notranslate"><span class="pre">num_replicas</span></code> and
-information about the container in which to run (<code class="docutils literal notranslate"><span class="pre">entrypoint=/bin/echo</span></code>).</p>
-<p>The app spec is flexible and can encode specs for a variety of app topologies.
-For example, <code class="docutils literal notranslate"><span class="pre">num_replicas</span> <span class="pre">&gt;</span> <span class="pre">1</span></code> means that the application is distributed.
-Specifying multiple <code class="docutils literal notranslate"><span class="pre">specs.Roles</span></code> makes it possible to represent a
-non-homogeneous distributed application, such as those that require a single
-“coordinator” and many “workers”.</p>
-<p>Refer to <code class="docutils literal notranslate"><span class="pre">torchx.specs</span></code> <a class="reference internal" href="specs.html#module-torchx.specs"><span class="std std-ref">API Docs</span></a> to learn more.</p>
-<p>What makes app specs flexible also makes it have many fields. The good
-news is that in most cases you don’t have to build an app spec from scratch.
-Rather you would use a templetized app spec called <code class="docutils literal notranslate"><span class="pre">components</span></code>.</p>
+<p>Multiple <a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> instances represent non-homogeneous
+apps (e.g. coordinator + workers). Setting <code class="docutils literal notranslate"><span class="pre">num_replicas</span> <span class="pre">&gt;</span> <span class="pre">1</span></code> runs multiple
+identical copies (replicas) of a role – this is how you express distributed
+jobs (e.g. multi-node training).</p>
+<p>See the <a class="reference internal" href="specs.html#torchx-specs"><span class="std std-ref">torchx.specs</span></a> API docs for full details.</p>
 </section>
 <section id="components">
 <h3>Components<a class="headerlink" href="#components" title="Permalink to this heading">¶</a></h3>
-<p>A component in TorchX is simply a templetized <code class="docutils literal notranslate"><span class="pre">spec.AppDef</span></code>. You can
-think of them as convenient “factory methods” for <code class="docutils literal notranslate"><span class="pre">spec.AppDef</span></code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Unlike applications, components don’t map to an actual python dataclass.
-Rather a factory function that returns an <code class="docutils literal notranslate"><span class="pre">spec.AppDef</span></code>
-is called a component.</p>
-</div>
-<p>The granularity at which the app spec is templetized varies. Some components
-such as the <code class="docutils literal notranslate"><span class="pre">echo</span></code> example above are <em>ready-to-run</em>, meaning that they
-have hardcoded application binaries. Others such as <code class="docutils literal notranslate"><span class="pre">ddp</span></code> (distributed data parallel)
-specs only specify the topology of the application. Below is one possible templetization
-of a ddp style trainer app spec that specifies a homogeneous node topology:</p>
+<p>A <strong>component</strong> is a factory function that returns an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">ddp</span><span class="p">(</span><span class="n">jobname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">nnodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">script_args</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-   <span class="n">single_gpu</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">Resources</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
-   <span class="k">return</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
-           <span class="n">name</span><span class="o">=</span><span class="n">jobname</span><span class="p">,</span>
-           <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
-               <span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span>
-                   <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
-                   <span class="n">entrypoint</span><span class="o">=</span><span class="n">entrypoint</span><span class="p">,</span>
-                   <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
-                   <span class="n">resource</span><span class="o">=</span><span class="n">single_gpu</span><span class="p">,</span>
-                   <span class="n">args</span><span class="o">=</span><span class="n">script_args</span><span class="p">,</span>
-                   <span class="n">num_replicas</span><span class="o">=</span><span class="n">nnodes</span>
-               <span class="p">)</span>
-           <span class="p">]</span>
-   <span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ddp</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">nnodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
+                <span class="n">entrypoint</span><span class="o">=</span><span class="n">entrypoint</span><span class="p">,</span>
+                <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+                <span class="n">resource</span><span class="o">=</span><span class="n">specs</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">1024</span><span class="p">),</span>
+                <span class="n">args</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">),</span>
+                <span class="n">num_replicas</span><span class="o">=</span><span class="n">nnodes</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
-<p>As you can see, the level of parameterization is completely up to the
-component author. And the effort of creating a component is no more than
-writing a python function. Don’t try to over generalize components by
-parameterizing everything. Components are easy and cheap to create,
-create as many as you want based on repetitive use cases.</p>
-<p><strong>PROTIP 1:</strong> Since components are python functions, component composition
-can be achieved through python function composition rather than object composition.
-However <strong>we do not recommend component composition</strong> for maintainability
-purposes.</p>
-<p>Before authoring your own component, browse through the library of
-<a class="reference internal" href="index.html#components"><span class="std std-ref">Components</span></a> that are included with TorchX
-to see if one fits your needs.</p>
+<p>Components are cheap — create one per use case rather than over-generalizing.
+Browse the <a class="reference internal" href="components/overview.html"><span class="doc">builtin components</span></a> library before writing your own.</p>
 </section>
 <section id="runner-and-schedulers">
 <h3>Runner and Schedulers<a class="headerlink" href="#runner-and-schedulers" title="Permalink to this heading">¶</a></h3>
-<p>A <code class="docutils literal notranslate"><span class="pre">Runner</span></code> does exactly what you would expect – given an app spec it
-launches the application as a job onto a cluster through a job scheduler.</p>
-<p>There are two ways to access runners in TorchX:</p>
-<ol class="arabic simple">
-<li><p>CLI: <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span> <span class="pre">~/app_spec.py</span></code></p></li>
-<li><p>Programmatically: <code class="docutils literal notranslate"><span class="pre">torchx.runner.get_runner().run(appspec)</span></code></p></li>
-</ol>
-<p>See <a class="reference internal" href="index.html#schedulers"><span class="std std-ref">Schedulers</span></a> for a list of schedulers that the runner can
-launch apps to.</p>
+<p>The <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> submits AppDefs as jobs. Use it from
+the CLI <strong>or</strong> from Python – both are first-class interfaces:</p>
+<p><strong>CLI:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_cwd<span class="w"> </span>my_component.py:ddp
+</pre></div>
+</div>
+<p><strong>Python API:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
+
+<span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
+    <span class="c1"># Option 1: run a named component (same resolution as the CLI)</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span>
+        <span class="s2">&quot;dist.ddp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Option 2: run an AppDef you built directly</span>
+    <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Monitor the job</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>      <span class="c1"># poll current state</span>
+    <span class="n">final</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>          <span class="c1"># block until terminal</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>                <span class="c1"># request cancellation</span>
+
+    <span class="c1"># Fetch logs for replica 0 of the &quot;trainer&quot; role</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">runner</span><span class="o">.</span><span class="n">log_lines</span><span class="p">(</span><span class="n">app_handle</span><span class="p">,</span> <span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">app_handle</span></code> returned by <code class="docutils literal notranslate"><span class="pre">run</span></code>/<code class="docutils literal notranslate"><span class="pre">run_component</span></code> is a URI string:
+<code class="docutils literal notranslate"><span class="pre">{scheduler}://{session_name}/{app_id}</span></code> (e.g.
+<code class="docutils literal notranslate"><span class="pre">kubernetes://torchx/my_job_123</span></code>). Pass it to <code class="docutils literal notranslate"><span class="pre">status</span></code>, <code class="docutils literal notranslate"><span class="pre">wait</span></code>,
+<code class="docutils literal notranslate"><span class="pre">cancel</span></code>, <code class="docutils literal notranslate"><span class="pre">log_lines</span></code>, and <code class="docutils literal notranslate"><span class="pre">delete</span></code>.</p>
+<p>See <a class="reference internal" href="schedulers.html"><span class="doc">Schedulers</span></a> for supported backends and the
+<a class="reference internal" href="api_reference.html"><span class="doc">API Quick Reference</span></a> for complete recipes.</p>
 </section>
 <section id="runtime">
 <h3>Runtime<a class="headerlink" href="#runtime" title="Permalink to this heading">¶</a></h3>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p><code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code> is by no means is a requirement to use TorchX.
-If your infrastructure is fixed and you don’t need your application
-to be portable across different types of schedulers,
-you can skip this section.</p>
+<p><code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code> is optional. Your application binary has <strong>zero</strong>
+dependency on TorchX.</p>
 </div>
-<p>Your application (not the app spec, but the actual app binary) has <strong>ZERO</strong> dependencies
-to TorchX (e.g. <code class="docutils literal notranslate"><span class="pre">/bin/echo</span></code> does not use TorchX, but a <code class="docutils literal notranslate"><span class="pre">echo_torchx.py</span></code> component
-can be created for it).</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code> is the ONLY module you should be using when
-authoring your application binary!</p>
-</div>
-<p>However because TorchX essentially allows your app to run <strong>anywhere</strong> it is
-recommended that your application be written in a scheduler/infrastructure
-agnostic fashion.</p>
-<p>This typically means adding an API layer at the touch-points with scheduler/infra.
-For example the following application is <strong>NOT</strong> infra agnostic</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">boto3</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">input_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-   <span class="n">s3</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;s3&quot;</span><span class="p">)</span>
-   <span class="n">path</span> <span class="o">=</span> <span class="n">s3_input_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
-   <span class="n">bucket</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-   <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-   <span class="n">s3</span><span class="o">.</span><span class="n">download_file</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="s2">&quot;/tmp/input&quot;</span><span class="p">)</span>
-   <span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;/tmp/input&quot;</span><span class="p">)</span>
-   <span class="c1"># ...&lt;rest of code omitted for brevity&gt;...</span>
-</pre></div>
-</div>
-<p>The binary above makes an implicit assumption that the <code class="docutils literal notranslate"><span class="pre">input_path</span></code>
-is an AWS S3 path. One way to make this trainer storage agnostic is to introduce
-a <code class="docutils literal notranslate"><span class="pre">FileSystem</span></code> abstraction layer. For file systems, frameworks like
-<a class="reference external" href="https://www.pytorchlightning.ai/">PyTorch Lightning</a>  already define <code class="docutils literal notranslate"><span class="pre">io</span></code>
-layers (lightning uses <a class="reference external" href="https://filesystem-spec.readthedocs.io/en/latest/index.html">fsspec</a>
-under the hood). The binary above can be rewritten to be storage agnostic with
-lightning.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytorch_lightning.utilities.io</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">io</span>
+<p>For portable apps, use <a class="reference external" href="https://filesystem-spec.readthedocs.io">fsspec</a>
+for storage abstraction:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">input_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-   <span class="n">fs</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">get_filesystem</span><span class="p">(</span><span class="n">input_url</span><span class="p">)</span>
-   <span class="k">with</span> <span class="n">fs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">input_url</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-       <span class="nb">input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-   <span class="c1"># ...&lt;rest of code omitted for brevity&gt;...</span>
+    <span class="k">with</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">input_url</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Now <code class="docutils literal notranslate"><span class="pre">main</span></code> can be called as <code class="docutils literal notranslate"><span class="pre">main(&quot;s3://foo/bar&quot;)</span></code> or <code class="docutils literal notranslate"><span class="pre">main(&quot;file://foo/bar&quot;)</span></code>
-making it compatible with input stored in various storages.</p>
-<p>With <code class="docutils literal notranslate"><span class="pre">FileSystem</span></code> there were existing libraries defining the file system abstraction.
-In the <code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code>, you’ll find libraries or pointers to other libraries
-that provide abstractions for various functionalities that you may need to author
-a infra-agnostic application. Ideally features in <code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code> are upstreamed
-in a timely fashion to libraries such as lightning that are intended to be used to
-author your application. But finding a proper permanent home for these abstractions
-may take time or even require an entirely new OSS project to be created.
-Until this happens the features can mature and be accessible to users
-through the <code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code> module.</p>
+<p>This works with <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, <code class="docutils literal notranslate"><span class="pre">gs://</span></code>, <code class="docutils literal notranslate"><span class="pre">file://</span></code>, and other backends.</p>
+</section>
+<section id="when-to-use-torchx-and-when-not-to">
+<h3>When to Use TorchX (and When Not To)<a class="headerlink" href="#when-to-use-torchx-and-when-not-to" title="Permalink to this heading">¶</a></h3>
+<p>TorchX is a good fit when you launch PyTorch jobs across multiple backends
+without maintaining separate configurations for each:</p>
+<ul class="simple">
+<li><p>You need <strong>portable job definitions</strong> that work the same way on a laptop,
+an HPC cluster, and a cloud provider.</p></li>
+<li><p>You need <strong>distributed training</strong> with TorchElastic and a single command to
+launch multi-node jobs on any scheduler.</p></li>
+<li><p>You prefer <strong>Python-native</strong> job definitions over YAML and want to launch
+jobs programmatically from scripts, notebooks, or pipelines.</p></li>
+</ul>
+<p>TorchX focuses on job launching and lifecycle management. It does <strong>not</strong>
+include workflow orchestration (DAGs), hyperparameter search, or a model
+registry – integrate with Airflow, Kubeflow Pipelines, or MLflow for those.</p>
+<p><strong>TorchX vs. alternatives:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Alternative</p></th>
+<th class="head"><p>When to use it instead</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">torchrun</span></code></p></td>
+<td><p>You only need distributed training on a <strong>single cluster</strong> and already
+have nodes allocated (e.g. via <code class="docutils literal notranslate"><span class="pre">salloc</span></code> or inside a Kubernetes pod).
+TorchX’s <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> uses <code class="docutils literal notranslate"><span class="pre">torchrun</span></code> under the hood.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Direct Kubernetes YAML</p></td>
+<td><p>You are <strong>Kubernetes-only</strong> and prefer managing manifests directly.</p></td>
+</tr>
+<tr class="row-even"><td><p>AWS SageMaker SDK</p></td>
+<td><p>You are <strong>all-in on AWS</strong> and want tight integration with SageMaker
+features (spot training, model registry, endpoints). TorchX supports
+SageMaker but does not expose every SageMaker API.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Kubeflow Training Operator</p></td>
+<td><p>You need <strong>Kubernetes-native CRDs</strong> (PyTorchJob, TFJob) with gang
+scheduling or priority queues. TorchX creates vanilla <code class="docutils literal notranslate"><span class="pre">Job</span></code> resources.</p></td>
+</tr>
+<tr class="row-even"><td><p>Custom shell scripts</p></td>
+<td><p>You have a <strong>single environment</strong> with stable infrastructure. TorchX
+pays off with multiple environments or teams needing reproducible
+launches.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple glossary">
+<dt id="term-AppDef">AppDef<a class="headerlink" href="#term-AppDef" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> is a job definition containing one or
+more Roles. It is the primary unit that the Runner submits to a Scheduler.</p>
+</dd>
+<dt id="term-Role">Role<a class="headerlink" href="#term-Role" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> describes a set of identical containers
+(replicas) within an AppDef. Roles specify the entrypoint, image,
+arguments, and resource requirements.</p>
+</dd>
+<dt id="term-Resource">Resource<a class="headerlink" href="#term-Resource" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a> specifies the hardware requirements
+(CPU, GPU, memory) for a Role. Named resources provide t-shirt-sized
+presets.</p>
+</dd>
+<dt id="term-Component">Component<a class="headerlink" href="#term-Component" title="Permalink to this term">¶</a></dt><dd><p>A Python function that returns an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>. Components are the
+recommended way to define reusable, shareable job specifications.</p>
+</dd>
+<dt id="term-Runner">Runner<a class="headerlink" href="#term-Runner" title="Permalink to this term">¶</a></dt><dd><p>The <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> submits AppDefs as jobs to a
+Scheduler and manages their lifecycle.</p>
+</dd>
+<dt id="term-Scheduler">Scheduler<a class="headerlink" href="#term-Scheduler" title="Permalink to this term">¶</a></dt><dd><p>A backend that executes jobs (e.g. Kubernetes, Slurm, local Docker).
+See <a class="reference internal" href="schedulers.html"><span class="doc">Schedulers</span></a> for the full list.</p>
+</dd>
+<dt id="term-Workspace">Workspace<a class="headerlink" href="#term-Workspace" title="Permalink to this term">¶</a></dt><dd><p>A local directory containing your source code. TorchX can automatically
+<strong>patch</strong> (overlay) your workspace onto a base image so that remote jobs
+run your latest code without a manual image rebuild. See <a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a>.</p>
+</dd>
+<dt id="term-Image">Image<a class="headerlink" href="#term-Image" title="Permalink to this term">¶</a></dt><dd><p>The base runtime environment for a job. For container-based schedulers
+(<code class="docutils literal notranslate"><span class="pre">local_docker</span></code>, <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code>) this is a Docker
+container image. For <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> and <code class="docutils literal notranslate"><span class="pre">slurm</span></code> it is the current
+working directory or shared filesystem path.</p>
+</dd>
+<dt id="term-Dryrun">Dryrun<a class="headerlink" href="#term-Dryrun" title="Permalink to this term">¶</a></dt><dd><p>A preview of what TorchX <em>would</em> submit to a scheduler without actually
+submitting. Useful for debugging job definitions. The Runner’s
+<a class="reference internal" href="runner.html#torchx.runner.Runner.dryrun" title="torchx.runner.Runner.dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun()</span></code></a> method returns an
+<a class="reference internal" href="specs.html#torchx.specs.AppDryRunInfo" title="torchx.specs.AppDryRunInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code></a> containing the native request.</p>
+</dd>
+<dt id="term-AppHandle">AppHandle<a class="headerlink" href="#term-AppHandle" title="Permalink to this term">¶</a></dt><dd><p>A URI string returned by <a class="reference internal" href="runner.html#torchx.runner.Runner.run" title="torchx.runner.Runner.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a> with the
+format <code class="docutils literal notranslate"><span class="pre">{scheduler}://{session_name}/{app_id}</span></code> (e.g.
+<code class="docutils literal notranslate"><span class="pre">kubernetes://torchx/my_job_123</span></code>). Passed to <code class="docutils literal notranslate"><span class="pre">status</span></code>, <code class="docutils literal notranslate"><span class="pre">wait</span></code>,
+<code class="docutils literal notranslate"><span class="pre">cancel</span></code>, <code class="docutils literal notranslate"><span class="pre">log_lines</span></code>, and <code class="docutils literal notranslate"><span class="pre">delete</span></code>. See
+<a class="reference internal" href="specs.html#torchx.specs.parse_app_handle" title="torchx.specs.parse_app_handle"><code class="xref py py-func docutils literal notranslate"><span class="pre">parse_app_handle()</span></code></a>.</p>
+</dd>
+<dt id="term-Entry-Point">Entry Point<a class="headerlink" href="#term-Entry-Point" title="Permalink to this term">¶</a></dt><dd><p>A standard Python packaging mechanism that lets installed packages
+advertise plugins. TorchX uses entry points to discover schedulers,
+components, trackers, and CLI commands at runtime. Defined in
+<code class="docutils literal notranslate"><span class="pre">setup.py</span></code> or <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. See the
+<a class="reference external" href="https://packaging.python.org/specifications/entry-points/">packaging guide</a>.</p>
+</dd>
+</dl>
 </section>
 </section>
 <section id="next-steps">
 <h2>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">¶</a></h2>
-<p>Check out the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a> to learn how to create and
-run components.</p>
+<ol class="arabic simple">
+<li><p>If you haven’t already, work through the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a>.</p></li>
+<li><p>Explore the <a class="reference internal" href="runner.html"><span class="doc">Runner Python API</span></a> for launching jobs programmatically.</p></li>
+<li><p>Write your first reusable job template in <a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a>.</p></li>
+<li><p>Register components, schedulers, and resources as plugins in <a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a>.</p></li>
+</ol>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a></dt><dd><p>Step-by-step guide for writing and launching a custom component.</p>
+</dd>
+<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Extending TorchX with custom schedulers, resources, and components.</p>
+</dd>
+</dl>
+</div>
 </section>
 </section>
 
@@ -641,10 +722,10 @@ run components.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="runner.config.html" class="btn btn-neutral float-right" title=".torchxconfig" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="custom_components.html" class="btn btn-neutral float-right" title="Custom Components" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="cli.html" class="btn btn-neutral" title="CLI" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral" title="Quickstart" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -683,6 +764,7 @@ run components.</p>
 <li><a class="reference internal" href="#components">Components</a></li>
 <li><a class="reference internal" href="#runner-and-schedulers">Runner and Schedulers</a></li>
 <li><a class="reference internal" href="#runtime">Runtime</a></li>
+<li><a class="reference internal" href="#when-to-use-torchx-and-when-not-to">When to Use TorchX (and When Not To)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#next-steps">Next Steps</a></li>

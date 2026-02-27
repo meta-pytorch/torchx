@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -475,7 +470,7 @@
     <span class="k">return</span> <span class="n">args_decs</span>
 
 
-<div class="viewcode-block" id="TorchXArgumentHelpFormatter"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.TorchXArgumentHelpFormatter">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TorchXArgumentHelpFormatter</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TorchXArgumentHelpFormatter</span><span class="p">(</span>
     <span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
     <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
     <span class="n">argparse</span><span class="o">.</span><span class="n">MetavarTypeHelpFormatter</span><span class="p">,</span>
@@ -497,7 +492,7 @@
             <span class="n">help</span> <span class="o">+=</span> <span class="s2">&quot; (required)&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">help</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (default: </span><span class="si">{</span><span class="n">action</span><span class="o">.</span><span class="n">default</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">help</span></div>
+        <span class="k">return</span> <span class="n">help</span>
 
 
 <div class="viewcode-block" id="get_fn_docstring"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.get_fn_docstring">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_fn_docstring</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
@@ -542,13 +537,13 @@
     <span class="n">severity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span></div>
 
 
-<div class="viewcode-block" id="ComponentFunctionValidator"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ComponentFunctionValidator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ComponentFunctionValidator</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
-<div class="viewcode-block" id="ComponentFunctionValidator.validate"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ComponentFunctionValidator.validate">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComponentFunctionValidator</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_specs_func_def</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to call to validate the provided function def.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_gen_linter_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lineno</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LinterMessage</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">LinterMessage</span><span class="p">(</span>
@@ -557,7 +552,7 @@
             <span class="n">line</span><span class="o">=</span><span class="n">lineno</span><span class="p">,</span>
             <span class="n">char</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">OK</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
@@ -585,7 +580,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_optional_type</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ast</span><span class="o">.</span><span class="n">expr</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if `arg``</span>
+<span class="sd">    Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if ``arg``</span>
 <span class="sd">    is not an ``Optional``. Handles both:</span>
 <span class="sd">        1. ``typing.Optional[T]`` (python&lt;3.10)</span>
 <span class="sd">        2.  ``T | None`` or ``None | T`` (python&gt;=3.10 - PEP 604)</span>
@@ -606,10 +601,10 @@
     <span class="k">return</span> <span class="kc">None</span>
 
 
-<div class="viewcode-block" id="ArgTypeValidator"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ArgTypeValidator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ArgTypeValidator</span><span class="p">(</span><span class="n">ComponentFunctionValidator</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ArgTypeValidator</span><span class="p">(</span><span class="n">ComponentFunctionValidator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validates component function&#39;s argument types.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ArgTypeValidator.validate"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ArgTypeValidator.validate">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_specs_func_def</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_specs_func_def</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
         <span class="n">linter_errors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">arg_def</span> <span class="ow">in</span> <span class="n">app_specs_func_def</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
             <span class="n">arg_linter_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_arg_def</span><span class="p">(</span><span class="n">app_specs_func_def</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">arg_def</span><span class="p">)</span>
@@ -622,7 +617,7 @@
         <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">app_specs_func_def</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">kwonlyargs</span><span class="p">:</span>
             <span class="n">arg_linter_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_arg_def</span><span class="p">(</span><span class="n">app_specs_func_def</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
             <span class="n">linter_errors</span> <span class="o">+=</span> <span class="n">arg_linter_errors</span>
-        <span class="k">return</span> <span class="n">linter_errors</span></div>
+        <span class="k">return</span> <span class="n">linter_errors</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_arg_def</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">function_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">arg</span>
@@ -692,10 +687,10 @@
 
             <span class="k">return</span> <span class="n">err</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported container type </span><span class="si">{</span><span class="n">container_type</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">err</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported argument type </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="n">err</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported argument type </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ReturnTypeValidator"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ReturnTypeValidator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ReturnTypeValidator</span><span class="p">(</span><span class="n">ComponentFunctionValidator</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReturnTypeValidator</span><span class="p">(</span><span class="n">ComponentFunctionValidator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validates that component functions always return AppDef type&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">supported_return_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -717,7 +712,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="ReturnTypeValidator.validate"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ReturnTypeValidator.validate">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_specs_func_def</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_specs_func_def</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validates return annotation of the torchx function. Current allowed annotations:</span>
 <span class="sd">            * AppDef</span>
@@ -743,10 +738,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_gen_linter_message</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">app_specs_func_def</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">linter_errors</span></div></div>
+        <span class="k">return</span> <span class="n">linter_errors</span>
 
 
-<div class="viewcode-block" id="ComponentFnVisitor"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ComponentFnVisitor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ComponentFnVisitor</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComponentFnVisitor</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Visitor that finds the component_function and runs registered validators on it.</span>
 <span class="sd">    Current registered validators:</span>
@@ -780,7 +775,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">component_function_name</span> <span class="o">=</span> <span class="n">component_function_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">visited_function</span> <span class="o">=</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="ComponentFnVisitor.visit_FunctionDef"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.ComponentFnVisitor.visit_FunctionDef">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">visit_FunctionDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">visit_FunctionDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validates the function def with the child validators.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -788,7 +783,7 @@
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">visited_function</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">for</span> <span class="n">validator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validators</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">linter_errors</span> <span class="o">+=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linter_errors</span> <span class="o">+=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="validate"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.validate">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span>

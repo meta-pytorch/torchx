@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchx.components.component_test_base &mdash; PyTorch/TorchX main documentation</title>
+  <title>torchx.cli.cmd_base &mdash; PyTorch/TorchX main documentation</title>
   
 
   
@@ -402,7 +402,7 @@
         
           <li><a href="../../index.html">Module code</a> &gt;</li>
         
-      <li>torchx.components.component_test_base</li>
+      <li>torchx.cli.cmd_base</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -433,7 +433,7 @@
     <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
-  <h1>Source code for torchx.components.component_test_base</h1><div class="highlight"><pre>
+  <h1>Source code for torchx.cli.cmd_base</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright (c) Meta Platforms, Inc. and affiliates.</span>
 <span class="c1"># All rights reserved.</span>
 <span class="c1">#</span>
@@ -442,119 +442,28 @@
 
 <span class="c1"># pyre-strict</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">You can unit test the component definitions as you would normal Python code</span>
-<span class="sd">since they are valid Python definitions.</span>
-
-<span class="sd">We do recommend using :py:class:`ComponentTestCase` to ensure that your</span>
-<span class="sd">component can be parsed by the TorchX CLI. The CLI requires stricter formatting</span>
-<span class="sd">on the doc string than pure Python as the doc string is used for parsing CLI</span>
-<span class="sd">args.</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModuleType</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">AppStatus</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.builders</span><span class="w"> </span><span class="kn">import</span> <span class="n">_create_args_parser</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.finder</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_component</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 
 
-<div class="viewcode-block" id="ComponentTestCase"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ComponentTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
-<div class="viewcode-block" id="ComponentTestCase.setUp"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.setUp">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">test_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="s2">&quot;torchx_component_test&quot;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">old_cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span></div>
-
-<div class="viewcode-block" id="ComponentTestCase.tearDown"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.tearDown">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dir</span><span class="p">)</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_cwd</span><span class="p">)</span></div>
-
+<div class="viewcode-block" id="SubCommand"><a class="viewcode-back" href="../../../cli.html#torchx.cli.cmd_base.SubCommand">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SubCommand</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    ComponentTestCase is an extension of TestCase with helper methods for use</span>
-<span class="sd">    with testing component definitions.</span>
-
-<span class="sd">    .. doctest:: [component_test_case]</span>
-
-<span class="sd">     import unittest</span>
-<span class="sd">     from torchx.components.component_test_base import ComponentTestCase</span>
-<span class="sd">     from torchx.components import utils</span>
-<span class="sd">     class MyComponentTest(ComponentTestCase):</span>
-<span class="sd">         def test_my_comp(self):</span>
-<span class="sd">             self.validate(utils, &quot;copy&quot;)</span>
-<span class="sd">     MyComponentTest(&quot;test_my_comp&quot;).run()</span>
-
+<span class="sd">    Base sub command class, all subcommands should implement this base class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ComponentTestCase.validate"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.validate">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">ModuleType</span><span class="p">,</span> <span class="n">function_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="SubCommand.add_arguments"><a class="viewcode-back" href="../../../cli.html#torchx.cli.cmd_base.SubCommand.add_arguments">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subparser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the component by effectively running:</span>
-
-<span class="sd">        .. code-block:: shell-session</span>
-
-<span class="sd">         $ torchx run COMPONENT.py:FN --help</span>
-
+<span class="sd">        Adds the arguments to this sub command</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-        <span class="c1"># make it the same as a custom component (e.g. /abs/path/to/component.py:train)</span>
-        <span class="n">module_path</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="vm">__file__</span>
-        <span class="k">assert</span> <span class="n">module_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;module must have __file__: </span><span class="si">{</span><span class="n">module_path</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">module_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
-        <span class="n">component_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_path</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">function_name</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">component_def</span> <span class="o">=</span> <span class="n">get_component</span><span class="p">(</span><span class="n">component_id</span><span class="p">)</span>
-
-        <span class="c1"># on `--help` argparse will print the help message and exit 0</span>
-        <span class="c1"># just make sure that happens; if the component has errors then</span>
-        <span class="c1"># this will raise an exception and the test will fail</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">SystemExit</span><span class="p">):</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">_create_args_parser</span><span class="p">(</span><span class="n">component_def</span><span class="o">.</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s2">&quot;--help&quot;</span><span class="p">])</span></div>
-
-<div class="viewcode-block" id="ComponentTestCase.run_component"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.run_component">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_component</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">component</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">AppDef</span><span class="p">],</span>
-        <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">scheduler_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;local_cwd&quot;</span><span class="p">,</span>
-        <span class="n">interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
-        <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppStatus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="SubCommand.run"><a class="viewcode-back" href="../../../cli.html#torchx.cli.cmd_base.SubCommand.run">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Helper function that hides complexity of setting up the runner and polling results.</span>
-<span class="sd">        Note: method is blocking until either scheduler exits or timeout is reached (for non-blocking schedulers).</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">                components: component function, factory for AppDef</span>
-<span class="sd">                args: optional component factory arguments</span>
-<span class="sd">                scheduler_params: optional parameters for scheduler factory method</span>
-<span class="sd">                scheduler: scheduler name</span>
-<span class="sd">                interval: scheduler comppletion polling interval</span>
-<span class="sd">                timeout: max time for scheduler to complete</span>
-
+<span class="sd">        Runs the sub command. Parsed arguments are available as ``args``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">app_def</span> <span class="o">=</span> <span class="n">component</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">scheduler_params</span><span class="p">:</span>
-            <span class="n">runner</span> <span class="o">=</span> <span class="n">get_runner</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">component_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">scheduler_params</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">runner</span> <span class="o">=</span> <span class="n">get_runner</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">component_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-        <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">app_def</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">)</span>
-
-        <span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">status</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
-        <span class="k">while</span> <span class="p">(</span><span class="n">status</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">is_terminal</span><span class="p">)</span> <span class="ow">or</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
-            <span class="n">elapsed</span> <span class="o">+=</span> <span class="n">interval</span>
-            <span class="n">status</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">status</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 </pre></div>
 
      </article>

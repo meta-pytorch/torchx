@@ -320,14 +320,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -341,27 +349,14 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul class="current">
@@ -444,28 +439,30 @@
       
   <section id="component-best-practices">
 <h1>Component Best Practices<a class="headerlink" href="#component-best-practices" title="Permalink to this heading">¶</a></h1>
-<p>This has a list of common things you might want to do with a component and best
-practices for them. Components are designed to be flexible so you can deviate
-from these practices if necessary however these are the best practices we use
-for the builtin TorchX components.</p>
-<p>See <a class="reference internal" href="app_best_practices.html#app-best-practices"><span class="std std-ref">App Best Practices</span></a> for information how to write
-apps using TorchX.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Best practices for authoring reusable TorchX
+<a class="reference internal" href="basics.html#term-Component"><span class="xref std std-term">components</span></a>: entrypoints, simplicity, named resources,
+composition, and testing.</p>
+</div>
+<p><strong>Prerequisites:</strong> <a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a>.</p>
+<p>These practices reflect conventions used in the builtin components. Deviate
+when your use case demands it.</p>
 <section id="entrypoints">
 <h2>Entrypoints<a class="headerlink" href="#entrypoints" title="Permalink to this heading">¶</a></h2>
-<p>When possible it’s best to call your reusable component via <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">&lt;module&gt;</span></code>
-instead of specifying the path to the main module. This makes it so it can be
-used in multiple different environments such as docker and slurm by relying on
-the python module resolution instead of the directory structure.</p>
-<p>If your app isn’t python based, you can place your app in a folder on your
-<cite>PATH</cite> so it’s accessible regardless of the directory structure.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer</span><span class="p">(</span><span class="n">img_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">img_version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">roles</span><span class="o">=</span><span class="p">[</span>
+<p>Prefer <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">&lt;module&gt;</span></code> over a path to the main module. Module
+resolution works across environments (Docker, Slurm) regardless of directory
+structure.</p>
+<p>For non-Python apps, place the binary on <code class="docutils literal notranslate"><span class="pre">PATH</span></code> instead.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">trainer</span><span class="p">(</span><span class="n">img_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">img_version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">roles</span><span class="o">=</span><span class="p">[</span>
         <span class="n">Role</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
+            <span class="n">image</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">img_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">img_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
             <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
-            <span class="n">args</span><span class="o">=</span><span class="p">[</span>
-                <span class="s2">&quot;-m&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;your.app&quot;</span><span class="p">,</span>
-            <span class="p">],</span>
+            <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;your.app&quot;</span><span class="p">],</span>
         <span class="p">)</span>
     <span class="p">])</span>
 </pre></div>
@@ -473,81 +470,72 @@ the python module resolution instead of the directory structure.</p>
 </section>
 <section id="simplify">
 <h2>Simplify<a class="headerlink" href="#simplify" title="Permalink to this heading">¶</a></h2>
-<p>When writing a component you want to keep each component as simple as
-possible to make it easier for others to reuse and understand.</p>
+<p>Keep each component as simple as possible.</p>
 <section id="argument-processing">
 <h3>Argument Processing<a class="headerlink" href="#argument-processing" title="Permalink to this heading">¶</a></h3>
-<p>Argument processing makes it hard to use the component in other environments.
-For images in particular we want to directly pass the image field to the AppDef
-since any sort of manipulation will make it impossible to use in other
-environments with different image naming conventions.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">)</span><span class="o">...</span><span class="p">)</span>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">image</span></code> directly to <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> without manipulation – processing
+breaks portability across environments.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">)])</span>
 </pre></div>
 </div>
 </section>
 <section id="branching-logic">
 <h3>Branching Logic<a class="headerlink" href="#branching-logic" title="Permalink to this heading">¶</a></h3>
-<p>You should avoid branching logic in the components. If you have a case where you
-feel like you need an <code class="docutils literal notranslate"><span class="pre">if</span></code> statement in the component you should prefer to
-create multiple components with shared logic. Complex arguments make it hard for
-others to understand how to use it.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer_test</span><span class="p">():</span>
+<p>Avoid <code class="docutils literal notranslate"><span class="pre">if</span></code> statements in components. Create multiple components with shared
+private helpers instead.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer_test</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">_trainer</span><span class="p">(</span><span class="n">num_replicas</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">trainer_prod</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">_trainer</span><span class="p">(</span><span class="n">num_replicas</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
-<span class="c1"># not a component just a function</span>
+<span class="c1"># not a component — just a shared helper</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_trainer</span><span class="p">(</span><span class="n">num_replicas</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
-     <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">num_replicas</span><span class="o">=</span><span class="n">num_replicas</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="n">AppDef</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
+        <span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my_image:latest&quot;</span><span class="p">,</span> <span class="n">num_replicas</span><span class="o">=</span><span class="n">num_replicas</span><span class="p">)],</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="documentation">
 <h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading">¶</a></h3>
-<p>The documentation is optional, but it is the best practice to keep component functions documented,
-especially if you want to share your components. See :ref:Component Authoring&lt;components/overview:Authoring&gt;
-for more details.</p>
+<p>Document component functions. See <a class="reference internal" href="components/overview.html"><span class="doc">Overview</span></a> for examples.</p>
 </section>
 </section>
 <section id="named-resources">
 <h2>Named Resources<a class="headerlink" href="#named-resources" title="Permalink to this heading">¶</a></h2>
-<p>When writing components it’s best to use TorchX’s named resources support
-instead of manually specifying cpu and memory allocations. Named resources allow
-your component to be environment independent and allow for better scheduling
-behavior by using t-shirt sizes.</p>
-<p>See <a class="reference internal" href="specs.html#torchx.specs.get_named_resources" title="torchx.specs.get_named_resources"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torchx.specs.get_named_resources()</span></code></a> for more info.</p>
+<p>Use <a class="reference internal" href="basics.html#term-Resource"><span class="xref std std-term">named resources</span></a> instead of hard-coding CPU and memory
+values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
+
+<span class="n">resource</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">&quot;aws_p3.2xlarge&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="advanced.html#registering-named-resources"><span class="std std-ref">Registering Named Resources</span></a> for defining custom named
+resources.</p>
 </section>
 <section id="composing-components">
 <h2>Composing Components<a class="headerlink" href="#composing-components" title="Permalink to this heading">¶</a></h2>
-<p>For common component styles we provide base component definitions. These can be
-called from your custom component definition and an alternative to creating a
-full AppDef from scratch.</p>
-<p>See:</p>
+<p>Start from base component definitions rather than building <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> from
+scratch:</p>
 <ul class="simple">
 <li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.components.base</span></code> for simple single node components.</p></li>
-<li><p><a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> for distributed components.</p></li>
+<li><p><a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> for distributed components.</p></li>
 </ul>
-<p>For even more complex components it’s possible to merge multiple existing
-components into a single one. For instance you could use a metrics UI component
-and merge the roles from it into training component roles to have a sidecar
-service to your main training job.</p>
+<p>You can also merge roles from multiple components to run sidecars alongside
+the main job.</p>
 </section>
 <section id="distributed-components">
 <h2>Distributed Components<a class="headerlink" href="#distributed-components" title="Permalink to this heading">¶</a></h2>
-<p>If you’re writing a component for distributed training or other similar
-distributed computation, we recommend using the
-<a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> component since it provides out of the box
-support for <code class="docutils literal notranslate"><span class="pre">torch.distributed.elastic</span></code> jobs.</p>
-<p>You can extend the <code class="docutils literal notranslate"><span class="pre">ddp</span></code> component by writing a custom component that simple
-imports the <code class="docutils literal notranslate"><span class="pre">ddp</span></code> component and calls it with your app configuration.</p>
+<p>Use <a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> for distributed training. Extend it
+by writing a wrapper that calls <code class="docutils literal notranslate"><span class="pre">ddp</span></code> with your configuration.</p>
 </section>
 <section id="define-all-arguments">
 <h2>Define All Arguments<a class="headerlink" href="#define-all-arguments" title="Permalink to this heading">¶</a></h2>
-<p>It’s preferable to define all component arguments as function arguments instead
-of consuming a dictionary of arguments. This makes it easier for users to figure
-out the options as well as can provide static typing when used with <a class="reference external" href="https://pyre-check.org/">pyre</a> or <a class="reference external" href="http://mypy-lang.org/">mypy</a>.</p>
+<p>Define all arguments as function parameters instead of consuming a dictionary.
+This enables discoverability and static type checking.</p>
 </section>
 <section id="module-torchx.components.component_test_base">
 <span id="unit-tests"></span><h2>Unit Tests<a class="headerlink" href="#module-torchx.components.component_test_base" title="Permalink to this heading">¶</a></h2>
@@ -605,10 +593,22 @@ Note: method is blocking until either scheduler exits or timeout is reached (for
 </section>
 <section id="integration-tests">
 <h2>Integration Tests<a class="headerlink" href="#integration-tests" title="Permalink to this heading">¶</a></h2>
-<p>You can setup integration tests with your components by either using the
-programmatic runner API or write a bash script to call the CLI.</p>
-<p>You can see both styles in use in the core
-<a class="reference external" href="https://github.com/meta-pytorch/torchx/tree/main/.github/workflows">TorchX scheduler integration tests</a>.</p>
+<p>Use the <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> API or CLI scripts. See the
+<a class="reference external" href="https://github.com/meta-pytorch/torchx/tree/main/.github/workflows">scheduler integration tests</a>
+for examples.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="api_reference.html"><span class="doc">Quick Reference</span></a></dt><dd><p>Single-page reference with imports, types, and copy-pasteable recipes.</p>
+</dd>
+<dt><a class="reference internal" href="app_best_practices.html"><span class="doc">App Best Practices</span></a></dt><dd><p>Best practices for writing TorchX applications.</p>
+</dd>
+<dt><a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a></dt><dd><p>Step-by-step guide for building and launching a custom component.</p>
+</dd>
+<dt><a class="reference internal" href="components/overview.html"><span class="doc">Overview</span></a></dt><dd><p>Browse the builtin component library.</p>
+</dd>
+</dl>
+</div>
 </section>
 </section>
 

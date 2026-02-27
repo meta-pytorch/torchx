@@ -318,14 +318,22 @@
               
             
             
-              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../basics.html">Basic Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runner.config.html">.torchxconfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tracker.html">torchx.tracker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
@@ -339,27 +347,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Components</span></p>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/train.html">Train</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/distributed.html">Distributed</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/interpret.html">Interpret</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/metrics.html">Metrics</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/serve.html">Serve</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../components/utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workspaces/docker.html">Docker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runtime/tracking.html">Tracking</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
 <ul>
@@ -511,18 +506,18 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">TORCHX_HOME</span><span class="p">(</span><span class="o">*</span><span class="n">subdir_paths</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Path to the &quot;dot-directory&quot; for torchx.</span>
-<span class="sd">    Defaults to `~/.torchx` and is overridable via the `TORCHX_HOME` environment variable.</span>
+<span class="sd">    Defaults to ``~/.torchx`` and is overridable via the ``TORCHX_HOME`` environment variable.</span>
 
-<span class="sd">    Usage:</span>
+<span class="sd">    .. doctest::</span>
 
-<span class="sd">    .. doc-test::</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import TORCHX_HOME</span>
+<span class="sd">        &gt;&gt;&gt; import os, pathlib</span>
+<span class="sd">        &gt;&gt;&gt; _ = os.environ.pop(&quot;TORCHX_HOME&quot;, None)  # ensure default</span>
+<span class="sd">        &gt;&gt;&gt; TORCHX_HOME() == pathlib.Path.home() / &quot;.torchx&quot;</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; TORCHX_HOME(&quot;conda-pack-out&quot;) == pathlib.Path.home() / &quot;.torchx&quot; / &quot;conda-pack-out&quot;</span>
+<span class="sd">        True</span>
 
-<span class="sd">        from pathlib import Path</span>
-<span class="sd">        from torchx.specs import TORCHX_HOME</span>
-
-<span class="sd">        assert TORCHX_HOME() == Path.home() / &quot;.torchx&quot;</span>
-<span class="sd">        assert TORCHX_HOME(&quot;conda-pack-out&quot;) ==  Path.home() / &quot;.torchx&quot; / &quot;conda-pack-out&quot;</span>
-<span class="sd">    ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">default_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;.torchx&quot;</span><span class="p">)</span>
@@ -540,21 +535,24 @@
 <div class="viewcode-block" id="Resource"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Resource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents resource requirements for a ``Role``.</span>
+<span class="sd">    Represents resource requirements for a :py:class:`Role`.</span>
+
+<span class="sd">    .. important:: Prefer :py:func:`~torchx.specs.resource` with named resources</span>
+<span class="sd">                   (t-shirt sizes) over specifying raw values directly.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import Resource</span>
+<span class="sd">        &gt;&gt;&gt; Resource(cpu=4, gpu=1, memMB=8192)</span>
+<span class="sd">        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        cpu: number of logical cpu cores. The definition of a CPU core depends</span>
-<span class="sd">            on the scheduler. See your scheduler documentation for how a logical</span>
-<span class="sd">            CPU core maps to physical cores and threads.</span>
+<span class="sd">        cpu: number of logical cpu cores</span>
 <span class="sd">        gpu: number of gpus</span>
 <span class="sd">        memMB: MB of ram</span>
 <span class="sd">        capabilities: additional hardware specs (interpreted by scheduler)</span>
-<span class="sd">        devices: a list of named devices with their quantities</span>
-<span class="sd">        tags: metadata tags for the resource (not interpreted by schedulers)</span>
-<span class="sd">          used to add non-functional information about resources (e.g. whether it is an alias of another resource)</span>
-
-<span class="sd">    Note: you should prefer to use named_resources instead of specifying the raw</span>
-<span class="sd">    resource requirement directly.</span>
+<span class="sd">        devices: named devices with their quantities (e.g. ``{&quot;vpc.amazonaws.com/efa&quot;: 1}``)</span>
+<span class="sd">        tags: metadata tags (not interpreted by schedulers)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">cpu</span><span class="p">:</span> <span class="nb">int</span>
@@ -566,11 +564,7 @@
 
 <div class="viewcode-block" id="Resource.copy"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.copy">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">capabilities</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Resource&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Copies a resource and applies new capabilities. If the same capabilities</span>
-<span class="sd">        are present in the original resource and as parameter, the one from parameter</span>
-<span class="sd">        will be used.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies a resource, merging in the given ``capabilities``.&quot;&quot;&quot;</span>
 
         <span class="n">res_capabilities</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">capabilities</span><span class="p">)</span>
         <span class="n">res_capabilities</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">capabilities</span><span class="p">)</span>
@@ -605,37 +599,30 @@
 
 <div class="viewcode-block" id="macros"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">macros</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Defines macros that can be used in the elements of ``Role.args``</span>
-<span class="sd">    values of ``Role.env``. The macros will be substituted at runtime</span>
-<span class="sd">    to their actual values.</span>
+<span class="sd">    Template variables substituted at runtime in :py:attr:`Role.args`,</span>
+<span class="sd">    :py:attr:`Role.env`, and :py:attr:`Role.metadata`.</span>
 
-<span class="sd">    .. warning:: Macros used fields of :py:class:`Role` other than the ones</span>
-<span class="sd">                 mentioned above, are NOT substituted.</span>
+<span class="sd">    .. warning:: Macros in other :py:class:`Role` fields are NOT substituted.</span>
 
 <span class="sd">    Available macros:</span>
 
-<span class="sd">    1. ``img_root`` - root directory of the pulled container.image</span>
-<span class="sd">    2. ``app_id`` - application id as assigned by the scheduler</span>
-<span class="sd">    3. ``replica_id`` - unique id for each instance of a replica of a Role,</span>
-<span class="sd">                        for instance a role with 3 replicas could have the 0, 1, 2</span>
-<span class="sd">                        as replica ids. Note that when the container fails and is</span>
-<span class="sd">                        replaced, the new container will have the same ``replica_id``</span>
-<span class="sd">                        as the one it is replacing. For instance if node 1 failed and</span>
-<span class="sd">                        was replaced by the scheduler the replacing node will also</span>
-<span class="sd">                        have ``replica_id=1``.</span>
+<span class="sd">    1. ``img_root`` — root directory of the pulled image</span>
+<span class="sd">    2. ``app_id`` — application id as assigned by the scheduler</span>
+<span class="sd">    3. ``replica_id`` — per-role replica index (``0, 1, ...``).</span>
+<span class="sd">       When a replica is replaced after failure, the replacement retains</span>
+<span class="sd">       the same ``replica_id``.</span>
 
-<span class="sd">    Example:</span>
+<span class="sd">    .. doctest::</span>
 
-<span class="sd">    ::</span>
-
-<span class="sd">     # runs: hello_world.py --app_id ${app_id}</span>
-<span class="sd">     trainer = Role(</span>
-<span class="sd">                name=&quot;trainer&quot;,</span>
-<span class="sd">                entrypoint=&quot;hello_world.py&quot;,</span>
-<span class="sd">                args=[&quot;--app_id&quot;, macros.app_id],</span>
-<span class="sd">                env={&quot;IMAGE_ROOT_DIR&quot;: macros.img_root})</span>
-<span class="sd">     app = AppDef(&quot;train_app&quot;, roles=[trainer])</span>
-<span class="sd">     app_handle = session.run(app, scheduler=&quot;local_docker&quot;, cfg={})</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import AppDef, Role, macros</span>
+<span class="sd">        &gt;&gt;&gt; trainer = Role(</span>
+<span class="sd">        ...     name=&quot;trainer&quot;,</span>
+<span class="sd">        ...     image=&quot;my_image:latest&quot;,</span>
+<span class="sd">        ...     entrypoint=&quot;train.py&quot;,</span>
+<span class="sd">        ...     args=[&quot;--app_id&quot;, macros.app_id],</span>
+<span class="sd">        ...     env={&quot;IMG_ROOT&quot;: macros.img_root},</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; app = AppDef(&quot;train_app&quot;, roles=[trainer])</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -660,9 +647,7 @@
         <span class="n">base_img_root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DEPRECATED&quot;</span>
 
 <div class="viewcode-block" id="macros.Values.apply"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.apply">[docs]</a>        <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="s2">&quot;Role&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            apply applies the values to a copy the specified role and returns it.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns a deep copy of ``role`` with macros substituted.&quot;&quot;&quot;</span>
 
             <span class="c1"># Overrides might contain future values which can&#39;t be serialized so taken out for the copy</span>
             <span class="n">overrides</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">overrides</span>
@@ -680,7 +665,7 @@
 
             <span class="k">return</span> <span class="n">role</span></div>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">_apply_nested</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_apply_nested</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>  <span class="c1"># noqa: D102</span>
             <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">]</span>
             <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
                 <span class="n">current_dict</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
@@ -697,14 +682,12 @@
                                 <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="k">return</span> <span class="n">d</span>
 
-        <span class="c1"># Overrides the asdict method to generate a dictionary of macro values to be substituted.</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-            <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<div class="viewcode-block" id="macros.Values.to_dict"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.to_dict">[docs]</a>        <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns the macro values as a plain dict.&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="macros.Values.substitute"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.substitute">[docs]</a>        <span class="k">def</span><span class="w"> </span><span class="nf">substitute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            substitute applies the values to the template arg.</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Substitutes macro placeholders in ``arg``.&quot;&quot;&quot;</span>
             <span class="k">return</span> <span class="n">Template</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div></div></div>
 
 
@@ -746,16 +729,7 @@
 
 <div class="viewcode-block" id="BindMount"><a class="viewcode-back" href="../../../specs.html#torchx.specs.BindMount">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BindMount</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Defines a bind mount to `mount --bind` a host path into the worker</span>
-<span class="sd">    environment. See scheduler documentation on how bind mounts operate for each</span>
-<span class="sd">    scheduler.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        src_path: the path on the host</span>
-<span class="sd">        dst_path: the path in the worker environment/container</span>
-<span class="sd">        read_only: whether the mount should be read only</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bind-mounts a host path into the worker container.&quot;&quot;&quot;</span>
 
     <span class="n">src_path</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -764,13 +738,7 @@
 
 <div class="viewcode-block" id="VolumeMount"><a class="viewcode-back" href="../../../specs.html#torchx.specs.VolumeMount">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">VolumeMount</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Defines a persistent volume mount to mount into the worker environment.</span>
-<span class="sd">    Args:</span>
-<span class="sd">       src: the name or ID of the volume to mount</span>
-<span class="sd">       dst_path: the path in the worker environment/container</span>
-<span class="sd">       read_only: whether the mount should be read only</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mounts a persistent volume into the worker container.&quot;&quot;&quot;</span>
 
     <span class="n">src</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span>
@@ -779,47 +747,37 @@
 
 <div class="viewcode-block" id="DeviceMount"><a class="viewcode-back" href="../../../specs.html#torchx.specs.DeviceMount">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceMount</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Defines a host device to mount into the container.</span>
-<span class="sd">    Args:</span>
-<span class="sd">       src_path: the path on the host</span>
-<span class="sd">       dst_path: the path in the worker environment/container</span>
-<span class="sd">       permissions: the permissions to set on the device. Default: read, write, mknode</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mounts a host device into the container.&quot;&quot;&quot;</span>
 
     <span class="n">src_path</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">dst_path</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">permissions</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rwm&quot;</span></div>
 
 
-<span class="nd">@dataclass</span>
+<div class="viewcode-block" id="Workspace"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Workspace</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Specifies a local &quot;workspace&quot; (a set of directories). Workspaces are ad-hoc built</span>
-<span class="sd">    into an (usually ephemeral) image. This effectively mirrors the local code changes</span>
-<span class="sd">    at job submission time.</span>
+<span class="sd">    Maps local project directories to remote workspace locations. At submit-time,</span>
+<span class="sd">    files are copied/synced so that the remote job mirrors local code changes.</span>
 
-<span class="sd">    For example:</span>
+<span class="sd">    .. doctest::</span>
 
-<span class="sd">      1. ``projects={&quot;~/github/torch&quot;: &quot;torch&quot;}`` copies ``~/github/torch/**`` into ``$REMOTE_WORKSPACE_ROOT/torch/**``</span>
-<span class="sd">      2. ``projects={&quot;~/github/torch&quot;: &quot;&quot;}`` copies ``~/github/torch/**`` into ``$REMOTE_WORKSPACE_ROOT/**``</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import Workspace</span>
+<span class="sd">        &gt;&gt;&gt; # copies ~/github/torch/** into $REMOTE_ROOT/torch/**</span>
+<span class="sd">        &gt;&gt;&gt; ws = Workspace(projects={&quot;~/github/torch&quot;: &quot;torch&quot;})</span>
+<span class="sd">        &gt;&gt;&gt; # copies ~/github/torch/** into $REMOTE_ROOT/** (no sub-dir)</span>
+<span class="sd">        &gt;&gt;&gt; ws = Workspace(projects={&quot;~/github/torch&quot;: &quot;&quot;})</span>
 
-<span class="sd">    The exact location of ``$REMOTE_WORKSPACE_ROOT`` is implementation dependent and varies between</span>
-<span class="sd">    different implementations of :py:class:`~torchx.workspace.api.WorkspaceMixin`.</span>
-<span class="sd">    Check the scheduler documentation for details on which workspace it supports.</span>
+<span class="sd">    The exact ``$REMOTE_ROOT`` is implementation-dependent. See</span>
+<span class="sd">    :py:class:`~torchx.workspace.api.WorkspaceMixin` and scheduler docs.</span>
 
-<span class="sd">    Note: ``projects`` maps the location of the local project to a sub-directory in the remote workspace root directory.</span>
-<span class="sd">    Typically the local project location is a directory path (e.g. ``/home/foo/github/torch``).</span>
-
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        projects: mapping of local project to the sub-dir in the remote workspace dir.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        projects: ``{local_path: remote_subdir}`` mapping.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">projects</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;False if no projects mapping. Lets us use workspace object in an if-statement&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -828,49 +786,21 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">projects</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">projects</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="c1"># makes it possible to use Workspace as the key in the workspace build cache</span>
-        <span class="c1"># see WorkspaceMixin.caching_build_workspace_and_update_role</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">is_unmapped_single_project</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns ``True`` if this workspace only has 1 project</span>
-<span class="sd">        and its target mapping is an empty string.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+<div class="viewcode-block" id="Workspace.is_unmapped_single_project"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace.is_unmapped_single_project">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_unmapped_single_project</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;``True`` if this is a single-project workspace with no target sub-directory.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">merge_into</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Copies each project dir of this workspace into the specified ``outdir``.</span>
-<span class="sd">        Each project dir is copied into ``{outdir}/{target}`` where ``target`` is</span>
-<span class="sd">        the target mapping of the project dir.</span>
-
-<span class="sd">        For example:</span>
-
-<span class="sd">        .. code-block:: python</span>
-<span class="sd">            from os.path import expanduser</span>
-
-<span class="sd">            workspace = Workspace(</span>
-<span class="sd">                projects={</span>
-<span class="sd">                    expanduser(&quot;~/workspace/torch&quot;): &quot;torch&quot;,</span>
-<span class="sd">                    expanduser(&quot;~/workspace/my_project&quot;: &quot;&quot;)</span>
-<span class="sd">                }</span>
-<span class="sd">            )</span>
-<span class="sd">            workspace.merge_into(expanduser(&quot;~/tmp&quot;))</span>
-
-<span class="sd">        Copies:</span>
-
-<span class="sd">            * ``~/workspace/torch/**`` into ``~/tmp/torch/**``</span>
-<span class="sd">            * ``~/workspace/my_project/**`` into ``~/tmp/**``</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Workspace.merge_into"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace.merge_into">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">merge_into</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies each project into ``{outdir}/{target}``.&quot;&quot;&quot;</span>
 
         <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">dst_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span> <span class="o">/</span> <span class="n">dst</span>
             <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># src is dir</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">,</span> <span class="n">dirs_exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">,</span> <span class="n">dirs_exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_str</span><span class="p">(</span><span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Workspace&quot;</span><span class="p">:</span>
@@ -889,80 +819,53 @@
         <span class="k">return</span> <span class="n">Workspace</span><span class="p">(</span><span class="n">projects</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a string representation of the Workspace by concatenating</span>
-<span class="sd">        the project mappings using &#39;;&#39; as a delimiter and &#39;:&#39; between key and value.</span>
-<span class="sd">        If the single-project workspace with no target mapping, then simply</span>
-<span class="sd">        returns the src (local project dir)</span>
-
-<span class="sd">        NOTE: meant to be used for logging purposes not serde.</span>
-<span class="sd">          Therefore not symmetric with :py:func:`Workspace.from_str`.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Logging-only representation; not symmetric with from_str().</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_unmapped_single_project</span><span class="p">():</span>
             <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
                 <span class="n">k</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="p">)</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Role"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Role">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Role</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A set of nodes that perform a specific duty within the ``AppDef``.</span>
-<span class="sd">    Examples:</span>
+<span class="sd">    A set of nodes that perform a specific duty within an :py:class:`AppDef`.</span>
 
-<span class="sd">    1. Distributed data parallel app - made up of a single role (trainer).</span>
+<span class="sd">    * DDP app — single role (``trainer``)</span>
+<span class="sd">    * Parameter-server app — multiple roles (``trainer``, ``ps``)</span>
 
-<span class="sd">    2. App with parameter server - made up of multiple roles (trainer, ps).</span>
+<span class="sd">    .. doctest::</span>
 
-<span class="sd">    .. note:: An ``image`` is a software bundle that is installed on the container</span>
-<span class="sd">              scheduled by the scheduler. The container on the scheduler dictates</span>
-<span class="sd">              what an image actually is. An image could be as simple as a tar-ball</span>
-<span class="sd">              or map to a docker image. The scheduler typically knows how to &quot;pull&quot;</span>
-<span class="sd">              the image given an image name (str), which could be a simple name</span>
-<span class="sd">              (e.g. docker image) or a url e.g. ``s3://path/my_image.tar``).</span>
-
-<span class="sd">    Usage:</span>
-
-<span class="sd">    ::</span>
-
-<span class="sd">     trainer = Role(name=&quot;trainer&quot;,</span>
-<span class="sd">                    image = &quot;pytorch/torch:1&quot;,</span>
-<span class="sd">                    entrypoint = &quot;my_trainer.py&quot;</span>
-<span class="sd">                    args = [&quot;--arg&quot;, &quot;foo&quot;, ENV_VAR=&quot;FOOBAR&quot;],</span>
-<span class="sd">                    num_replicas = 4,</span>
-<span class="sd">                    resource = Resource(cpu=1, gpu=1, memMB=500),</span>
-<span class="sd">                    port_map={&quot;tcp_store&quot;:8080, &quot;tensorboard&quot;: 8081},</span>
-<span class="sd">                    metadata={&quot;local_cwd.property&quot;, value})</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import Role, Resource</span>
+<span class="sd">        &gt;&gt;&gt; trainer = Role(</span>
+<span class="sd">        ...     name=&quot;trainer&quot;,</span>
+<span class="sd">        ...     image=&quot;pytorch/torch:latest&quot;,</span>
+<span class="sd">        ...     entrypoint=&quot;train.py&quot;,</span>
+<span class="sd">        ...     args=[&quot;--lr&quot;, &quot;0.01&quot;],</span>
+<span class="sd">        ...     num_replicas=4,</span>
+<span class="sd">        ...     resource=Resource(cpu=4, gpu=1, memMB=8192),</span>
+<span class="sd">        ... )</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">            name: name of the role</span>
-<span class="sd">            image: a software bundle that is installed on a container.</span>
-<span class="sd">            entrypoint: command (within the container) to invoke the role</span>
-<span class="sd">            args: commandline arguments to the entrypoint cmd</span>
-<span class="sd">            env: environment variable mappings</span>
-<span class="sd">            num_replicas: number of container replicas to run</span>
-<span class="sd">            min_replicas: minimum number of replicas for the job to start. When</span>
-<span class="sd">                set the job size can automatically adjust between min_replicas</span>
-<span class="sd">                and num_replicas depending on the cluster resources and</span>
-<span class="sd">                policies. If the scheduler doesn&#39;t support auto scaling this</span>
-<span class="sd">                field is ignored and the job size will be num_replicas.</span>
-<span class="sd">            max_retries: max number of retries before giving up</span>
-<span class="sd">            retry_policy: retry behavior upon replica failures</span>
-<span class="sd">            resource: Resource requirement for the role. The role should be scheduled</span>
-<span class="sd">                by the scheduler on ``num_replicas`` container, each of them should have at</span>
-<span class="sd">                least ``resource`` guarantees.</span>
-<span class="sd">            port_map: Port mapping for the role. The key is the unique identifier of the port</span>
-<span class="sd">                e.g. &quot;tensorboard&quot;: 9090</span>
-<span class="sd">            metadata: Free form information that is associated with the role, for example</span>
-<span class="sd">                scheduler specific data. The key should follow the pattern: ``$scheduler.$key``</span>
-<span class="sd">            mounts: a list of mounts on the machine</span>
-<span class="sd">            workspace: local project directories to be mirrored on the remote job.</span>
-<span class="sd">              NOTE: The workspace argument provided to the :py:class:`~torchx.runner.api.Runner` APIs</span>
-<span class="sd">              only takes effect on ``appdef.role[0]`` and overrides this attribute.</span>
-
+<span class="sd">        name: name of the role</span>
+<span class="sd">        image: software bundle installed on the container (docker image, fbpkg, tar-ball, etc.)</span>
+<span class="sd">        entrypoint: command to invoke inside the container</span>
+<span class="sd">        args: arguments to the entrypoint</span>
+<span class="sd">        env: environment variable mappings</span>
+<span class="sd">        num_replicas: number of container replicas</span>
+<span class="sd">        min_replicas: minimum replicas for elastic scaling. If unset or unsupported</span>
+<span class="sd">            by the scheduler, the job runs at ``num_replicas``.</span>
+<span class="sd">        max_retries: max number of retries before giving up</span>
+<span class="sd">        retry_policy: retry behavior upon failures</span>
+<span class="sd">        resource: resource requirements per replica</span>
+<span class="sd">        port_map: named port mappings (e.g. ``{&quot;tensorboard&quot;: 8081}``)</span>
+<span class="sd">        metadata: scheduler-specific data. Keys should follow ``$scheduler.$key``.</span>
+<span class="sd">        mounts: bind, volume, or device mounts</span>
+<span class="sd">        workspace: local project directories to mirror on the remote job.</span>
+<span class="sd">            The ``workspace`` argument on :py:class:`~torchx.runner.api.Runner`</span>
+<span class="sd">            APIs overrides this on ``roles[0]``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -1007,26 +910,28 @@
         <span class="n">dryrun_info</span><span class="p">:</span> <span class="s2">&quot;AppDryRunInfo&quot;</span><span class="p">,</span>
         <span class="c1"># pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AppDryRunInfo&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Modifies the scheduler request based on the role specific configuration.</span>
-<span class="sd">        The method is invoked for each role during scheduler ``submit_dryrun``.</span>
-<span class="sd">        If there are multiple roles, the method is invoked for each role in</span>
-<span class="sd">        order that is defined by the ``AppDef.roles`` list.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hook for role-specific scheduler request modifications.</span>
+
+<span class="sd">        Called per-role during :py:meth:`Scheduler.submit_dryrun &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`,</span>
+<span class="sd">        in the order they appear in :py:attr:`AppDef.roles`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">dryrun_info</span></div></div>
 
 
 <div class="viewcode-block" id="AppDef"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDef">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppDef</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a distributed application made up of multiple ``Roles``</span>
-<span class="sd">    and metadata. Contains the necessary information for the driver</span>
-<span class="sd">    to submit this app to the scheduler.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distributed application composed of one or more :py:class:`Role` s.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import AppDef, Role</span>
+<span class="sd">        &gt;&gt;&gt; app = AppDef(</span>
+<span class="sd">        ...     name=&quot;my_train&quot;,</span>
+<span class="sd">        ...     roles=[Role(name=&quot;trainer&quot;, image=&quot;my_image:latest&quot;)],</span>
+<span class="sd">        ... )</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        name: Name of application</span>
-<span class="sd">        roles: List of roles</span>
-<span class="sd">        metadata: metadata to the app (treatment of metadata is scheduler dependent)</span>
+<span class="sd">        metadata: scheduler-specific metadata (treatment varies by scheduler)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -1103,17 +1008,11 @@
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ReplicaStatus</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The status of the replica during the job execution.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Status of a single replica during job execution.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        id: The node rank, note: this is not a worker rank.</span>
-<span class="sd">        state: The current state of the node.</span>
-<span class="sd">        role: The role name</span>
-<span class="sd">        hostname: The hostname where the replica is running</span>
-<span class="sd">        structured_error_msg: Error message if any, None if job succeeded.</span>
-<span class="sd">        hostaddr: DNS resolvable hostname or ipv4 or ipv6 addr of the container</span>
-<span class="sd">            running this replica. Defaults to `hostname` if the scheduler does not set it.</span>
+<span class="sd">        id: node rank (not worker rank)</span>
+<span class="sd">        hostaddr: DNS name or IP of the container. Defaults to ``hostname``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
@@ -1130,21 +1029,12 @@
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RoleStatus</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The status of the role during the job execution.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        role: Role name</span>
-<span class="sd">        replicas: List of replica statuses</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Status of all replicas within a role.&quot;&quot;&quot;</span>
 
     <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">replicas</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReplicaStatus</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert the RoleStatus to a json object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
             <span class="s2">&quot;replicas&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">asdict</span><span class="p">(</span><span class="n">replica</span><span class="p">)</span> <span class="k">for</span> <span class="n">replica</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">replicas</span><span class="p">],</span>
@@ -1153,16 +1043,9 @@
 
 <div class="viewcode-block" id="AppStatus"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppStatus</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The runtime status of the ``AppDef``. The scheduler can</span>
-<span class="sd">    return an arbitrary text message (msg field).</span>
-<span class="sd">    If any error occurs, scheduler can populate ``structured_error_msg``</span>
-<span class="sd">    with json response.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Runtime status of an :py:class:`AppDef`.</span>
 
-<span class="sd">    ``replicas`` represent the statuses of the replicas in the job. If the job</span>
-<span class="sd">    runs with multiple retries, the parameter will contain the statuses of the</span>
-<span class="sd">    most recent retry. Note: if the previous retries failed, but the most recent</span>
-<span class="sd">    retry succeeded or in progress, ``replicas`` will not contain occurred errors.</span>
+<span class="sd">    ``roles`` contains replica statuses for the most recent retry only.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">state</span><span class="p">:</span> <span class="n">AppState</span>
@@ -1190,9 +1073,7 @@
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;AppStatus&quot;</span><span class="p">:</span> <span class="n">app_status_dict</span><span class="p">})</span>
 
 <div class="viewcode-block" id="AppStatus.raise_for_status"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.raise_for_status">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">raise_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        raise_for_status will raise an AppStatusError if the state is not SUCCEEDED.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Raises :py:class:`AppStatusError` if state is not ``SUCCEEDED``.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">SUCCEEDED</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">AppStatusError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;job did not succeed: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -1269,10 +1150,7 @@
             <span class="n">replica_data</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_replica_status</span><span class="p">(</span><span class="n">replica</span><span class="p">)</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">replica_data</span><span class="si">}</span><span class="s2">&quot;</span>
 
-<div class="viewcode-block" id="AppStatus.to_json"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.to_json">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convert the AppStatus to a json object, including RoleStatus.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">roles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_role_statuses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">filter_roles</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="p">{</span>
@@ -1282,21 +1160,13 @@
             <span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">,</span>
             <span class="s2">&quot;structured_error_msg&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">structured_error_msg</span><span class="p">,</span>
             <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui_url</span><span class="p">,</span>
-        <span class="p">}</span></div>
+        <span class="p">}</span>
 
 <div class="viewcode-block" id="AppStatus.format"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.format">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">filter_roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Format logs for app status. The app status include:</span>
-<span class="sd">            1. State: State of the application.</span>
-<span class="sd">            2. Num Restarts: The number of application restarts.</span>
-<span class="sd">            3. Roles: List of roles.</span>
-<span class="sd">            4. Msg: Arbitrary text message the scheduler returned.</span>
-<span class="sd">            5. Structured Error Msg: Json response error msg.</span>
-<span class="sd">            6. UI URL: Application URL</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Human-readable status string.&quot;&quot;&quot;</span>
         <span class="n">roles_data</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
         <span class="n">roles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_role_statuses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">filter_roles</span><span class="p">)</span>
 
@@ -1313,10 +1183,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AppStatusError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    AppStatusError is raised when the job status is in an exceptional state i.e.</span>
-<span class="sd">    not SUCCEEDED.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised by :py:meth:`AppStatus.raise_for_status` when state is not ``SUCCEEDED``.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">AppStatus</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
@@ -1331,14 +1198,11 @@
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returned by ``Scheduler.submit_dryrun``. Represents the</span>
-<span class="sd">    request that would have been made to the scheduler.</span>
-<span class="sd">    The ``fmt_str()`` method of this object should return a</span>
-<span class="sd">    pretty formatted string representation of the underlying</span>
-<span class="sd">    request object such that ``print(info)`` yields a human</span>
-<span class="sd">    readable representation of the underlying request.</span>
+<div class="viewcode-block" id="AppDryRunInfo"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDryRunInfo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returned by :py:meth:`Scheduler.submit_dryrun &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`.</span>
+
+<span class="sd">    Wraps the scheduler ``request`` that *would* have been submitted.</span>
+<span class="sd">    ``print(info)`` yields a human-readable representation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">T</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1358,16 +1222,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">)</span></div>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_type_name</span><span class="p">(</span><span class="n">tp</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Gets the type&#39;s name as a string. If ``tp` is a primitive class like int, str, etc, then</span>
-<span class="sd">    uses its attribute ``__name__``. Otherwise, use ``str(tp)``.</span>
-
-<span class="sd">    Note: we use this method to print out generic typing like List[str].</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a human-readable name for ``tp`` (handles generic types like ``list[str]``).&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">tp</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">!=</span> <span class="s2">&quot;typing&quot;</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">tp</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1389,11 +1248,9 @@
         <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([a-z0-9])([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1_\2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
 
-<span class="nd">@dataclass</span>
+<div class="viewcode-block" id="runopt"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopt">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">runopt</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents the metadata about the specific run option</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata for a single scheduler run option.&quot;&quot;&quot;</span>
 
     <span class="n">default</span><span class="p">:</span> <span class="n">CfgVal</span>
     <span class="n">opt_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">]</span>
@@ -1402,25 +1259,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_type_list_of_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks if the option type is a list of strings.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            bool: True if the option type is either List[str] or list[str], False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_type_dict_of_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks if the option type is a dict of string keys to string values.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            bool: True if the option type is either Dict[str, str] or dict[str, str], False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">cast_to_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
+<div class="viewcode-block" id="runopt.cast_to_type"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopt.cast_to_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cast_to_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Casts the given `value` (in its string representation) to the type of this run option.</span>
 <span class="sd">        Below are the cast rules for each option type and value literal:</span>
 
@@ -1429,8 +1274,7 @@
 <span class="sd">        1. opt_type=int, value=&quot;1&quot; -&gt; 1</span>
 <span class="sd">        1. opt_type=float, value=&quot;1.1&quot; -&gt; 1.1</span>
 <span class="sd">        1. opt_type=list[str]/List[str], value=&quot;a,b,c&quot; or value=&quot;a;b;c&quot; -&gt; [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]</span>
-<span class="sd">        1. opt_type=dict[str,str]/Dict[str,str],</span>
-<span class="sd">           value=&quot;key1:val1,key2:val2&quot; or value=&quot;key1:val1;key2:val2&quot; -&gt; {&quot;key1&quot;: &quot;val1&quot;, &quot;key2&quot;: &quot;val2&quot;}</span>
+<span class="sd">        1. opt_type=dict[str,str]/Dict[str,str], value=&quot;a:1,b:2&quot; or value=&quot;a:1;b:2&quot; -&gt; {&quot;a&quot;: &quot;1&quot;, &quot;b&quot;: &quot;2&quot;}</span>
 
 <span class="sd">        NOTE: dict parsing uses &quot;:&quot; as the kv separator (rather than the standard &quot;=&quot;) because &quot;=&quot; is used</span>
 <span class="sd">        at the top-level cfg to parse runopts (notice the plural) from the CLI. Originally torchx only supported</span>
@@ -1452,40 +1296,27 @@
             <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="runopts"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">runopts</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Holds the accepted scheduler run configuration</span>
-<span class="sd">    keys, default value (if any), and help message string.</span>
-<span class="sd">    These options are provided by the ``Scheduler`` and validated</span>
-<span class="sd">    in ``Session.run`` against user provided run cfg.</span>
-<span class="sd">    Allows ``None`` default values. Required opts must NOT have a</span>
-<span class="sd">    non-None default.</span>
+<span class="sd">    Schema for scheduler run configuration.</span>
 
-<span class="sd">    .. important:: This class has no accessors because it is intended to</span>
-<span class="sd">                   be constructed and returned by ``Scheduler.run_config_options``</span>
-<span class="sd">                   and printed out as a &quot;help&quot; tool or as part of an exception msg.</span>
+<span class="sd">    Holds accepted config keys, defaults, and help strings. Constructed by</span>
+<span class="sd">    :py:meth:`Scheduler.run_opts() &lt;torchx.schedulers.api.Scheduler.run_opts&gt;`</span>
+<span class="sd">    and validated at submit time.</span>
 
-<span class="sd">    Usage:</span>
+<span class="sd">    .. doctest::</span>
 
-<span class="sd">    .. code-block:: python</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import runopts</span>
+<span class="sd">        &gt;&gt;&gt; opts = runopts()</span>
+<span class="sd">        &gt;&gt;&gt; opts.add(&quot;cluster_id&quot;, type_=int, help=&quot;cluster to submit the job&quot;, required=True)</span>
+<span class="sd">        &gt;&gt;&gt; opts.add(&quot;priority&quot;, type_=float, default=0.5, help=&quot;job priority&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; opts.add(&quot;preemptible&quot;, type_=bool, default=False, help=&quot;is the job preemptible&quot;)</span>
 
-<span class="sd">     opts = runopts()</span>
-
-<span class="sd">     opts.add(&quot;run_as_user&quot;, type_=str, help=&quot;user to run the job as&quot;)</span>
-<span class="sd">     opts.add(&quot;cluster_id&quot;, type_=int, help=&quot;cluster to submit the job&quot;, required=True)</span>
-<span class="sd">     opts.add(&quot;priority&quot;, type_=float, default=0.5, help=&quot;job priority&quot;)</span>
-<span class="sd">     opts.add(&quot;preemptible&quot;, type_=bool, default=False, help=&quot;is the job preemptible&quot;)</span>
-
-<span class="sd">     # invalid</span>
-<span class="sd">     opts.add(&quot;illegal&quot;, default=10, required=True)</span>
-<span class="sd">     opts.add(&quot;bad_type&quot;, type=str, default=10)</span>
-
-<span class="sd">     opts.check(cfg)</span>
-<span class="sd">     print(opts)</span>
-
+<span class="sd">    .. note:: For new schedulers, prefer :py:class:`~torchx.schedulers.api.StructuredOpts`</span>
+<span class="sd">              which auto-generates ``runopts`` from typed dataclass fields.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1499,10 +1330,7 @@
 
 <div class="viewcode-block" id="runopts.is_type"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.is_type">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_type</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">tp</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns True if ``obj`` is type of ``tp``. Similar to isinstance() but supports</span>
-<span class="sd">        tp = List[str], thus can be used to validate ConfigValue.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Like ``isinstance()`` but supports generic types (e.g. ``list[str]``).&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">tp</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
@@ -1516,12 +1344,9 @@
                 <span class="k">return</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="runopts.get"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.get">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopt</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns option if any was registered, or None otherwise.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the registered option, or ``None``.</span>
 
-<span class="sd">        Falls back to snake_case lookup so that camelCase names resolve to</span>
-<span class="sd">        snake_case registered keys (e.g., ``get(&quot;clusterName&quot;)`` finds</span>
-<span class="sd">        ``cluster_name``). This is for backwards compatibility with</span>
-<span class="sd">        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.</span>
+<span class="sd">        Accepts camelCase names (e.g. ``&quot;clusterName&quot;`` resolves ``&quot;cluster_name&quot;``).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># _opts maps names to runopt instances (never None), so a None</span>
         <span class="c1"># result unambiguously means the key does not exist.</span>
@@ -1533,11 +1358,10 @@
         <span class="k">return</span> <span class="n">result</span></div>
 
 <div class="viewcode-block" id="runopts.resolve"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.resolve">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve cfg against registered options, filling defaults.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates ``cfg`` against registered options, filling defaults.</span>
 
-<span class="sd">        Extra configs unknown to this run option are ignored. camelCase cfg</span>
-<span class="sd">        keys are accepted for backwards compatibility with</span>
-<span class="sd">        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.</span>
+<span class="sd">        Raises :py:class:`InvalidRunConfigException` for missing required options</span>
+<span class="sd">        or type mismatches. Accepts camelCase keys.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">resolved_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cfg</span><span class="p">}</span>
@@ -1671,11 +1495,7 @@
         <span class="n">default</span><span class="p">:</span> <span class="n">CfgVal</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds the ``config`` option with the given help string and ``default``</span>
-<span class="sd">        value (if any). If the ``default`` is not specified then this option</span>
-<span class="sd">        is a required option.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers a config option. Required options must not have a default.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">required</span> <span class="ow">and</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Required option: </span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2"> must not specify default value. Given: </span><span class="si">{</span><span class="n">default</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1710,7 +1530,7 @@
 <span class="sd">                &gt;&gt;&gt; opts2 = runopts()</span>
 <span class="sd">                &gt;&gt;&gt; opts2.add(&quot;bar&quot;, type_=int, default=1, help=&quot;bar option&quot;)</span>
 <span class="sd">                &gt;&gt;&gt; merged = opts1 | opts2</span>
-<span class="sd">                &gt;&gt;&gt; sorted(merged.keys())</span>
+<span class="sd">                &gt;&gt;&gt; sorted(k for k, _ in merged)</span>
 <span class="sd">                [&#39;bar&#39;, &#39;foo&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">merged</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
@@ -1748,11 +1568,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">InvalidRunConfigException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Raised when the supplied run cfg does not satisfy the</span>
-<span class="sd">    ``runopts``, either due to missing required configs or value</span>
-<span class="sd">    type mismatch.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when run cfg is missing required options or has type mismatches.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">invalid_reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
@@ -1763,9 +1579,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MalformedAppHandleException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Raised when APIs are given a bad app handle.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when an :py:data:`AppHandle` is not a valid URI.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -1786,21 +1600,16 @@
 <span class="n">AppHandle</span> <span class="o">=</span> <span class="nb">str</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ParsedAppHandle</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Individual accessible components of the `AppHandle`</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ParsedAppHandle"><a class="viewcode-back" href="../../../specs.html#torchx.specs.ParsedAppHandle">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ParsedAppHandle</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parsed components of an :py:data:`AppHandle`.&quot;&quot;&quot;</span>
 
     <span class="n">scheduler_backend</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span></div>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">UnknownAppException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Raised by ``Session`` APIs when either the application does not</span>
-<span class="sd">    exist or the application is not owned by the session.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when the application does not exist or has been purged.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="s2">&quot;AppHandle&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -1809,25 +1618,16 @@
         <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedAppHandle</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parses the app handle into ```(scheduler_backend, session_name, and app_id)```.</span>
-
-<span class="sd">    Example:</span>
+<div class="viewcode-block" id="parse_app_handle"><a class="viewcode-back" href="../../../specs.html#torchx.specs.parse_app_handle">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedAppHandle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses ``{scheduler}://{session_name}/{app_id}`` into its components.</span>
 
 <span class="sd">    .. doctest::</span>
 
-<span class="sd">     assert parse_app_handle(&quot;k8s://default/foo_bar&quot;) == (&quot;k8s&quot;, &quot;default&quot;, &quot;foo_bar&quot;)</span>
-<span class="sd">     assert parse_app_handle(&quot;k8s:///foo_bar&quot;) == (&quot;k8s&quot;, &quot;&quot;, &quot;foo_bar&quot;)</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        app_handle: a URI of the form ``{scheduler}://{session_name}/{app_id}``,</span>
-<span class="sd">            where the ``session_name`` is optional. In this case the app handle is</span>
-<span class="sd">            of the form ``{scheduler}:///{app_id}`` (notice the triple slashes).</span>
-
-<span class="sd">    Returns: A ``Tuple`` of three elements, ``(scheduler, session_name, app_id)``</span>
-<span class="sd">        parsed from the app_handle URI str. If the session name is not present then</span>
-<span class="sd">        an empty string is returned in its place in the tuple.</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import parse_app_handle</span>
+<span class="sd">        &gt;&gt;&gt; parse_app_handle(&quot;k8s://default/foo_bar&quot;)</span>
+<span class="sd">        ParsedAppHandle(scheduler_backend=&#39;k8s&#39;, session_name=&#39;default&#39;, app_id=&#39;foo_bar&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; parse_app_handle(&quot;k8s:///foo_bar&quot;)</span>
+<span class="sd">        ParsedAppHandle(scheduler_backend=&#39;k8s&#39;, session_name=&#39;&#39;, app_id=&#39;foo_bar&#39;)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1840,7 +1640,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">MalformedAppHandleException</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
     <span class="n">gd</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">ParsedAppHandle</span><span class="p">(</span><span class="n">gd</span><span class="p">[</span><span class="s2">&quot;scheduler_backend&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;session_name&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;app_id&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">ParsedAppHandle</span><span class="p">(</span><span class="n">gd</span><span class="p">[</span><span class="s2">&quot;scheduler_backend&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;session_name&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;app_id&quot;</span><span class="p">])</span></div>
 </pre></div>
 
      </article>
