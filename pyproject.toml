@@ -70,16 +70,10 @@ dev = [
     "pip", # pip required by lintrunner but not installed by default in a uv env
     "pyre-check",
 ]
-docs = [
-    "sphinx~=5.0",
-    "sphinxcontrib.katex",
-    "pytorch-sphinx-theme @ git+https://github.com/pytorch/pytorch_sphinx_theme.git",
-    "jinja2>=3.1.4",
-]
 
 [project.urls]
 Homepage = "https://github.com/meta-pytorch/torchx"
-Documentation = "https://pytorch.org/torchx/"
+Documentation = "https://meta-pytorch.org/torchx/"
 Repository = "https://github.com/meta-pytorch/torchx"
 
 [project.scripts]
