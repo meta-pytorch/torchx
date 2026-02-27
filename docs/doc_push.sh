@@ -92,6 +92,15 @@ done
 
 "$docs_dir"/versions_html.py
 
+# Root redirect: /torchx/ -> /torchx/main/
+cat > index.md <<'REDIRECT'
+---
+layout: docs_redirect
+title: PyTorch | Redirect
+redirect_url: "/torchx/main"
+---
+REDIRECT
+
 git add .
 git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirects: ${redirects[*]} -> $torchx_ver."
 
