@@ -68,18 +68,18 @@ RESET = "\033[0m"
 def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
     """
     Path to the "dot-directory" for torchx.
-    Defaults to `~/.torchx` and is overridable via the `TORCHX_HOME` environment variable.
+    Defaults to ``~/.torchx`` and is overridable via the ``TORCHX_HOME`` environment variable.
 
-    Usage:
+    .. doctest::
 
-    .. doc-test::
+        >>> from torchx.specs import TORCHX_HOME
+        >>> import os, pathlib
+        >>> _ = os.environ.pop("TORCHX_HOME", None)  # ensure default
+        >>> TORCHX_HOME() == pathlib.Path.home() / ".torchx"
+        True
+        >>> TORCHX_HOME("conda-pack-out") == pathlib.Path.home() / ".torchx" / "conda-pack-out"
+        True
 
-        from pathlib import Path
-        from torchx.specs import TORCHX_HOME
-
-        assert TORCHX_HOME() == Path.home() / ".torchx"
-        assert TORCHX_HOME("conda-pack-out") ==  Path.home() / ".torchx" / "conda-pack-out"
-    ```
     """
 
     default_dir = str(pathlib.Path.home() / ".torchx")
@@ -97,21 +97,24 @@ def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
 @dataclass
 class Resource:
     """
-    Represents resource requirements for a ``Role``.
+    Represents resource requirements for a :py:class:`Role`.
+
+    .. important:: Prefer :py:func:`~torchx.specs.resource` with named resources
+                   (t-shirt sizes) over specifying raw values directly.
+
+    .. doctest::
+
+        >>> from torchx.specs import Resource
+        >>> Resource(cpu=4, gpu=1, memMB=8192)
+        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})
 
     Args:
-        cpu: number of logical cpu cores. The definition of a CPU core depends
-            on the scheduler. See your scheduler documentation for how a logical
-            CPU core maps to physical cores and threads.
+        cpu: number of logical cpu cores
         gpu: number of gpus
         memMB: MB of ram
         capabilities: additional hardware specs (interpreted by scheduler)
-        devices: a list of named devices with their quantities
-        tags: metadata tags for the resource (not interpreted by schedulers)
-          used to add non-functional information about resources (e.g. whether it is an alias of another resource)
-
-    Note: you should prefer to use named_resources instead of specifying the raw
-    resource requirement directly.
+        devices: named devices with their quantities (e.g. ``{"vpc.amazonaws.com/efa": 1}``)
+        tags: metadata tags (not interpreted by schedulers)
     """
 
     cpu: int
@@ -123,11 +126,7 @@ class Resource:
 
     @staticmethod
     def copy(original: "Resource", **capabilities: Any) -> "Resource":
-        """
-        Copies a resource and applies new capabilities. If the same capabilities
-        are present in the original resource and as parameter, the one from parameter
-        will be used.
-        """
+        """Copies a resource, merging in the given ``capabilities``."""
 
         res_capabilities = dict(original.capabilities)
         res_capabilities.update(capabilities)
@@ -162,37 +161,30 @@ NONE: str = "<NONE>"
 
 class macros:
     """
-    Defines macros that can be used in the elements of ``Role.args``
-    values of ``Role.env``. The macros will be substituted at runtime
-    to their actual values.
+    Template variables substituted at runtime in :py:attr:`Role.args`,
+    :py:attr:`Role.env`, and :py:attr:`Role.metadata`.
 
-    .. warning:: Macros used fields of :py:class:`Role` other than the ones
-                 mentioned above, are NOT substituted.
+    .. warning:: Macros in other :py:class:`Role` fields are NOT substituted.
 
     Available macros:
 
-    1. ``img_root`` - root directory of the pulled container.image
-    2. ``app_id`` - application id as assigned by the scheduler
-    3. ``replica_id`` - unique id for each instance of a replica of a Role,
-                        for instance a role with 3 replicas could have the 0, 1, 2
-                        as replica ids. Note that when the container fails and is
-                        replaced, the new container will have the same ``replica_id``
-                        as the one it is replacing. For instance if node 1 failed and
-                        was replaced by the scheduler the replacing node will also
-                        have ``replica_id=1``.
+    1. ``img_root`` — root directory of the pulled image
+    2. ``app_id`` — application id as assigned by the scheduler
+    3. ``replica_id`` — per-role replica index (``0, 1, ...``).
+       When a replica is replaced after failure, the replacement retains
+       the same ``replica_id``.
 
-    Example:
+    .. doctest::
 
-    ::
-
-     # runs: hello_world.py --app_id ${app_id}
-     trainer = Role(
-                name="trainer",
-                entrypoint="hello_world.py",
-                args=["--app_id", macros.app_id],
-                env={"IMAGE_ROOT_DIR": macros.img_root})
-     app = AppDef("train_app", roles=[trainer])
-     app_handle = session.run(app, scheduler="local_docker", cfg={})
+        >>> from torchx.specs import AppDef, Role, macros
+        >>> trainer = Role(
+        ...     name="trainer",
+        ...     image="my_image:latest",
+        ...     entrypoint="train.py",
+        ...     args=["--app_id", macros.app_id],
+        ...     env={"IMG_ROOT": macros.img_root},
+        ... )
+        >>> app = AppDef("train_app", roles=[trainer])
 
     """
 
@@ -217,9 +209,7 @@ class macros:
         base_img_root: str = "DEPRECATED"
 
         def apply(self, role: "Role") -> "Role":
-            """
-            apply applies the values to a copy the specified role and returns it.
-            """
+            """Returns a deep copy of ``role`` with macros substituted."""
 
             # Overrides might contain future values which can't be serialized so taken out for the copy
             overrides = role.overrides
@@ -237,7 +227,7 @@ class macros:
 
             return role
 
-        def _apply_nested(self, d: dict[str, Any]) -> dict[str, Any]:
+        def _apply_nested(self, d: dict[str, Any]) -> dict[str, Any]:  # noqa: D102
             stack = [d]
             while stack:
                 current_dict = stack.pop()
@@ -254,14 +244,12 @@ class macros:
                                 v[i] = self.substitute(v[i])
             return d
 
-        # Overrides the asdict method to generate a dictionary of macro values to be substituted.
         def to_dict(self) -> dict[str, Any]:
+            """Returns the macro values as a plain dict."""
             return asdict(self)
 
         def substitute(self, arg: str) -> str:
-            """
-            substitute applies the values to the template arg.
-            """
+            """Substitutes macro placeholders in ``arg``."""
             return Template(arg).safe_substitute(**self.to_dict())
 
 
@@ -303,16 +291,7 @@ class MountType(str, Enum):
 
 @dataclass
 class BindMount:
-    """
-    Defines a bind mount to `mount --bind` a host path into the worker
-    environment. See scheduler documentation on how bind mounts operate for each
-    scheduler.
-
-    Args:
-        src_path: the path on the host
-        dst_path: the path in the worker environment/container
-        read_only: whether the mount should be read only
-    """
+    """Bind-mounts a host path into the worker container."""
 
     src_path: str
     dst_path: str
@@ -321,13 +300,7 @@ class BindMount:
 
 @dataclass
 class VolumeMount:
-    """
-    Defines a persistent volume mount to mount into the worker environment.
-    Args:
-       src: the name or ID of the volume to mount
-       dst_path: the path in the worker environment/container
-       read_only: whether the mount should be read only
-    """
+    """Mounts a persistent volume into the worker container."""
 
     src: str
     dst_path: str
@@ -336,13 +309,7 @@ class VolumeMount:
 
 @dataclass
 class DeviceMount:
-    """
-    Defines a host device to mount into the container.
-    Args:
-       src_path: the path on the host
-       dst_path: the path in the worker environment/container
-       permissions: the permissions to set on the device. Default: read, write, mknode
-    """
+    """Mounts a host device into the container."""
 
     src_path: str
     dst_path: str
@@ -352,31 +319,27 @@ class DeviceMount:
 @dataclass
 class Workspace:
     """
-    Specifies a local "workspace" (a set of directories). Workspaces are ad-hoc built
-    into an (usually ephemeral) image. This effectively mirrors the local code changes
-    at job submission time.
+    Maps local project directories to remote workspace locations. At submit-time,
+    files are copied/synced so that the remote job mirrors local code changes.
 
-    For example:
+    .. doctest::
 
-      1. ``projects={"~/github/torch": "torch"}`` copies ``~/github/torch/**`` into ``$REMOTE_WORKSPACE_ROOT/torch/**``
-      2. ``projects={"~/github/torch": ""}`` copies ``~/github/torch/**`` into ``$REMOTE_WORKSPACE_ROOT/**``
+        >>> from torchx.specs import Workspace
+        >>> # copies ~/github/torch/** into $REMOTE_ROOT/torch/**
+        >>> ws = Workspace(projects={"~/github/torch": "torch"})
+        >>> # copies ~/github/torch/** into $REMOTE_ROOT/** (no sub-dir)
+        >>> ws = Workspace(projects={"~/github/torch": ""})
 
-    The exact location of ``$REMOTE_WORKSPACE_ROOT`` is implementation dependent and varies between
-    different implementations of :py:class:`~torchx.workspace.api.WorkspaceMixin`.
-    Check the scheduler documentation for details on which workspace it supports.
+    The exact ``$REMOTE_ROOT`` is implementation-dependent. See
+    :py:class:`~torchx.workspace.api.WorkspaceMixin` and scheduler docs.
 
-    Note: ``projects`` maps the location of the local project to a sub-directory in the remote workspace root directory.
-    Typically the local project location is a directory path (e.g. ``/home/foo/github/torch``).
-
-
-    Attributes:
-        projects: mapping of local project to the sub-dir in the remote workspace dir.
+    Args:
+        projects: ``{local_path: remote_subdir}`` mapping.
     """
 
     projects: dict[str, str]
 
     def __bool__(self) -> bool:
-        """False if no projects mapping. Lets us use workspace object in an if-statement"""
         return bool(self.projects)
 
     def __eq__(self, other: object) -> bool:
@@ -385,42 +348,14 @@ class Workspace:
         return self.projects == other.projects
 
     def __hash__(self) -> int:
-        # makes it possible to use Workspace as the key in the workspace build cache
-        # see WorkspaceMixin.caching_build_workspace_and_update_role
         return hash(frozenset(self.projects.items()))
 
     def is_unmapped_single_project(self) -> bool:
-        """
-        Returns ``True`` if this workspace only has 1 project
-        and its target mapping is an empty string.
-        """
+        """``True`` if this is a single-project workspace with no target sub-directory."""
         return len(self.projects) == 1 and not next(iter(self.projects.values()))
 
     def merge_into(self, outdir: str | pathlib.Path) -> None:
-        """
-        Copies each project dir of this workspace into the specified ``outdir``.
-        Each project dir is copied into ``{outdir}/{target}`` where ``target`` is
-        the target mapping of the project dir.
-
-        For example:
-
-        .. code-block:: python
-            from os.path import expanduser
-
-            workspace = Workspace(
-                projects={
-                    expanduser("~/workspace/torch"): "torch",
-                    expanduser("~/workspace/my_project": "")
-                }
-            )
-            workspace.merge_into(expanduser("~/tmp"))
-
-        Copies:
-
-            * ``~/workspace/torch/**`` into ``~/tmp/torch/**``
-            * ``~/workspace/my_project/**`` into ``~/tmp/**``
-
-        """
+        """Copies each project into ``{outdir}/{target}``."""
 
         for src, dst in self.projects.items():
             dst_path = pathlib.Path(outdir) / dst
@@ -446,16 +381,7 @@ class Workspace:
         return Workspace(projects)
 
     def __str__(self) -> str:
-        """
-        Returns a string representation of the Workspace by concatenating
-        the project mappings using ';' as a delimiter and ':' between key and value.
-        If the single-project workspace with no target mapping, then simply
-        returns the src (local project dir)
-
-        NOTE: meant to be used for logging purposes not serde.
-          Therefore not symmetric with :py:func:`Workspace.from_str`.
-
-        """
+        # Logging-only representation; not symmetric with from_str().
         if self.is_unmapped_single_project():
             return next(iter(self.projects))
         else:
@@ -467,59 +393,41 @@ class Workspace:
 @dataclass
 class Role:
     """
-    A set of nodes that perform a specific duty within the ``AppDef``.
-    Examples:
+    A set of nodes that perform a specific duty within an :py:class:`AppDef`.
 
-    1. Distributed data parallel app - made up of a single role (trainer).
+    * DDP app — single role (``trainer``)
+    * Parameter-server app — multiple roles (``trainer``, ``ps``)
 
-    2. App with parameter server - made up of multiple roles (trainer, ps).
+    .. doctest::
 
-    .. note:: An ``image`` is a software bundle that is installed on the container
-              scheduled by the scheduler. The container on the scheduler dictates
-              what an image actually is. An image could be as simple as a tar-ball
-              or map to a docker image. The scheduler typically knows how to "pull"
-              the image given an image name (str), which could be a simple name
-              (e.g. docker image) or a url e.g. ``s3://path/my_image.tar``).
-
-    Usage:
-
-    ::
-
-     trainer = Role(name="trainer",
-                    image = "pytorch/torch:1",
-                    entrypoint = "my_trainer.py"
-                    args = ["--arg", "foo", ENV_VAR="FOOBAR"],
-                    num_replicas = 4,
-                    resource = Resource(cpu=1, gpu=1, memMB=500),
-                    port_map={"tcp_store":8080, "tensorboard": 8081},
-                    metadata={"local_cwd.property", value})
+        >>> from torchx.specs import Role, Resource
+        >>> trainer = Role(
+        ...     name="trainer",
+        ...     image="pytorch/torch:latest",
+        ...     entrypoint="train.py",
+        ...     args=["--lr", "0.01"],
+        ...     num_replicas=4,
+        ...     resource=Resource(cpu=4, gpu=1, memMB=8192),
+        ... )
 
     Args:
-            name: name of the role
-            image: a software bundle that is installed on a container.
-            entrypoint: command (within the container) to invoke the role
-            args: commandline arguments to the entrypoint cmd
-            env: environment variable mappings
-            num_replicas: number of container replicas to run
-            min_replicas: minimum number of replicas for the job to start. When
-                set the job size can automatically adjust between min_replicas
-                and num_replicas depending on the cluster resources and
-                policies. If the scheduler doesn't support auto scaling this
-                field is ignored and the job size will be num_replicas.
-            max_retries: max number of retries before giving up
-            retry_policy: retry behavior upon replica failures
-            resource: Resource requirement for the role. The role should be scheduled
-                by the scheduler on ``num_replicas`` container, each of them should have at
-                least ``resource`` guarantees.
-            port_map: Port mapping for the role. The key is the unique identifier of the port
-                e.g. "tensorboard": 9090
-            metadata: Free form information that is associated with the role, for example
-                scheduler specific data. The key should follow the pattern: ``$scheduler.$key``
-            mounts: a list of mounts on the machine
-            workspace: local project directories to be mirrored on the remote job.
-              NOTE: The workspace argument provided to the :py:class:`~torchx.runner.api.Runner` APIs
-              only takes effect on ``appdef.role[0]`` and overrides this attribute.
-
+        name: name of the role
+        image: software bundle installed on the container (docker image, fbpkg, tar-ball, etc.)
+        entrypoint: command to invoke inside the container
+        args: arguments to the entrypoint
+        env: environment variable mappings
+        num_replicas: number of container replicas
+        min_replicas: minimum replicas for elastic scaling. If unset or unsupported
+            by the scheduler, the job runs at ``num_replicas``.
+        max_retries: max number of retries before giving up
+        retry_policy: retry behavior upon failures
+        resource: resource requirements per replica
+        port_map: named port mappings (e.g. ``{"tensorboard": 8081}``)
+        metadata: scheduler-specific data. Keys should follow ``$scheduler.$key``.
+        mounts: bind, volume, or device mounts
+        workspace: local project directories to mirror on the remote job.
+            The ``workspace`` argument on :py:class:`~torchx.runner.api.Runner`
+            APIs overrides this on ``roles[0]``.
     """
 
     name: str
@@ -564,26 +472,28 @@ class Role:
         dryrun_info: "AppDryRunInfo",
         # pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object
     ) -> "AppDryRunInfo":
-        """
-        Modifies the scheduler request based on the role specific configuration.
-        The method is invoked for each role during scheduler ``submit_dryrun``.
-        If there are multiple roles, the method is invoked for each role in
-        order that is defined by the ``AppDef.roles`` list.
+        """Hook for role-specific scheduler request modifications.
+
+        Called per-role during :py:meth:`Scheduler.submit_dryrun <torchx.schedulers.api.Scheduler.submit_dryrun>`,
+        in the order they appear in :py:attr:`AppDef.roles`.
         """
         return dryrun_info
 
 
 @dataclass
 class AppDef:
-    """
-    Represents a distributed application made up of multiple ``Roles``
-    and metadata. Contains the necessary information for the driver
-    to submit this app to the scheduler.
+    """A distributed application composed of one or more :py:class:`Role` s.
+
+    .. doctest::
+
+        >>> from torchx.specs import AppDef, Role
+        >>> app = AppDef(
+        ...     name="my_train",
+        ...     roles=[Role(name="trainer", image="my_image:latest")],
+        ... )
 
     Args:
-        name: Name of application
-        roles: List of roles
-        metadata: metadata to the app (treatment of metadata is scheduler dependent)
+        metadata: scheduler-specific metadata (treatment varies by scheduler)
     """
 
     name: str
@@ -660,17 +570,11 @@ ReplicaState = AppState
 
 @dataclass
 class ReplicaStatus:
-    """
-    The status of the replica during the job execution.
+    """Status of a single replica during job execution.
 
     Args:
-        id: The node rank, note: this is not a worker rank.
-        state: The current state of the node.
-        role: The role name
-        hostname: The hostname where the replica is running
-        structured_error_msg: Error message if any, None if job succeeded.
-        hostaddr: DNS resolvable hostname or ipv4 or ipv6 addr of the container
-            running this replica. Defaults to `hostname` if the scheduler does not set it.
+        id: node rank (not worker rank)
+        hostaddr: DNS name or IP of the container. Defaults to ``hostname``.
     """
 
     id: int
@@ -687,21 +591,12 @@ class ReplicaStatus:
 
 @dataclass
 class RoleStatus:
-    """
-    The status of the role during the job execution.
-
-    Args:
-        role: Role name
-        replicas: List of replica statuses
-    """
+    """Status of all replicas within a role."""
 
     role: str
     replicas: list[ReplicaStatus]
 
     def to_json(self) -> dict[str, Any]:
-        """
-        Convert the RoleStatus to a json object.
-        """
         return {
             "role": self.role,
             "replicas": [asdict(replica) for replica in self.replicas],
@@ -710,16 +605,9 @@ class RoleStatus:
 
 @dataclass
 class AppStatus:
-    """
-    The runtime status of the ``AppDef``. The scheduler can
-    return an arbitrary text message (msg field).
-    If any error occurs, scheduler can populate ``structured_error_msg``
-    with json response.
+    """Runtime status of an :py:class:`AppDef`.
 
-    ``replicas`` represent the statuses of the replicas in the job. If the job
-    runs with multiple retries, the parameter will contain the statuses of the
-    most recent retry. Note: if the previous retries failed, but the most recent
-    retry succeeded or in progress, ``replicas`` will not contain occurred errors.
+    ``roles`` contains replica statuses for the most recent retry only.
     """
 
     state: AppState
@@ -747,9 +635,7 @@ class AppStatus:
         return yaml.dump({"AppStatus": app_status_dict})
 
     def raise_for_status(self) -> None:
-        """
-        raise_for_status will raise an AppStatusError if the state is not SUCCEEDED.
-        """
+        """Raises :py:class:`AppStatusError` if state is not ``SUCCEEDED``."""
         if self.state != AppState.SUCCEEDED:
             raise AppStatusError(self, f"job did not succeed: {self}")
 
@@ -827,9 +713,6 @@ class AppStatus:
         return f"{replica_data}"
 
     def to_json(self, filter_roles: list[str] | None = None) -> dict[str, Any]:
-        """
-        Convert the AppStatus to a json object, including RoleStatus.
-        """
         roles = self._get_role_statuses(self.roles, filter_roles)
 
         return {
@@ -845,15 +728,7 @@ class AppStatus:
         self,
         filter_roles: list[str] | None = None,
     ) -> str:
-        """
-        Format logs for app status. The app status include:
-            1. State: State of the application.
-            2. Num Restarts: The number of application restarts.
-            3. Roles: List of roles.
-            4. Msg: Arbitrary text message the scheduler returned.
-            5. Structured Error Msg: Json response error msg.
-            6. UI URL: Application URL
-        """
+        """Human-readable status string."""
         roles_data = ""
         roles = self._get_role_statuses(self.roles, filter_roles)
 
@@ -870,10 +745,7 @@ class AppStatus:
 
 
 class AppStatusError(Exception):
-    """
-    AppStatusError is raised when the job status is in an exceptional state i.e.
-    not SUCCEEDED.
-    """
+    """Raised by :py:meth:`AppStatus.raise_for_status` when state is not ``SUCCEEDED``."""
 
     def __init__(self, status: AppStatus, *args: object) -> None:
         super().__init__(*args)
@@ -889,13 +761,10 @@ T = TypeVar("T")
 
 
 class AppDryRunInfo(Generic[T]):
-    """
-    Returned by ``Scheduler.submit_dryrun``. Represents the
-    request that would have been made to the scheduler.
-    The ``fmt_str()`` method of this object should return a
-    pretty formatted string representation of the underlying
-    request object such that ``print(info)`` yields a human
-    readable representation of the underlying request.
+    """Returned by :py:meth:`Scheduler.submit_dryrun <torchx.schedulers.api.Scheduler.submit_dryrun>`.
+
+    Wraps the scheduler ``request`` that *would* have been submitted.
+    ``print(info)`` yields a human-readable representation.
     """
 
     def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
@@ -919,12 +788,7 @@ class AppDryRunInfo(Generic[T]):
 
 
 def get_type_name(tp: Type[CfgVal]) -> str:
-    """
-    Gets the type's name as a string. If ``tp` is a primitive class like int, str, etc, then
-    uses its attribute ``__name__``. Otherwise, use ``str(tp)``.
-
-    Note: we use this method to print out generic typing like List[str].
-    """
+    """Returns a human-readable name for ``tp`` (handles generic types like ``list[str]``)."""
     if tp.__module__ != "typing" and hasattr(tp, "__name__"):
         return tp.__name__
     else:
@@ -948,9 +812,7 @@ class cases:
 
 @dataclass
 class runopt:
-    """
-    Represents the metadata about the specific run option
-    """
+    """Metadata for a single scheduler run option."""
 
     default: CfgVal
     opt_type: Type[CfgVal]
@@ -959,22 +821,10 @@ class runopt:
 
     @property
     def is_type_list_of_str(self) -> bool:
-        """
-        Checks if the option type is a list of strings.
-
-        Returns:
-            bool: True if the option type is either List[str] or list[str], False otherwise.
-        """
         return self.opt_type in (List[str], list[str])
 
     @property
     def is_type_dict_of_str(self) -> bool:
-        """
-        Checks if the option type is a dict of string keys to string values.
-
-        Returns:
-            bool: True if the option type is either Dict[str, str] or dict[str, str], False otherwise.
-        """
         return self.opt_type in (Dict[str, str], dict[str, str])
 
     def cast_to_type(self, value: str) -> CfgVal:
@@ -986,8 +836,7 @@ class runopt:
         1. opt_type=int, value="1" -> 1
         1. opt_type=float, value="1.1" -> 1.1
         1. opt_type=list[str]/List[str], value="a,b,c" or value="a;b;c" -> ["a", "b", "c"]
-        1. opt_type=dict[str,str]/Dict[str,str],
-           value="key1:val1,key2:val2" or value="key1:val1;key2:val2" -> {"key1": "val1", "key2": "val2"}
+        1. opt_type=dict[str,str]/Dict[str,str], value="a:1,b:2" or value="a:1;b:2" -> {"a": "1", "b": "2"}
 
         NOTE: dict parsing uses ":" as the kv separator (rather than the standard "=") because "=" is used
         at the top-level cfg to parse runopts (notice the plural) from the CLI. Originally torchx only supported
@@ -1014,35 +863,22 @@ class runopt:
 
 class runopts:
     """
-    Holds the accepted scheduler run configuration
-    keys, default value (if any), and help message string.
-    These options are provided by the ``Scheduler`` and validated
-    in ``Session.run`` against user provided run cfg.
-    Allows ``None`` default values. Required opts must NOT have a
-    non-None default.
+    Schema for scheduler run configuration.
 
-    .. important:: This class has no accessors because it is intended to
-                   be constructed and returned by ``Scheduler.run_config_options``
-                   and printed out as a "help" tool or as part of an exception msg.
+    Holds accepted config keys, defaults, and help strings. Constructed by
+    :py:meth:`Scheduler.run_opts() <torchx.schedulers.api.Scheduler.run_opts>`
+    and validated at submit time.
 
-    Usage:
+    .. doctest::
 
-    .. code-block:: python
+        >>> from torchx.specs import runopts
+        >>> opts = runopts()
+        >>> opts.add("cluster_id", type_=int, help="cluster to submit the job", required=True)
+        >>> opts.add("priority", type_=float, default=0.5, help="job priority")
+        >>> opts.add("preemptible", type_=bool, default=False, help="is the job preemptible")
 
-     opts = runopts()
-
-     opts.add("run_as_user", type_=str, help="user to run the job as")
-     opts.add("cluster_id", type_=int, help="cluster to submit the job", required=True)
-     opts.add("priority", type_=float, default=0.5, help="job priority")
-     opts.add("preemptible", type_=bool, default=False, help="is the job preemptible")
-
-     # invalid
-     opts.add("illegal", default=10, required=True)
-     opts.add("bad_type", type=str, default=10)
-
-     opts.check(cfg)
-     print(opts)
-
+    .. note:: For new schedulers, prefer :py:class:`~torchx.schedulers.api.StructuredOpts`
+              which auto-generates ``runopts`` from typed dataclass fields.
     """
 
     def __init__(self) -> None:
@@ -1056,10 +892,7 @@ class runopts:
 
     @staticmethod
     def is_type(obj: CfgVal, tp: Type[CfgVal]) -> bool:
-        """
-        Returns True if ``obj`` is type of ``tp``. Similar to isinstance() but supports
-        tp = List[str], thus can be used to validate ConfigValue.
-        """
+        """Like ``isinstance()`` but supports generic types (e.g. ``list[str]``)."""
         try:
             return isinstance(obj, tp)
         except TypeError:
@@ -1073,12 +906,9 @@ class runopts:
                 return False
 
     def get(self, name: str) -> runopt | None:
-        """Returns option if any was registered, or None otherwise.
+        """Returns the registered option, or ``None``.
 
-        Falls back to snake_case lookup so that camelCase names resolve to
-        snake_case registered keys (e.g., ``get("clusterName")`` finds
-        ``cluster_name``). This is for backwards compatibility with
-        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.
+        Accepts camelCase names (e.g. ``"clusterName"`` resolves ``"cluster_name"``).
         """
         # _opts maps names to runopt instances (never None), so a None
         # result unambiguously means the key does not exist.
@@ -1090,11 +920,10 @@ class runopts:
         return result
 
     def resolve(self, cfg: Mapping[str, CfgVal]) -> dict[str, CfgVal]:
-        """Resolve cfg against registered options, filling defaults.
+        """Validates ``cfg`` against registered options, filling defaults.
 
-        Extra configs unknown to this run option are ignored. camelCase cfg
-        keys are accepted for backwards compatibility with
-        pre-:py:class:`~torchx.schedulers.api.StructuredOpts` schedulers.
+        Raises :py:class:`InvalidRunConfigException` for missing required options
+        or type mismatches. Accepts camelCase keys.
         """
 
         resolved_cfg: dict[str, CfgVal] = {**cfg}
@@ -1228,11 +1057,7 @@ class runopts:
         default: CfgVal = None,
         required: bool = False,
     ) -> None:
-        """
-        Adds the ``config`` option with the given help string and ``default``
-        value (if any). If the ``default`` is not specified then this option
-        is a required option.
-        """
+        """Registers a config option. Required options must not have a default."""
         if required and default is not None:
             raise ValueError(
                 f"Required option: {cfg_key} must not specify default value. Given: {default}"
@@ -1267,7 +1092,7 @@ class runopts:
                 >>> opts2 = runopts()
                 >>> opts2.add("bar", type_=int, default=1, help="bar option")
                 >>> merged = opts1 | opts2
-                >>> sorted(merged.keys())
+                >>> sorted(k for k, _ in merged)
                 ['bar', 'foo']
         """
         merged = runopts()
@@ -1305,11 +1130,7 @@ class runopts:
 
 
 class InvalidRunConfigException(Exception):
-    """
-    Raised when the supplied run cfg does not satisfy the
-    ``runopts``, either due to missing required configs or value
-    type mismatch.
-    """
+    """Raised when run cfg is missing required options or has type mismatches."""
 
     def __init__(
         self, invalid_reason: str, cfg_key: str, cfg: Mapping[str, CfgVal]
@@ -1320,9 +1141,7 @@ class InvalidRunConfigException(Exception):
 
 
 class MalformedAppHandleException(Exception):
-    """
-    Raised when APIs are given a bad app handle.
-    """
+    """Raised when an :py:data:`AppHandle` is not a valid URI."""
 
     def __init__(self, app_handle: str) -> None:
         super().__init__(
@@ -1344,9 +1163,7 @@ AppHandle = str
 
 
 class ParsedAppHandle(NamedTuple):
-    """
-    Individual accessible components of the `AppHandle`
-    """
+    """Parsed components of an :py:data:`AppHandle`."""
 
     scheduler_backend: str
     session_name: str
@@ -1354,10 +1171,7 @@ class ParsedAppHandle(NamedTuple):
 
 
 class UnknownAppException(Exception):
-    """
-    Raised by ``Session`` APIs when either the application does not
-    exist or the application is not owned by the session.
-    """
+    """Raised when the application does not exist or has been purged."""
 
     def __init__(self, app_handle: "AppHandle") -> None:
         super().__init__(
@@ -1367,24 +1181,15 @@ class UnknownAppException(Exception):
 
 
 def parse_app_handle(app_handle: AppHandle) -> ParsedAppHandle:
-    """
-    Parses the app handle into ```(scheduler_backend, session_name, and app_id)```.
-
-    Example:
+    """Parses ``{scheduler}://{session_name}/{app_id}`` into its components.
 
     .. doctest::
 
-     assert parse_app_handle("k8s://default/foo_bar") == ("k8s", "default", "foo_bar")
-     assert parse_app_handle("k8s:///foo_bar") == ("k8s", "", "foo_bar")
-
-    Args:
-        app_handle: a URI of the form ``{scheduler}://{session_name}/{app_id}``,
-            where the ``session_name`` is optional. In this case the app handle is
-            of the form ``{scheduler}:///{app_id}`` (notice the triple slashes).
-
-    Returns: A ``Tuple`` of three elements, ``(scheduler, session_name, app_id)``
-        parsed from the app_handle URI str. If the session name is not present then
-        an empty string is returned in its place in the tuple.
+        >>> from torchx.specs import parse_app_handle
+        >>> parse_app_handle("k8s://default/foo_bar")
+        ParsedAppHandle(scheduler_backend='k8s', session_name='default', app_id='foo_bar')
+        >>> parse_app_handle("k8s:///foo_bar")
+        ParsedAppHandle(scheduler_backend='k8s', session_name='', app_id='foo_bar')
 
     """
 

@@ -28,7 +28,7 @@ def make_unique(name: str, string_length: int = 0) -> str:
           Default is 0, which returns the length of a randomly generated 64-bit string (typically 11-14 characters long).
 
     Returns:
-        string in format ``{name}-{unique_suffix}`
+        string in format ``{name}-{unique_suffix}``
     """
     max_length = None if string_length == 0 else string_length
     return f"{name}-{random_id(max_length)}"

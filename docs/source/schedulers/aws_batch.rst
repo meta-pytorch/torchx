@@ -13,6 +13,6 @@ AWS Batch
    :members:
 
 Reference
-~~~~~~~~~~~~
+------------
 
 .. autofunction:: create_scheduler

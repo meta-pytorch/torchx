@@ -13,6 +13,6 @@ IBM Spectrum LSF
    :members:
 
 Reference
-~~~~~~~~~~~~
+------------
 
 .. autofunction:: create_scheduler

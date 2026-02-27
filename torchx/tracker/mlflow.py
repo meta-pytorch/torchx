@@ -47,7 +47,7 @@ class MLflowTracker(TrackerBase):
         of the job submission API).
 
     .. warning::
-        APIs on this class may only be called with the same ``run_name`.
+        APIs on this class may only be called with the same ``run_name``.
         Typically the user does not have to worry about manually setting
         the run_name as it is picked up by default from the environment variable
         ``TORCHX_APP_NAME``.

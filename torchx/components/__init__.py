@@ -14,7 +14,7 @@ of job definitions. The functions that return ``specs.AppDef`` in this
 module are what we refer to as components.
 
 You can browse the library of components in the ``torchx.components`` module
-or on our :ref:`docs page<index:Components Library>`.
+or on our :doc:`docs page</components/overview>`.
 
 Using Builtins
 ---------------------------

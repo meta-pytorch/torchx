@@ -204,7 +204,7 @@ def DEL(key: str) -> str:
 
 
 def _field_of(key: str) -> str:
-    """Extract the logical field name from a possibly-encoded operator key."""
+    # Extract the logical field name from a possibly-encoded operator key.
     if key.startswith(_PUT_PREFIX):
         return key[len(_PUT_PREFIX) :]
     if key.startswith(_DEL_PREFIX):
@@ -230,11 +230,9 @@ def _strategic_merge_by_key(
     overlay_list: list[dict[str, Any]],
     merge_key: str = "name",
 ) -> None:
-    """Merge list items by key field (strategic merge patch semantics).
-
-    Matched items: overlay fields overwrite base fields (top-level only).
-    Unmatched items: appended.
-    """
+    # Merge list items by key field (strategic merge patch semantics).
+    # Matched items: overlay fields overwrite base fields (top-level only).
+    # Unmatched items: appended.
     base_by_key: dict[str, dict[str, Any]] = {
         item[merge_key]: item
         for item in base_list
@@ -255,10 +253,8 @@ def _strategic_merge_by_key(
 
 
 def _remove_field_keys(base: _Overlay, field: str, *, keep_plain: bool = False) -> None:
-    """Remove all keys from ``base`` whose logical field name is ``field``.
-
-    When ``keep_plain`` is True, the plain key (no operator prefix) is kept.
-    """
+    # Remove all keys from base whose logical field name is field.
+    # When keep_plain is True, the plain key (no operator prefix) is kept.
     for k in [k for k in base if _field_of(k) == field]:
         if keep_plain and k == field:
             continue
@@ -271,7 +267,7 @@ def _resolve_join(
     overlay_value: object,
     field: str,
 ) -> None:
-    """Resolve a JOIN operator key into a strategic merge on ``base``."""
+    # Resolve a JOIN operator key into a strategic merge on base.
     _remove_field_keys(base, field, keep_plain=True)
     parts = key[len(_JOIN_PREFIX) :].split(":", 1)
     if len(parts) != 2 or not parts[1]:
@@ -306,7 +302,7 @@ def _resolve_join(
 
 
 def _check_type_equal(key: str, o1: object, o2: object) -> None:
-    """Raise TypeError if ``o1`` and ``o2`` have different types."""
+    # Raise TypeError if o1 and o2 have different types.
     o1_type = type(o1)
     o2_type = type(o2)
     if o1_type != o2_type:
@@ -323,13 +319,9 @@ def _merge_value(
     *,
     _resolve: bool,
 ) -> None:
-    """Merge a single overlay value into ``base`` using default rules.
-
-    - dict → recursive merge
-    - list → append
-    - tuple → replace list (legacy BC for YAML ``!!python/tuple``)
-    - primitive → overwrite
-    """
+    # Merge a single overlay value into base using default rules:
+    # dict -> recursive merge, list -> append,
+    # tuple -> replace list (legacy BC for YAML !!python/tuple), primitive -> overwrite
     if key in base:
         base_value = base[key]
 
@@ -452,14 +444,10 @@ def apply_overlay(
 
 
 def _load_overlay_file(uri: str) -> _Overlay:
-    """Load overlay dict from a file path or URI.
-
-    Supports bare paths (``/path/to/overlay.yaml``), ``file://``, ``s3://``,
-    etc. via ``fsspec``. Tries JSON first, falls back to YAML.
-
-    Raises:
-        ValueError: If the file contents are not a dict.
-    """
+    # Load overlay dict from a file path or URI.
+    # Supports bare paths, file://, s3://, etc. via fsspec.
+    # Tries JSON first, falls back to YAML.
+    # Raises ValueError if the file contents are not a dict.
     import json
 
     import fsspec

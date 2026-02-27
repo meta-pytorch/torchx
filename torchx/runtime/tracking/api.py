@@ -131,20 +131,19 @@ class FsspecResultTracker(ResultTracker):
 
     .. testcode:: [tracking_fsspec_result_tracker]
 
-     from torchx.runtime.tracking import FsspecResultTracker
+        import tempfile, os
+        from torchx.runtime.tracking import FsspecResultTracker
 
-     # PUT: in trainer.py
-     tracker_base = "/tmp/foobar" # also supports URIs (e.g. "s3://bucket/trainer/123")
-     tracker = FsspecResultTracker(tracker_base)
-     tracker["attempt_1/out"] = {"accuracy": 0.233}
+        tracker_base = tempfile.mkdtemp()  # also supports URIs (e.g. "s3://bucket/trainer/123")
+        tracker = FsspecResultTracker(tracker_base)
+        tracker["attempt_1/out"] = {"accuracy": 0.233}
 
-     # GET: anywhere outside trainer.py
-     tracker = FsspecResultTracker(tracker_base)
-     print(tracker["attempt_1/out"]["accuracy"])
+        tracker = FsspecResultTracker(tracker_base)
+        print(tracker["attempt_1/out"]["accuracy"])
 
     .. testoutput:: [tracking_fsspec_result_tracker]
 
-      0.233
+        0.233
 
     """
 

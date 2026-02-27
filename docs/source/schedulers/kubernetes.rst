@@ -13,7 +13,7 @@ Kubernetes
    :members:
 
 Reference
-~~~~~~~~~~~~
+------------
 
 .. autofunction:: create_scheduler
 .. autofunction:: app_to_resource

@@ -79,11 +79,17 @@ def get_configured_trackers() -> dict[str, str | None]:
 
 
 class Runner:
-    """
-    TorchX individual component runner. Has the methods for the user to
-    act upon ``AppDefs``. The ``Runner`` will cache information about the
-    launched apps if they were launched locally otherwise it's up to the
-    specific scheduler implementation.
+    """Submits, monitors, and manages :py:class:`~torchx.specs.AppDef` jobs.
+
+    Use :py:func:`get_runner` to create an instance with all registered schedulers.
+
+    .. doctest::
+
+        >>> from torchx.runner import get_runner
+        >>> runner = get_runner()
+        >>> runner.scheduler_backends()  # doctest: +SKIP
+        ['local_cwd', 'local_docker', 'slurm', 'kubernetes', ...]
+
     """
 
     def __init__(
@@ -93,14 +99,6 @@ class Runner:
         component_defaults: dict[str, dict[str, str]] | None = None,
         scheduler_params: dict[str, object] | None = None,
     ) -> None:
-        """
-        Creates a new runner instance.
-
-        Args:
-            name: the human readable name for this session. Jobs launched will
-                inherit this name.
-            schedulers: a list of schedulers the runner can use.
-        """
         self._name: str = name
         self._scheduler_factories: dict[str, SchedulerFactory] = (
             scheduler_factories or {}
@@ -142,14 +140,7 @@ class Runner:
         return False
 
     def close(self) -> None:
-        """
-        Closes this runner and frees/cleans up any allocated resources.
-        Transitively calls the ``close()`` method on all the schedulers.
-        Once this method is called on the runner, the runner object is deemed
-        invalid and any methods called on the runner object as well as
-        the schedulers associated with this runner have undefined behavior.
-        It is ok to call this method multiple times on the same runner object.
-        """
+        """Closes the runner and all scheduler instances. Safe to call multiple times."""
 
         for scheduler in self._scheduler_instances.values():
             scheduler.close()
@@ -163,36 +154,13 @@ class Runner:
         workspace: Workspace | str | None = None,
         parent_run_id: str | None = None,
     ) -> AppHandle:
-        """
-        Runs a component.
+        """Resolves and runs a named component.
 
-        ``component`` has the following resolution order(high to low):
-            * User-registered components. Users can register components via
-                https://packaging.python.org/specifications/entry-points/. Method looks for
-                entrypoints in the group ``torchx.components``.
-            * Builtin components relative to `torchx.components`. The path to the component should
-                be module name relative to `torchx.components` and function name in a format:
-                ``$module.$function``.
-            * File-based components in format: ``$FILE_PATH:FUNCTION_NAME``. Both relative and
-                absolute paths supported.
+        ``component`` resolution order (high → low):
 
-        Usage:
-
-        .. code-block:: python
-
-         # resolved to torchx.components.distributed.ddp()
-         runner.run_component("distributed.ddp", ...)
-
-         # resolved to my_component() function in ~/home/components.py
-         runner.run_component("~/home/components.py:my_component", ...)
-
-
-        Returns:
-            An application handle that is used to call other action APIs on the app
-
-        Raises:
-            ComponentValidationException: if component is invalid.
-            ComponentNotFoundException: if the ``component_path`` is failed to resolve.
+        1. User-registered ``torchx.components`` entry points
+        2. Builtins relative to ``torchx.components`` (e.g. ``"dist.ddp"``)
+        3. File-based ``path/to/file.py:function_name``
         """
 
         with log_event("run_component") as ctx:
@@ -223,10 +191,7 @@ class Runner:
         workspace: Workspace | str | None = None,
         parent_run_id: str | None = None,
     ) -> AppDryRunInfo:
-        """
-        Dryrun version of :py:func:`run_component`. Will not actually run the
-        component, but just returns what "would" have run.
-        """
+        """Like :py:meth:`run_component` but returns the request without submitting."""
         component_def = get_component(component)
         args_from_cli = component_args if isinstance(component_args, list) else []
         args_from_json = component_args if isinstance(component_args, dict) else {}
@@ -252,15 +217,7 @@ class Runner:
         workspace: Workspace | str | None = None,
         parent_run_id: str | None = None,
     ) -> AppHandle:
-        """
-        Runs the given application in the specified mode.
-
-        .. note:: sub-classes of ``Runner`` should implement ``schedule`` method
-                  rather than overriding this method directly.
-
-        Returns:
-            An application handle that is used to call other action APIs on the app.
-        """
+        """Submits an :py:class:`~torchx.specs.AppDef` and returns its :py:data:`~torchx.specs.AppHandle`."""
 
         with log_event(api="run") as ctx:
             dryrun_info = self.dryrun(
@@ -283,34 +240,16 @@ class Runner:
             return handle
 
     def schedule(self, dryrun_info: AppDryRunInfo) -> AppHandle:
-        """
-        Actually runs the application from the given dryrun info.
-        Useful when one needs to overwrite a parameter in the scheduler
-        request that is not configurable from one of the object APIs.
+        """Submits a previously dry-run request, allowing request mutation.
 
-        .. warning:: Use sparingly since abusing this method to overwrite
-                     many parameters in the raw scheduler request may
-                     lead to your usage of TorchX going out of compliance
-                     in the long term. This method is intended to
-                     unblock the user from experimenting with certain
-                     scheduler-specific features in the short term without
-                     having to wait until TorchX exposes scheduler features
-                     in its APIs.
+        .. code-block:: python
 
-        .. note:: It is recommended that sub-classes of ``Session`` implement
-                  this method instead of directly implementing the ``run`` method.
+            dryrun_info = runner.dryrun(app, scheduler="kubernetes", cfg)
+            dryrun_info.request.foo = "bar"  # mutate the raw request
+            app_handle = runner.schedule(dryrun_info)
 
-        Usage:
-
-        ::
-
-         dryrun_info = session.dryrun(app, scheduler="default", cfg)
-
-         # overwrite parameter "foo" to "bar"
-         dryrun_info.request.foo = "bar"
-
-         app_handle = session.submit(dryrun_info)
-
+        .. warning:: Use sparingly. Overwriting many raw scheduler fields may
+                     cause your usage to diverge from TorchX's supported API.
         """
         scheduler = none_throws(dryrun_info._scheduler)
         cfg = dryrun_info._cfg
@@ -342,19 +281,10 @@ class Runner:
         workspace: Workspace | str | None = None,
         parent_run_id: str | None = None,
     ) -> AppDryRunInfo:
-        """
-        Dry runs an app on the given scheduler with the provided run configs.
-        Does not actually submit the app but rather returns what would have been
-        submitted. The returned ``AppDryRunInfo`` is pretty formatted and can
-        be printed or logged directly.
+        """Returns what *would* be submitted without actually submitting.
 
-        Usage:
-
-        ::
-
-         dryrun_info = session.dryrun(app, scheduler="local", cfg)
-         print(dryrun_info)
-
+        The returned :py:class:`~torchx.specs.AppDryRunInfo` can be
+        ``print()``-ed for inspection or passed to :py:meth:`schedule`.
         """
         # input validation
         if not app.roles:
@@ -450,19 +380,7 @@ class Runner:
             return dryrun_info
 
     def scheduler_run_opts(self, scheduler: str) -> runopts:
-        """
-        Returns the ``runopts`` for the supported scheduler backends.
-
-        Usage:
-
-        ::
-
-         local_runopts = session.scheduler_run_opts("local_cwd")
-         print("local scheduler run options: {local_runopts}")
-
-        Returns:
-            The ``runopts`` for the specified scheduler type.
-        """
+        """Returns the :py:class:`~torchx.specs.runopts` for the given scheduler."""
         return self._scheduler(scheduler).run_opts()
 
     def cfg_from_str(self, scheduler: str, *cfg_literal: str) -> Mapping[str, CfgVal]:
@@ -487,17 +405,11 @@ class Runner:
         return cfg
 
     def scheduler_backends(self) -> list[str]:
-        """
-        Returns a list of all supported scheduler backends.
-        """
+        """Returns all registered scheduler backend names."""
         return list(self._scheduler_factories.keys())
 
     def status(self, app_handle: AppHandle) -> AppStatus | None:
-        """
-        Returns:
-            The status of the application, or ``None`` if the app does not exist anymore
-            (e.g. was stopped in the past and removed from the scheduler's backend).
-        """
+        """Returns app status, or ``None`` if the app no longer exists."""
         scheduler, scheduler_backend, app_id = self._scheduler_app_id(
             app_handle, check_session=False
         )
@@ -524,24 +436,10 @@ class Runner:
     def wait(
         self, app_handle: AppHandle, wait_interval: float = 10
     ) -> AppStatus | None:
-        """
-        Block waits (indefinitely) for the application to complete.
-        Possible implementation:
-
-        ::
-
-         while(True):
-             app_status = status(app)
-             if app_status.is_terminal():
-                 return
-             sleep(10)
+        """Blocks until the app reaches a terminal state.
 
         Args:
-            app_handle: the app handle to wait for completion
-            wait_interval: the minimum interval to wait before polling for status
-
-        Returns:
-            The terminal status of the application, or ``None`` if the app does not exist anymore
+            wait_interval: seconds between status polls
         """
         scheduler, scheduler_backend, app_id = self._scheduler_app_id(
             app_handle, check_session=False
@@ -558,18 +456,7 @@ class Runner:
                     time.sleep(wait_interval)
 
     def cancel(self, app_handle: AppHandle) -> None:
-        """
-        Stops the application, effectively directing the scheduler to cancel
-        the job. Does nothing if the app does not exist.
-
-        .. note:: This method returns as soon as the cancel request has been
-                  submitted to the scheduler. The application will be in a
-                  ``RUNNING`` state until the scheduler actually terminates
-                  the job. If the scheduler successfully interrupts the job
-                  and terminates it the final state will be ``CANCELLED``
-                  otherwise it will be ``FAILED``.
-
-        """
+        """Requests cancellation. The app transitions to ``CANCELLED`` asynchronously."""
         scheduler, scheduler_backend, app_id = self._scheduler_app_id(app_handle)
         with log_event("cancel", scheduler_backend, app_id):
             status = self.status(app_handle)
@@ -577,9 +464,7 @@ class Runner:
                 scheduler.cancel(app_id)
 
     def delete(self, app_handle: AppHandle) -> None:
-        """
-        Deletes the application from the scheduler.
-        """
+        """Deletes the app from the scheduler."""
         scheduler, scheduler_backend, app_id = self._scheduler_app_id(app_handle)
         with log_event("delete", scheduler_backend, app_id):
             status = self.status(app_handle)
@@ -587,13 +472,7 @@ class Runner:
                 scheduler.delete(app_id)
 
     def stop(self, app_handle: AppHandle) -> None:
-        """
-        See method ``cancel``.
-
-        .. warning:: This method will be deprecated in the future. It has been
-                    replaced with ``cancel`` which provides the same functionality.
-                    The change is to be consistent with the CLI and scheduler API.
-        """
+        """.. deprecated:: Use :py:meth:`cancel` instead."""
         warnings.warn(
             "This method will be deprecated in the future, please use `cancel` instead.",
             PendingDeprecationWarning,
@@ -601,15 +480,9 @@ class Runner:
         self.cancel(app_handle)
 
     def describe(self, app_handle: AppHandle) -> AppDef | None:
-        """
-        Reconstructs the application (to the best extent) given the app handle.
-        Note that the reconstructed application may not be the complete app as
-        it was submitted via the run API. How much of the app can be reconstructed
-        is scheduler dependent.
+        """Reconstructs the :py:class:`~torchx.specs.AppDef` from the scheduler.
 
-        Returns:
-            AppDef or None if the app does not exist anymore or if the
-            scheduler does not support describing the app handle
+        Completeness is scheduler-dependent. Returns ``None`` if the app no longer exists.
         """
         scheduler, scheduler_backend, app_id = self._scheduler_app_id(
             app_handle, check_session=False
@@ -635,69 +508,22 @@ class Runner:
         should_tail: bool = False,
         streams: Stream | None = None,
     ) -> Iterable[str]:
-        """
-        Returns an iterator over the log lines of the specified job container.
+        """Returns an iterator over log lines for the k-th replica of a role.
 
-        .. note:: #. ``k`` is the node (host) id NOT the ``rank``.
-                  #. ``since`` and ``until`` need not always be honored (depends on scheduler).
+        .. important:: ``k`` is the **node** (host) id, NOT the worker rank.
 
-        .. warning:: The semantics and guarantees of the returned iterator is highly
-                     scheduler dependent. See ``torchx.specs.api.Scheduler.log_iter``
-                     for the high-level semantics of this log iterator. For this reason
-                     it is HIGHLY DISCOURAGED to use this method for generating output
-                     to pass to downstream functions/dependencies. This method
-                     DOES NOT guarantee that 100% of the log lines are returned.
-                     It is totally valid for this method to return no or partial log lines
-                     if the scheduler has already totally or partially purged log records
-                     for the application.
+        .. warning:: Completeness is scheduler-dependent. Lines may be
+                     partial or missing if logs have been purged. Do not use
+                     this for programmatic output parsing.
 
-        Return lines will include whitespace characters such as ``\\n`` or
-        ``\\r``. When outputting the lines you should make sure to avoid adding
-        extra newline characters.
-
-        Usage:
-
-        .. code:: python
-
-            app_handle = session.run(app, scheduler="local", cfg=Dict[str, ConfigValue]())
-
-            print("== trainer node 0 logs ==")
-            for line in session.log_lines(app_handle, "trainer", k=0):
-               # for prints newlines will already be present in the line
-               print(line, end="")
-
-               # when writing to a file nothing extra is necessary
-               f.write(line)
-
-        Discouraged anti-pattern:
-
-        .. code:: python
-
-            # DO NOT DO THIS!
-            # parses accuracy metric from log and reports it for this experiment run
-            accuracy = -1
-            for line in session.log_lines(app_handle, "trainer", k=0):
-               if matches_regex(line, "final model_accuracy:[0-9]*"):
-                   accuracy = parse_accuracy(line)
-                   break
-            report(experiment_name, accuracy)
+        Lines include trailing whitespace (``\\n``). Use ``print(line, end="")``
+        to avoid double newlines.
 
         Args:
-            app_handle: application handle
-            role_name: role within the app (e.g. trainer)
-            k: k-th replica of the role to fetch the logs for
-            regex: optional regex filter, returns all lines if left empty
-            since: datetime based start cursor. If left empty begins from the
-                    first log line (start of job).
-            until: datetime based end cursor. If left empty, follows the log output
-                    until the job completes and all log lines have been consumed.
-
-        Returns:
-             An iterator over the role k-th replica of the specified application.
-
-        Raise:
-            UnknownAppException: if the app does not exist in the scheduler
-
+            k: replica (node) index
+            regex: optional filter pattern
+            since: start cursor (scheduler-dependent)
+            until: end cursor (scheduler-dependent)
         """
         scheduler, scheduler_backend, app_id = self._scheduler_app_id(
             app_handle, check_session=False
@@ -722,16 +548,10 @@ class Runner:
         scheduler: str,
         cfg: Mapping[str, CfgVal] | None = None,
     ) -> list[ListAppResponse]:
-        """
-        For apps launched on the scheduler, this API returns a list of ListAppResponse
-        objects each of which have app id, app handle and its status.
+        """Lists jobs on the scheduler.
 
         Args:
-            scheduler: name of the scheduler backend.
-            cfg: scheduler configuration, same as passed to run/dryrun APIs.
-                Some schedulers may use this for backend routing decisions.
-
-        Note: This API is in prototype phase and is subject to change.
+            cfg: scheduler config, used by some schedulers for backend routing.
         """
         with log_event("list", scheduler):
             sched = self._scheduler(scheduler)
@@ -760,16 +580,6 @@ class Runner:
         check_session: bool = True,
         # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
     ) -> tuple[Scheduler, str, str]:
-        """
-        Returns the scheduler and app_id from the app_handle.
-        Set ``check_session`` to validate that the session name in the app handle
-        is the same as this session.
-
-        Raises:
-            ValueError: if ``check_session=True`` and the session in the app handle
-                         does not match this session's name
-            KeyError: if no such scheduler backend exists
-        """
 
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
         scheduler = self._scheduler(scheduler_backend)
@@ -784,33 +594,16 @@ def get_runner(
     component_defaults: dict[str, dict[str, str]] | None = None,
     **scheduler_params: Any,
 ) -> Runner:
-    """
-    Convenience method to construct and get a Runner object. Usage:
+    """Creates a :py:class:`Runner` with all registered schedulers.
 
     .. code-block:: python
 
-      with get_runner() as runner:
-        app_handle = runner.run(component(args), scheduler="kubernetes", runcfg)
-        print(runner.status(app_handle))
-
-    Alternatively,
-
-    .. code-block:: python
-
-     runner = get_runner()
-     try:
-        app_handle = runner.run(component(args), scheduler="kubernetes", runcfg)
-        print(runner.status(app_handle))
-     finally:
-        runner.close()
+        with get_runner() as runner:
+            app_handle = runner.run(app, scheduler="kubernetes", cfg=cfg)
+            print(runner.status(app_handle))
 
     Args:
-        name: human readable name that will be included as part of all launched
-            jobs.
-        scheduler_params: extra arguments that will be passed to the constructor
-            of all available schedulers.
-
-
+        scheduler_params: extra kwargs passed to all scheduler constructors.
     """
     if name:
         warnings.warn(

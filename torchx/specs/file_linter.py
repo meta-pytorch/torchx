@@ -142,7 +142,7 @@ def get_generic_type(arg: ast.expr) -> ast.expr:
 
 def get_optional_type(arg: ast.expr) -> ast.expr | None:
     """
-    Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if `arg``
+    Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if ``arg``
     is not an ``Optional``. Handles both:
         1. ``typing.Optional[T]`` (python<3.10)
         2.  ``T | None`` or ``None | T`` (python>=3.10 - PEP 604)

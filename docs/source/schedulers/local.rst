@@ -10,7 +10,7 @@ Local
    :show-inheritance:
 
 Image Providers
-~~~~~~~~~~~~~~~~~
+-----------------
 
 .. autoclass:: ImageProvider
    :members:
@@ -22,7 +22,7 @@ Image Providers
    :members:
 
 Reference
-~~~~~~~~~~~~
+------------
 
 .. autofunction:: create_scheduler
 

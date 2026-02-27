@@ -223,7 +223,7 @@ def dump(
     f: TextIO, schedulers: list[str] | None = None, required_only: bool = False
 ) -> None:
     """
-    Dumps a default INI-style config template containing the :py:class:torchx.specs.runopts for the
+    Dumps a default INI-style config template containing the :py:class:`torchx.specs.runopts` for the
     given scheduler names into the file-like object specified by ``f``.
     If no ``schedulers`` are specified dumps all known registered schedulers.
 

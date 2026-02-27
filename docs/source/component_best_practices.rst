@@ -1,35 +1,37 @@
 Component Best Practices
 ==========================
 
-This has a list of common things you might want to do with a component and best
-practices for them. Components are designed to be flexible so you can deviate
-from these practices if necessary however these are the best practices we use
-for the builtin TorchX components.
+.. tip::
 
-See :ref:`app_best_practices:App Best Practices` for information how to write
-apps using TorchX.
+   Best practices for authoring reusable TorchX
+   :term:`components <Component>`: entrypoints, simplicity, named resources,
+   composition, and testing.
+
+**Prerequisites:** :doc:`custom_components`.
+
+These practices reflect conventions used in the builtin components. Deviate
+when your use case demands it.
 
 Entrypoints
 -------------------
 
-When possible it's best to call your reusable component via ``python -m <module>``
-instead of specifying the path to the main module. This makes it so it can be
-used in multiple different environments such as docker and slurm by relying on
-the python module resolution instead of the directory structure.
+Prefer ``python -m <module>`` over a path to the main module. Module
+resolution works across environments (Docker, Slurm) regardless of directory
+structure.
 
-If your app isn't python based, you can place your app in a folder on your
-`PATH` so it's accessible regardless of the directory structure.
+For non-Python apps, place the binary on ``PATH`` instead.
 
 .. code-block:: python
 
+   from torchx.specs import AppDef, Role
+
    def trainer(img_name: str, img_version: str) -> AppDef:
-       return AppDef(roles=[
+       return AppDef(name="trainer", roles=[
            Role(
+               name="trainer",
+               image=f"{img_name}:{img_version}",
                entrypoint="python",
-               args=[
-                   "-m",
-                   "your.app",
-               ],
+               args=["-m", "your.app"],
            )
        ])
 
@@ -37,96 +39,85 @@ If your app isn't python based, you can place your app in a folder on your
 Simplify
 -------------------
 
-When writing a component you want to keep each component as simple as
-possible to make it easier for others to reuse and understand.
+Keep each component as simple as possible.
 
 Argument Processing
 ^^^^^^^^^^^^^^^^^^^^^
 
-Argument processing makes it hard to use the component in other environments.
-For images in particular we want to directly pass the image field to the AppDef
-since any sort of manipulation will make it impossible to use in other
-environments with different image naming conventions.
+Pass ``image`` directly to ``AppDef`` without manipulation -- processing
+breaks portability across environments.
 
 .. code-block:: python
 
-   def trainer(image: str):
-       return AppDef(roles=[Role(image=image)...)
+   def trainer(image: str) -> AppDef:
+       return AppDef(name="trainer", roles=[Role(name="trainer", image=image)])
 
 Branching Logic
 ^^^^^^^^^^^^^^^^^
 
-You should avoid branching logic in the components. If you have a case where you
-feel like you need an ``if`` statement in the component you should prefer to
-create multiple components with shared logic. Complex arguments make it hard for
-others to understand how to use it.
+Avoid ``if`` statements in components. Create multiple components with shared
+private helpers instead.
 
 .. code-block:: python
 
-   def trainer_test():
+   def trainer_test() -> AppDef:
        return _trainer(num_replicas=1)
 
    def trainer_prod() -> AppDef:
        return _trainer(num_replicas=10)
 
-   # not a component just a function
+   # not a component — just a shared helper
    def _trainer(num_replicas: int) -> AppDef:
-        return AppDef(roles=[Role(..., num_replicas=num_replicas)])
+       return AppDef(
+           name="trainer",
+           roles=[Role(name="trainer", image="my_image:latest", num_replicas=num_replicas)],
+       )
 
 
 Documentation
 ^^^^^^^^^^^^^^^^^^^^^
 
-The documentation is optional, but it is the best practice to keep component functions documented,
-especially if you want to share your components. See :ref:Component Authoring<components/overview:Authoring>
-for more details.
+Document component functions. See :doc:`components/overview` for examples.
 
 
 Named Resources
 -----------------
 
-When writing components it's best to use TorchX's named resources support
-instead of manually specifying cpu and memory allocations. Named resources allow
-your component to be environment independent and allow for better scheduling
-behavior by using t-shirt sizes.
+Use :term:`named resources <Resource>` instead of hard-coding CPU and memory
+values:
 
-See :py:meth:`torchx.specs.get_named_resources` for more info.
+.. code-block:: python
+
+   from torchx.specs import resource
+
+   resource(h="aws_p3.2xlarge")
+
+See :ref:`advanced:Registering Named Resources` for defining custom named
+resources.
 
 Composing Components
 ----------------------
 
-For common component styles we provide base component definitions. These can be
-called from your custom component definition and an alternative to creating a
-full AppDef from scratch.
-
-See:
+Start from base component definitions rather than building ``AppDef`` from
+scratch:
 
 * :py:mod:`torchx.components.base` for simple single node components.
-* :py:meth:`torchx.components.dist.ddp` for distributed components.
+* :py:func:`torchx.components.dist.ddp` for distributed components.
 
-For even more complex components it's possible to merge multiple existing
-components into a single one. For instance you could use a metrics UI component
-and merge the roles from it into training component roles to have a sidecar
-service to your main training job.
+You can also merge roles from multiple components to run sidecars alongside
+the main job.
 
 Distributed Components
 ------------------------
 
-If you're writing a component for distributed training or other similar
-distributed computation, we recommend using the
-:py:meth:`torchx.components.dist.ddp` component since it provides out of the box
-support for ``torch.distributed.elastic`` jobs.
-
-You can extend the ``ddp`` component by writing a custom component that simple
-imports the ``ddp`` component and calls it with your app configuration.
+Use :py:func:`torchx.components.dist.ddp` for distributed training. Extend it
+by writing a wrapper that calls ``ddp`` with your configuration.
 
 Define All Arguments
 ----------------------
 
-It's preferable to define all component arguments as function arguments instead
-of consuming a dictionary of arguments. This makes it easier for users to figure
-out the options as well as can provide static typing when used with `pyre
-<https://pyre-check.org/>`__ or `mypy <http://mypy-lang.org/>`__.
+Define all arguments as function parameters instead of consuming a dictionary.
+This enables discoverability and static type checking.
 
 Unit Tests
 --------------
@@ -140,8 +131,20 @@ Unit Tests
 Integration Tests
 -------------------
 
-You can setup integration tests with your components by either using the
-programmatic runner API or write a bash script to call the CLI.
+Use the :py:class:`~torchx.runner.Runner` API or CLI scripts. See the
+`scheduler integration tests <https://github.com/meta-pytorch/torchx/tree/main/.github/workflows>`__
+for examples.
 
-You can see both styles in use in the core
-`TorchX scheduler integration tests <https://github.com/meta-pytorch/torchx/tree/main/.github/workflows>`__.
+.. seealso::
+
+   :doc:`api_reference`
+      Single-page reference with imports, types, and copy-pasteable recipes.
+
+   :doc:`app_best_practices`
+      Best practices for writing TorchX applications.
+
+   :doc:`custom_components`
+      Step-by-step guide for building and launching a custom component.
+
+   :doc:`components/overview`
+      Browse the builtin component library.

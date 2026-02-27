@@ -123,56 +123,26 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     # pyre-fixme[14]: Inconsistent override - Mapping.get accepts a default parameter
     def get(self, key: str) -> CfgVal:
-        """Get a config value by key, returning None if not found."""
         try:
             return self[key]
         except KeyError:
             return None
 
     def __getitem__(self, key: str) -> CfgVal:
-        """Get a config value by key. Raises KeyError if not found.
-
-        Transparently handles camelCase keys by converting to snake_case.
-        """
         snake_key = cases.camel_to_snake(key)
         if hasattr(self, snake_key):
             return getattr(self, snake_key)
         raise KeyError(key) from None
 
     def __len__(self) -> int:
-        """Return the number of config fields."""
         return len(fields(self))
 
     def __iter__(self) -> Iterator[str]:
-        """Iterate over config field names."""
         for f in fields(self):
             yield f.name
 
     # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
     def __contains__(self, key: object) -> bool:
-        """Check if a config key exists.
-
-        camelCase keys are normalized to snake_case prior to lookup.
-
-        Example:
-            .. doctest::
-
-                >>> from dataclasses import dataclass
-                >>> @dataclass
-                ... class Opt(StructuredOpts):
-                ...     job_queue_name: str = "default"
-
-                >>> cfg = Opt()
-                >>> "job_queue_name" in cfg
-                True
-                >>> "jobQueueName" in cfg
-                True
-                >>> "queue_name" in cfg
-                False
-                >>> "queueName" in cfg
-                False
-
-        """
         if not isinstance(key, str):
             return False
         try:
@@ -183,7 +153,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     @classmethod
     def get_docstrings(cls) -> dict[str, str]:
-        """Parse source code to extract attribute docstrings."""
+        # Parses source to extract attribute docstrings for help text.
         docstrings: dict[str, str] = {}
         try:
             source = inspect.getsource(cls)
@@ -299,22 +269,7 @@ class Stream(str, Enum):
 
 @dataclass
 class DescribeAppResponse:
-    """
-    Response object returned by ``Scheduler.describe(app)`` API. Contains
-    the status and description of the application as known by the scheduler.
-    For some schedulers implementations this response object has necessary
-    and sufficient information to recreate an ``AppDef`` object. For these types
-    of schedulers, the user can re-``run()`` the recreated application. Otherwise
-    the user can only call non-creating methods (e.g. ``wait()``, ``status()``,
-    etc).
-
-    Since this class is a data class and contains many member variables we
-    keep the usage simple and provide a no-args constructor and chose to
-    access the member vars directly rather than provide accessors.
-
-    If scheduler returns arbitrary message, the ``msg`` field should be populated.
-    If scheduler returns a structured json, the ``structured_error_msg`` field should be populated.
-    """
+    """Response from :py:meth:`Scheduler.describe`. Contains status, roles, and metadata."""
 
     app_id: str = "<NOT_SET>"
     state: AppState = AppState.UNSUBMITTED
@@ -330,19 +285,7 @@ class DescribeAppResponse:
 
 @dataclass
 class ListAppResponse:
-    """
-    Response object returned by ``scheduler.list()`` and ``runner.list()`` APIs.
-    Contains the app_id, app_handle and status of the application.
-    App ID : The unique identifier that identifies apps submitted on the scheduler
-    App handle: Identifier for apps run with torchx in a url format like
-    {scheduler_backend}://{session_name}/{app_id}, which is created by the runner
-    when it submits a job on a scheduler. Handle info in ListAppResponse is filled
-    in by ``runner.list()``. This handle can be used to further describe the app
-    with torchx CLI or a torchx runner instance.
-
-    Since this class is a data class with some member variables we keep the usage
-    simple and chose to access the member vars directly rather than provide accessors.
-    """
+    """Response from :py:meth:`Scheduler.list` / :py:meth:`~torchx.runner.api.Runner.list`."""
 
     app_id: str
     state: AppState
@@ -360,10 +303,11 @@ T = TypeVar("T")
 
 
 class Scheduler(abc.ABC, Generic[T]):
-    """
-    An interface abstracting functionalities of a scheduler.
-    Implementers need only implement those methods annotated with
-    ``@abc.abstractmethod``.
+    """Abstract base class for job schedulers.
+
+    Implementors must override all ``@abc.abstractmethod`` methods.
+    See :py:class:`StructuredOpts` for typed config and
+    :py:mod:`torchx.schedulers` for built-in implementations.
     """
 
     def __init__(self, backend: str, session_name: str) -> None:
@@ -371,19 +315,9 @@ class Scheduler(abc.ABC, Generic[T]):
         self.session_name = session_name
 
     def close(self) -> None:
-        """
-        Only for schedulers th118at have local state! Closes the scheduler
-        freeing any allocated resources. Once closed, the scheduler object
-        is deemed to no longer be valid and any method called on the object
-        results in undefined behavior.
+        """Releases local resources. Safe to call multiple times.
 
-        This method should not raise exceptions and is allowed to be called
-        multiple times on the same object.
-
-        .. note:: Override only for scheduler implementations that have local state
-                  (``torchx/schedulers/local_scheduler.py``).
-                  Schedulers simply wrapping a remote scheduler's client need not
-                  implement this method.
+        Only override for schedulers with local state (e.g. ``local_scheduler``).
         """
         pass
 
@@ -393,14 +327,7 @@ class Scheduler(abc.ABC, Generic[T]):
         cfg: T,
         workspace: str | Workspace | None = None,
     ) -> str:
-        """
-        Submits the application to be run by the scheduler.
-
-        WARNING: Mostly used for tests. Users should prefer to use the TorchX runner instead.
-
-        Returns:
-            The application id that uniquely identifies the submitted app.
-        """
+        """Submits an app directly. Prefer :py:meth:`~torchx.runner.api.Runner.run` for production use."""
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
@@ -418,30 +345,11 @@ class Scheduler(abc.ABC, Generic[T]):
 
     @abc.abstractmethod
     def schedule(self, dryrun_info: AppDryRunInfo) -> str:
-        """
-        Same as ``submit`` except that it takes an ``AppDryRunInfo``.
-        Implementers are encouraged to implement this method rather than
-        directly implementing ``submit`` since ``submit`` can be trivially
-        implemented by:
-
-        ::
-
-         dryrun_info = self.submit_dryrun(app, cfg)
-         return schedule(dryrun_info)
-
-        """
-
+        """Submits a previously dry-run request. Returns the app_id."""
         raise NotImplementedError()
 
     def submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
-        """
-        Rather than submitting the request to run the app, returns the
-        request object that would have been submitted to the underlying
-        service. The type of the request object is scheduler dependent.
-        This method can be used to dry-run an application. Please refer
-        to the scheduler implementation's documentation regarding
-        the actual return type.
-        """
+        """Returns the scheduler request without submitting."""
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         # pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg
@@ -459,10 +367,7 @@ class Scheduler(abc.ABC, Generic[T]):
         raise NotImplementedError()
 
     def run_opts(self) -> runopts:
-        """
-        Returns the run configuration options expected by the scheduler.
-        Basically a ``--help`` for the ``run`` API.
-        """
+        """Returns accepted run configuration options (``torchx runopts <scheduler>``)."""
         opts = self._run_opts()
         if isinstance(self, WorkspaceMixin):
             opts.update(self.workspace_opts())
@@ -473,55 +378,27 @@ class Scheduler(abc.ABC, Generic[T]):
 
     @abc.abstractmethod
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
-        """
-        Describes the specified application.
-
-        Returns:
-            AppDef description or ``None`` if the app does not exist.
-        """
+        """Returns app description, or ``None`` if it no longer exists."""
         raise NotImplementedError()
 
     @abc.abstractmethod
     def list(self, cfg: Mapping[str, CfgVal] | None = None) -> List[ListAppResponse]:
-        """
-        For apps launched on the scheduler, this API returns a list of ListAppResponse
-        objects each of which have app id and its status.
-
-        Args:
-            cfg: scheduler configuration, same as passed to run/dryrun APIs.
-                Some schedulers may use this for backend routing decisions.
-
-        Note: This API is in prototype phase and is subject to change.
-        """
+        """Lists jobs on this scheduler."""
         raise NotImplementedError()
 
     def exists(self, app_id: str) -> bool:
-        """
-        Returns:
-            ``True`` if the app exists (was submitted), ``False`` otherwise
-        """
         desc = self.describe(app_id)
         return desc is not None
 
     @abc.abstractmethod
     def _cancel_existing(self, app_id: str) -> None:
-        """
-        Kills the application. This method will only be called on an
-        application that exists.
-        """
         raise NotImplementedError()
 
     def cancel(self, app_id: str) -> None:
-        """
-        Cancels/kills the application. This method is idempotent within the same
-        thread and is safe to call on the same application multiple times.
-        However when called from multiple threads/processes on the same app
-        the exact semantics of this method depends on the idempotency guarantees
-        of the underlying scheduler API.
+        """Cancels the app. Idempotent — safe to call multiple times.
 
-        .. note:: This method does not block for the application to reach a
-                  cancelled state. To ensure that the application reaches a
-                  terminal state use the ``wait`` API.
+        Does not block. Use :py:meth:`~torchx.runner.api.Runner.wait` to
+        await the terminal state.
         """
         if self.exists(app_id):
             self._cancel_existing(app_id)
@@ -530,43 +407,16 @@ class Scheduler(abc.ABC, Generic[T]):
             return
 
     def delete(self, app_id: str) -> None:
-        """
-        Deletes the job information for the specified ``app_id`` from the
-        scheduler's data-plane. Basically "deep-purging" the job from the
-        scheduler's data-plane. Calling this API on a "live" job (e.g in a
-        non-terminal status such as PENDING or RUNNING) cancels the job.
+        """Deletes the job definition from the scheduler's data-plane.
 
-        Note that this API is only relevant for schedulers for which its
-        data-plane persistently stores the "JobDefinition" (which is often
-        versioned). AWS Batch and Kubernetes are examples of such schedulers.
-        On these schedulers, a finished job may fall out of the data-plane
-        (e.g. really old finished jobs get deleted) but the JobDefinition is
-        typically permanently stored. In this case, calling
-        :py:meth:`~cancel` would not delete the job definition.
-
-        In schedulers with no such feature (e.g. SLURM)
-        :py:meth:`~delete` is the same as :py:meth:`~cancel`, which is the
-        default implementation. Hence implementors of such schedulers need not
-        override this method.
-
-        .. warning::
-            Calling :py:meth:`~delete` on an ``app_id`` that has fallen out of
-            the scheduler's data-plane does nothing. The user is responsible for
-            manually tracking down and cleaning up any dangling resources related
-            to the job.
+        On schedulers with persistent job definitions (e.g. Kubernetes, AWS Batch),
+        this purges the definition. On others (e.g. Slurm), this is equivalent to
+        :py:meth:`cancel`. Calling on a live job cancels it first.
         """
         if self.exists(app_id):
             self._delete_existing(app_id)
 
     def _delete_existing(self, app_id: str) -> None:
-        """
-        Deletes the job information for the specified ``app_id`` from the
-        scheduler's data-plane. This method will only be called on an
-        application that exists.
-
-        The default implementation calls :py:meth:`~_cancel_existing` which is
-        appropriate for schedulers without persistent job definitions.
-        """
         self._cancel_existing(app_id)
 
     def log_iter(
@@ -580,69 +430,21 @@ class Scheduler(abc.ABC, Generic[T]):
         should_tail: bool = False,
         streams: Optional[Stream] = None,
     ) -> Iterable[str]:
-        """
-        Returns an iterator to the log lines of the ``k``th replica of the ``role``.
-        The iterator ends when all qualifying log lines have been read.
+        """Returns an iterator over log lines for the ``k``-th replica of ``role_name``.
 
-        If the scheduler supports time-based cursors fetching log lines
-        for custom time ranges, then the ``since``, ``until`` fields are
-        honored, otherwise they are ignored. Not specifying ``since`` and ``until``
-        is equivalent to getting all available log lines. If the ``until`` is
-        empty, then the iterator behaves like ``tail -f``, following the log output
-        until the job reaches a terminal state.
+        .. important:: Not all schedulers support log iteration, tailing, or
+                       time-based cursors. Check the specific scheduler docs.
 
-        The exact definition of what constitutes a log is scheduler specific. Some
-        schedulers may consider stderr or stdout as the log, others may read the logs
-        from a log file.
-
-        Behaviors and assumptions:
-
-        1. Produces an undefined-behavior if called on an app that does not exist
-           The caller should check that the app exists using ``exists(app_id)``
-           prior to calling this method.
-
-        2. Is not stateful, calling this method twice with same parameters
-           returns a new iterator. Prior iteration
-           progress is lost.
-
-        3. Does not always support log-tailing. Not all schedulers support live
-           log iteration (e.g. tailing logs while the app is running). Refer to
-           the specific scheduler's documentation for the iterator's behavior.
-
-        3.1 If the scheduler supports log-tailing, it should be controlled
-            by ``should_tail`` parameter.
-
-        4. Does not guarantee log retention. It is possible that by the time this
-           method is called, the underlying scheduler may have purged the log records
-           for this application. If so this method raises an arbitrary exception.
-
-        5. If ``should_tail`` is True, the method only raises a ``StopIteration`` exception
-           when the accessible log lines have been fully exhausted and the app has reached
-           a final state. For instance, if the app gets stuck and does not produce any log lines,
-           then the iterator blocks until the app eventually gets killed (either via
-           timeout or manually) at which point it raises a ``StopIteration``.
-
-           If ``should_tail`` is False, the method raises ``StopIteration``
-           when there are no more logs.
-
-        6. Need not be supported by all schedulers.
-
-        7. Some schedulers may support line cursors by supporting ``__getitem__``
-           (e.g. ``iter[50]`` seeks to the 50th log line).
-
-        8. Whitespace is preserved, each new line should include ``\\n``. To
-            support interactive progress bars the returned lines don't need to
-            include ``\\n`` but should then be printed without a newline to
-            correctly handle ``\\r`` carriage returns.
+        Lines include trailing whitespace (``\\n``). When ``should_tail=True``,
+        the iterator blocks until the app reaches a terminal state.
 
         Args:
-            streams: The IO output streams to select.
-                One of: combined, stdout, stderr.
-                If the selected stream isn't supported by the scheduler it will
-                throw an ValueError.
-
-        Returns:
-            An ``Iterator`` over log lines of the specified role replica
+            k: replica (node) index
+            regex: optional filter pattern
+            since: start cursor (scheduler-dependent)
+            until: end cursor (scheduler-dependent)
+            should_tail: if ``True``, follow output like ``tail -f``
+            streams: ``stdout``, ``stderr``, or ``combined``
 
         Raises:
             NotImplementedError: if the scheduler does not support log iteration
@@ -652,19 +454,11 @@ class Scheduler(abc.ABC, Generic[T]):
         )
 
     def _pre_build_validate(self, app: AppDef, scheduler: str, cfg: T) -> None:
-        """
-        validates before workspace build whether application is consistent with the scheduler.
-
-        Raises error if application is not compatible with scheduler
-        """
+        # Hook for pre-workspace-build validation. Override to add checks.
         pass
 
     def _validate(self, app: AppDef, scheduler: str, cfg: T) -> None:
-        """
-        Validates after workspace build whether application is consistent with the scheduler.
-
-        Raises error if application is not compatible with scheduler
-        """
+        # Hook for post-workspace-build validation.
         for role in app.roles:
             if role.resource == NULL_RESOURCE:
                 raise ValueError(
@@ -673,19 +467,14 @@ class Scheduler(abc.ABC, Generic[T]):
 
 
 def filter_regex(regex: str, data: Iterable[str]) -> Iterable[str]:
-    """
-    filter_regex takes a string iterator and returns an iterator that only has
-    values that match the regex.
-    """
+    """Filters an iterable of strings, yielding only lines matching ``regex``."""
 
     r = re.compile(regex)
     return filter(lambda datum: r.search(datum), data)
 
 
 def split_lines(text: str) -> List[str]:
-    """
-    split_lines splits the string by new lines and keeps the new line characters.
-    """
+    """Splits ``text`` by newlines, preserving the ``\\n`` characters."""
     lines = []
     while len(text) > 0:
         idx = text.find("\n")
@@ -699,10 +488,7 @@ def split_lines(text: str) -> List[str]:
 
 
 def split_lines_iterator(chunks: Iterable[str]) -> Iterable[str]:
-    """
-    split_lines_iterator splits each chunk in the iterator by new lines and
-    returns them.
-    """
+    """Splits each chunk in the iterable by newlines, yielding individual lines."""
     for chunk in chunks:
         lines = split_lines(chunk)
         for line in lines:

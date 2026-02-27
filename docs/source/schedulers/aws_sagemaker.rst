@@ -13,7 +13,7 @@ AWS SageMaker
    :members:
 
 Reference
-~~~~~~~~~~~~
+------------
 
 .. autofunction:: create_scheduler
 
