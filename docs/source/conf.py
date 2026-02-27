@@ -68,11 +68,7 @@ extensions = [
     "runopts",
     "fbcode",
 ]
-if FBCODE:
-    extensions += [
-        "myst_parser",  # fb/*.md docs
-    ]
-else:
+if not FBCODE:
     extensions += [
         "sphinx.ext.intersphinx",
         "sphinxcontrib.katex",
@@ -104,10 +100,16 @@ napoleon_use_ivar = True
 templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = [".rst", ".md"] if FBCODE else [".rst"]
+source_suffix = [".rst"]
+
+# Mock imports for modules with external dependencies not available during doc build.
+# These schedulers have optional dependencies (boto3, sagemaker, kubernetes) that may
+# not be installed in the documentation build environment.
+autodoc_mock_imports = [
+    "boto3",
+    "sagemaker",
+    "kubernetes",
+]
 
 # The master toctree document.
 master_doc = "index"
@@ -140,8 +142,7 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
 if not FBCODE:
-    # fb/ contains Meta-internal .md docs that require a markdown parser
-    # and Meta-internal Sphinx extensions only available in the fbcode build.
+    # fb/ contains Meta-internal docs only available in the fbcode build.
     exclude_patterns += ["fb/**"]
 
 # The name of the Pygments (syntax highlighting) style to use.

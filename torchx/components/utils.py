@@ -325,7 +325,8 @@ def hydra(
     Config should have an 'app' key with _target_: torchx.specs.AppDef.
     Other top-level keys (like 'role') can be used for config groups and interpolation.
 
-    Example:
+    Example::
+
         defaults:
           - role: python
 

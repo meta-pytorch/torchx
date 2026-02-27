@@ -7,15 +7,28 @@
 # pyre-strict
 
 """
-This contains the TorchX AppDef and related component definitions. These are
-used by components to define the apps which can then be launched via a TorchX
-scheduler or pipeline adapter.
+Core TorchX types for defining distributed applications.
+
+The main types are :py:class:`AppDef`, :py:class:`Role`, and :py:class:`Resource`.
+Components are functions that return an ``AppDef`` which can then be launched
+via a :py:class:`~torchx.schedulers.api.Scheduler`.
+
+.. doctest::
+
+    >>> import torchx.specs as specs
+    >>> app = specs.AppDef(
+    ...     name="echo",
+    ...     roles=[specs.Role(name="worker", image="/tmp", entrypoint="/bin/echo", args=["hello"])],
+    ... )
+    >>> app.name
+    'echo'
+
 """
 import difflib
 import os
 from typing import Callable, Iterator, Mapping
 
-from torchx.specs.api import (
+from torchx.specs.api import (  # noqa: F401
     ALL,
     AppDef,
     AppDryRunInfo,
@@ -35,6 +48,7 @@ from torchx.specs.api import (
     NONE,
     NULL_RESOURCE,
     parse_app_handle,
+    ParsedAppHandle,
     ReplicaState,
     ReplicaStatus,
     Resource,
@@ -138,27 +152,17 @@ def resource(
     memMB: int | None = None,
     h: str | None = None,
 ) -> Resource:
-    """
-    Convenience method to create a ``Resource`` object from either the
-    raw resource specs (cpu, gpu, memMB) or the registered named resource (``h``).
-    Note that the (cpu, gpu, memMB) is mutually exclusive with ``h``
-    taking predecence if specified.
+    """Creates a :py:class:`Resource` from raw specs or a named resource.
 
-    If ``h`` is specified then it is used to look up the
-    resource specs from the list of registered named resources.
-    See `registering named resource <https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+    When ``h`` is set, it takes precedence (raw specs are ignored). See
+    :ref:`advanced:Registering Named Resources` for custom named resources.
 
-    Otherwise a ``Resource`` object is created from the raw resource specs.
+    .. doctest::
 
-    Example:
+        >>> from torchx.specs import resource
+        >>> resource(cpu=4, gpu=1, memMB=8192)
+        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})
 
-    .. code-block:: python
-
-         resource(cpu=1) # returns Resource(cpu=1)
-         resource(named_resource="foobar") # returns registered named resource "foo"
-         resource(cpu=1, named_resource="foobar") # returns registered named resource "foo" (cpu=1 ignored)
-         resource() # returns default resource values
-         resource(cpu=None, gpu=None, memMB=None) # throws
     """
 
     if h:
@@ -209,6 +213,7 @@ __all__ = [
     "NONE",
     "NULL_RESOURCE",
     "parse_app_handle",
+    "ParsedAppHandle",
     "ReplicaState",
     "ReplicaStatus",
     "Resource",

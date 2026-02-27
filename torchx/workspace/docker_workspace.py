@@ -38,31 +38,19 @@ COPY . .
 
 
 class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
-    """
-    DockerWorkspaceMixin will build patched docker images from the workspace. These
-    patched images are docker images and can be either used locally via the
-    docker daemon or pushed using the helper methods to a remote repository for
-    remote jobs.
+    """Builds patched Docker images from the workspace.
 
-    This requires a running docker daemon locally and for remote pushing
-    requires being authenticated to those repositories via ``docker login``.
+    Requires a local Docker daemon. For remote jobs, authenticate via
+    ``docker login`` and set the ``image_repo`` runopt.
 
-    If there is a ``Dockerfile.torchx`` file present in the workspace that will
-    be used instead to build the container.
+    If ``Dockerfile.torchx`` exists in the workspace it is used as the
+    Dockerfile; otherwise a default ``COPY . .`` Dockerfile is generated.
+    Extra ``--build-arg`` values available in ``Dockerfile.torchx``:
 
-    The docker build is provided with some extra build arguments that can be
-    used in the Dockerfile.torchx:
+    * ``IMAGE`` -- the role's base image
+    * ``WORKSPACE`` -- the workspace path
 
-    * IMAGE: the image string from the first Role in the AppDef
-    * WORKSPACE: the full workspace path
-
-    To exclude files from the build context you can use the standard
-    `.dockerignore` file.
-
-    See more:
-
-    * https://docs.docker.com/engine/reference/commandline/login/
-    * https://docs.docker.com/get-docker/
+    Use ``.dockerignore`` to exclude files from the build context.
     """
 
     LABEL_VERSION: str = "torchx.pytorch.org/version"
@@ -104,13 +92,8 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
     def build_workspace_and_update_role(
         self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
     ) -> None:
-        """
-        Builds a new docker image using the ``role``'s image as the base image
-        and updates the ``role``'s image with this newly built docker image id
-
-        Args:
-            role: the role whose image (a Docker image) is to be used as the base image
-            workspace: a fsspec path to a directory with contents to be overlaid
+        """Builds a Docker image from *workspace* on top of ``role.image`` and
+        updates ``role.image`` with the resulting image id.
         """
 
         old_imgs = [
@@ -163,16 +146,8 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
     def dryrun_push_images(
         self, app: AppDef, cfg: Mapping[str, CfgVal]
     ) -> dict[str, tuple[str, str]]:
-        """
-        _update_app_images replaces the local Docker images (identified via
-        ``sha256:...``) in the provided ``AppDef`` with the remote path that they will be uploaded to and
-        returns a mapping of local to remote names.
-
-        ``push`` must be called with the returned mapping before
-        launching the job.
-
-        Returns:
-            A dict of [local image name, (remote repo, tag)].
+        """Replaces local ``sha256:...`` images in *app* with remote paths and
+        returns a ``{local_image: (repo, tag)}`` mapping for :py:meth:`push_images`.
         """
         HASH_PREFIX = "sha256:"
         image_repo = cfg.get("image_repo")
@@ -196,13 +171,9 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
         return images_to_push
 
     def push_images(self, images_to_push: dict[str, tuple[str, str]]) -> None:
-        """
-        _push_images pushes the specified images to the remote container
-        repository with the specified tag. The docker daemon must be
-        authenticated to the remote repository using ``docker login``.
+        """Pushes local images to a remote repository.
 
-        Args:
-            images_to_push: A dict of [local image name, (remote repo, tag)].
+        Requires ``docker login`` authentication to the target repo.
         """
 
         if len(images_to_push) == 0:

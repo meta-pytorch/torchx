@@ -33,7 +33,10 @@ WorkspaceConfigType = TypeVar("WorkspaceConfigType")
 @dataclass
 class PkgInfo(Generic[PackageType]):
     """
-    Convenience class used to specify information regarding the built workspace
+    .. deprecated::
+        Will be removed in a future release. Fork if your project depends on it.
+
+    Metadata for a built workspace package.
     """
 
     img: str
@@ -69,50 +72,34 @@ class WorkspaceBuilder(Generic[PackageType, WorkspaceConfigType]):
 
     @abc.abstractmethod
     def build_workspace(self, sync: bool = True) -> PkgInfo[PackageType]:
-        """
-        Builds the specified ``workspace`` with respect to ``img``.
-        In the simplest case, this method builds a new image.
-        Certain (more efficient) implementations build
-        incremental diff patches that overlay on top of the role's image.
-
-        """
+        """Builds the workspace, producing either a new image or an incremental patch."""
         pass
 
 
 class WorkspaceMixin(abc.ABC, Generic[T]):
-    """
-    Note: (Prototype) this interface may change without notice!
+    """Scheduler mix-in that auto-builds a local workspace into a deployable image or patch.
 
-    A mix-in that can be attached to a Scheduler that adds the ability to
-    builds a workspace. A workspace is the local checkout of the codebase/project
-    that builds into an image. The workspace scheduler adds capability to
-    automatically rebuild images or generate diff patches that are
-    applied to the ``Role``, allowing the user to make local code
-    changes to the application and having those changes be reflected
-    (either through a new image or an overlaid patch) at runtime
-    without a manual image rebuild. The exact semantics of what the
-    workspace build artifact is, is implementation dependent.
+    .. warning::
+        Prototype -- this interface may change without notice.
+
+    Attach to a :py:class:`~torchx.schedulers.api.Scheduler` so that local code
+    changes in the workspace are automatically reflected at runtime (via a rebuilt
+    image or an overlaid diff patch) without a manual image rebuild.
     """
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
 
     def workspace_opts(self) -> runopts:
-        """
-        Returns the run configuration options expected by the workspace.
-        Basically a ``--help`` for the ``run`` API.
-        """
+        """Returns the :py:class:`~torchx.specs.api.runopts` accepted by this workspace."""
         return runopts()
 
     def build_workspaces(self, roles: list[Role], cfg: Mapping[str, CfgVal]) -> None:
-        """
-        NOTE: this method MUTATES the passed roles!
+        """Builds workspaces for each role and updates ``role.image`` in-place.
 
-        Builds the workspaces (if any) for each role and updates the role to reflect the built workspace.
-        Typically ``role.image`` is updated with the newly built image that reflects the local workspace.
-        Some workspace implementations may add extra environment variables to make it easier for other
-        parts of the program to access the workspace. For example a ``WORKSPACE_DIR`` env var may be added
-        to ``role.env`` that scripts can use to refert to the workspace directory in the container.
+        .. important::
+            Mutates the passed *roles*. May also add env vars (e.g. ``WORKSPACE_DIR``)
+            to ``role.env``.
         """
 
         build_cache: dict[object, object] = {}
@@ -135,24 +122,20 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         cfg: Mapping[str, CfgVal],
         build_cache: dict[object, object],
     ) -> None:
-        """
-        Same as :py:meth:`build_workspace_and_update_role` but takes
-        a ``build_cache`` that can be used to cache pointers to build artifacts
-        between building workspace for each role.
+        """Like :py:meth:`build_workspace_and_update_role` but with a per-call *build_cache*.
 
-        This is useful when an appdef has multiple roles where the image and workspace
-        of the roles are the same but other attributes such as entrypoint or args are different.
+        Subclasses should implement this method instead of
+        :py:meth:`build_workspace_and_update_role`. The cache avoids redundant
+        builds when multiple roles share the same image and workspace.
 
-        NOTE: ``build_cache``'s lifetime is within :py:meth:`build_workspace_and_update_roles`
-        NOTE: the workspace implementation decides what to cache
+        .. important::
+            *build_cache* lifetime is scoped to a single
+            :py:meth:`build_workspaces` call. What gets cached is up to the
+            implementation.
 
-        Workspace subclasses should prefer implementing this method over
-        :py:meth:`build_workspace_and_update_role`.
-
-        The default implementation of this method simply calls the (deprecated) non-caching
-        :py:meth:`build_workspace_and_update_role` and deals with multi-dir workspaces by
-        merging them into a single tmpdir before passing it down.
-
+        The default implementation delegates to the (deprecated)
+        :py:meth:`build_workspace_and_update_role`, merging multi-dir
+        workspaces into a single tmpdir first.
         """
 
         workspace = role.workspace
@@ -176,33 +159,23 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         workspace: str,
         cfg: Mapping[str, CfgVal],
     ) -> None:
-        """
-        .. note:: DEPRECATED: Workspace subclasses should implement
-                  :py:meth:`caching_build_workspace_and_update_role` over this method.
+        """Build *workspace* and mutate *role* to reference the resulting artifact.
 
-        Builds the specified ``workspace`` with respect to ``img``
-        and updates the ``role`` to reflect the built workspace artifacts.
-        In the simplest case, this method builds a new image and updates
-        the role's image. Certain (more efficient) implementations build
-        incremental diff patches that overlay on top of the role's image.
-
-        Note: this method mutates the passed ``role``.
+        .. deprecated::
+            Implement :py:meth:`caching_build_workspace_and_update_role` instead.
         """
         raise NotImplementedError("implement `caching_build_workspace_and_update_role`")
 
     def dryrun_push_images(self, app: AppDef, cfg: Mapping[str, CfgVal]) -> T:
-        """
-        dryrun_push does a dryrun of the image push and updates the app to have
-        the final values. Only called for remote jobs.
+        """Dry-run the image push: updates *app* with final image names.
 
-        ``push`` must be called before scheduling the job.
+        Only called for remote jobs. :py:meth:`push_images` must be called
+        with the return value before scheduling.
         """
         raise NotImplementedError("dryrun_push is not implemented")
 
     def push_images(self, images_to_push: T) -> None:
-        """
-        push pushes any images to the remote repo if required.
-        """
+        """Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo."""
         raise NotImplementedError("push is not implemented")
 
 
@@ -227,10 +200,8 @@ def walk_workspace(
     path: str,
     ignore_name: str = TORCHX_IGNORE,
 ) -> Iterable[tuple[str, Iterable[str], Mapping[str, Mapping[str, object]]]]:
-    """
-    walk_workspace walks the filesystem path and applies the ignore rules
-    specified via ``ignore_name``.
-    This follows the rules for ``.dockerignore``.
+    """Walks *path* on *fs*, filtering entries via ``.dockerignore``-style rules
+    read from *ignore_name*.
     """
     ignore_patterns = []
     ignore_path = posixpath.join(path, ignore_name)

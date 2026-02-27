@@ -22,11 +22,9 @@ class TmpDirWorkspaceMixin(WorkspaceMixin[None]):
     def build_workspace_and_update_role(
         self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
     ) -> None:
-        """
-        Creates a new temp directory from the workspace. Role image fields will
-        be set to the ``job_dir``.
+        """Copies *workspace* to a temp directory and sets ``role.image`` to it.
 
-        Any files listed in the ``.torchxignore`` folder will be skipped.
+        Files matching ``.torchxignore`` patterns are skipped.
         """
         job_dir = mkdtemp(prefix="torchx_workspace")
         _copy_to_dir(workspace, job_dir)
@@ -37,11 +35,10 @@ class DirWorkspaceMixin(WorkspaceMixin[None]):
     def build_workspace_and_update_role(
         self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
     ) -> None:
-        """
-        Creates a new directory specified by ``job_dir`` from the workspace. Role
-        image fields will be set to the ``job_dir``.
+        """Copies *workspace* into ``cfg["job_dir"]`` and sets ``role.image`` to it.
 
-        Any files listed in the ``.torchxignore`` folder will be skipped.
+        No-op if ``job_dir`` is not set. Files matching ``.torchxignore``
+        patterns are skipped.
         """
         job_dir = cfg.get("job_dir")
         if job_dir is None:

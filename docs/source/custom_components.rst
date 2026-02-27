@@ -1,24 +1,20 @@
 Custom Components
 =================
 
-This is a guide on how to build a simple app and custom component spec and
-launch it via two different schedulers.
+.. tip::
 
-See the :doc:`quickstart` for installation and basic usage.
+   This guide covers writing a custom :term:`component <Component>` (a Python
+   function returning an :term:`AppDef`) and launching it on both local and
+   container-based :term:`schedulers <Scheduler>`.
+   Check the :doc:`builtins <components/overview>` first -- you may not need a
+   custom component.
+
+**Prerequisites:** :doc:`quickstart` (installation) and :doc:`basics` (core concepts).
 
 Builtins
 --------
 
-Before writing a custom component, check if any of the builtin components
-satisfy your needs. TorchX provides a number of builtin components with premade
-images. You can discover them via:
-
-.. code:: shell-session
-
-    $ torchx builtins
-
-You can use these either from the CLI, from a pipeline or programmatically like
-you would any other component.
+Discover available builtins with ``torchx builtins``:
 
 .. code:: shell-session
 
@@ -27,10 +23,7 @@ you would any other component.
 Hello World
 -----------
 
-Lets start off with writing a simple "Hello World" python app. This is just a
-normal python program and can contain anything you'd like.
-
-First, create ``my_app.py``:
+Create ``my_app.py``:
 
 .. code-block:: python
 
@@ -54,11 +47,7 @@ First, create ``my_app.py``:
 
         main(args.user)
 
-Now that we have an app we can write the component file for it. This function
-allows us to reuse and share our app in a user friendly way.
-
-We can use this component from the ``torchx`` cli or programmatically as part of a
-pipeline.
+Next, write a component -- a factory function that returns an ``AppDef``.
 
 Create ``my_component.py``:
 
@@ -82,48 +71,76 @@ Create ``my_component.py``:
             ],
         )
 
-We can execute our component via ``torchx run``. The ``local_cwd`` scheduler
-executes the component relative to the current directory.
+Run the component with the ``local_cwd`` scheduler (executes in the current
+directory):
 
 .. code:: shell-session
 
     $ torchx run --scheduler local_cwd my_component.py:greet --user "your name"
 
-If we want to run in other environments, we can build a Docker container so we
-can run our component in Docker enabled environments such as Kubernetes or via
-the local Docker scheduler.
+The same launch works from Python using the :py:class:`~torchx.runner.Runner`:
+
+.. code-block:: python
+
+    from torchx.runner import get_runner
+
+    with get_runner() as runner:
+        # reference the file:function component, same as the CLI
+        app_handle = runner.run_component(
+            "my_component.py:greet",
+            ["--user", "your name"],
+            scheduler="local_cwd",
+        )
+
+        # alternatively, call the component function directly
+        from my_component import greet
+
+        app = greet(user="your name")
+        app_handle = runner.run(app, scheduler="local_cwd")
+
+For container-based schedulers, build a Docker image:
 
 .. note::
 
-    This requires Docker installed and won't work in environments such as Google
-    Colab. If you have not done so already follow the install instructions on:
-    https://docs.docker.com/get-docker/
+   Requires Docker: https://docs.docker.com/get-docker/
 
 Create ``Dockerfile.custom``:
 
 .. code-block:: dockerfile
 
-    FROM ghcr.io/pytorch/torchx:0.1.0rc1
+    FROM ghcr.io/pytorch/torchx:latest
 
     ADD my_app.py .
 
-Once we have the Dockerfile created we can create our docker image.
+Build the image:
 
 .. code:: shell-session
 
     $ docker build -t my_app:latest -f Dockerfile.custom .
 
-We can then launch it on the local scheduler.
+Launch on the local Docker scheduler:
 
 .. code:: shell-session
 
     $ torchx run --scheduler local_docker my_component.py:greet --image "my_app:latest" --user "your name"
 
-If you have a Kubernetes cluster you can use the
-:doc:`Kubernetes scheduler <schedulers/kubernetes>` to launch this on the cluster
-instead.
+Or push and launch on a :doc:`Kubernetes <schedulers/kubernetes>` cluster:
 
 .. code:: shell-session
 
     $ docker push my_app:latest
     $ torchx run --scheduler kubernetes my_component.py:greet --image "my_app:latest" --user "your name"
+
+.. seealso::
+
+   :doc:`api_reference`
+      Single-page reference with imports, types, and copy-pasteable recipes.
+
+   :doc:`component_best_practices`
+      Best practices for entrypoints, simplicity, named resources, and testing.
+
+   :doc:`advanced`
+      Registering custom components as CLI builtins via entry points.
+
+   :doc:`components/overview`
+      Browse the builtin component library.
