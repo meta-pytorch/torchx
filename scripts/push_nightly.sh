@@ -23,7 +23,7 @@ if [ -z "$PYPI_TOKEN" ]; then
     exit 1
 fi
 
-python3 -m twine upload \
+uv run twine upload \
     --username __token__ \
     --password "$PYPI_TOKEN" \
     dist/torchx_nightly-*
