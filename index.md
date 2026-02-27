@@ -1,5 +1,5 @@
 ---
 layout: docs_redirect
 title: PyTorch | Redirect
-redirect_url: "/torchx/latest"
+redirect_url: "/torchx/main"
 ---
