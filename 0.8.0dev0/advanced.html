@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -514,14 +514,14 @@ Each section shows both formats.</p>
 <p>Implement the <code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code> interface (see
 <a class="reference internal" href="schedulers.html#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> for a full skeleton). The factory function
 signature:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scheduler</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scheduler</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Register it via entry points:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.schedulers&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -548,7 +548,7 @@ signature:</p>
 <p>A <a class="reference internal" href="basics.html#term-Resource"><span class="xref std std-term">Named Resource</span></a> maps a human-readable name (e.g.
 <code class="docutils literal notranslate"><span class="pre">gpu_x2</span></code>) to a <a class="reference internal" href="specs.html#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a>. For example, on an AWS
 cluster with p3.16xlarge nodes:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gpu_x1</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>  <span class="n">gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">61_000</span><span class="p">)</span>
@@ -564,7 +564,7 @@ cluster with p3.16xlarge nodes:</p>
 </pre></div>
 </div>
 <p>Register them via entry points:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.named_resources&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -579,12 +579,12 @@ cluster with p3.16xlarge nodes:</p>
 </pre></div>
 </div>
 <p>Once installed, use the named resource:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">resource</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">&quot;gpu_x2&quot;</span><span class="p">)</span>
 <span class="go">Resource(cpu=16, gpu=2, memMB=122000, ...)</span>
 </pre></div>
 </div>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_module.component</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># my_module.component</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">resource</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_app</span><span class="p">(</span><span class="n">res</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
@@ -650,7 +650,7 @@ suggestion of close matches.</p>
 </pre></div>
 </div>
 <p>Register via entry points:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.components&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -690,7 +690,7 @@ Namespace packages (no <code class="docutils literal notranslate"><span class="p
 </div>
 <p>Custom components replace the default builtins. To keep them, add another
 entry:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.components&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -703,7 +703,7 @@ entry:</p>
 <p>This adds back TorchX builtins with a <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">torchx.dist.ddp</span></code>
 instead of <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code>).</p>
 <p id="advanced-overlapping-components">If there are two registry entries pointing to the same component, for instance</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.components&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -722,7 +722,7 @@ instead of <code class="docutils literal notranslate"><span class="pre">dist.ddp
 </pre></div>
 </div>
 <p>To omit the prefix, use underscore names (<code class="docutils literal notranslate"><span class="pre">_</span></code>, <code class="docutils literal notranslate"><span class="pre">_0</span></code>, <code class="docutils literal notranslate"><span class="pre">_1</span></code>, etc.):</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
 <span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
     <span class="s2">&quot;torchx.components&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -980,6 +980,7 @@ and <code class="docutils literal notranslate"><span class="pre">tracker</span><
          <script src="_static/underscore.js"></script>
          <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
          <script src="_static/katex.min.js"></script>
          <script src="_static/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>

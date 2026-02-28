@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -508,8 +508,8 @@ the built image to a remote registry.</p></li>
 <h3>Built-in Mixins<a class="headerlink" href="#built-in-mixins" title="Permalink to this heading">¶</a></h3>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 35%" />
-<col style="width: 65%" />
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Mixin</p></th>
@@ -845,9 +845,27 @@ patterns are skipped.</p>
 <li><a class="reference internal" href="#torchxignore"><code class="docutils literal notranslate"><span class="pre">.torchxignore</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin.build_workspace_and_update_role()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.build_workspaces"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin.build_workspaces()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin.caching_build_workspace_and_update_role()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.dryrun_push_images"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin.dryrun_push_images()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.push_images"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin.push_images()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.workspace.WorkspaceMixin.workspace_opts"><code class="docutils literal notranslate"><span class="pre">WorkspaceMixin.workspace_opts()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.workspace.walk_workspace"><code class="docutils literal notranslate"><span class="pre">walk_workspace()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#torchx-workspace-docker-workspace">torchx.workspace.docker_workspace</a></li>
-<li><a class="reference internal" href="#module-torchx.workspace.dir_workspace">torchx.workspace.dir_workspace</a></li>
+<li><a class="reference internal" href="#module-torchx.workspace.dir_workspace">torchx.workspace.dir_workspace</a><ul>
+<li><a class="reference internal" href="#torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.workspace.dir_workspace.DirWorkspaceMixin.build_workspace_and_update_role"><code class="docutils literal notranslate"><span class="pre">DirWorkspaceMixin.build_workspace_and_update_role()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -870,6 +888,7 @@ patterns are skipped.</p>
          <script src="_static/underscore.js"></script>
          <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
          <script src="_static/katex.min.js"></script>
          <script src="_static/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>

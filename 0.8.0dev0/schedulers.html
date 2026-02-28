@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -467,10 +467,10 @@ TorchX ships with schedulers for:</p>
 (CLI) or <code class="docutils literal notranslate"><span class="pre">scheduler=</span></code> argument (Python API) changes.</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 18%" />
-<col style="width: 20%" />
-<col style="width: 22%" />
-<col style="width: 40%" />
+<col style="width: 18.0%" />
+<col style="width: 20.0%" />
+<col style="width: 22.0%" />
+<col style="width: 40.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Scheduler</p></th>
@@ -574,9 +574,9 @@ stream logs via <code class="docutils literal notranslate"><span class="pre">Sch
 <h3>Method Reference<a class="headerlink" href="#method-reference" title="Permalink to this heading">¶</a></h3>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 35%" />
-<col style="width: 15%" />
-<col style="width: 50%" />
+<col style="width: 35.0%" />
+<col style="width: 15.0%" />
+<col style="width: 50.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Method</p></th>
@@ -997,7 +997,7 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuredOpts</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nd">@dataclass</span>
@@ -1125,8 +1125,36 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
 </ul>
 </li>
 <li><a class="reference internal" href="#all-schedulers">All Schedulers</a></li>
-<li><a class="reference internal" href="#module-torchx.schedulers">Scheduler Functions</a></li>
-<li><a class="reference internal" href="#scheduler-classes">Scheduler Classes</a></li>
+<li><a class="reference internal" href="#module-torchx.schedulers">Scheduler Functions</a><ul>
+<li><a class="reference internal" href="#torchx.schedulers.get_scheduler_factories"><code class="docutils literal notranslate"><span class="pre">get_scheduler_factories()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.get_default_scheduler_name"><code class="docutils literal notranslate"><span class="pre">get_default_scheduler_name()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#scheduler-classes">Scheduler Classes</a><ul>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler"><code class="docutils literal notranslate"><span class="pre">Scheduler</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.cancel"><code class="docutils literal notranslate"><span class="pre">Scheduler.cancel()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.close"><code class="docutils literal notranslate"><span class="pre">Scheduler.close()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.delete"><code class="docutils literal notranslate"><span class="pre">Scheduler.delete()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.describe"><code class="docutils literal notranslate"><span class="pre">Scheduler.describe()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.list"><code class="docutils literal notranslate"><span class="pre">Scheduler.list()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.log_iter"><code class="docutils literal notranslate"><span class="pre">Scheduler.log_iter()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.run_opts"><code class="docutils literal notranslate"><span class="pre">Scheduler.run_opts()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.schedule"><code class="docutils literal notranslate"><span class="pre">Scheduler.schedule()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.submit"><code class="docutils literal notranslate"><span class="pre">Scheduler.submit()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Scheduler.submit_dryrun"><code class="docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.schedulers.api.StructuredOpts"><code class="docutils literal notranslate"><span class="pre">StructuredOpts</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.as_runopts"><code class="docutils literal notranslate"><span class="pre">StructuredOpts.as_runopts()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.from_cfg"><code class="docutils literal notranslate"><span class="pre">StructuredOpts.from_cfg()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.get"><code class="docutils literal notranslate"><span class="pre">StructuredOpts.get()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.schedulers.api.DescribeAppResponse"><code class="docutils literal notranslate"><span class="pre">DescribeAppResponse</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.ListAppResponse"><code class="docutils literal notranslate"><span class="pre">ListAppResponse</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.api.Stream"><code class="docutils literal notranslate"><span class="pre">Stream</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1149,6 +1177,7 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
          <script src="_static/underscore.js"></script>
          <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
          <script src="_static/katex.min.js"></script>
          <script src="_static/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>

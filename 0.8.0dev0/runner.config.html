@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -560,7 +560,7 @@ default component to run.</p>
 from <code class="docutils literal notranslate"><span class="pre">CWD</span></code> if you are programmatically running your component with <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchx.runner.Runner</span></code></a>.
 You’ll have to manually specify the directory containing <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code>.</p>
 <p>Below is an example</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go">from torchx.runner import get_runner</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go">from torchx.runner import get_runner</span>
 <span class="go">from torchx.runner.config import apply</span>
 <span class="go">import torchx.specs as specs</span>
 
@@ -794,7 +794,16 @@ as component parameter types.</p>
 <li><a class="reference internal" href="#">.torchxconfig</a><ul>
 <li><a class="reference internal" href="#cli-usage">CLI Usage</a></li>
 <li><a class="reference internal" href="#programmatic-usage">Programmatic Usage</a></li>
-<li><a class="reference internal" href="#config-api-functions">Config API Functions</a></li>
+<li><a class="reference internal" href="#config-api-functions">Config API Functions</a><ul>
+<li><a class="reference internal" href="#torchx.runner.config.apply"><code class="docutils literal notranslate"><span class="pre">apply()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runner.config.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runner.config.dump"><code class="docutils literal notranslate"><span class="pre">dump()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runner.config.find_configs"><code class="docutils literal notranslate"><span class="pre">find_configs()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runner.config.get_configs"><code class="docutils literal notranslate"><span class="pre">get_configs()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runner.config.get_config"><code class="docutils literal notranslate"><span class="pre">get_config()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runner.config.load_sections"><code class="docutils literal notranslate"><span class="pre">load_sections()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -817,6 +826,7 @@ as component parameter types.</p>
          <script src="_static/underscore.js"></script>
          <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
          <script src="_static/katex.min.js"></script>
          <script src="_static/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>

@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -465,9 +465,9 @@ TorchX handles the rest.</p>
 <p>TorchX ships the following component categories out of the box:</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 50%" />
-<col style="width: 30%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+<col style="width: 30.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Category</p></th>
@@ -570,7 +570,7 @@ is not picked up by torchx at all.</p></li>
 </ol>
 <p>Below is an example component that launches DDP scripts, it is a simplified version of
 the <a class="reference internal" href="distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> builtin.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go">import os</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go">import os</span>
 <span class="go">import torchx.specs as specs</span>
 
 <span class="go">def ddp(</span>
@@ -689,7 +689,7 @@ guide walks though the basics for you to get started.</p>
 <p>To run builtins or your own component programmatically, simply invoke the
 component as a regular python function and pass it along to the <a class="reference internal" href="../runner.html#module-torchx.runner" title="torchx.runner"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runner</span></code></a>.
 Below is an example of calling the <code class="docutils literal notranslate"><span class="pre">utils.echo</span></code> builtin:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go">from torchx.components.utils import echo</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go">from torchx.components.utils import echo</span>
 <span class="go">from torchx.runner import get_runner</span>
 
 <span class="go">get_runner().run(echo(msg=&quot;hello world&quot;), scheduler=&quot;local_cwd&quot;)</span>
@@ -744,7 +744,7 @@ as program arguments using the double-dash + param_name syntax (e.g <code class=
 The cli autogenerates <a class="reference external" href="https://docs.python.org/3/library/argparse.html">argparse</a> parser based on the
 docstring of the component. Below is a summary on how to pass component parameters of various types,
 imagine the component is defined as:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go"># in comp.py</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go"># in comp.py</span>
 <span class="go">from typing import Dict, List</span>
 <span class="go">import torchx.specs as specs</span>
 
@@ -881,6 +881,7 @@ the <code class="docutils literal notranslate"><span class="pre">--help</span></
          <script src="../_static/underscore.js"></script>
          <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="../_static/doctools.js"></script>
+         <script src="../_static/sphinx_highlight.js"></script>
          <script src="../_static/katex.min.js"></script>
          <script src="../_static/auto-render.min.js"></script>
          <script src="../_static/katex_autorenderer.js"></script>

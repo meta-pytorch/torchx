@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -785,7 +785,22 @@ count is set to the minimum of the max_retries of the roles.</p>
 <li><a class="reference internal" href="#">Kubernetes</a><ul>
 <li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li><a class="reference internal" href="#pod-overlay">Pod Overlay</a></li>
-<li><a class="reference internal" href="#reference">Reference</a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler"><code class="docutils literal notranslate"><span class="pre">KubernetesScheduler</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.describe"><code class="docutils literal notranslate"><span class="pre">KubernetesScheduler.describe()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.list"><code class="docutils literal notranslate"><span class="pre">KubernetesScheduler.list()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.log_iter"><code class="docutils literal notranslate"><span class="pre">KubernetesScheduler.log_iter()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.schedule"><code class="docutils literal notranslate"><span class="pre">KubernetesScheduler.schedule()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.KubernetesJob"><code class="docutils literal notranslate"><span class="pre">KubernetesJob</span></code></a></li>
+<li><a class="reference internal" href="#reference">Reference</a><ul>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.create_scheduler"><code class="docutils literal notranslate"><span class="pre">create_scheduler()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.app_to_resource"><code class="docutils literal notranslate"><span class="pre">app_to_resource()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.pod_labels"><code class="docutils literal notranslate"><span class="pre">pod_labels()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.role_to_pod"><code class="docutils literal notranslate"><span class="pre">role_to_pod()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.schedulers.kubernetes_scheduler.sanitize_for_serialization"><code class="docutils literal notranslate"><span class="pre">sanitize_for_serialization()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -808,6 +823,7 @@ count is set to the minimum of the max_retries of the roles.</p>
          <script src="../_static/underscore.js"></script>
          <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="../_static/doctools.js"></script>
+         <script src="../_static/sphinx_highlight.js"></script>
          <script src="../_static/katex.min.js"></script>
          <script src="../_static/auto-render.min.js"></script>
          <script src="../_static/katex_autorenderer.js"></script>

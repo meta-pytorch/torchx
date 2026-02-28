@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -449,7 +449,7 @@
 <p>The main types are <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a>, <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a>, and <a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a>.
 Components are functions that return an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> which can then be launched
 via a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a>.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">app</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;echo&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">specs</span><span class="o">.</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;worker&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;/tmp&quot;</span><span class="p">,</span> <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;/bin/echo&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hello&quot;</span><span class="p">])],</span>
@@ -464,7 +464,7 @@ via a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.
 <dt class="sig sig-object py" id="torchx.specs.AppDef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.specs.</span></span><span class="sig-name descname"><span class="pre">AppDef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roles:</span> <span class="pre">list[torchx.specs.api.Role]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/specs/api.html#AppDef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.AppDef" title="Permalink to this definition">¶</a></dt>
 <dd><p>A distributed application composed of one or more <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> s.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">app</span> <span class="o">=</span> <span class="n">AppDef</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_train&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my_image:latest&quot;</span><span class="p">)],</span>
@@ -489,7 +489,7 @@ via a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.
 <li><p>DDP app — single role (<code class="docutils literal notranslate"><span class="pre">trainer</span></code>)</p></li>
 <li><p>Parameter-server app — multiple roles (<code class="docutils literal notranslate"><span class="pre">trainer</span></code>, <code class="docutils literal notranslate"><span class="pre">ps</span></code>)</p></li>
 </ul>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span><span class="p">,</span> <span class="n">Resource</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span><span class="p">,</span> <span class="n">Resource</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">trainer</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">image</span><span class="o">=</span><span class="s2">&quot;pytorch/torch:latest&quot;</span><span class="p">,</span>
@@ -581,7 +581,7 @@ replacement replica admittance.</p>
 <p>Prefer <a class="reference internal" href="#torchx.specs.resource" title="torchx.specs.resource"><code class="xref py py-func docutils literal notranslate"><span class="pre">resource()</span></code></a> with named resources
 (t-shirt sizes) over specifying raw values directly.</p>
 </div>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">8192</span><span class="p">)</span>
 <span class="go">Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})</span>
 </pre></div>
@@ -612,7 +612,7 @@ replacement replica admittance.</p>
 <dd><p>Creates a <a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a> from raw specs or a named resource.</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">h</span></code> is set, it takes precedence (raw specs are ignored). See
 <a class="reference internal" href="advanced.html#registering-named-resources"><span class="std std-ref">Registering Named Resources</span></a> for custom named resources.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">8192</span><span class="p">)</span>
 <span class="go">Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})</span>
 </pre></div>
@@ -627,7 +627,7 @@ replacement replica admittance.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.specs.</span></span><span class="sig-name descname"><span class="pre">Workspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">projects</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/specs/api.html#Workspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.Workspace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maps local project directories to remote workspace locations. At submit-time,
 files are copied/synced so that the remote job mirrors local code changes.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Workspace</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Workspace</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># copies ~/github/torch/** into $REMOTE_ROOT/torch/**</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ws</span> <span class="o">=</span> <span class="n">Workspace</span><span class="p">(</span><span class="n">projects</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;~/github/torch&quot;</span><span class="p">:</span> <span class="s2">&quot;torch&quot;</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># copies ~/github/torch/** into $REMOTE_ROOT/** (no sub-dir)</span>
@@ -675,7 +675,7 @@ files are copied/synced so that the remote job mirrors local code changes.</p>
 When a replica is replaced after failure, the replacement retains
 the same <code class="docutils literal notranslate"><span class="pre">replica_id</span></code>.</p></li>
 </ol>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">macros</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span><span class="p">,</span> <span class="n">macros</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">trainer</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my_image:latest&quot;</span><span class="p">,</span>
@@ -744,7 +744,7 @@ scheduler methods.</p>
 <p>Holds accepted config keys, defaults, and help strings. Constructed by
 <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.run_opts" title="torchx.schedulers.api.Scheduler.run_opts"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.run_opts()</span></code></a>
 and validated at submit time.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">runopts</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">runopts</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;cluster_id&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;cluster to submit the job&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;job priority&quot;</span><span class="p">)</span>
@@ -795,7 +795,7 @@ delimiters are used to delimit between cfg kv pairs, this method
 interprets the last (trailing) <code class="docutils literal notranslate"><span class="pre">&quot;,&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;;&quot;</span></code> as the delimiter between
 kv pairs. See example below.</p>
 <p>Examples:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="go">opts = runopts()</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go">opts = runopts()</span>
 <span class="go">opts.add(&quot;FOO&quot;, type_=List[str], default=[&quot;a&quot;], help=&quot;an optional list option&quot;)</span>
 <span class="go">opts.add(&quot;BAR&quot;, type_=str, required=True, help=&quot;a required str option&quot;)</span>
 
@@ -883,7 +883,7 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuredOpts</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nd">@dataclass</span>
@@ -1006,7 +1006,7 @@ errors defaults to ‘strict’.</p>
 <dt class="sig sig-object py" id="torchx.specs.parse_app_handle">
 <span class="sig-prename descclassname"><span class="pre">torchx.specs.</span></span><span class="sig-name descname"><span class="pre">parse_app_handle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_handle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.specs.ParsedAppHandle" title="torchx.specs.api.ParsedAppHandle"><span class="pre">ParsedAppHandle</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/api.html#parse_app_handle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.parse_app_handle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses <code class="docutils literal notranslate"><span class="pre">{scheduler}://{session_name}/{app_id}</span></code> into its components.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_app_handle</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_app_handle</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parse_app_handle</span><span class="p">(</span><span class="s2">&quot;k8s://default/foo_bar&quot;</span><span class="p">)</span>
 <span class="go">ParsedAppHandle(scheduler_backend=&#39;k8s&#39;, session_name=&#39;default&#39;, app_id=&#39;foo_bar&#39;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parse_app_handle</span><span class="p">(</span><span class="s2">&quot;k8s:///foo_bar&quot;</span><span class="p">)</span>
@@ -1088,7 +1088,7 @@ and <a class="reference internal" href="#torchx.specs.overlays.apply_overlay" ti
 <h3>For Users<a class="headerlink" href="#for-users" title="Permalink to this heading">¶</a></h3>
 <p>Use <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> to attach scheduler-specific fields to a
 <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> or <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a>:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_overlay</span><span class="p">,</span> <span class="n">get_overlay</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Kubernetes: add a node selector to a role</span>
@@ -1110,7 +1110,7 @@ and <a class="reference internal" href="#torchx.specs.overlays.apply_overlay" ti
 <p>By default, <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> merges dicts and appends lists. Use
 <a class="reference internal" href="#torchx.specs.overlays.PUT" title="torchx.specs.overlays.PUT"><code class="xref py py-func docutils literal notranslate"><span class="pre">PUT()</span></code></a>, <a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a>, and <a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a> as dict keys to override
 per-field behavior:</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Role</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_overlay</span><span class="p">,</span> <span class="n">PUT</span><span class="p">,</span> <span class="n">JOIN</span><span class="p">,</span> <span class="n">DEL</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">role</span> <span class="o">=</span> <span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my-image&quot;</span><span class="p">,</span> <span class="n">entrypoint</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">)</span>
@@ -1178,6 +1178,7 @@ stored overlays, <a class="reference internal" href="#torchx.specs.overlays.vali
 </div>
 <p><a class="reference internal" href="#torchx.specs.overlays.apply_overlay" title="torchx.specs.overlays.apply_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a> handles operator keys (<a class="reference internal" href="#torchx.specs.overlays.PUT" title="torchx.specs.overlays.PUT"><code class="xref py py-func docutils literal notranslate"><span class="pre">PUT()</span></code></a>, <a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a>,
 <a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a>) automatically — the scheduler doesn’t need to know about them.</p>
+</section>
 <dl class="py function">
 <dt class="sig sig-object py" id="torchx.specs.overlays.DEL">
 <span class="sig-prename descclassname"><span class="pre">torchx.specs.overlays.</span></span><span class="sig-name descname"><span class="pre">DEL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/overlays.html#DEL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.overlays.DEL" title="Permalink to this definition">¶</a></dt>
@@ -1186,7 +1187,7 @@ stored overlays, <a class="reference internal" href="#torchx.specs.overlays.vali
 <p>This is different from setting a field to <code class="docutils literal notranslate"><span class="pre">None</span></code> — <code class="docutils literal notranslate"><span class="pre">DEL</span></code> removes the key
 entirely (thrift/protobuf: field not sent, server uses default), while
 <code class="docutils literal notranslate"><span class="pre">&quot;field&quot;:</span> <span class="pre">None</span></code> sets it to null (thrift/protobuf: field present but null).</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">DEL</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">DEL</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;keep&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;remove_me&quot;</span><span class="p">:</span> <span class="s2">&quot;old&quot;</span><span class="p">}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">DEL</span><span class="p">(</span><span class="s2">&quot;remove_me&quot;</span><span class="p">):</span> <span class="kc">None</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
@@ -1201,7 +1202,7 @@ entirely (thrift/protobuf: field not sent, server uses default), while
 <dd><p>Strategic merge list items by key field.</p>
 <p>Matched items (same value for <code class="docutils literal notranslate"><span class="pre">on</span></code> field) have their fields merged.
 Unmatched items are appended. Use as a dict key in overlays.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">JOIN</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">JOIN</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;containers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">}]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">JOIN</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">&quot;name&quot;</span><span class="p">):</span> <span class="p">[</span>
 <span class="gp">... </span>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span> <span class="s2">&quot;memory&quot;</span><span class="p">:</span> <span class="s2">&quot;1Gi&quot;</span><span class="p">},</span>
@@ -1224,7 +1225,7 @@ Unmatched items are appended. Use as a dict key in overlays.</p>
 <dd><p>Replace a value entirely instead of merging/appending.</p>
 <p>Use as a dict key in overlays. For lists this replaces instead of appending;
 for dicts this replaces instead of recursive merge.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;containers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;old1&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;old2&quot;</span><span class="p">}]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">apply_overlay</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="p">{</span><span class="n">PUT</span><span class="p">(</span><span class="s2">&quot;containers&quot;</span><span class="p">):</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;only&quot;</span><span class="p">}]})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">base</span>
@@ -1251,7 +1252,7 @@ for dicts this replaces instead of recursive merge.</p>
 </ol>
 <p>During accumulation (multiple <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> calls), operators for
 the same field replace earlier operations — last call wins.</p>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span><span class="p">,</span> <span class="n">JOIN</span><span class="p">,</span> <span class="n">DEL</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span><span class="p">,</span> <span class="n">JOIN</span><span class="p">,</span> <span class="n">DEL</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Dicts merge recursively, lists append, primitives overwrite</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">base</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cpu&quot;</span><span class="p">:</span> <span class="s2">&quot;500m&quot;</span><span class="p">},</span> <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;prod&quot;</span><span class="p">],</span> <span class="s2">&quot;replicas&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
@@ -1340,7 +1341,7 @@ before checking against the blocklist.</p>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If validation fails.</p>
 </dd>
 </dl>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_overlay</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_overlay</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># &quot;env&quot; is blocklisted — should be set via Role.env</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
@@ -1356,7 +1357,6 @@ before checking against the blocklist.</p>
 </div>
 </dd></dl>
 
-</section>
 </section>
 <section id="named-resources">
 <h2>Named Resources<a class="headerlink" href="#named-resources" title="Permalink to this heading">¶</a></h2>
@@ -1408,10 +1408,10 @@ values may change between releases – define your own named resources for
 production workloads.</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 36%" />
-<col style="width: 18%" />
-<col style="width: 18%" />
-<col style="width: 27%" />
+<col style="width: 36.4%" />
+<col style="width: 18.2%" />
+<col style="width: 18.2%" />
+<col style="width: 27.3%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Name</p></th>
@@ -1612,24 +1612,106 @@ on how to improve the help message and arguments descriptions will be names of t
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">torchx.specs</a><ul>
-<li><a class="reference internal" href="#appdef">AppDef</a></li>
-<li><a class="reference internal" href="#role">Role</a></li>
-<li><a class="reference internal" href="#resource">Resource</a></li>
-<li><a class="reference internal" href="#workspace">Workspace</a></li>
-<li><a class="reference internal" href="#macros">Macros</a></li>
+<li><a class="reference internal" href="#appdef">AppDef</a><ul>
+<li><a class="reference internal" href="#torchx.specs.AppDef"><code class="docutils literal notranslate"><span class="pre">AppDef</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#role">Role</a><ul>
+<li><a class="reference internal" href="#torchx.specs.Role"><code class="docutils literal notranslate"><span class="pre">Role</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.Role.pre_proc"><code class="docutils literal notranslate"><span class="pre">Role.pre_proc()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.specs.RetryPolicy"><code class="docutils literal notranslate"><span class="pre">RetryPolicy</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#resource">Resource</a><ul>
+<li><a class="reference internal" href="#torchx.specs.Resource"><code class="docutils literal notranslate"><span class="pre">Resource</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.Resource.copy"><code class="docutils literal notranslate"><span class="pre">Resource.copy()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.specs.resource"><code class="docutils literal notranslate"><span class="pre">resource()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#workspace">Workspace</a><ul>
+<li><a class="reference internal" href="#torchx.specs.Workspace"><code class="docutils literal notranslate"><span class="pre">Workspace</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.Workspace.is_unmapped_single_project"><code class="docutils literal notranslate"><span class="pre">Workspace.is_unmapped_single_project()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.Workspace.merge_into"><code class="docutils literal notranslate"><span class="pre">Workspace.merge_into()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#macros">Macros</a><ul>
+<li><a class="reference internal" href="#torchx.specs.macros"><code class="docutils literal notranslate"><span class="pre">macros</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.macros.Values"><code class="docutils literal notranslate"><span class="pre">macros.Values</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.macros.Values.apply"><code class="docutils literal notranslate"><span class="pre">macros.Values.apply()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.macros.Values.substitute"><code class="docutils literal notranslate"><span class="pre">macros.Values.substitute()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.macros.Values.to_dict"><code class="docutils literal notranslate"><span class="pre">macros.Values.to_dict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#run-configs">Run Configs</a><ul>
+<li><a class="reference internal" href="#torchx.specs.CfgVal"><code class="docutils literal notranslate"><span class="pre">CfgVal</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.runopts"><code class="docutils literal notranslate"><span class="pre">runopts</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.runopts.add"><code class="docutils literal notranslate"><span class="pre">runopts.add()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.runopts.cfg_from_json_repr"><code class="docutils literal notranslate"><span class="pre">runopts.cfg_from_json_repr()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.runopts.cfg_from_str"><code class="docutils literal notranslate"><span class="pre">runopts.cfg_from_str()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.runopts.get"><code class="docutils literal notranslate"><span class="pre">runopts.get()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.runopts.is_type"><code class="docutils literal notranslate"><span class="pre">runopts.is_type()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.runopts.resolve"><code class="docutils literal notranslate"><span class="pre">runopts.resolve()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.specs.runopt"><code class="docutils literal notranslate"><span class="pre">runopt</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.runopt.cast_to_type"><code class="docutils literal notranslate"><span class="pre">runopt.cast_to_type()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#structured-opts">Structured Opts</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#run-status">Run Status</a></li>
-<li><a class="reference internal" href="#app-handle">App Handle</a></li>
-<li><a class="reference internal" href="#mounts">Mounts</a></li>
+<li><a class="reference internal" href="#run-status">Run Status</a><ul>
+<li><a class="reference internal" href="#torchx.specs.AppStatus"><code class="docutils literal notranslate"><span class="pre">AppStatus</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.AppStatus.format"><code class="docutils literal notranslate"><span class="pre">AppStatus.format()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.AppStatus.raise_for_status"><code class="docutils literal notranslate"><span class="pre">AppStatus.raise_for_status()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.specs.AppState"><code class="docutils literal notranslate"><span class="pre">AppState</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.ReplicaState"><code class="docutils literal notranslate"><span class="pre">ReplicaState</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.AppDryRunInfo"><code class="docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#app-handle">App Handle</a><ul>
+<li><a class="reference internal" href="#torchx.specs.AppHandle"><code class="docutils literal notranslate"><span class="pre">AppHandle</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.parse_app_handle"><code class="docutils literal notranslate"><span class="pre">parse_app_handle()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.ParsedAppHandle"><code class="docutils literal notranslate"><span class="pre">ParsedAppHandle</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.ParsedAppHandle.app_id"><code class="docutils literal notranslate"><span class="pre">ParsedAppHandle.app_id</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.ParsedAppHandle.scheduler_backend"><code class="docutils literal notranslate"><span class="pre">ParsedAppHandle.scheduler_backend</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.ParsedAppHandle.session_name"><code class="docutils literal notranslate"><span class="pre">ParsedAppHandle.session_name</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mounts">Mounts</a><ul>
+<li><a class="reference internal" href="#torchx.specs.parse_mounts"><code class="docutils literal notranslate"><span class="pre">parse_mounts()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.BindMount"><code class="docutils literal notranslate"><span class="pre">BindMount</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.VolumeMount"><code class="docutils literal notranslate"><span class="pre">VolumeMount</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.DeviceMount"><code class="docutils literal notranslate"><span class="pre">DeviceMount</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-torchx.specs.overlays">Overlays</a><ul>
 <li><a class="reference internal" href="#for-users">For Users</a><ul>
 <li><a class="reference internal" href="#operators">Operators</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#for-scheduler-implementors">For Scheduler Implementors</a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.DEL"><code class="docutils literal notranslate"><span class="pre">DEL()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.JOIN"><code class="docutils literal notranslate"><span class="pre">JOIN()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.PUT"><code class="docutils literal notranslate"><span class="pre">PUT()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.apply_overlay"><code class="docutils literal notranslate"><span class="pre">apply_overlay()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.get_overlay"><code class="docutils literal notranslate"><span class="pre">get_overlay()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.set_overlay"><code class="docutils literal notranslate"><span class="pre">set_overlay()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.overlays.validate_overlay"><code class="docutils literal notranslate"><span class="pre">validate_overlay()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#named-resources">Named Resources</a><ul>
@@ -1637,7 +1719,12 @@ on how to improve the help message and arguments descriptions will be names of t
 <li><a class="reference internal" href="#module-torchx.specs.named_resources_aws">AWS Named Resources</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-torchx.specs.file_linter">Component Linter</a></li>
+<li><a class="reference internal" href="#module-torchx.specs.file_linter">Component Linter</a><ul>
+<li><a class="reference internal" href="#torchx.specs.file_linter.validate"><code class="docutils literal notranslate"><span class="pre">validate()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.file_linter.get_fn_docstring"><code class="docutils literal notranslate"><span class="pre">get_fn_docstring()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.file_linter.LinterMessage"><code class="docutils literal notranslate"><span class="pre">LinterMessage</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1660,6 +1747,7 @@ on how to improve the help message and arguments descriptions will be names of t
          <script src="_static/underscore.js"></script>
          <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
          <script src="_static/katex.min.js"></script>
          <script src="_static/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>

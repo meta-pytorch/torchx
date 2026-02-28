@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -680,7 +680,7 @@ Provide a sensible default or raise a clear error.</p></li>
 <p class="admonition-title">Warning</p>
 <p>This API is experimental and may change significantly.</p>
 </div>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">run</span> <span class="o">=</span> <span class="n">AppRun</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;my_job_123&quot;</span><span class="p">,</span> <span class="n">backends</span><span class="o">=</span><span class="p">[])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">run</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># no-op with empty backends</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">run</span><span class="o">.</span><span class="n">job_id</span><span class="p">()</span>
@@ -722,7 +722,7 @@ Returns a cached singleton so all callers share the same tracker backends.</p>
 <p>When not launched via torchx, returns an empty <code class="docutils literal notranslate"><span class="pre">AppRun</span></code> with
 <code class="docutils literal notranslate"><span class="pre">job_id=&quot;&lt;UNDEFINED&gt;&quot;</span></code> and no backends (write methods become no-ops).</p>
 </div>
-<div class="highlight-pycon3 notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppRun</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">apprun</span> <span class="o">=</span> <span class="n">AppRun</span><span class="o">.</span><span class="n">run_from_env</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">apprun</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">md_1</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">md_2</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
 </pre></div>
@@ -1055,8 +1055,8 @@ interacting with tracker implementation.</p>
 <p>Set automatically by the runner when trackers are configured.</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 40%" />
-<col style="width: 60%" />
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Variable</p></th>
@@ -1157,9 +1157,67 @@ read by <a class="reference internal" href="#torchx.tracker.AppRun.run_from_env"
 </ul>
 </li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
-<li><a class="reference internal" href="#data-types">Data Types</a></li>
-<li><a class="reference internal" href="#built-in-backends">Built-in Backends</a></li>
-<li><a class="reference internal" href="#cli-command">CLI Command</a></li>
+<li><a class="reference internal" href="#torchx.tracker.AppRun"><code class="docutils literal notranslate"><span class="pre">AppRun</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.tracker.AppRun.add_artifact"><code class="docutils literal notranslate"><span class="pre">AppRun.add_artifact()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.AppRun.add_metadata"><code class="docutils literal notranslate"><span class="pre">AppRun.add_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.AppRun.add_source"><code class="docutils literal notranslate"><span class="pre">AppRun.add_source()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.AppRun.job_id"><code class="docutils literal notranslate"><span class="pre">AppRun.job_id()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.AppRun.run_from_env"><code class="docutils literal notranslate"><span class="pre">AppRun.run_from_env()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.AppRun.sources"><code class="docutils literal notranslate"><span class="pre">AppRun.sources()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase"><code class="docutils literal notranslate"><span class="pre">TrackerBase</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.add_artifact"><code class="docutils literal notranslate"><span class="pre">TrackerBase.add_artifact()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.add_metadata"><code class="docutils literal notranslate"><span class="pre">TrackerBase.add_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.add_source"><code class="docutils literal notranslate"><span class="pre">TrackerBase.add_source()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.artifacts"><code class="docutils literal notranslate"><span class="pre">TrackerBase.artifacts()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.lineage"><code class="docutils literal notranslate"><span class="pre">TrackerBase.lineage()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.metadata"><code class="docutils literal notranslate"><span class="pre">TrackerBase.metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.run_ids"><code class="docutils literal notranslate"><span class="pre">TrackerBase.run_ids()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerBase.sources"><code class="docutils literal notranslate"><span class="pre">TrackerBase.sources()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-types">Data Types</a><ul>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerArtifact"><code class="docutils literal notranslate"><span class="pre">TrackerArtifact</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.api.TrackerSource"><code class="docutils literal notranslate"><span class="pre">TrackerSource</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#built-in-backends">Built-in Backends</a><ul>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker"><code class="docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.add_artifact"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.add_artifact()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.add_metadata"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.add_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.add_source"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.add_source()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.artifacts"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.artifacts()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.lineage"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.lineage()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.metadata"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.run_ids"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.run_ids()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.sources"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.sources()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker"><code class="docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_artifact"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.add_artifact()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_metadata"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.add_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_source"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.add_source()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.artifacts"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.artifacts()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.get_run"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.get_run()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.get_run_id"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.get_run_id()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.lineage"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.lineage()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.log_params_flat"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.log_params_flat()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.metadata"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.metadata()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.run_ids"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.run_ids()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.sources"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.sources()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cli-command">CLI Command</a><ul>
+<li><a class="reference internal" href="#torchx.cli.cmd_tracker.CmdTracker"><code class="docutils literal notranslate"><span class="pre">CmdTracker</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.cli.cmd_tracker.CmdTracker.add_arguments"><code class="docutils literal notranslate"><span class="pre">CmdTracker.add_arguments()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.cli.cmd_tracker.CmdTracker.run"><code class="docutils literal notranslate"><span class="pre">CmdTracker.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
 </ul>
 </li>
@@ -1187,6 +1245,7 @@ read by <a class="reference internal" href="#torchx.tracker.AppRun.run_from_env"
          <script src="_static/underscore.js"></script>
          <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
          <script src="_static/katex.min.js"></script>
          <script src="_static/auto-render.min.js"></script>
          <script src="_static/katex_autorenderer.js"></script>
