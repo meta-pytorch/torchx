@@ -20,10 +20,11 @@ jobs:
         with:
           python-version: "3.12"
           enable-cache: true
-      - name: Install Doc Dependencies
+      - name: Install Dependencies
         run: |
           set -eux
-          uv sync --frozen --extra dev --extra docs
+          uv sync --frozen --extra dev
+          uv pip install -r docs/requirements.txt
       - name: Doc Test
         run: |
           cd docs
@@ -68,7 +69,8 @@ jobs:
       - name: Install Dependencies
         run: |
           set -eux
-          uv sync --frozen --extra dev --extra docs
+          uv sync --frozen --extra dev
+          uv pip install -r docs/requirements.txt
       - name: Build
         run: |
           set -ex
