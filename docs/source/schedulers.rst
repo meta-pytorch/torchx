@@ -14,7 +14,7 @@ interface is pluggable, you switch backends without changing application code.
 TorchX ships with schedulers for:
 
 * **Local development:** ``local_cwd``, ``local_docker``
-* **HPC (High-Performance Computing) clusters:** ``slurm``, ``lsf``
+* **HPC (High-Performance Computing) clusters:** ``slurm``
 * **Cloud / container orchestrators:** ``kubernetes``, ``aws_batch``,
   ``aws_sagemaker``
 
@@ -51,11 +51,6 @@ Every scheduler accepts the same ``AppDef``; only the ``--scheduler`` flag
      - Kubernetes ``Job`` resource
      - Production workloads on Kubernetes. Requires cluster access and a
        container registry.
-   * - ``kubernetes_mcad``
-     - Kubernetes + MCAD
-     - MCAD ``AppWrapper`` resource
-     - Gang-scheduled multi-node jobs on Kubernetes with the Multi-Cluster
-       Application Dispatcher.
    * - ``slurm``
      - Slurm HPC cluster
      - ``sbatch`` script
@@ -71,11 +66,6 @@ Every scheduler accepts the same ``AppDef``; only the ``--scheduler`` flag
      - SageMaker training job
      - Managed training with SageMaker features (spot instances, managed
        infrastructure).
-   * - ``lsf``
-     - IBM LSF cluster
-     - ``bsub`` script
-     - Enterprise HPC environments running IBM Spectrum LSF.
-
 .. _implementing-scheduler:
 
 Implementing a Custom Scheduler
@@ -383,7 +373,7 @@ TorchX ships two workspace mixins:
 :py:class:`~torchx.workspace.docker_workspace.DockerWorkspaceMixin` (for
 container-based schedulers like Kubernetes and AWS Batch) and
 :py:class:`~torchx.workspace.dir_workspace.DirWorkspaceMixin` (for
-shared-filesystem schedulers like Slurm and LSF). You can also subclass
+shared-filesystem schedulers like Slurm). You can also subclass
 :py:class:`~torchx.workspace.WorkspaceMixin` directly for custom strategies.
 
 See :doc:`workspace` for the full workspace API, built-in mixin reference,

@@ -168,11 +168,9 @@ Works With
    schedulers/local
    schedulers/docker
    schedulers/kubernetes
-   schedulers/kubernetes_mcad
    schedulers/slurm
    schedulers/aws_batch
    schedulers/aws_sagemaker
-   schedulers/lsf
 
 .. fbcode::
 

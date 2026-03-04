@@ -83,7 +83,7 @@ Built-in Mixins
        ``image_repo``. Used by ``kubernetes``, ``aws_batch``, ``local_docker``.
    * - :py:class:`~torchx.workspace.dir_workspace.DirWorkspaceMixin`
      - Copies workspace files into a shared job directory on the filesystem.
-       Used by ``slurm``, ``lsf``.
+       Used by ``slurm``.
 
 Implementing a Custom WorkspaceMixin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

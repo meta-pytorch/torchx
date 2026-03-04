@@ -61,10 +61,8 @@ def main() -> None:
 
     if scheduler in (
         "kubernetes",
-        "kubernetes_mcad",
         "local_docker",
         "aws_batch",
-        "lsf",
     ):
         build = build_and_push_image(args.container_repo)
         torchx_image = build.torchx_image
@@ -83,16 +81,6 @@ def main() -> None:
             "cfg": {
                 "namespace": "torchx-dev",
                 "queue": "default",
-            },
-        },
-        "kubernetes_mcad": {
-            "providers": [
-                component_provider,
-                examples_app_defs_providers,
-            ],
-            "image": torchx_image,
-            "cfg": {
-                "namespace": "torchx-dev",
             },
         },
         "local_cwd": {
@@ -117,17 +105,6 @@ def main() -> None:
             "image": torchx_image,
             "cfg": {
                 "queue": "torchx",
-            },
-        },
-        "lsf": {
-            "providers": [
-                component_provider,
-            ],
-            "image": torchx_image,
-            "cfg": {
-                "runtime": "docker",
-                "jobdir": "/mnt/data/torchx",
-                "host_network": True,
             },
         },
     }
