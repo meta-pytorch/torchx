@@ -344,11 +344,9 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/local.html">Local</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes_mcad.html">Kubernetes-MCAD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -892,26 +890,17 @@ schedulers)</p></td>
 <td><p>Kubernetes</p></td>
 <td><p>Creates <code class="docutils literal notranslate"><span class="pre">Job</span></code> resources. Requires cluster access.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kubernetes_mcad</span></code></p></td>
-<td><p>Kubernetes (MCAD)</p></td>
-<td><p>Uses Multi-Cluster Application Dispatcher (MCAD) for gang scheduling
-(all pods in a job start together or none start).</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></td>
 <td><p>Slurm HPC</p></td>
 <td><p>Generates <code class="docutils literal notranslate"><span class="pre">sbatch</span></code> scripts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></td>
 <td><p>AWS Batch</p></td>
 <td><p>Creates job definitions and submits jobs.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></td>
 <td><p>AWS SageMaker</p></td>
 <td><p>Creates training jobs.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lsf</span></code></p></td>
-<td><p>IBM LSF</p></td>
-<td><p>Generates <code class="docutils literal notranslate"><span class="pre">bsub</span></code> scripts.</p></td>
 </tr>
 </tbody>
 </table>

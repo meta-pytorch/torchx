@@ -452,10 +452,6 @@ Scheduler Reference
    * - ``kubernetes``
      - Kubernetes
      - Creates ``Job`` resources. Requires cluster access.
-   * - ``kubernetes_mcad``
-     - Kubernetes (MCAD)
-     - Uses Multi-Cluster Application Dispatcher (MCAD) for gang scheduling
-       (all pods in a job start together or none start).
    * - ``slurm``
      - Slurm HPC
      - Generates ``sbatch`` scripts.
@@ -465,9 +461,6 @@ Scheduler Reference
    * - ``aws_sagemaker``
      - AWS SageMaker
      - Creates training jobs.
-   * - ``lsf``
-     - IBM LSF
-     - Generates ``bsub`` scripts.
 
 
 Named Resources Reference

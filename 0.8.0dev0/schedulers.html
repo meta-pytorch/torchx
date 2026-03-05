@@ -344,11 +344,9 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/local.html">Local</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes_mcad.html">Kubernetes-MCAD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -453,7 +451,7 @@ interface is pluggable, you switch backends without changing application code.
 TorchX ships with schedulers for:</p>
 <ul class="simple">
 <li><p><strong>Local development:</strong> <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code>, <code class="docutils literal notranslate"><span class="pre">local_docker</span></code></p></li>
-<li><p><strong>HPC (High-Performance Computing) clusters:</strong> <code class="docutils literal notranslate"><span class="pre">slurm</span></code>, <code class="docutils literal notranslate"><span class="pre">lsf</span></code></p></li>
+<li><p><strong>HPC (High-Performance Computing) clusters:</strong> <code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></li>
 <li><p><strong>Cloud / container orchestrators:</strong> <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code>,
 <code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></li>
 </ul>
@@ -496,34 +494,23 @@ TorchX ships with schedulers for:</p>
 <td><p>Production workloads on Kubernetes. Requires cluster access and a
 container registry.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">kubernetes_mcad</span></code></p></td>
-<td><p>Kubernetes + MCAD</p></td>
-<td><p>MCAD <code class="docutils literal notranslate"><span class="pre">AppWrapper</span></code> resource</p></td>
-<td><p>Gang-scheduled multi-node jobs on Kubernetes with the Multi-Cluster
-Application Dispatcher.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></td>
 <td><p>Slurm HPC cluster</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">sbatch</span></code> script</p></td>
 <td><p>Traditional HPC environments. Uses the shared filesystem as the
 workspace (no container build needed).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></td>
 <td><p>AWS</p></td>
 <td><p>AWS Batch job definition + job</p></td>
 <td><p>AWS-native batch compute. Requires a Batch compute environment and
 job queue.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></td>
 <td><p>AWS</p></td>
 <td><p>SageMaker training job</p></td>
 <td><p>Managed training with SageMaker features (spot instances, managed
 infrastructure).</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lsf</span></code></p></td>
-<td><p>IBM LSF cluster</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">bsub</span></code> script</p></td>
-<td><p>Enterprise HPC environments running IBM Spectrum LSF.</p></td>
 </tr>
 </tbody>
 </table>
@@ -833,7 +820,7 @@ become typed config options with auto-generated help text from docstrings:</p>
 <a class="reference internal" href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a> (for
 container-based schedulers like Kubernetes and AWS Batch) and
 <a class="reference internal" href="workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a> (for
-shared-filesystem schedulers like Slurm and LSF). You can also subclass
+shared-filesystem schedulers like Slurm). You can also subclass
 <a class="reference internal" href="workspace.html#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a> directly for custom strategies.</p>
 <p>See <a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a> for the full workspace API, built-in mixin reference,
 and a guide to implementing your own workspace mixin.</p>
@@ -856,9 +843,7 @@ and a guide to implementing your own workspace mixin.</p>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes_mcad.html">Kubernetes-MCAD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/local.html">Local</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/lsf.html">IBM Spectrum LSF</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
 </ul>
 </div>
