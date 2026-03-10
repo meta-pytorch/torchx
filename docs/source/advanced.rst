@@ -4,9 +4,9 @@ Advanced Usage
 .. tip::
 
    This guide covers TorchX's extension points: registering custom schedulers,
-   named resources, components, trackers, and CLI commands via Python
-   :term:`entry points <Entry Point>` -- a standard packaging mechanism that
-   lets installed packages advertise plugins.
+   named resources, components, trackers, and CLI commands. The recommended
+   approach is the ``@register`` decorator with ``torchx_plugins.*`` namespace
+   packages. See :doc:`plugins` for the full API reference.
 
 **Audience:** Platform engineers who want to integrate TorchX with custom
 infrastructure. If you only need to **use** TorchX to launch jobs, the
@@ -15,71 +15,63 @@ sufficient.
 
 **Prerequisites:** :doc:`basics` (core concepts) and :doc:`custom_components`.
 
+.. deprecated::
+   Entry-point based plugin registration (``[torchx.*]`` sections in
+   ``setup.py`` / ``pyproject.toml``) is deprecated. Use the ``@register``
+   decorator with ``torchx_plugins.*`` namespace packages instead.
+
+   Namespace plugins are **always** loaded. By default
+   (``TORCHX_NO_ENTRYPOINTS=0`` or unset), entry points are also loaded
+   for backward compatibility. Set ``TORCHX_NO_ENTRYPOINTS=1`` to load
+   only namespace plugins. Entry-point loading will be removed in a
+   future release. See :doc:`plugins` for the full API reference.
+
 .. code-block:: text
 
    ┌──────────────────────────────────────────────────────────────┐
    │                     TorchX Extension Points                  │
    │                                                              │
-   │  Entry-Point Group         What You Register                 │
+   │  @register Decorator       What You Register                 │
    │  ──────────────────────    ──────────────────────────────    │
-   │  torchx.schedulers         Scheduler factory function        │
-   │  torchx.named_resources    Resource factory function         │
+   │  @register.scheduler()     Scheduler factory function        │
+   │  @register.named_resource  Resource factory function         │
+   │  @register.tracker()       Tracker factory function          │
+   │                                                              │
+   │  Entry Points (not yet migrated to @register)                │
+   │  ──────────────────────    ──────────────────────────────    │
    │  torchx.components         Component module path             │
-   │  torchx.tracker            Tracker factory function          │
    │  torchx.cli.cmds           SubCommand class                  │
    │                                                              │
-   │      ┌───────────────────────────┐                           │
-   │      │ setup.py / pyproject.toml │ ◄── register here         │
-   │      └─────────────┬─────────────┘                           │
-   │                    │                                          │
-   │                    ▼                                          │
+   │  ┌──────────────────────────────────────────┐                │
+   │  │ torchx_plugins/<group>/<module>.py       │ ◄── write here │
+   │  │   @register.scheduler()                  │                │
+   │  │   def my_scheduler(...): ...             │                │
+   │  └──────────────────┬───────────────────────┘                │
+   │                     │                                        │
+   │                     ▼                                        │
    │         ┌───────────────────────┐                            │
    │         │    pip install .      │  ◄── install package       │
    │         └───────────┬───────────┘                            │
-   │                     │                                         │
-   │                     ▼                                         │
-   │  ┌────────────────────────────────────────────────────┐      │
-   │  │           TorchX Runtime Discovery                  │      │
-   │  │                                                     │      │
-   │  │  Runner ──► discovers schedulers, resources         │      │
-   │  │  CLI    ──► discovers components, subcommands       │      │
-   │  │  AppRun ──► discovers tracker backends              │      │
-   │  └────────────────────────────────────────────────────┘      │
+   │                     │                                        │
+   │                     ▼                                        │
+   │  ┌───────────────────────────────────────────────────┐       │
+   │  │             TorchX Runtime Discovery              │       │
+   │  │                                                   │       │
+   │  │  Runner ──► discovers schedulers, resources       │       │
+   │  │  CLI    ──► discovers components, subcommands     │       │
+   │  │  AppRun ──► discovers tracker backends            │       │
+   │  └───────────────────────────────────────────────────┘       │
    └──────────────────────────────────────────────────────────────┘
 
-Most configuration is done through Python's
-`entry points <https://packaging.python.org/specifications/entry-points/>`__
--- a standard mechanism that lets installed packages advertise plugins for
-automatic discovery at runtime.
-
-.. note::
-
-   Entry points require an installed Python package.
-
-The entry points below can be specified in ``setup.py`` or ``pyproject.toml``.
-Each section shows both formats.
-
-.. code-block:: python
-
-   from setuptools import setup
-
-   setup(
-       name="project foobar",
-       version="0.0.1",
-       entry_points={
-           "torchx.schedulers": [
-               "my_scheduler = my.custom.scheduler:create_scheduler",
-           ],
-           "torchx.named_resources": [
-               "gpu_x2 = my_module.resources:gpu_x2",
-           ],
-       }
-   )
+Plugins are discovered from ``torchx_plugins.*`` namespace packages.
+Decorate your factory with ``@register.<type>()`` and TorchX finds it
+automatically after ``pip install``.
 
 
 
 Registering Custom Schedulers
 --------------------------------
+
 Implement the :py:class:`~torchx.schedulers.Scheduler` interface (see
 :ref:`implementing-scheduler` for a full skeleton). The factory function
 signature:
@@ -91,7 +83,23 @@ signature:
  def create_scheduler(session_name: str, **kwargs: object) -> Scheduler:
      return MyScheduler(session_name, **kwargs)
 
-Register it via entry points:
+**Recommended: ``@register`` decorator**
+
+Place your scheduler in a ``torchx_plugins/schedulers/`` namespace package
+and decorate it:
+
+.. code-block:: python
+
+   # torchx_plugins/schedulers/my_scheduler.py
+   from torchx.plugins import register
+
+   @register.scheduler()
+   def my_scheduler(session_name: str, **kwargs) -> Scheduler:
+       return MyScheduler(session_name, **kwargs)
+
+After ``pip install``, TorchX discovers it automatically.
+
+**Legacy: entry points** *(deprecated)*
 
 .. testcode::
 
@@ -125,8 +133,39 @@ Registering Named Resources
 -------------------------------
 
 A :term:`Named Resource <Resource>` maps a human-readable name (e.g.
-``gpu_x2``) to a :py:class:`~torchx.specs.Resource`. For example, on an AWS
-cluster with p3.16xlarge nodes:
+``gpu_x2``) to a :py:class:`~torchx.specs.Resource`.
+
+**Recommended: ``@register`` decorator**
+
+Place your resources in a ``torchx_plugins/named_resources/`` namespace package
+and decorate them:
+
+.. code-block:: python
+
+   # torchx_plugins/named_resources/my_cluster.py
+   from torchx.plugins import register, WHOLE
+   from torchx.specs import Resource
+
+   @register.named_resource(fractionals=register.powers_of_two_gpus)
+   def gpu_x(fractional: float = WHOLE) -> Resource:
+       return Resource(
+           cpu=int(64 * fractional),
+           gpu=int(8 * fractional),
+           memMB=int(488_000 * fractional),
+       )
+   # Registers: gpu_x (base), gpu_x_8, gpu_x_4, gpu_x_2, gpu_x_1
+
+   @register.named_resource()
+   def cpu_x32() -> Resource:
+       return Resource(cpu=32, gpu=0, memMB=131072)
+
+The ``fractionals`` argument auto-generates fractional variants. See
+:py:meth:`~torchx.plugins.register.powers_of_two_gpus` and
+:py:meth:`~torchx.plugins.register.halve_mem_down_to` in :doc:`plugins`.
+
+**Legacy: entry points** *(deprecated)*
+
+For example, on an AWS cluster with p3.16xlarge nodes:
 
 .. testcode:: python
 
@@ -246,6 +285,7 @@ suggestion of close matches.
 
 Registering Custom Components
 -------------------------------
+
 Register custom components as CLI builtins:
 
 .. code-block:: shell-session
@@ -431,7 +471,7 @@ subclassing :py:class:`~torchx.tracker.api.TrackerBase`.
 
        def run_ids(self, **kwargs: str) -> Iterable[str]: ...
 
-**Factory function.** Each entry point must point to a factory:
+**Factory function.** Each tracker plugin must provide a factory:
 
 .. code-block:: python
 
@@ -440,8 +480,23 @@ subclassing :py:class:`~torchx.tracker.api.TrackerBase`.
    def create(config: str | None) -> TrackerBase:
        return MyTracker(connection_str=config or "default://localhost")
 
-**Entry-point registration.** Register the factory under the ``torchx.tracker``
-group:
+**Recommended: ``@register`` decorator**
+
+Place your tracker in a ``torchx_plugins/tracker/`` namespace package
+and decorate the factory:
+
+.. code-block:: python
+
+   # torchx_plugins/tracker/my_tracker.py
+   from torchx.plugins import register
+
+   @register.tracker()
+   def my_tracker(config: str | None) -> TrackerBase:
+       return MyTracker(connection_str=config or "default://localhost")
+
+**Legacy: entry points** *(deprecated)*
+
+Register the factory under the ``torchx.tracker`` group:
 
 .. code-block:: python
 
@@ -508,8 +563,7 @@ Registering Custom CLI Commands
 ----------------------------------
 
 Extend the ``torchx`` CLI by implementing
-:py:class:`~torchx.cli.cmd_base.SubCommand` and registering via the
-``torchx.cli.cmds`` entry-point group.
+:py:class:`~torchx.cli.cmd_base.SubCommand`.
 
 **The SubCommand ABC** defines two abstract methods:
 
@@ -528,8 +582,8 @@ Extend the ``torchx`` CLI by implementing
            """Execute the command with parsed arguments."""
            print(f"Running my_tool on {args.app_id} with config={args.config}")
 
-**Entry-point registration.** Register the class (not a factory) under
-``torchx.cli.cmds``. The key becomes the subcommand name:
+Register the class (not a factory) under ``torchx.cli.cmds``. The key
+becomes the subcommand name:
 
 .. code-block:: python
 
@@ -562,7 +616,110 @@ The default built-in commands are: ``builtins``, ``cancel``, ``configure``,
 ``delete``, ``describe``, ``list``, ``log``, ``run``, ``runopts``, ``status``,
 and ``tracker``.
 
+
+Packaging a Plugin
+---------------------
+
+To create a TorchX plugin distribution, use
+`native namespace packages <https://packaging.python.org/en/latest/guides/packaging-namespace-packages/#native-namespace-packages>`_
+-- do **not** add ``__init__.py`` files under ``torchx_plugins/``. This allows
+multiple independent distributions to contribute to the same namespace.
+
+Structure your project like:
+
+.. code-block:: text
+
+   my-torchx-plugin/
+   ├── pyproject.toml
+   └── src/
+       └── torchx_plugins/          # NO __init__.py
+           └── schedulers/          # NO __init__.py
+               └── my_scheduler.py  # uses @register.scheduler()
+
+Configure the build backend to include ``src/torchx_plugins`` as a package.
+For example with ``hatchling``:
+
+.. code-block:: toml
+
+   [build-system]
+   requires = ["hatchling"]
+   build-backend = "hatchling.build"
+
+   [project]
+   name = "my-torchx-plugin"
+   version = "0.1.0"
+   dependencies = ["torchx"]
+
+   [tool.hatch.build.targets.wheel]
+   packages = ["src/torchx_plugins"]
+
+After ``pip install my-torchx-plugin``, TorchX will automatically discover
+your plugins from the ``@register``-decorated functions.
+
+**Single-project layout** — You don't need a separate package just for
+plugins. A single project can ship both your application code and a
+``torchx_plugins/`` namespace package side-by-side. The key is to list
+**both** packages in the build backend's ``packages`` configuration so the
+wheel includes them together.
+
+The example below uses a `UV <https://docs.astral.sh/uv/>`_ project with
+``hatchling``. For other build backends (e.g. ``setuptools``), consult their
+documentation for the equivalent package-discovery configuration.
+
+.. code-block:: text
+
+   my-project/
+   ├── pyproject.toml
+   ├── my_training/              # your application code (regular package)
+   │   ├── __init__.py
+   │   ├── train.py
+   │   └── model.py
+   └── torchx_plugins/           # NO __init__.py (namespace package)
+       ├── schedulers/            # NO __init__.py
+       │   └── my_scheduler.py
+       └── named_resources/       # NO __init__.py
+           └── my_cluster.py
+
+A single ``pyproject.toml`` manages both packages:
+
+.. code-block:: toml
+
+   [project]
+   name = "my-project"
+   version = "0.1.0"
+   dependencies = ["torchx", "torch"]
+
+   [build-system]
+   requires = ["hatchling"]
+   build-backend = "hatchling.build"
+
+   [tool.hatch.build.targets.wheel]
+   packages = ["my_training", "torchx_plugins"]
+
+After ``uv sync``, both ``my_training`` and the TorchX plugins are installed
+into the same virtual environment. TorchX discovers the
+``@register``-decorated plugins automatically — no entry points needed.
+
+
+Diagnostics
+-------------
+
+Print a diagnostic report of all discovered plugins:
+
+.. code-block:: python
+
+   from torchx import plugins
+   print(plugins.registry())
+
+This lists every discovered plugin, its source module, and the distribution
+package it belongs to. Errors encountered during discovery are reported at
+the bottom.
+
+
 .. seealso::
+
+   :doc:`plugins`
+      Plugin API reference (``@register``, ``find()``, ``PluginRegistry``).
 
    :doc:`cli`
       CLI module API reference.
@@ -584,4 +741,3 @@ and ``tracker``.
 
    :doc:`component_best_practices`
       Best practices for authoring reusable components.
-

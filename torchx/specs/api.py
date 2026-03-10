@@ -124,6 +124,27 @@ class Resource:
     devices: dict[str, int] = field(default_factory=dict)
     tags: dict[str, object] = field(default_factory=dict)
 
+    def is_fractional(self) -> bool:
+        """Return ``True`` if this resource is a fractional slice of a base resource.
+
+        Set automatically by :py:meth:`register.named_resource` when a
+        ``fractionals`` argument is provided.
+        """
+        from torchx.plugins._registration import resource_tags
+
+        return bool(self.tags.get(resource_tags.IS_FRACTIONAL, False))
+
+    def get_resource_name(self) -> str | None:
+        """Return the registered named-resource name, or ``None``.
+
+        Set automatically by :py:meth:`register.named_resource` on every
+        resource it creates.
+        """
+        from torchx.plugins._registration import resource_tags
+
+        name = self.tags.get(resource_tags.RESOURCE_NAME)
+        return str(name) if name is not None else None
+
     @staticmethod
     def copy(original: "Resource", **capabilities: Any) -> "Resource":
         """Copies a resource, merging in the given ``capabilities``."""

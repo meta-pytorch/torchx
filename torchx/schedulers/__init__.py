@@ -10,8 +10,8 @@
 import importlib
 from typing import Mapping, Protocol
 
+from torchx import plugins
 from torchx.schedulers.api import Scheduler
-from torchx.util.entrypoints import load_group
 
 DEFAULT_SCHEDULER_MODULES: Mapping[str, str] = {
     "local_docker": "torchx.schedulers.docker_scheduler",
@@ -38,10 +38,10 @@ def _defer_load_scheduler(path: str) -> SchedulerFactory:
 
 
 def get_scheduler_factories(
-    group: str = "torchx.schedulers", skip_defaults: bool = False
+    *, skip_defaults: bool = False
 ) -> dict[str, SchedulerFactory]:
     """
-    get_scheduler_factories returns all the available schedulers names under `group` and the
+    get_scheduler_factories returns all the available schedulers names and the
     method to instantiate them.
 
     The first scheduler in the dictionary is used as the default scheduler.
@@ -54,7 +54,10 @@ def get_scheduler_factories(
         for scheduler, path in DEFAULT_SCHEDULER_MODULES.items():
             default_schedulers[scheduler] = _defer_load_scheduler(path)
 
-    return load_group(group, default=default_schedulers)
+    plugin_scheds = plugins.registry().get(plugins.PluginType.SCHEDULER)
+    if plugin_scheds:
+        return dict(plugin_scheds)
+    return default_schedulers
 
 
 def get_default_scheduler_name() -> str:

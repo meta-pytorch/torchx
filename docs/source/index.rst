@@ -116,6 +116,7 @@ Documentation
    api_reference
    specs
    runner
+   plugins
    schedulers
    workspace
 

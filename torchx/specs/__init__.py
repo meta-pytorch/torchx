@@ -28,6 +28,7 @@ import difflib
 import os
 from typing import Callable, Iterator, Mapping
 
+from torchx import plugins
 from torchx.specs.api import (  # noqa: F401
     ALL,
     AppDef,
@@ -64,7 +65,6 @@ from torchx.specs.api import (  # noqa: F401
     Workspace,
 )
 from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
-from torchx.util.entrypoints import load_group
 from torchx.util.modules import import_attr
 
 GiB: int = 1024
@@ -86,14 +86,13 @@ CUSTOM_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
 
 
 def _load_named_resources() -> dict[str, Callable[[], Resource]]:
-    resource_methods = load_group("torchx.named_resources", default={})
     materialized_resources: dict[str, Callable[[], Resource]] = {}
 
     for name, resource in {
         **GENERIC_NAMED_RESOURCES,
         **AWS_NAMED_RESOURCES,
         **CUSTOM_NAMED_RESOURCES,
-        **resource_methods,
+        **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
     }.items():
         materialized_resources[name] = resource
 
