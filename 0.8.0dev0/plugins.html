@@ -1,0 +1,1112 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchx.plugins &mdash; PyTorch/TorchX main documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/katex-math.css" type="text/css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="torchx.schedulers" href="schedulers.html" />
+    <link rel="prev" title="torchx.runner" href="runner.html" />
+  <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','UA-117752657-2');</script>
+    <!-- End Google Tag Manager -->
+  
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+  <!-- Preload the theme fonts -->
+
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+
+<!-- Preload the katex fonts -->
+
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Math-Italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Main-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size1-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size4-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size2-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Size3-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/katex@0.10.0/dist/fonts/KaTeX_Caligraphic-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
+</head>
+
+<div class="container-fluid header-holder tutorials-header" id="header-holder">
+  <div class="container">
+    <div class="header-container">
+      <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+
+      <div class="main-menu">
+        <ul>
+
+          <li class="main-menu-item">
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Learn
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/get-started">
+                  <span class=dropdown-title>Get Started</span>
+                  <p>Run PyTorch locally or get started quickly with one of the supported cloud platforms</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials">
+                  <span class="dropdown-title">Tutorials</span>
+                  <p>Whats new in PyTorch tutorials</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/basics/intro.html">
+                  <span class="dropdown-title">Learn the Basics</span>
+                  <p>Familiarize yourself with PyTorch concepts and modules</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/recipes/recipes_index.html">
+                  <span class="dropdown-title">PyTorch Recipes</span>
+                  <p>Bite-size, ready-to-deploy PyTorch code examples</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tutorials/beginner/introyt.html">
+                  <span class="dropdown-title">Intro to PyTorch - YouTube Series</span>
+                  <p>Master PyTorch basics with our engaging YouTube tutorial series</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Ecosystem
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem">
+                  <span class="dropdown-title">Tools</span>
+                  <p>Learn about the tools and frameworks in the PyTorch Ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/#community-module">
+                  <span class=dropdown-title>Community</span>
+                  <p>Join the PyTorch developer community to contribute, learn, and get your questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://discuss.pytorch.org/" target="_blank">
+                  <span class=dropdown-title>Forums</span>
+                  <p>A place to discuss PyTorch code, issues, install, research</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/resources">
+                  <span class=dropdown-title>Developer Resources</span>
+                  <p>Find resources and get questions answered</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/ecosystem/contributor-awards-2024">
+                  <span class="dropdown-title">Contributor Awards - 2024</span>
+                  <p>Award winners announced at this year's PyTorch Conference</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+          <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Edge
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/edge">
+                  <span class="dropdown-title">About PyTorch Edge</span>
+                  <p>Build innovative and privacy-aware AI experiences for edge devices</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch-overview">
+                  <span class="dropdown-title">ExecuTorch</span>
+                  <p>End-to-end solution for enabling on-device inference capabilities across mobile and edge devices</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/executorch/stable/index.html">
+                  <span class="dropdown-title">ExecuTorch Docs</span>
+                </a>
+              </div>
+            </div>  
+          </li>
+
+          <li class="main-menu-item">
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Docs
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/docs/stable/index.html">
+                  <span class="dropdown-title">PyTorch</span>
+                  <p>Explore the documentation for comprehensive guidance on how to use PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/pytorch-domains">
+                  <span class="dropdown-title">PyTorch Domains</span>
+                  <p>Read the PyTorch Domains documentation to learn more about domain-specific libraries</p>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                Blogs & News 
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/blog/">
+                  <span class="dropdown-title">PyTorch Blog</span>
+                  <p>Catch up on the latest technical news and happenings</p>
+                </a>
+                 <a class="nav-dropdown-item" href="https://pytorch.org/community-blog">
+                  <span class="dropdown-title">Community Blog</span>
+                  <p>Stories from the PyTorch ecosystem</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/videos">
+                  <span class="dropdown-title">Videos</span>
+                  <p>Learn about the latest PyTorch tutorials, new, and more </p>
+                <a class="nav-dropdown-item" href="https://pytorch.org/community-stories">
+                  <span class="dropdown-title">Community Stories</span>
+                  <p>Learn how our community solves real, everyday machine learning problems with PyTorch</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/events">
+                  <span class="dropdown-title">Events</span>
+                  <p>Find events, webinars, and podcasts</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/newsletter">
+                  <span class="dropdown-title">Newsletter</span>
+                  <p>Stay up-to-date with the latest updates</p>
+                </a>
+            </div>
+          </li>
+
+          <li>
+            <div id="resourcesDropdownButton" data-toggle="resources-dropdown" class="resources-dropdown">
+              <a class="with-down-arrow">
+                About
+              </a>
+              <div class="resources-dropdown-menu">
+                <a class="nav-dropdown-item" href="https://pytorch.org/foundation">
+                  <span class="dropdown-title">PyTorch Foundation</span>
+                  <p>Learn more about the PyTorch Foundation</p>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/governing-board">
+                  <span class="dropdown-title">Governing Board</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/credits">
+                  <span class="dropdown-title">Cloud Credit Program</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/tac">
+                  <span class="dropdown-title">Technical Advisory Council</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/staff">
+                  <span class="dropdown-title">Staff</span>
+                </a>
+                <a class="nav-dropdown-item" href="https://pytorch.org/contact-us">
+                  <span class="dropdown-title">Contact Us</span>
+                </a>
+              </div>
+            </div>
+          </li>
+
+          <li class="main-menu-item">
+            <div class="no-dropdown">
+              <a href="https://pytorch.org/join" data-cta="join">
+                Become a Member
+              </a>
+            </div>
+          </li>
+          <li>
+           <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="github-icon">
+             </a>
+           </div>
+          </li>
+          <!--- TODO: This block adds the search icon to the nav bar. We will enable it later. 
+          <li>
+            <div class="main-menu-item">
+             <a href="https://github.com/pytorch/pytorch" class="search-icon">
+             </a>
+            </div>
+          </li>
+          --->
+        </ul>
+      </div>
+
+      <a class="main-menu-open-button" href="#" data-behavior="open-mobile-menu"></a>
+    </div>
+  </div>
+</div>
+
+<body class="pytorch-body">
+
+  
+  
+    <div id="redirect-banner" style="display: none">
+      <p>
+        This is the public documentation. There's an internal wiki with extra
+        information for Meta employees at
+        <a href="https://fburl.com/torchx">https://fburl.com/torchx</a>
+      </p>
+    </div>
+  
+
+    
+
+    <div class="table-of-contents-link-wrapper">
+      <span>Table of Contents</span>
+      <a href="#" class="toggle-table-of-contents" data-behavior="toggle-table-of-contents"></a>
+    </div>
+
+    <nav data-toggle="wy-nav-shift" class="pytorch-left-menu" id="pytorch-left-menu">
+      <div class="pytorch-side-scroll">
+        <div class="pytorch-menu pytorch-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <div class="pytorch-left-menu-search">
+            
+    <div class="version">
+      <a href='/torchx/versions.html'>v0.8.0dev0 &#x25BC</a>
+    </div>
+    
+
+
+  
+
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search Docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          </div>
+
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Basic Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_components.html">Custom Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runner.config.html">.torchxconfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tracker.html">torchx.tracker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Schedulers</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="schedulers/local.html">Local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workspaces/docker.html">Docker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Application (Runtime)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="runtime/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime/tracking.html">Tracking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Best Practices</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="app_best_practices.html">App Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="component_best_practices.html">Component Best Practices</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="pytorch-container">
+      <div class="pytorch-page-level-bar" id="pytorch-page-level-bar">
+        <div class="pytorch-breadcrumbs-wrapper">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="pytorch-breadcrumbs">
+    
+      <li>
+        <a href="index.html">
+          
+            Docs
+          
+        </a> &gt;
+      </li>
+
+        
+      <li>torchx.plugins</li>
+    
+    
+      <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="_sources/plugins.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+</div>
+        </div>
+
+        <div class="pytorch-shortcuts-wrapper" id="pytorch-shortcuts-wrapper">
+          Shortcuts
+        </div>
+      </div>
+
+      <section data-toggle="wy-nav-shift" id="pytorch-content-wrap" class="pytorch-content-wrap">
+        <div class="pytorch-content-left">
+
+        
+  
+
+  <!-- copied from pytorch_sphinx_theme -->
+  
+  <div class="rst-content">
+  
+    <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
+     <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
+      
+  <section id="module-torchx.plugins">
+<span id="torchx-plugins"></span><h1>torchx.plugins<a class="headerlink" href="#module-torchx.plugins" title="Permalink to this heading">¶</a></h1>
+<p>Plugin registration, discovery, and diagnostics for TorchX.</p>
+<p>Decorate factory functions with <a class="reference internal" href="#torchx.plugins.register" title="torchx.plugins.register"><code class="xref py py-class docutils literal notranslate"><span class="pre">register</span></code></a> and place them in
+<code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code> namespace packages for automatic discovery:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># torchx_plugins/schedulers/my_scheduler.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">scheduler</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Discover plugins and print a diagnostic report:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
+<span class="n">reg</span> <span class="o">=</span> <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span>
+<span class="n">scheds</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">SCHEDULER</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version Entry-point: </span>based registration (<code class="docutils literal notranslate"><span class="pre">[torchx.*]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>)
+is deprecated.  Set <code class="docutils literal notranslate"><span class="pre">TORCHX_NO_ENTRYPOINTS=1</span></code> to opt out early.</p>
+</div>
+<section id="core-api">
+<h2>Core API<a class="headerlink" href="#core-api" title="Permalink to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="torchx.plugins.registry">
+<span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">registry</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.plugins.PluginRegistry" title="torchx.plugins._registry.PluginRegistry"><span class="pre">PluginRegistry</span></a></span></span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#registry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.registry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cached <a class="reference internal" href="#torchx.plugins.PluginRegistry" title="torchx.plugins.PluginRegistry"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a> singleton.</p>
+<p>The registry lazily discovers plugins per-group on first
+<a class="reference internal" href="#torchx.plugins.PluginRegistry.get" title="torchx.plugins.PluginRegistry.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> access and caches the results.</p>
+<p>Namespace plugins (<code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code>) are <strong>always</strong> loaded.
+Entry points from <code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code> are additionally merged in
+unless <code class="docutils literal notranslate"><span class="pre">TORCHX_NO_ENTRYPOINTS=1</span></code> is set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cached <a class="reference internal" href="#torchx.plugins.PluginRegistry" title="torchx.plugins.PluginRegistry"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a> instance.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
+
+<span class="n">reg</span> <span class="o">=</span> <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span>
+<span class="n">scheds</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">SCHEDULER</span><span class="p">)</span>
+<span class="n">named</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">NAMED_RESOURCE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.plugins.PluginRegistry">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">PluginRegistry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_entrypoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Immutable, lazily-populated plugin registry.</p>
+<p>Created by <a class="reference internal" href="#torchx.plugins.registry" title="torchx.plugins.registry"><code class="xref py py-func docutils literal notranslate"><span class="pre">registry()</span></code></a>.  Each plugin group is discovered on first
+access via <a class="reference internal" href="#torchx.plugins.PluginRegistry.get" title="torchx.plugins.PluginRegistry.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> and cached for subsequent calls.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
+
+<span class="n">reg</span> <span class="o">=</span> <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span>
+<span class="n">scheds</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">SCHEDULER</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Namespace plugins (<code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code>) are <strong>always</strong> loaded.
+The <em>load_entrypoints</em> flag only controls whether <code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code>
+entry points are additionally merged in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>load_entrypoints</strong> – Whether to <strong>also</strong> load plugins from
+<code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code> entry points.  Set to <code class="docutils literal notranslate"><span class="pre">False</span></code> to
+disable entry-point loading (namespace plugins are still
+discovered).  Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code> for backward compatibility.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.PluginRegistry.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins._registry.PluginType"><span class="pre">PluginType</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discover plugins for <em>plugin_type</em>.  Cached after first call.</p>
+<p>Returns a <code class="docutils literal notranslate"><span class="pre">dict</span></code> mapping plugin names to their factory callables.
+Returns an empty <code class="docutils literal notranslate"><span class="pre">dict</span></code> when no plugins are found (never <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.PluginRegistry.info">
+<span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins._registry.PluginType"><span class="pre">torchx.plugins._registry.PluginType</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry.info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry.info" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins._registry.PluginType"><span class="pre">PluginType</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd><p>Return discovered plugins.</p>
+<p>When called with no arguments, triggers discovery for <strong>all</strong> plugin
+groups and returns a defensive copy of the full cache keyed by
+<a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins.PluginType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginType</span></code></a>.</p>
+<p>When called with a <em>plugin_type</em>, returns a defensive copy of the
+plugins dict for that single group.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">all_plugins</span> <span class="o">=</span> <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">scheds</span> <span class="o">=</span> <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">SCHEDULER</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.plugins.PluginType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">PluginType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names=&lt;not</span> <span class="pre">given&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start=1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type of TorchX plugin.</p>
+<p>Values are the entry-point group names (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;torchx.schedulers&quot;</span></code>).</p>
+<p>This enum is used internally to tag decorated functions and to filter
+plugins during discovery.  It is part of the public API only to support
+advanced subclassing of <a class="reference internal" href="#torchx.plugins.register" title="torchx.plugins.register"><code class="xref py py-class docutils literal notranslate"><span class="pre">register</span></code></a>.</p>
+</dd></dl>
+
+</section>
+<section id="registration">
+<h2>Registration<a class="headerlink" href="#registration" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.plugins.register">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins._registry.PluginType"><span class="pre">PluginType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/plugins/_registration.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that tags a function as a TorchX plugin.</p>
+<p>Sets <code class="docutils literal notranslate"><span class="pre">_plugin_type</span></code> and <code class="docutils literal notranslate"><span class="pre">_plugin_name</span></code> attributes on the decorated
+function.  The discovery scanner (<a class="reference internal" href="#torchx.plugins.PluginRegistry" title="torchx.plugins.PluginRegistry"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a>) imports
+each submodule under <code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code> and collects any callable
+with a <code class="docutils literal notranslate"><span class="pre">_plugin_type</span></code> attribute.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">scheduler</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">scheduler</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;custom_name&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_custom</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Each <a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins.PluginType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginType</span></code></a> has a corresponding classmethod:
+<a class="reference internal" href="#torchx.plugins.register.scheduler" title="torchx.plugins.register.scheduler"><code class="xref py py-meth docutils literal notranslate"><span class="pre">scheduler()</span></code></a>, <a class="reference internal" href="#torchx.plugins.register.tracker" title="torchx.plugins.register.tracker"><code class="xref py py-meth docutils literal notranslate"><span class="pre">tracker()</span></code></a>, and <a class="reference internal" href="#torchx.plugins.register.named_resource" title="torchx.plugins.register.named_resource"><code class="xref py py-meth docutils literal notranslate"><span class="pre">named_resource()</span></code></a>.</p>
+<p>The explicit constructor <code class="docutils literal notranslate"><span class="pre">register(PluginType.SCHEDULER,</span> <span class="pre">name=...)</span></code>
+is still supported for advanced use-cases.</p>
+<section id="fractional-resource-helpers">
+<h3>Fractional resource helpers<a class="headerlink" href="#fractional-resource-helpers" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference internal" href="#torchx.plugins.register.powers_of_two_gpus" title="torchx.plugins.register.powers_of_two_gpus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">powers_of_two_gpus()</span></code></a> and <a class="reference internal" href="#torchx.plugins.register.halve_mem_down_to" title="torchx.plugins.register.halve_mem_down_to"><code class="xref py py-meth docutils literal notranslate"><span class="pre">halve_mem_down_to()</span></code></a> are
+available as staticmethods so plugin authors can use them with a
+single import:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@register</span><span class="o">.</span><span class="n">named_resource</span><span class="p">(</span><span class="n">fractionals</span><span class="o">=</span><span class="n">register</span><span class="o">.</span><span class="n">powers_of_two_gpus</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_gpu</span><span class="p">(</span><span class="n">fractional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">named_resource</span><span class="p">(</span><span class="n">fractionals</span><span class="o">=</span><span class="n">register</span><span class="o">.</span><span class="n">halve_mem_down_to</span><span class="p">(</span><span class="n">minGiB</span><span class="o">=</span><span class="mi">16</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_cpu</span><span class="p">(</span><span class="n">fractional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">param type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The <a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins.PluginType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginType</span></code></a> declaring what kind of plugin
+this function provides.</p>
+</dd>
+<dt class="field-even">param name<span class="colon">:</span></dt>
+<dd class="field-even"><p>Plugin name. Defaults to the decorated function’s <code class="docutils literal notranslate"><span class="pre">__name__</span></code>.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.register.halve_mem_down_to">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">halve_mem_down_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minGiB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registration.html#register.halve_mem_down_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.register.halve_mem_down_to" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate fractional suffixes by halving memory in GiB.</p>
+<p>Returns a callable that produces a geometric series with r=1/2
+starting from the resource’s total memory in GiB down to <code class="docutils literal notranslate"><span class="pre">minGiB</span></code>.
+Each entry maps a fractional float to the corresponding memory
+suffix string.</p>
+<p>Example — 64 GiB host with <code class="docutils literal notranslate"><span class="pre">minGiB=8</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="mf">1.0</span><span class="p">:</span> <span class="s2">&quot;64&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">:</span> <span class="s2">&quot;32&quot;</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">:</span> <span class="s2">&quot;16&quot;</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">:</span> <span class="s2">&quot;8&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@register</span><span class="o">.</span><span class="n">named_resource</span><span class="p">(</span><span class="n">fractionals</span><span class="o">=</span><span class="n">register</span><span class="o">.</span><span class="n">halve_mem_down_to</span><span class="p">(</span><span class="n">minGiB</span><span class="o">=</span><span class="mi">16</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">t1</span><span class="p">(</span><span class="n">fractional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WHOLE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span> <span class="o">...</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>minGiB</strong> – Stop generating fractionals when memory drops below
+this threshold in GiB.  Must be &gt;= the odd part of
+<code class="docutils literal notranslate"><span class="pre">memGiB</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">memGiB</span></code> with all factors of 2
+removed), otherwise halving would produce non-integer
+GiB values.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – if <code class="docutils literal notranslate"><span class="pre">resource.memMB</span></code> is zero, not GiB-aligned,
+    or <code class="docutils literal notranslate"><span class="pre">minGiB</span></code> is below the odd part of <code class="docutils literal notranslate"><span class="pre">memGiB</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.register.named_resource">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">named_resource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aliases</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fractionals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.14)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">_register_named_resource</span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registration.html#register.named_resource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.register.named_resource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a named resource factory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Resource name. Defaults to the decorated function’s
+<code class="docutils literal notranslate"><span class="pre">__name__</span></code>.</p></li>
+<li><p><strong>aliases</strong> – Additional names that point to the same factory.</p></li>
+<li><p><strong>fractionals</strong> – Either a callable <code class="docutils literal notranslate"><span class="pre">(Resource)</span> <span class="pre">→</span> <span class="pre">{fraction:</span> <span class="pre">suffix}</span></code>
+or a literal dict.  When provided, the decorated function
+<strong>must</strong> accept a <code class="docutils literal notranslate"><span class="pre">fractional:</span> <span class="pre">float</span></code> parameter.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.register.powers_of_two_gpus">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">powers_of_two_gpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registration.html#register.powers_of_two_gpus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.register.powers_of_two_gpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return fractional specs for every power-of-two GPU slice of <em>resource</em>.</p>
+<p>For example, an 8-GPU resource produces:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="mf">1.0</span><span class="p">:</span> <span class="s2">&quot;8&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="mf">0.125</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>When passed as the <code class="docutils literal notranslate"><span class="pre">fractionals</span></code> argument of
+<a class="reference internal" href="#torchx.plugins.register.named_resource" title="torchx.plugins.register.named_resource"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register.named_resource()</span></code></a>, this auto-generates and registers
+all power-of-two fractional variants (e.g. <code class="docutils literal notranslate"><span class="pre">my_gpu_8</span></code>, <code class="docutils literal notranslate"><span class="pre">my_gpu_4</span></code>,
+…).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>resource</strong> – The base (whole-host) resource.  Must have <code class="docutils literal notranslate"><span class="pre">gpu</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>
+and <code class="docutils literal notranslate"><span class="pre">gpu</span></code> must be a power of two.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – if <code class="docutils literal notranslate"><span class="pre">resource.gpu</span></code> is zero or not a power of two.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.register.scheduler">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.plugins.register" title="torchx.plugins._registration.register"><span class="pre">register</span></a></span></span><a class="reference internal" href="_modules/torchx/plugins/_registration.html#register.scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.register.scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler" title="torchx.schedulers.api.Scheduler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code></a> factory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.register.tracker">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.plugins.register" title="torchx.plugins._registration.register"><span class="pre">register</span></a></span></span><a class="reference internal" href="_modules/torchx/plugins/_registration.html#register.tracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.register.tracker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a tracker factory.</p>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+</section>
+<section id="constants">
+<h2>Constants<a class="headerlink" href="#constants" title="Permalink to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="torchx.plugins.WHOLE">
+<span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">WHOLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#torchx.plugins.WHOLE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string or number to a floating point number, if possible.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchx.plugins.HALF">
+<span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">HALF</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#torchx.plugins.HALF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string or number to a floating point number, if possible.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchx.plugins.QUARTER">
+<span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">QUARTER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.25</span></em><a class="headerlink" href="#torchx.plugins.QUARTER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string or number to a floating point number, if possible.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchx.plugins.EIGHTH">
+<span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">EIGHTH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.125</span></em><a class="headerlink" href="#torchx.plugins.EIGHTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string or number to a floating point number, if possible.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="torchx.plugins.SIXTEENTH">
+<span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">SIXTEENTH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0625</span></em><a class="headerlink" href="#torchx.plugins.SIXTEENTH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a string or number to a floating point number, if possible.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+     </article>
+     
+    </div>
+    <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="schedulers.html" class="btn btn-neutral float-right" title="torchx.schedulers" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="runner.html" class="btn btn-neutral" title="torchx.runner" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
+  
+
+  
+
+    <hr>
+
+  
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, TorchX Contributors.
+
+    </p>
+  </div>
+    
+      <div>
+        Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+      </div>
+     
+
+</footer>
+
+  </div>
+        </div>
+
+        <div class="pytorch-content-right" id="pytorch-content-right">
+          <div class="pytorch-right-menu" id="pytorch-right-menu">
+            <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
+              <ul>
+<li><a class="reference internal" href="#">torchx.plugins</a><ul>
+<li><a class="reference internal" href="#core-api">Core API</a><ul>
+<li><a class="reference internal" href="#torchx.plugins.registry"><code class="docutils literal notranslate"><span class="pre">registry()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.PluginRegistry"><code class="docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.plugins.PluginRegistry.get"><code class="docutils literal notranslate"><span class="pre">PluginRegistry.get()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.PluginRegistry.info"><code class="docutils literal notranslate"><span class="pre">PluginRegistry.info()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#torchx.plugins.PluginType"><code class="docutils literal notranslate"><span class="pre">PluginType</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#registration">Registration</a><ul>
+<li><a class="reference internal" href="#torchx.plugins.register"><code class="docutils literal notranslate"><span class="pre">register</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.plugins.register.halve_mem_down_to"><code class="docutils literal notranslate"><span class="pre">register.halve_mem_down_to()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.register.named_resource"><code class="docutils literal notranslate"><span class="pre">register.named_resource()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.register.powers_of_two_gpus"><code class="docutils literal notranslate"><span class="pre">register.powers_of_two_gpus()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.register.scheduler"><code class="docutils literal notranslate"><span class="pre">register.scheduler()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.register.tracker"><code class="docutils literal notranslate"><span class="pre">register.tracker()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#constants">Constants</a><ul>
+<li><a class="reference internal" href="#torchx.plugins.WHOLE"><code class="docutils literal notranslate"><span class="pre">WHOLE</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.HALF"><code class="docutils literal notranslate"><span class="pre">HALF</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.QUARTER"><code class="docutils literal notranslate"><span class="pre">QUARTER</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.EIGHTH"><code class="docutils literal notranslate"><span class="pre">EIGHTH</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.SIXTEENTH"><code class="docutils literal notranslate"><span class="pre">SIXTEENTH</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  
+
+
+  
+
+     
+       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+         <script src="_static/jquery.js"></script>
+         <script src="_static/underscore.js"></script>
+         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="_static/doctools.js"></script>
+         <script src="_static/sphinx_highlight.js"></script>
+         <script src="_static/katex.min.js"></script>
+         <script src="_static/auto-render.min.js"></script>
+         <script src="_static/katex_autorenderer.js"></script>
+         <script src="_static/js/torchx.js"></script>
+     
+
+  
+
+  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+  <!-- Begin Footer -->
+
+  <div class="container-fluid docs-tutorials-resources" id="docs-tutorials-resources">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <h2>Docs</h2>
+          <p>Access comprehensive developer documentation for PyTorch</p>
+          <a class="with-right-arrow" href="https://pytorch.org/docs/stable/index.html">View Docs</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Tutorials</h2>
+          <p>Get in-depth tutorials for beginners and advanced developers</p>
+          <a class="with-right-arrow" href="https://pytorch.org/tutorials">View Tutorials</a>
+        </div>
+
+        <div class="col-md-4 text-center">
+          <h2>Resources</h2>
+          <p>Find development resources and get your questions answered</p>
+          <a class="with-right-arrow" href="https://pytorch.org/resources">View Resources</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-logo-wrapper">
+        <a href="https://pytorch.org/" class="footer-logo"></a>
+      </div>
+
+      <div class="footer-links-wrapper">
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/">PyTorch</a></li>
+            <li><a href="https://pytorch.org/get-started">Get Started</a></li>
+            <li><a href="https://pytorch.org/features">Features</a></li>
+            <li><a href="https://pytorch.org/ecosystem">Ecosystem</a></li>
+            <li><a href="https://pytorch.org/blog/">Blog</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title"><a href="https://pytorch.org/resources">Resources</a></li>
+            <li><a href="https://pytorch.org/tutorials">Tutorials</a></li>
+            <li><a href="https://pytorch.org/docs/stable/index.html">Docs</a></li>
+            <li><a href="https://discuss.pytorch.org" target="_blank">Discuss</a></li>
+            <li><a href="https://github.com/pytorch/pytorch/issues" target="_blank">Github Issues</a></li>
+            <li><a href="https://pytorch.org/assets/brand-guidelines/PyTorch-Brand-Guidelines.pdf" target="_blank">Brand Guidelines</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">Stay up to date</li>
+            <li><a href="https://www.facebook.com/pytorch" target="_blank">Facebook</a></li>
+            <li><a href="https://twitter.com/pytorch" target="_blank">Twitter</a></li>
+            <li><a href="https://www.youtube.com/pytorch" target="_blank">YouTube</a></li>
+            <li><a href="https://www.linkedin.com/company/pytorch" target="_blank">LinkedIn</a></li>
+          </ul>  
+          </div>
+
+        <div class="footer-links-col">
+          <ul>
+            <li class="list-title">PyTorch Podcasts</li>
+            <li><a href="https://open.spotify.com/show/6UzHKeiy368jKfQMKKvJY5" target="_blank">Spotify</a></li>
+            <li><a href="https://podcasts.apple.com/us/podcast/pytorch-developer-podcast/id1566080008" target="_blank">Apple</a></li>
+            <li><a href="https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkcy5zaW1wbGVjYXN0LmNvbS9PQjVGa0lsOA%3D%3D" target="_blank">Google</a></li>
+            <li><a href="https://music.amazon.com/podcasts/7a4e6f0e-26c2-49e9-a478-41bd244197d0/PyTorch-Developer-Podcast?" target="_blank">Amazon</a></li>
+          </ul>
+         </div>
+        </div>
+        
+        <div class="privacy-policy">
+          <ul>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/terms/" target="_blank">Terms</a></li>
+            <li class="privacy-policy-links">|</li>
+            <li class="privacy-policy-links"><a href="https://www.linuxfoundation.org/privacy-policy/" target="_blank">Privacy</a></li>
+          </ul>
+        </div>
+        <div class="copyright">
+        <p>© Copyright The Linux Foundation. The PyTorch Foundation is a project of The Linux Foundation.
+          For web site terms of use, trademark policy and other policies applicable to The PyTorch Foundation please see
+          <a href="https://www.linuxfoundation.org/policies/">www.linuxfoundation.org/policies/</a>. The PyTorch Foundation supports the PyTorch open source
+          project, which has been established as PyTorch Project a Series of LF Projects, LLC. For policies applicable to the PyTorch Project a Series of LF Projects, LLC,
+          please see <a href="https://www.lfprojects.org/policies/">www.lfprojects.org/policies/</a>.</p>
+      </div>
+     </div>
+
+  </footer>
+
+  <div class="cookie-banner-wrapper">
+  <div class="container">
+    <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
+    <img class="close-button" src="_static/images/pytorch-x.svg">
+  </div>
+</div>
+
+  <!-- End Footer -->
+
+  <!-- Begin Mobile Menu -->
+
+  <div class="mobile-main-menu">
+    <div class="container-fluid">
+      <div class="container">
+        <div class="mobile-main-menu-header-container">
+          <a class="header-logo" href="https://pytorch.org/" aria-label="PyTorch"></a>
+          <a class="main-menu-close-button" href="#" data-behavior="close-mobile-menu"></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-main-menu-links-container">
+      <div class="main-menu">
+        <ul>
+           <li class="resources-mobile-menu-title">
+             <a>Learn</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/get-started">Get Started</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials">Tutorials</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/basics/intro.html">Learn the Basics</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/recipes/recipes_index.html">PyTorch Recipes</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/tutorials/beginner/introyt.html">Introduction to PyTorch - YouTube Series</a>
+             </li>
+           </ul>
+           <li class="resources-mobile-menu-title">
+             <a>Ecosystem</a>
+           </li>
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/ecosystem">Tools</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/#community-module">Community</a>
+             </li>
+             <li>
+               <a href="https://discuss.pytorch.org/">Forums</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/resources">Developer Resources</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/ecosystem/contributor-awards-2023">Contributor Awards - 2024</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Edge</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+             <li>
+               <a href="https://pytorch.org/edge">About PyTorch Edge</a>
+             </li>
+             
+             <li>
+               <a href="https://pytorch.org/executorch-overview">ExecuTorch</a>
+             </li>
+             <li>
+               <a href="https://pytorch.org/executorch/stable/index.html">ExecuTorch Documentation</a>
+             </li>
+           </ul>
+
+           <li class="resources-mobile-menu-title">
+             <a>Docs</a>
+           </li>
+
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/docs/stable/index.html">PyTorch</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/pytorch-domains">PyTorch Domains</a>
+            </li>
+          </ul>
+
+          <li class="resources-mobile-menu-title">
+            <a>Blog & News</a>
+          </li>
+            
+           <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/blog/">PyTorch Blog</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/community-blog">Community Blog</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/videos">Videos</a>
+            </li>
+
+            <li>
+              <a href="https://pytorch.org/community-stories">Community Stories</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/events">Events</a>
+            </li>
+            <li>
+               <a href="https://pytorch.org/newsletter">Newsletter</a>
+             </li>
+          </ul>
+          
+          <li class="resources-mobile-menu-title">
+            <a>About</a>
+          </li>
+
+          <ul class="resources-mobile-menu-items">
+            <li>
+              <a href="https://pytorch.org/foundation">PyTorch Foundation</a>
+            </li>
+            <li>
+              <a href="https://pytorch.org/governing-board">Governing Board</a>
+            </li>
+            <li>
+               <a href="https://pytorch.org/credits">Cloud Credit Program</a>
+            </li>
+            <li>
+               <a href="https://pytorch.org/tac">Technical Advisory Council</a>
+            </li>
+            <li>
+               <a href="https://pytorch.org/staff">Staff</a>
+            </li>
+            <li>
+               <a href="https://pytorch.org/contact-us">Contact Us</a>
+            </li>
+          </ul>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- End Mobile Menu -->
+
+  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function() {
+      mobileMenu.bind();
+      mobileTOC.bind();
+      pytorchAnchors.bind();
+      sideMenus.bind();
+      scrollToAnchor.bind();
+      highlightNavigation.bind();
+      mainMenuDropdown.bind();
+      filterTags.bind();
+
+      // Add class to links that have code blocks, since we cannot create links in code blocks
+      $("article.pytorch-article a span.pre").each(function(e) {
+        $(this).closest("a").addClass("has-code");
+      });
+    })
+  </script>
+</body>
+</html>

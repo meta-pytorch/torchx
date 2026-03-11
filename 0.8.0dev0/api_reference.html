@@ -326,6 +326,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">torchx.plugins</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
@@ -457,6 +458,10 @@ page. For detailed API docs see <a class="reference internal" href="specs.html">
 
 <span class="c1"># Mounts — bind, volume, and device mounts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">BindMount</span><span class="p">,</span> <span class="n">VolumeMount</span><span class="p">,</span> <span class="n">DeviceMount</span>
+
+<span class="c1"># Plugins — registration, discovery, and diagnostics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">find</span><span class="p">,</span> <span class="n">PluginType</span>
 </pre></div>
 </div>
 </section>
@@ -1017,6 +1022,7 @@ and <a class="reference internal" href="schedulers.html"><span class="doc">torch
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
     <span class="n">ListAppResponse</span><span class="p">,</span>
@@ -1061,6 +1067,8 @@ and <a class="reference internal" href="schedulers.html"><span class="doc">torch
     <span class="k">def</span><span class="w"> </span><span class="nf">_cancel_existing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>  <span class="c1"># cancel the job</span>
 
+<span class="c1"># 4. Register the scheduler</span>
+<span class="nd">@register</span><span class="o">.</span><span class="n">scheduler</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MyScheduler</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">)</span>
 </pre></div>
@@ -1161,20 +1169,31 @@ full guide.</p>
 <p>See <a class="reference internal" href="advanced.html#registering-custom-cli-commands"><span class="std std-ref">Registering Custom CLI Commands</span></a> for
 the full guide.</p>
 </section>
-<section id="entry-point-registration">
-<h3>Entry-Point Registration<a class="headerlink" href="#entry-point-registration" title="Permalink to this heading">¶</a></h3>
-<p><strong>setup.py format:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
-<span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
-    <span class="s2">&quot;torchx.schedulers&quot;</span><span class="p">:</span>       <span class="p">[</span><span class="s2">&quot;my_sched = my_pkg:create_scheduler&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;torchx.named_resources&quot;</span><span class="p">:</span>  <span class="p">[</span><span class="s2">&quot;gpu_x4 = my_pkg.resources:gpu_x4&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;torchx.components&quot;</span><span class="p">:</span>       <span class="p">[</span><span class="s2">&quot;myco = my_pkg.components&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;torchx.tracker&quot;</span><span class="p">:</span>          <span class="p">[</span><span class="s2">&quot;my_tracker = my_pkg.tracking:create&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;torchx.cli.cmds&quot;</span><span class="p">:</span>         <span class="p">[</span><span class="s2">&quot;my_tool = my_pkg.cli:CmdMyTool&quot;</span><span class="p">],</span>
-<span class="p">}</span>
+<section id="plugin-registration">
+<h3>Plugin Registration<a class="headerlink" href="#plugin-registration" title="Permalink to this heading">¶</a></h3>
+<p><strong>Recommended: ``&#64;register`` decorator</strong> — place your plugin in a
+<code class="docutils literal notranslate"><span class="pre">torchx_plugins/&lt;group&gt;/</span></code> namespace package and decorate it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># torchx_plugins/schedulers/my_scheduler.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">scheduler</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_sched</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c1"># torchx_plugins/named_resources/my_resources.py</span>
+<span class="nd">@register</span><span class="o">.</span><span class="n">named_resource</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gpu_x4</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">244_000</span><span class="p">)</span>
+
+<span class="c1"># torchx_plugins/tracker/my_tracker.py</span>
+<span class="nd">@register</span><span class="o">.</span><span class="n">tracker</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_tracker</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackerBase</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">MyTracker</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>pyproject.toml format:</strong></p>
+<p>See <a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a> for the full API reference and <a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a> for
+packaging and diagnostics.</p>
+<p><strong>Legacy: entry points</strong> <em>(deprecated)</em></p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.schedulers&quot;</span><span class="k">]</span>
 <span class="n">my_sched</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg:create_scheduler&quot;</span>
 
@@ -1191,17 +1210,6 @@ the full guide.</p>
 <span class="n">my_tool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.cli:CmdMyTool&quot;</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Entry point targets differ by plugin type:</p>
-<ul class="simple">
-<li><p><strong>Schedulers</strong>: factory function <code class="docutils literal notranslate"><span class="pre">(session_name:</span> <span class="pre">str,</span> <span class="pre">**kwargs)</span> <span class="pre">-&gt;</span> <span class="pre">Scheduler</span></code></p></li>
-<li><p><strong>Named resources</strong>: factory function <code class="docutils literal notranslate"><span class="pre">()</span> <span class="pre">-&gt;</span> <span class="pre">Resource</span></code></p></li>
-<li><p><strong>Components</strong>: module path (TorchX discovers component functions inside it)</p></li>
-<li><p><strong>Trackers</strong>: factory function <code class="docutils literal notranslate"><span class="pre">(config:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None)</span> <span class="pre">-&gt;</span> <span class="pre">TrackerBase</span></code></p></li>
-<li><p><strong>CLI commands</strong>: <code class="docutils literal notranslate"><span class="pre">SubCommand</span></code> class (not a factory – TorchX calls <code class="docutils literal notranslate"><span class="pre">cls()</span></code>)</p></li>
-</ul>
-</div>
 <p>See <a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a> for the full registration guide.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
@@ -1209,6 +1217,8 @@ the full guide.</p>
 <dt><a class="reference internal" href="specs.html"><span class="doc">torchx.specs</span></a></dt><dd><p>Full API documentation for AppDef, Role, Resource, and related types.</p>
 </dd>
 <dt><a class="reference internal" href="runner.html"><span class="doc">torchx.runner</span></a></dt><dd><p>Full API documentation for Runner and get_runner.</p>
+</dd>
+<dt><a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a></dt><dd><p>Plugin API reference (<code class="docutils literal notranslate"><span class="pre">&#64;register</span></code>, <code class="docutils literal notranslate"><span class="pre">find()</span></code>, <code class="docutils literal notranslate"><span class="pre">PluginRegistry</span></code>).</p>
 </dd>
 <dt><a class="reference internal" href="schedulers.html"><span class="doc">torchx.schedulers</span></a></dt><dd><p>Scheduler API reference and implementation guide.</p>
 </dd>
@@ -1305,7 +1315,7 @@ the full guide.</p>
 <li><a class="reference internal" href="#workspace-plugin">Workspace Plugin</a></li>
 <li><a class="reference internal" href="#tracker-plugin">Tracker Plugin</a></li>
 <li><a class="reference internal" href="#cli-command-plugin">CLI Command Plugin</a></li>
-<li><a class="reference internal" href="#entry-point-registration">Entry-Point Registration</a></li>
+<li><a class="reference internal" href="#plugin-registration">Plugin Registration</a></li>
 </ul>
 </li>
 </ul>

@@ -323,6 +323,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">torchx.plugins</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
@@ -448,7 +449,9 @@
  | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
@@ -713,6 +716,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="plugins.html#torchx.plugins.EIGHTH">EIGHTH (in module torchx.plugins)</a>
+</li>
       <li><a href="basics.html#term-Entry-Point"><strong>Entry Point</strong></a>
 </li>
   </ul></td>
@@ -751,9 +756,11 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="schedulers.html#torchx.schedulers.api.StructuredOpts.get">get() (torchx.schedulers.api.StructuredOpts method)</a>
+      <li><a href="plugins.html#torchx.plugins.PluginRegistry.get">get() (torchx.plugins.PluginRegistry method)</a>
 
       <ul>
+        <li><a href="schedulers.html#torchx.schedulers.api.StructuredOpts.get">(torchx.schedulers.api.StructuredOpts method)</a>
+</li>
         <li><a href="specs.html#torchx.specs.runopts.get">(torchx.specs.runopts method)</a>
 </li>
       </ul></li>
@@ -787,6 +794,8 @@
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ImageProvider.get_replica_param">get_replica_param() (torchx.schedulers.local_scheduler.ImageProvider method)</a>
 </li>
+      <li><a href="specs.html#torchx.specs.Resource.get_resource_name">get_resource_name() (torchx.specs.Resource method)</a>
+</li>
       <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run">get_run() (torchx.tracker.mlflow.MLflowTracker method)</a>
 </li>
       <li><a href="tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run_id">get_run_id() (torchx.tracker.mlflow.MLflowTracker method)</a>
@@ -801,10 +810,14 @@
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="schedulers/docker.html#torchx.schedulers.docker_scheduler.has_docker">has_docker() (in module torchx.schedulers.docker_scheduler)</a>
+      <li><a href="plugins.html#torchx.plugins.HALF">HALF (in module torchx.plugins)</a>
+</li>
+      <li><a href="plugins.html#torchx.plugins.register.halve_mem_down_to">halve_mem_down_to() (torchx.plugins.register static method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="schedulers/docker.html#torchx.schedulers.docker_scheduler.has_docker">has_docker() (in module torchx.schedulers.docker_scheduler)</a>
+</li>
       <li><a href="components/utils.html#torchx.components.utils.hydra">hydra() (in module torchx.components.utils)</a>
 </li>
   </ul></td>
@@ -817,8 +830,12 @@
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ImageProvider">ImageProvider (class in torchx.schedulers.local_scheduler)</a>
 </li>
+      <li><a href="plugins.html#torchx.plugins.PluginRegistry.info">info() (torchx.plugins.PluginRegistry method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="specs.html#torchx.specs.Resource.is_fractional">is_fractional() (torchx.specs.Resource method)</a>
+</li>
       <li><a href="specs.html#torchx.specs.runopts.is_type">is_type() (torchx.specs.runopts static method)</a>
 </li>
       <li><a href="specs.html#torchx.specs.Workspace.is_unmapped_single_project">is_unmapped_single_project() (torchx.specs.Workspace method)</a>
@@ -965,6 +982,8 @@
 </li>
         <li><a href="components/utils.html#module-torchx.components.utils">torchx.components.utils</a>
 </li>
+        <li><a href="plugins.html#module-torchx.plugins">torchx.plugins</a>
+</li>
         <li><a href="runner.html#module-torchx.runner">torchx.runner</a>
 </li>
         <li><a href="runner.config.html#module-torchx.runner.config">torchx.runner.config</a>
@@ -1007,6 +1026,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="plugins.html#torchx.plugins.register.named_resource">named_resource() (torchx.plugins.register class method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -1016,12 +1043,18 @@
 </li>
       <li><a href="specs.html#torchx.specs.ParsedAppHandle">ParsedAppHandle (class in torchx.specs)</a>
 </li>
-      <li><a href="schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.pod_labels">pod_labels() (in module torchx.schedulers.kubernetes_scheduler)</a>
+      <li><a href="plugins.html#torchx.plugins.PluginRegistry">PluginRegistry (class in torchx.plugins)</a>
 </li>
-      <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.PopenRequest">PopenRequest (class in torchx.schedulers.local_scheduler)</a>
+      <li><a href="plugins.html#torchx.plugins.PluginType">PluginType (class in torchx.plugins)</a>
+</li>
+      <li><a href="schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.pod_labels">pod_labels() (in module torchx.schedulers.kubernetes_scheduler)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.PopenRequest">PopenRequest (class in torchx.schedulers.local_scheduler)</a>
+</li>
+      <li><a href="plugins.html#torchx.plugins.register.powers_of_two_gpus">powers_of_two_gpus() (torchx.plugins.register static method)</a>
+</li>
       <li><a href="specs.html#torchx.specs.Role.pre_proc">pre_proc() (torchx.specs.Role method)</a>
 </li>
       <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
@@ -1037,10 +1070,22 @@
   </ul></td>
 </tr></table>
 
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="plugins.html#torchx.plugins.QUARTER">QUARTER (in module torchx.plugins)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.AppStatus.raise_for_status">raise_for_status() (torchx.specs.AppStatus method)</a>
+</li>
+      <li><a href="plugins.html#torchx.plugins.register">register (class in torchx.plugins)</a>
+</li>
+      <li><a href="plugins.html#torchx.plugins.registry">registry() (in module torchx.plugins)</a>
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ReplicaParam">ReplicaParam (class in torchx.schedulers.local_scheduler)</a>
 </li>
@@ -1068,6 +1113,8 @@
       </ul></li>
       <li><a href="schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.role_to_pod">role_to_pod() (in module torchx.schedulers.kubernetes_scheduler)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="cli.html#torchx.cli.cmd_base.SubCommand.run">run() (torchx.cli.cmd_base.SubCommand method)</a>
 
       <ul>
@@ -1076,8 +1123,6 @@
         <li><a href="runner.html#torchx.runner.Runner.run">(torchx.runner.Runner method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.run_component">run_component() (torchx.components.component_test_base.ComponentTestCase method)</a>
 
       <ul>
@@ -1138,6 +1183,8 @@
         <li><a href="schedulers.html#torchx.schedulers.api.Scheduler">(class in torchx.schedulers.api)</a>
 </li>
       </ul></li>
+      <li><a href="plugins.html#torchx.plugins.register.scheduler">scheduler() (torchx.plugins.register class method)</a>
+</li>
       <li><a href="specs.html#torchx.specs.ParsedAppHandle.scheduler_backend">scheduler_backend (torchx.specs.ParsedAppHandle attribute)</a>
 </li>
       <li><a href="runner.html#torchx.runner.Runner.scheduler_backends">scheduler_backends() (torchx.runner.Runner method)</a>
@@ -1155,6 +1202,8 @@
       <li><a href="components/utils.html#torchx.components.utils.sh">sh() (in module torchx.components.utils)</a>
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.SignalException">SignalException (class in torchx.schedulers.local_scheduler)</a>
+</li>
+      <li><a href="plugins.html#torchx.plugins.SIXTEENTH">SIXTEENTH (in module torchx.plugins)</a>
 </li>
       <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmBatchRequest">SlurmBatchRequest (class in torchx.schedulers.slurm_scheduler)</a>
 </li>
@@ -1265,6 +1314,13 @@
 
       <ul>
         <li><a href="components/utils.html#module-torchx.components.utils">module</a>
+</li>
+      </ul></li>
+      <li>
+    torchx.plugins
+
+      <ul>
+        <li><a href="plugins.html#module-torchx.plugins">module</a>
 </li>
       </ul></li>
       <li>
@@ -1404,6 +1460,8 @@
       </ul></li>
       <li><a href="components/utils.html#torchx.components.utils.touch">touch() (in module torchx.components.utils)</a>
 </li>
+      <li><a href="plugins.html#torchx.plugins.register.tracker">tracker() (torchx.plugins.register class method)</a>
+</li>
       <li><a href="tracker.html#torchx.tracker.api.TrackerArtifact">TrackerArtifact (class in torchx.tracker.api)</a>
 </li>
       <li><a href="tracker.html#torchx.tracker.api.TrackerBase">TrackerBase (class in torchx.tracker.api)</a>
@@ -1437,6 +1495,8 @@
       <li><a href="runner.html#torchx.runner.Runner.wait">wait() (torchx.runner.Runner method)</a>
 </li>
       <li><a href="workspace.html#torchx.workspace.walk_workspace">walk_workspace() (in module torchx.workspace)</a>
+</li>
+      <li><a href="plugins.html#torchx.plugins.WHOLE">WHOLE (in module torchx.plugins)</a>
 </li>
       <li><a href="basics.html#term-Workspace"><strong>Workspace</strong></a>
 

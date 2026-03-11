@@ -326,6 +326,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.specs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">torchx.plugins</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers.html">torchx.schedulers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
@@ -600,6 +601,22 @@ replacement replica admittance.</p>
 <dt class="sig sig-object py" id="torchx.specs.Resource.copy">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.api.Resource"><span class="pre">Resource</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">capabilities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.api.Resource"><span class="pre">Resource</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/api.html#Resource.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.Resource.copy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Copies a resource, merging in the given <code class="docutils literal notranslate"><span class="pre">capabilities</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.specs.Resource.get_resource_name">
+<span class="sig-name descname"><span class="pre">get_resource_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/api.html#Resource.get_resource_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.Resource.get_resource_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the registered named-resource name, or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Set automatically by <code class="xref py py-meth docutils literal notranslate"><span class="pre">register.named_resource()</span></code> on every
+resource it creates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.specs.Resource.is_fractional">
+<span class="sig-name descname"><span class="pre">is_fractional</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/api.html#Resource.is_fractional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.Resource.is_fractional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if this resource is a fractional slice of a base resource.</p>
+<p>Set automatically by <code class="xref py py-meth docutils literal notranslate"><span class="pre">register.named_resource()</span></code> when a
+<code class="docutils literal notranslate"><span class="pre">fractionals</span></code> argument is provided.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1625,6 +1642,8 @@ on how to improve the help message and arguments descriptions will be names of t
 <li><a class="reference internal" href="#resource">Resource</a><ul>
 <li><a class="reference internal" href="#torchx.specs.Resource"><code class="docutils literal notranslate"><span class="pre">Resource</span></code></a><ul>
 <li><a class="reference internal" href="#torchx.specs.Resource.copy"><code class="docutils literal notranslate"><span class="pre">Resource.copy()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.Resource.get_resource_name"><code class="docutils literal notranslate"><span class="pre">Resource.get_resource_name()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.Resource.is_fractional"><code class="docutils literal notranslate"><span class="pre">Resource.is_fractional()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#torchx.specs.resource"><code class="docutils literal notranslate"><span class="pre">resource()</span></code></a></li>

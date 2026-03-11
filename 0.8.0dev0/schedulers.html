@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="AWS Batch" href="schedulers/aws_batch.html" />
-    <link rel="prev" title="torchx.runner" href="runner.html" />
+    <link rel="prev" title="torchx.plugins" href="plugins.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -326,6 +326,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api_reference.html">Quick Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="specs.html">torchx.specs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">torchx.plugins</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">torchx.schedulers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workspace.html">torchx.workspace</a></li>
 </ul>
@@ -457,7 +458,7 @@ TorchX ships with schedulers for:</p>
 </ul>
 <p>Need a scheduler that isn’t listed? See
 <a class="reference internal" href="#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> below and
-<a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">Registering Custom Schedulers</span></a> for entry-point registration.</p>
+<a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">Registering Custom Schedulers</span></a> for plugin registration.</p>
 <img alt="_images/scheduler_diagram.png" src="_images/scheduler_diagram.png" />
 <section id="choosing-a-scheduler">
 <h2>Choosing a Scheduler<a class="headerlink" href="#choosing-a-scheduler" title="Permalink to this heading">¶</a></h2>
@@ -701,22 +702,19 @@ persistent definitions (e.g. Kubernetes, AWS Batch).</p></td>
         <span class="k">pass</span>
 
 
-<span class="c1"># 4. Factory function (entry-point target)</span>
+<span class="c1"># 4. Register the scheduler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">scheduler</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MyScheduler</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">MyScheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Register the factory via a <code class="docutils literal notranslate"><span class="pre">torchx.schedulers</span></code> entry point
-(see <a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">Registering Custom Schedulers</span></a>):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
-<span class="n">entry_points</span><span class="o">=</span><span class="p">{</span>
-    <span class="s2">&quot;torchx.schedulers&quot;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="s2">&quot;my_backend = my_package.scheduler:create_scheduler&quot;</span><span class="p">,</span>
-    <span class="p">],</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Or in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<p>Place the module in a <code class="docutils literal notranslate"><span class="pre">torchx_plugins/schedulers/</span></code> namespace package and
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> it. TorchX discovers the scheduler automatically.</p>
+<p>See <a class="reference internal" href="advanced.html#registering-custom-schedulers"><span class="std std-ref">Registering Custom Schedulers</span></a> for the full guide,
+including the legacy entry-point approach.</p>
+<p><strong>Legacy: entry points</strong> <em>(deprecated)</em></p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.schedulers&quot;</span><span class="k">]</span>
 <span class="n">my_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_package.scheduler:create_scheduler&quot;</span>
 </pre></div>
@@ -852,8 +850,8 @@ and a guide to implementing your own workspace mixin.</p>
 <span id="scheduler-functions"></span><h2>Scheduler Functions<a class="headerlink" href="#module-torchx.schedulers" title="Permalink to this heading">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="torchx.schedulers.get_scheduler_factories">
-<span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">get_scheduler_factories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'torchx.schedulers'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torchx.schedulers.SchedulerFactory</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers.html#get_scheduler_factories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.get_scheduler_factories" title="Permalink to this definition">¶</a></dt>
-<dd><p>get_scheduler_factories returns all the available schedulers names under <cite>group</cite> and the
+<span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">get_scheduler_factories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torchx.schedulers.SchedulerFactory</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers.html#get_scheduler_factories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.get_scheduler_factories" title="Permalink to this definition">¶</a></dt>
+<dd><p>get_scheduler_factories returns all the available schedulers names and the
 method to instantiate them.</p>
 <p>The first scheduler in the dictionary is used as the default scheduler.</p>
 </dd></dl>
@@ -1043,7 +1041,9 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <dl class="simple">
-<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Registering custom schedulers, resources, and components via entry points.</p>
+<dt><a class="reference internal" href="advanced.html"><span class="doc">Advanced Usage</span></a></dt><dd><p>Registering custom schedulers, resources, and components.</p>
+</dd>
+<dt><a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a></dt><dd><p>Plugin API reference (<code class="docutils literal notranslate"><span class="pre">&#64;register</span></code>, <code class="docutils literal notranslate"><span class="pre">find()</span></code>, <code class="docutils literal notranslate"><span class="pre">PluginRegistry</span></code>).</p>
 </dd>
 <dt><a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a></dt><dd><p>Workspace API reference and custom workspace mixin guide.</p>
 </dd>
@@ -1065,7 +1065,7 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
         <a href="schedulers/aws_batch.html" class="btn btn-neutral float-right" title="AWS Batch" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="runner.html" class="btn btn-neutral" title="torchx.runner" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="plugins.html" class="btn btn-neutral" title="torchx.plugins" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   

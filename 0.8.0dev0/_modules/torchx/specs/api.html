@@ -323,6 +323,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">Quick Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../specs.html">torchx.specs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../runner.html">torchx.runner</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../plugins.html">torchx.plugins</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers.html">torchx.schedulers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../workspace.html">torchx.workspace</a></li>
 </ul>
@@ -559,6 +560,27 @@
     <span class="n">capabilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">devices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Resource.is_fractional"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.is_fractional">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_fractional</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if this resource is a fractional slice of a base resource.</span>
+
+<span class="sd">        Set automatically by :py:meth:`register.named_resource` when a</span>
+<span class="sd">        ``fractionals`` argument is provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins._registration</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_tags</span>
+
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">IS_FRACTIONAL</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Resource.get_resource_name"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.get_resource_name">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_resource_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the registered named-resource name, or ``None``.</span>
+
+<span class="sd">        Set automatically by :py:meth:`register.named_resource` on every</span>
+<span class="sd">        resource it creates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins._registration</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_tags</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">RESOURCE_NAME</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 <div class="viewcode-block" id="Resource.copy"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.copy">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">capabilities</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Resource&quot;</span><span class="p">:</span>

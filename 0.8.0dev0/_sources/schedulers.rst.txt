@@ -20,7 +20,7 @@ TorchX ships with schedulers for:
 
 Need a scheduler that isn't listed? See
 :ref:`Implementing a Custom Scheduler <implementing-scheduler>` below and
-:ref:`advanced:Registering Custom Schedulers` for entry-point registration.
+:ref:`advanced:Registering Custom Schedulers` for plugin registration.
 
 .. image:: scheduler_diagram.png
 
@@ -244,23 +244,20 @@ Minimal Skeleton
            pass
 
 
-   # 4. Factory function (entry-point target)
+   # 4. Register the scheduler
+   from torchx.plugins import register
+
+   @register.scheduler()
    def create_scheduler(session_name: str, **kwargs: Any) -> MyScheduler:
        return MyScheduler(session_name)
 
-Register the factory via a ``torchx.schedulers`` entry point
-(see :ref:`advanced:Registering Custom Schedulers`):
+Place the module in a ``torchx_plugins/schedulers/`` namespace package and
+``pip install`` it. TorchX discovers the scheduler automatically.
 
-.. code-block:: python
+See :ref:`advanced:Registering Custom Schedulers` for the full guide,
+including the legacy entry-point approach.
 
-   # setup.py
-   entry_points={
-       "torchx.schedulers": [
-           "my_backend = my_package.scheduler:create_scheduler",
-       ],
-   }
-
-Or in ``pyproject.toml``:
+**Legacy: entry points** *(deprecated)*
 
 .. code-block:: toml
 
@@ -436,7 +433,10 @@ Scheduler Classes
 .. seealso::
 
    :doc:`advanced`
-      Registering custom schedulers, resources, and components via entry points.
+      Registering custom schedulers, resources, and components.
+
+   :doc:`plugins`
+      Plugin API reference (``@register``, ``find()``, ``PluginRegistry``).
 
    :doc:`workspace`
       Workspace API reference and custom workspace mixin guide.
