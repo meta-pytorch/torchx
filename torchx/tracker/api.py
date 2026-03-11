@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Iterable, Mapping
 
-from torchx.util.entrypoints import load_group
+from torchx import plugins
 from torchx.util.modules import load_module
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -150,15 +150,16 @@ def build_trackers(
 ) -> Iterable[TrackerBase]:
     trackers = []
 
-    entrypoint_factories = load_group("torchx.tracker") or {}
-    if not entrypoint_factories:
-        logger.warning("No 'torchx.tracker' entry_points are defined.")
+    tracker_plugins = plugins.registry().get(plugins.PluginType.TRACKER)
+    if not tracker_plugins:
+        logger.warning("no 'torchx.tracker' plugins registered")
 
     for factory_name, config in factory_and_config.items():
-        factory = entrypoint_factories.get(factory_name) or load_module(factory_name)
-        if not factory:
+        plugin = tracker_plugins.get(factory_name)
+        factory = plugin if plugin else load_module(factory_name)
+        if not factory or not callable(factory):
             logger.warning(
-                f"No tracker factory `{factory_name}` found in entry_points or modules. See https://meta-pytorch.org/torchx/main/tracker.html#module-torchx.tracker"
+                f"no tracker factory `{factory_name}` found in plugins or modules. See https://meta-pytorch.org/torchx/main/tracker.html#module-torchx.tracker"
             )
             continue
         if config:

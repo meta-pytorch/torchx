@@ -363,6 +363,68 @@ class ResourceTest(unittest.TestCase):
         self.assertEqual(new_resource.capabilities["new_key"], "new_value")
         self.assertEqual(resource.capabilities["test_key"], "test_value")
 
+    def test_is_fractional_default(self) -> None:
+        """Resource with no tags is not fractional."""
+        res = Resource(cpu=4, gpu=1, memMB=1024)
+        self.assertFalse(
+            res.is_fractional(),
+            "resource with no tags should not be fractional",
+        )
+
+    def test_is_fractional_true(self) -> None:
+        """Resource tagged as fractional returns True."""
+        from torchx.plugins._registration import resource_tags
+
+        res = Resource(
+            cpu=4,
+            gpu=1,
+            memMB=1024,
+            tags={resource_tags.IS_FRACTIONAL: True},
+        )
+        self.assertTrue(
+            res.is_fractional(),
+            "resource tagged IS_FRACTIONAL=True should be fractional",
+        )
+
+    def test_is_fractional_false(self) -> None:
+        """Resource explicitly tagged IS_FRACTIONAL=False is not fractional."""
+        from torchx.plugins._registration import resource_tags
+
+        res = Resource(
+            cpu=4,
+            gpu=1,
+            memMB=1024,
+            tags={resource_tags.IS_FRACTIONAL: False},
+        )
+        self.assertFalse(
+            res.is_fractional(),
+            "resource tagged IS_FRACTIONAL=False should not be fractional",
+        )
+
+    def test_get_resource_name_none(self) -> None:
+        """Resource with no RESOURCE_NAME tag returns None."""
+        res = Resource(cpu=4, gpu=1, memMB=1024)
+        self.assertIsNone(
+            res.get_resource_name(),
+            "resource with no tags should return None for get_resource_name()",
+        )
+
+    def test_get_resource_name(self) -> None:
+        """Resource tagged with RESOURCE_NAME returns the name as a string."""
+        from torchx.plugins._registration import resource_tags
+
+        res = Resource(
+            cpu=4,
+            gpu=1,
+            memMB=1024,
+            tags={resource_tags.RESOURCE_NAME: "gpu_4"},
+        )
+        self.assertEqual(
+            res.get_resource_name(),
+            "gpu_4",
+            "should return the registered resource name",
+        )
+
     def test_named_resources_iterator(self) -> None:
         registered_named_resources = set()
         for resource_name in named_resources:

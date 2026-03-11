@@ -119,10 +119,10 @@ class AppRunApiTest(TestCase):
         },
     )
     def test_env_factory_test(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value={"tracker1": tracker_factory},
-        ):
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {
+                "tracker1": tracker_factory,
+            }
             app_run = app_run_from_env()
             self.assertEqual(app_run.id, self.run_id)
             trackers = list(app_run.backends)
@@ -196,10 +196,10 @@ class TrackerFactoryMethodsTest(TestCase):
 
     @mock.patch.dict(os.environ, {ENV_TORCHX_TRACKERS: "tracker1"})
     def test_tracker_from_environ(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value={"tracker1": tracker_factory},
-        ):
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {
+                "tracker1": tracker_factory,
+            }
             trackers = trackers_from_environ()
             self.assertEqual(1, len(list(trackers)))
             self.assertEqual(TestTrackerBackend, type(trackers[0]))
@@ -212,10 +212,10 @@ class TrackerFactoryMethodsTest(TestCase):
         },
     )
     def test_tracker_from_environ_with_config_setting(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value={"tracker1": tracker_factory},
-        ):
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {
+                "tracker1": tracker_factory,
+            }
             trackers = trackers_from_environ()
             tracker = cast(TestTrackerBackend, list(trackers)[0])
             self.assertEqual("myconfig.txt", tracker.config_path)
@@ -226,10 +226,8 @@ class TrackerFactoryMethodsTest(TestCase):
 
     @mock.patch.dict(os.environ, {ENV_TORCHX_TRACKERS: "tracker1"})
     def test_tracker_from_environ_with_missing_entrypoint(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value={},
-        ):
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {}
             trackers = trackers_from_environ()
             self.assertEqual(0, len(list(trackers)))
 
@@ -255,19 +253,17 @@ class TrackerFactoryMethodsTest(TestCase):
         self.assertEqual(entries, {"tracker1": "myconfig.txt"})
 
     def test_build_trackers_with_no_trackers_defined(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value={"tracker1": tracker_factory},
-        ):
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {
+                "tracker1": tracker_factory,
+            }
             no_tracker_names = {}
             trackers = build_trackers(no_tracker_names)
             self.assertEqual(0, len(list(trackers)))
 
-    def test_build_trackers_with_no_entrypoints_group_defined(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value=None,
-        ):
+    def test_build_trackers_with_no_plugins_registered(self) -> None:
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {}
             tracker_names = {"tracker1": "myconfig.txt"}
             trackers = build_trackers(tracker_names)
             self.assertEqual(0, len(list(trackers)))
@@ -275,10 +271,14 @@ class TrackerFactoryMethodsTest(TestCase):
     def test_build_trackers_with_module(self) -> None:
         module = MagicMock()
         module.return_value = MagicMock(spec=MLflowTracker)
-        with patch("torchx.tracker.api.load_group", return_value=None) and patch(
-            "torchx.tracker.api.load_module",
-            return_value=module,
+        with (
+            patch("torchx.tracker.api.plugins") as plugins_mock,
+            patch(
+                "torchx.tracker.api.load_module",
+                return_value=module,
+            ),
         ):
+            plugins_mock.registry.return_value.get.return_value = {}
             tracker_names = {
                 "torchx.tracker.mlflow:create_tracker": (config := "myconfig.txt")
             }
@@ -290,10 +290,10 @@ class TrackerFactoryMethodsTest(TestCase):
             module.assert_called_once_with(config)
 
     def test_build_trackers(self) -> None:
-        with patch(
-            "torchx.tracker.api.load_group",
-            return_value={"tracker1": tracker_factory},
-        ):
+        with patch("torchx.tracker.api.plugins") as plugins_mock:
+            plugins_mock.registry.return_value.get.return_value = {
+                "tracker1": tracker_factory,
+            }
             tracker_names = {"tracker1": "myconfig.txt"}
             trackers = build_trackers(tracker_names)
             trackers = list(trackers)

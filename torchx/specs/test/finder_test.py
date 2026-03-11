@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import torchx.specs.finder as finder
 from importlib_metadata import EntryPoints
+from torchx.plugins._registry import registry
 from torchx.runner import get_runner
 from torchx.runtime.tracking import FsspecResultTracker
 from torchx.specs.api import AppDef, AppState, Role
@@ -73,10 +74,15 @@ _ = torchx.specs.test.finder_test
         )
     )
 
-    def tearDown(self) -> None:
-        # clear the globals since find_component() has side-effects
+    def setUp(self) -> None:
+        # clear caches since find_component() has side-effects
         # and we load a bunch of mocks for components in the tests below
         finder._components = None
+        registry.cache_clear()
+
+    def tearDown(self) -> None:
+        finder._components = None
+        registry.cache_clear()
 
     def test_module_relname(self) -> None:
         import torchx.specs.test.components as c
@@ -240,6 +246,10 @@ to your component (see: https://meta-pytorch.org/torchx/latest/component_best_pr
 
 class GetBuiltinSourceTest(unittest.TestCase):
     def setUp(self) -> None:
+        # clear caches to avoid stale plugin registry state from other tests
+        finder._components = None
+        registry.cache_clear()
+
         self.test_dir = Path(tempfile.mkdtemp("torchx_specs_finder_test"))
 
         # this is so that the test can pick up penv python (fb-only)

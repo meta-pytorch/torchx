@@ -25,6 +25,10 @@ Imports
    # Mounts — bind, volume, and device mounts
    from torchx.specs import BindMount, VolumeMount, DeviceMount
 
+   # Plugins — registration, discovery, and diagnostics
+   from torchx import plugins
+   from torchx.plugins import register, find, PluginType
+
 
 Core Types
 -----------
@@ -556,6 +560,7 @@ Scheduler Plugin
    from dataclasses import dataclass
    from typing import Any, Mapping
 
+   from torchx.plugins import register
    from torchx.schedulers.api import (
        DescribeAppResponse,
        ListAppResponse,
@@ -600,6 +605,8 @@ Scheduler Plugin
        def _cancel_existing(self, app_id: str) -> None:
            pass  # cancel the job
 
+   # 4. Register the scheduler
+   @register.scheduler()
    def create_scheduler(session_name: str, **kwargs: Any) -> MyScheduler:
        return MyScheduler(session_name)
 
@@ -709,23 +716,35 @@ Abstract methods: ``add_arguments``, ``run``.
 See :ref:`Registering Custom CLI Commands <registering-custom-cli-commands>` for
 the full guide.
 
-Entry-Point Registration
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Plugin Registration
+^^^^^^^^^^^^^^^^^^^^^^
 
-**setup.py format:**
+**Recommended: ``@register`` decorator** — place your plugin in a
+``torchx_plugins/<group>/`` namespace package and decorate it:
 
 .. code-block:: python
 
-   # setup.py
-   entry_points={
-       "torchx.schedulers":       ["my_sched = my_pkg:create_scheduler"],
-       "torchx.named_resources":  ["gpu_x4 = my_pkg.resources:gpu_x4"],
-       "torchx.components":       ["myco = my_pkg.components"],
-       "torchx.tracker":          ["my_tracker = my_pkg.tracking:create"],
-       "torchx.cli.cmds":         ["my_tool = my_pkg.cli:CmdMyTool"],
-   }
+   # torchx_plugins/schedulers/my_scheduler.py
+   from torchx.plugins import register
 
-**pyproject.toml format:**
+   @register.scheduler()
+   def my_sched(session_name: str, **kwargs) -> Scheduler:
+       return MyScheduler(session_name, **kwargs)
+
+   # torchx_plugins/named_resources/my_resources.py
+   @register.named_resource()
+   def gpu_x4() -> Resource:
+       return Resource(cpu=64, gpu=4, memMB=244_000)
+
+   # torchx_plugins/tracker/my_tracker.py
+   @register.tracker()
+   def my_tracker(config: str | None) -> TrackerBase:
+       return MyTracker(config)
+
+See :doc:`plugins` for the full API reference and :doc:`advanced` for
+packaging and diagnostics.
+
+**Legacy: entry points** *(deprecated)*
 
 .. code-block:: toml
 
@@ -744,16 +763,6 @@ Entry-Point Registration
    [project.entry-points."torchx.cli.cmds"]
    my_tool = "my_pkg.cli:CmdMyTool"
 
-.. note::
-
-   Entry point targets differ by plugin type:
-
-   * **Schedulers**: factory function ``(session_name: str, **kwargs) -> Scheduler``
-   * **Named resources**: factory function ``() -> Resource``
-   * **Components**: module path (TorchX discovers component functions inside it)
-   * **Trackers**: factory function ``(config: str | None) -> TrackerBase``
-   * **CLI commands**: ``SubCommand`` class (not a factory -- TorchX calls ``cls()``)
-
 See :doc:`advanced` for the full registration guide.
 
 
@@ -764,6 +773,9 @@ See :doc:`advanced` for the full registration guide.
 
    :doc:`runner`
       Full API documentation for Runner and get_runner.
+
+   :doc:`plugins`
+      Plugin API reference (``@register``, ``find()``, ``PluginRegistry``).
 
    :doc:`schedulers`
       Scheduler API reference and implementation guide.

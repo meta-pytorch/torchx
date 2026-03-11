@@ -166,6 +166,7 @@ from typing import Iterable, TextIO
 from torchx.schedulers import get_scheduler_factories, Scheduler
 from torchx.specs import CfgVal, get_type_name
 from torchx.specs.api import runopt
+from torchx.util import entrypoints
 
 
 CONFIG_FILE = ".torchxconfig"
@@ -199,12 +200,7 @@ def _configparser() -> configparser.ConfigParser:
 def _get_scheduler(name: str) -> Scheduler:
     schedulers = {
         **get_scheduler_factories(),
-        **(
-            get_scheduler_factories(
-                group="torchx.schedulers.orchestrator", skip_defaults=True
-            )
-            or {}
-        ),
+        **(entrypoints.load_group("torchx.schedulers.orchestrator") or {}),
     }
     if name not in schedulers:
         raise ValueError(
@@ -251,12 +247,7 @@ def dump(
     else:
         scheduler_factories = {
             **get_scheduler_factories(),
-            **(
-                get_scheduler_factories(
-                    group="torchx.schedulers.orchestrator", skip_defaults=True
-                )
-                or {}
-            ),
+            **(entrypoints.load_group("torchx.schedulers.orchestrator") or {}),
         }
         scheds = scheduler_factories.keys()
 
