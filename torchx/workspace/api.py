@@ -11,9 +11,7 @@ import fnmatch
 import logging
 import posixpath
 import tempfile
-import warnings
-from dataclasses import dataclass
-from typing import Any, Generic, Iterable, Mapping, TYPE_CHECKING, TypeVar
+from typing import Generic, Iterable, Mapping, TYPE_CHECKING, TypeVar
 
 from torchx.specs import AppDef, CfgVal, Role, runopts, Workspace
 
@@ -25,55 +23,6 @@ if TYPE_CHECKING:
 TORCHX_IGNORE = ".torchxignore"
 
 T = TypeVar("T")
-
-PackageType = TypeVar("PackageType")
-WorkspaceConfigType = TypeVar("WorkspaceConfigType")
-
-
-@dataclass
-class PkgInfo(Generic[PackageType]):
-    """
-    .. deprecated::
-        Will be removed in a future release. Fork if your project depends on it.
-
-    Metadata for a built workspace package.
-    """
-
-    img: str
-    lazy_overrides: dict[str, Any]
-    metadata: PackageType
-
-    def __post_init__(self) -> None:
-        msg = (
-            f"{self.__class__.__name__} is deprecated and will be removed in the future."
-            " Consider forking this class if your project depends on it."
-        )
-        warnings.warn(
-            msg,
-            FutureWarning,
-            stacklevel=2,
-        )
-
-
-@dataclass
-class WorkspaceBuilder(Generic[PackageType, WorkspaceConfigType]):
-    cfg: WorkspaceConfigType
-
-    def __post_init__(self) -> None:
-        msg = (
-            f"{self.__class__.__name__} is deprecated and will be removed in the future."
-            " Consider forking this class if your project depends on it."
-        )
-        warnings.warn(
-            msg,
-            FutureWarning,
-            stacklevel=2,
-        )
-
-    @abc.abstractmethod
-    def build_workspace(self, sync: bool = True) -> PkgInfo[PackageType]:
-        """Builds the workspace, producing either a new image or an incremental patch."""
-        pass
 
 
 class WorkspaceMixin(abc.ABC, Generic[T]):
