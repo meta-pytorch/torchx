@@ -73,6 +73,15 @@ Built-in Commands
      - Block until the job reaches a terminal state.
    * - ``--log``
      - Tail logs after submission (implies ``--wait``).
+   * - ``--tee_logs``
+     - Prefix log lines with replica identity (e.g. ``trainer/0``) so you
+       can distinguish which replica produced each line.
+   * - ``--parent_run_id``
+     - Optional parent run ID for experiment tracking. Groups related runs
+       under a common identifier (propagated as ``TORCHX_PARENT_RUN_ID``).
+   * - ``--stdin``
+     - Read run arguments as JSON from stdin instead of CLI flags. When set,
+       most other CLI flags are disallowed.
 
 Usage examples:
 
