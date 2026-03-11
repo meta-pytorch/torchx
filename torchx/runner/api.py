@@ -471,14 +471,6 @@ class Runner:
             if status is not None:
                 scheduler.delete(app_id)
 
-    def stop(self, app_handle: AppHandle) -> None:
-        """.. deprecated:: Use :py:meth:`cancel` instead."""
-        warnings.warn(
-            "This method will be deprecated in the future, please use `cancel` instead.",
-            PendingDeprecationWarning,
-        )
-        self.cancel(app_handle)
-
     def describe(self, app_handle: AppHandle) -> AppDef | None:
         """Reconstructs the :py:class:`~torchx.specs.AppDef` from the scheduler.
 

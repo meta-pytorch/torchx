@@ -596,10 +596,6 @@ class RunnerTest(TestWithTmpDir):
         with self.get_runner() as runner:
             self.assertIsNone(runner.delete("local_dir://test_session/unknown_app_id"))
 
-    def test_stop(self, _) -> None:
-        with self.get_runner() as runner:
-            self.assertIsNone(runner.stop("local_dir://test_session/unknown_app_id"))
-
     def test_log_lines_unknown_app(self, _) -> None:
         with self.get_runner() as runner:
             with self.assertRaises(UnknownAppException):
