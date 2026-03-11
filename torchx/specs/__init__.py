@@ -181,21 +181,6 @@ def resource(
         )
 
 
-def get_named_resources(res: str) -> Resource:
-    """
-    .. deprecated::
-        Use :py:func:`resource(h=name) <resource>` instead.
-    """
-    import warnings
-
-    warnings.warn(
-        "`get_named_resources()` is deprecated, use `resource(h=name)` instead",
-        FutureWarning,
-        stacklevel=2,
-    )
-    return named_resources[res]
-
-
 __all__ = [
     "AppDef",
     "AppDryRunInfo",
@@ -228,7 +213,6 @@ __all__ = [
     "MalformedAppHandleException",
     "VolumeMount",
     "resource",
-    "get_named_resources",
     "named_resources",
     "make_app_handle",
     "materialize_appdef",
