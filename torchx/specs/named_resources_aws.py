@@ -17,7 +17,7 @@ the equvalent resource in mem, cpu and gpu numbers.
 .. note::
     These resource definitions may change in future. It is expected for each user to
     manage their own resources. See :ref:`advanced:Registering Named Resources`
-    to set up named resources.
+    for details on setting up custom named resources.
 
 Usage:
 
