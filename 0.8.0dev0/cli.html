@@ -534,6 +534,18 @@ for role[0].</p></td>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--log</span></code></p></td>
 <td><p>Tail logs after submission (implies <code class="docutils literal notranslate"><span class="pre">--wait</span></code>).</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--tee_logs</span></code></p></td>
+<td><p>Prefix log lines with replica identity (e.g. <code class="docutils literal notranslate"><span class="pre">trainer/0</span></code>) so you
+can distinguish which replica produced each line.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--parent_run_id</span></code></p></td>
+<td><p>Optional parent run ID for experiment tracking. Groups related runs
+under a common identifier (propagated as <code class="docutils literal notranslate"><span class="pre">TORCHX_PARENT_RUN_ID</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--stdin</span></code></p></td>
+<td><p>Read run arguments as JSON from stdin instead of CLI flags. When set,
+most other CLI flags are disallowed.</p></td>
+</tr>
 </tbody>
 </table>
 <p>Usage examples:</p>
