@@ -15,14 +15,15 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Iterable, Mapping
 
-from torchx import plugins
+from torchx import plugins, settings
 from torchx.util.modules import load_module
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-ENV_TORCHX_TRACKERS = "TORCHX_TRACKERS"
-ENV_TORCHX_PARENT_RUN_ID = "TORCHX_PARENT_RUN_ID"
-ENV_TORCHX_JOB_ID = "TORCHX_JOB_ID"
+# BC re-exports — new code should import from torchx.settings
+ENV_TORCHX_TRACKERS: str = settings.ENV_TORCHX_TRACKERS
+ENV_TORCHX_PARENT_RUN_ID: str = settings.ENV_TORCHX_PARENT_RUN_ID
+ENV_TORCHX_JOB_ID: str = settings.ENV_TORCHX_JOB_ID
 
 
 @dataclass

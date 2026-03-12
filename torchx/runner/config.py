@@ -163,6 +163,7 @@ import os
 from pathlib import Path
 from typing import Iterable, TextIO
 
+from torchx import settings
 from torchx.schedulers import get_scheduler_factories, Scheduler
 from torchx.specs import CfgVal, get_type_name
 from torchx.specs.api import runopt
@@ -171,7 +172,8 @@ from torchx.util import entrypoints
 
 CONFIG_FILE = ".torchxconfig"
 CONFIG_PREFIX_DELIM = ":"
-ENV_TORCHXCONFIG = "TORCHXCONFIG"
+# BC re-export — new code should import from torchx.settings
+ENV_TORCHXCONFIG: str = settings.ENV_TORCHXCONFIG
 DEFAULT_CONFIG_DIRS = [str(Path.home()), str(Path.cwd())]
 
 _NONE = "None"

@@ -46,6 +46,7 @@ from typing import Any, Callable, Iterable, List, Mapping, TYPE_CHECKING, TypeVa
 
 import torchx
 import yaml
+from torchx import settings
 from torchx.schedulers.api import (
     DescribeAppResponse,
     filter_regex,
@@ -75,11 +76,12 @@ from torchx.specs.named_resources_aws import instance_type_from_resource
 from torchx.util.types import none_throws
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
-ENV_TORCHX_ROLE_IDX = "TORCHX_ROLE_IDX"
+# BC re-exports — new code should import from torchx.settings
+ENV_TORCHX_ROLE_IDX: str = settings.ENV_TORCHX_ROLE_IDX
 
-ENV_TORCHX_ROLE_NAME = "TORCHX_ROLE_NAME"
+ENV_TORCHX_ROLE_NAME: str = settings.ENV_TORCHX_ROLE_NAME
 
-ENV_TORCHX_IMAGE = "TORCHX_IMAGE"
+ENV_TORCHX_IMAGE: str = settings.ENV_TORCHX_IMAGE
 
 DEFAULT_ROLE_NAME = "node"
 
