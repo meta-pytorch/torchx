@@ -13,8 +13,8 @@ default values for components and examples and are NOT meant to be used
 long term as the specific capabilities (e.g. number of cpu, gpu, memMB)
 are subject to change.
 
-.. note:: T
-    he named resources in this file DO NOT map device capabilities such as
+.. note::
+    The named resources in this file DO NOT map device capabilities such as
     special network interfaces (e.g. EFA devices on AWS).
 .. warning::
     Do not use for launching applications that require specific capabilities

@@ -84,7 +84,7 @@ the :py:func:`torchx.components.dist.ddp` builtin.
     return specs.AppDef(
         name=os.path.basename(script),
         roles=[
-            spec.Role(
+            specs.Role(
                 name="trainer",
                 image=image,
                 resource=specs.named_resources[host],
@@ -96,7 +96,7 @@ the :py:func:`torchx.components.dist.ddp` builtin.
                     "--rdzv_backend=c10d",
                     "--rdzv_endpoint=localhost:5900",
                     f"--nnodes={nnodes}",
-                    f"--nprocs_per_node={nprocs_per_node}",
+                    f"--nprocs_per_node={nproc_per_node}",
                     "-m",
                     script,
                     *script_args,
