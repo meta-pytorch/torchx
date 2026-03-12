@@ -583,7 +583,7 @@ the <a class="reference internal" href="distributed.html#torchx.components.dist.
 <span class="go">   return specs.AppDef(</span>
 <span class="go">       name=os.path.basename(script),</span>
 <span class="go">       roles=[</span>
-<span class="go">           spec.Role(</span>
+<span class="go">           specs.Role(</span>
 <span class="go">               name=&quot;trainer&quot;,</span>
 <span class="go">               image=image,</span>
 <span class="go">               resource=specs.named_resources[host],</span>
@@ -595,7 +595,7 @@ the <a class="reference internal" href="distributed.html#torchx.components.dist.
 <span class="go">                   &quot;--rdzv_backend=c10d&quot;,</span>
 <span class="go">                   &quot;--rdzv_endpoint=localhost:5900&quot;,</span>
 <span class="go">                   f&quot;--nnodes={nnodes}&quot;,</span>
-<span class="go">                   f&quot;--nprocs_per_node={nprocs_per_node}&quot;,</span>
+<span class="go">                   f&quot;--nprocs_per_node={nproc_per_node}&quot;,</span>
 <span class="go">                   &quot;-m&quot;,</span>
 <span class="go">                   script,</span>
 <span class="go">                   *script_args,</span>
