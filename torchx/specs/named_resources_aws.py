@@ -16,7 +16,7 @@ the equvalent resource in mem, cpu and gpu numbers.
 
 .. note::
     These resource definitions may change in future. It is expected for each user to
-    manage their own resources. Follow https://meta-pytorch.org/torchx/latest/specs.html#torchx.specs.get_named_resources
+    manage their own resources. See :ref:`advanced:Registering Named Resources`
     to set up named resources.
 
 Usage:
