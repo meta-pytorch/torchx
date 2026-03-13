@@ -10,7 +10,10 @@
 import os
 import uuid
 
-TORCHX_INTERNAL_SESSION_ID = "TORCHX_INTERNAL_SESSION_ID"
+from torchx import settings
+
+# BC re-export — new code should import from torchx.settings
+TORCHX_INTERNAL_SESSION_ID: str = settings.TORCHX_INTERNAL_SESSION_ID
 
 CURRENT_SESSION_ID: str | None = None
 

@@ -17,6 +17,7 @@ from typing import Any, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
+from torchx import settings
 from torchx.schedulers.api import (
     DescribeAppResponse,
     filter_regex,
@@ -86,7 +87,8 @@ LABEL_APP_ID: str = "torchx.pytorch.org/app-id"
 LABEL_ROLE_NAME: str = "torchx.pytorch.org/role-name"
 LABEL_REPLICA_ID: str = "torchx.pytorch.org/replica-id"
 
-ENV_TORCHX_IMAGE: str = "TORCHX_IMAGE"
+# BC re-export — new code should import from torchx.settings
+ENV_TORCHX_IMAGE: str = settings.ENV_TORCHX_IMAGE
 
 NETWORK = "torchx"
 
