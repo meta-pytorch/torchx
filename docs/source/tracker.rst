@@ -178,3 +178,9 @@ Set automatically by the runner when trackers are configured.
 
    :doc:`runtime/tracking`
       Runtime tracking utilities for use within applications.
+
+.. fbcode::
+
+   :doc:`fb/tracker_usage`
+      Step-by-step tutorial for setting up trackers on Meta infrastructure
+      (MAST/MSL, Manifold, FSSpec backend).
