@@ -454,6 +454,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
     <span class="n">filter_regex</span><span class="p">,</span>
@@ -523,7 +524,8 @@
 <span class="n">LABEL_ROLE_NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/role-name&quot;</span>
 <span class="n">LABEL_REPLICA_ID</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/replica-id&quot;</span>
 
-<span class="n">ENV_TORCHX_IMAGE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_IMAGE&quot;</span>
+<span class="c1"># BC re-export — new code should import from torchx.settings</span>
+<span class="n">ENV_TORCHX_IMAGE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_IMAGE</span>
 
 <span class="n">NETWORK</span> <span class="o">=</span> <span class="s2">&quot;torchx&quot;</span>
 

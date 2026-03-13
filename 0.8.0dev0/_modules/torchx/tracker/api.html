@@ -450,14 +450,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span><span class="p">,</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_module</span>
 
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">ENV_TORCHX_TRACKERS</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_TRACKERS&quot;</span>
-<span class="n">ENV_TORCHX_PARENT_RUN_ID</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_PARENT_RUN_ID&quot;</span>
-<span class="n">ENV_TORCHX_JOB_ID</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_JOB_ID&quot;</span>
+<span class="c1"># BC re-exports — new code should import from torchx.settings</span>
+<span class="n">ENV_TORCHX_TRACKERS</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_TRACKERS</span>
+<span class="n">ENV_TORCHX_PARENT_RUN_ID</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_PARENT_RUN_ID</span>
+<span class="n">ENV_TORCHX_JOB_ID</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_JOB_ID</span>
 
 
 <div class="viewcode-block" id="TrackerSource"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerSource">[docs]</a><span class="nd">@dataclass</span>

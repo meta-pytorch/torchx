@@ -483,6 +483,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
     <span class="n">filter_regex</span><span class="p">,</span>
@@ -512,11 +513,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">none_throws</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
 
-<span class="n">ENV_TORCHX_ROLE_IDX</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_ROLE_IDX&quot;</span>
+<span class="c1"># BC re-exports — new code should import from torchx.settings</span>
+<span class="n">ENV_TORCHX_ROLE_IDX</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_IDX</span>
 
-<span class="n">ENV_TORCHX_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_ROLE_NAME&quot;</span>
+<span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_NAME</span>
 
-<span class="n">ENV_TORCHX_IMAGE</span> <span class="o">=</span> <span class="s2">&quot;TORCHX_IMAGE&quot;</span>
+<span class="n">ENV_TORCHX_IMAGE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_IMAGE</span>
 
 <span class="n">DEFAULT_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;node&quot;</span>
 
