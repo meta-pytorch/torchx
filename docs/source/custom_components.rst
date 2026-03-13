@@ -140,7 +140,8 @@ Or push and launch on a :doc:`Kubernetes <schedulers/kubernetes>` cluster:
       Best practices for entrypoints, simplicity, named resources, and testing.
 
    :doc:`advanced`
-      Registering custom components as CLI builtins via entry points.
+      Registering custom components as CLI builtins (via entry points;
+      ``@register`` migration pending for components).
 
    :doc:`components/overview`
       Browse the builtin component library.

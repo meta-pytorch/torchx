@@ -286,7 +286,13 @@ suggestion of close matches.
 Registering Custom Components
 -------------------------------
 
-Register custom components as CLI builtins:
+Register custom components as CLI builtins.
+
+.. note::
+
+   Components still use entry-point registration. The ``@register`` decorator
+   migration is pending for components (tracked for a future release). Use
+   entry points as shown below.
 
 .. code-block:: shell-session
 
@@ -719,7 +725,7 @@ the bottom.
 .. seealso::
 
    :doc:`plugins`
-      Plugin API reference (``@register``, ``find()``, ``PluginRegistry``).
+      Plugin API reference (``@register``, ``registry()``, ``PluginRegistry``).
 
    :doc:`cli`
       CLI module API reference.
