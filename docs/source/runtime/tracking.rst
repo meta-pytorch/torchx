@@ -13,7 +13,9 @@ ResultTracker
 Base
 ^^^^^^
 .. autoclass:: ResultTracker
+   :members:
 
 Fsspec
 ^^^^^^^^
 .. autoclass:: FsspecResultTracker
+   :members:

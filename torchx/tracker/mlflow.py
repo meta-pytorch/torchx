@@ -50,7 +50,14 @@ class MLflowTracker(TrackerBase):
         APIs on this class may only be called with the same ``run_name``.
         Typically the user does not have to worry about manually setting
         the run_name as it is picked up by default from the environment variable
-        ``TORCHX_APP_NAME``.
+        ``TORCHX_JOB_ID``.
+
+    .. warning::
+        **Lineage not supported.** The following ``TrackerBase`` methods raise
+        :py:class:`NotImplementedError`: :py:meth:`add_source`,
+        :py:meth:`sources`, and :py:meth:`lineage`. If you need lineage
+        tracking, use :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker`
+        or implement a custom backend.
 
     """
 
