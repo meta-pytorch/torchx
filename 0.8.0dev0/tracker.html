@@ -895,7 +895,15 @@ of the job submission API).</p>
 <p>APIs on this class may only be called with the same <code class="docutils literal notranslate"><span class="pre">run_name</span></code>.
 Typically the user does not have to worry about manually setting
 the run_name as it is picked up by default from the environment variable
-<code class="docutils literal notranslate"><span class="pre">TORCHX_APP_NAME</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">TORCHX_JOB_ID</span></code>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>Lineage not supported.</strong> The following <code class="docutils literal notranslate"><span class="pre">TrackerBase</span></code> methods raise
+<a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NotImplementedError</span></code></a>: <a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_source" title="torchx.tracker.mlflow.MLflowTracker.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>,
+<a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.sources" title="torchx.tracker.mlflow.MLflowTracker.sources"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sources()</span></code></a>, and <a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.lineage" title="torchx.tracker.mlflow.MLflowTracker.lineage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lineage()</span></code></a>. If you need lineage
+tracking, use <a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a>
+or implement a custom backend.</p>
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_artifact">

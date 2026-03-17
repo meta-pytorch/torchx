@@ -575,6 +575,32 @@ made between two consecutive <code class="docutils literal notranslate"><span cl
 often the job id for simple jobs or can be a concatenation of
 (experiment_id, trial_number) or (job id, replica/worker rank)
 for iterative applications like hyper-parameter optimization.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.runtime.tracking.ResultTracker.get">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/torchx/runtime/tracking/api.html#ResultTracker.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.runtime.tracking.ResultTracker.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the results that have been recorded (put) with the key or
+an empty map if no such key exists.
+The key is implicitly converted to a string by calling <code class="docutils literal notranslate"><span class="pre">str(key)</span></code>.</p>
+<p>Note that if the backing store is not strongly consistent, there may be
+a delay in the presence of the key after the <code class="docutils literal notranslate"><span class="pre">put</span></code> API has been called.
+In this case, this method DOES NOT block until the key becomes available.
+To account for this, the caller may chose to retry-get-with-timeout.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.runtime.tracking.ResultTracker.put">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/torchx/runtime/tracking/api.html#ResultTracker.put"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.runtime.tracking.ResultTracker.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Records the given results by associating them with the provided key.
+The key is implicitly converted to a string by calling <code class="docutils literal notranslate"><span class="pre">str(key)</span></code>.</p>
+<p>Calling this API on the same key multiple times overwrites
+the results BUT not necessarily with the last call’s results.
+The exact semantics of consistency depends on the backing store.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is recommended this API is only called once per unique key</p>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -599,6 +625,32 @@ for iterative applications like hyper-parameter optimization.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0.233
 </pre></div>
 </div>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.runtime.tracking.FsspecResultTracker.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/torchx/runtime/tracking/api.html#FsspecResultTracker.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.runtime.tracking.FsspecResultTracker.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the results that have been recorded (put) with the key or
+an empty map if no such key exists.
+The key is implicitly converted to a string by calling <code class="docutils literal notranslate"><span class="pre">str(key)</span></code>.</p>
+<p>Note that if the backing store is not strongly consistent, there may be
+a delay in the presence of the key after the <code class="docutils literal notranslate"><span class="pre">put</span></code> API has been called.
+In this case, this method DOES NOT block until the key becomes available.
+To account for this, the caller may chose to retry-get-with-timeout.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.runtime.tracking.FsspecResultTracker.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/torchx/runtime/tracking/api.html#FsspecResultTracker.put"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.runtime.tracking.FsspecResultTracker.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Records the given results by associating them with the provided key.
+The key is implicitly converted to a string by calling <code class="docutils literal notranslate"><span class="pre">str(key)</span></code>.</p>
+<p>Calling this API on the same key multiple times overwrites
+the results BUT not necessarily with the last call’s results.
+The exact semantics of consistency depends on the backing store.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is recommended this API is only called once per unique key</p>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -652,11 +704,19 @@ for iterative applications like hyper-parameter optimization.</p>
 <li><a class="reference internal" href="#module-torchx.runtime.tracking">Overview &amp; Usage</a></li>
 <li><a class="reference internal" href="#resulttracker">ResultTracker</a><ul>
 <li><a class="reference internal" href="#base">Base</a><ul>
-<li><a class="reference internal" href="#torchx.runtime.tracking.ResultTracker"><code class="docutils literal notranslate"><span class="pre">ResultTracker</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runtime.tracking.ResultTracker"><code class="docutils literal notranslate"><span class="pre">ResultTracker</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.runtime.tracking.ResultTracker.get"><code class="docutils literal notranslate"><span class="pre">ResultTracker.get()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runtime.tracking.ResultTracker.put"><code class="docutils literal notranslate"><span class="pre">ResultTracker.put()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#fsspec">Fsspec</a><ul>
-<li><a class="reference internal" href="#torchx.runtime.tracking.FsspecResultTracker"><code class="docutils literal notranslate"><span class="pre">FsspecResultTracker</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runtime.tracking.FsspecResultTracker"><code class="docutils literal notranslate"><span class="pre">FsspecResultTracker</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.runtime.tracking.FsspecResultTracker.get"><code class="docutils literal notranslate"><span class="pre">FsspecResultTracker.get()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.runtime.tracking.FsspecResultTracker.put"><code class="docutils literal notranslate"><span class="pre">FsspecResultTracker.put()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

@@ -485,7 +485,14 @@
 <span class="sd">        APIs on this class may only be called with the same ``run_name``.</span>
 <span class="sd">        Typically the user does not have to worry about manually setting</span>
 <span class="sd">        the run_name as it is picked up by default from the environment variable</span>
-<span class="sd">        ``TORCHX_APP_NAME``.</span>
+<span class="sd">        ``TORCHX_JOB_ID``.</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        **Lineage not supported.** The following ``TrackerBase`` methods raise</span>
+<span class="sd">        :py:class:`NotImplementedError`: :py:meth:`add_source`,</span>
+<span class="sd">        :py:meth:`sources`, and :py:meth:`lineage`. If you need lineage</span>
+<span class="sd">        tracking, use :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker`</span>
+<span class="sd">        or implement a custom backend.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 

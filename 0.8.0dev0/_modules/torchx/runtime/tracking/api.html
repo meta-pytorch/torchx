@@ -528,7 +528,7 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="o">**</span><span class="n">results</span><span class="p">)</span>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ResultTracker.put"><a class="viewcode-back" href="../../../../runtime/tracking.html#torchx.runtime.tracking.ResultTracker.put">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">,</span> <span class="o">**</span><span class="n">results</span><span class="p">:</span> <span class="n">ResultType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Records the given results by associating them with the provided key.</span>
@@ -541,9 +541,9 @@
 <span class="sd">        .. note:: It is recommended this API is only called once per unique key</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="ResultTracker.get"><a class="viewcode-back" href="../../../../runtime/tracking.html#torchx.runtime.tracking.ResultTracker.get">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the results that have been recorded (put) with the key or</span>
@@ -555,7 +555,7 @@
 <span class="sd">        In this case, this method DOES NOT block until the key becomes available.</span>
 <span class="sd">        To account for this, the caller may chose to retry-get-with-timeout.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="FsspecResultTracker"><a class="viewcode-back" href="../../../../runtime/tracking.html#torchx.runtime.tracking.FsspecResultTracker">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FsspecResultTracker</span><span class="p">(</span><span class="n">ResultTracker</span><span class="p">):</span>
@@ -585,18 +585,18 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tracker_base</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tracker_base</span> <span class="o">=</span> <span class="n">tracker_base</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">,</span> <span class="o">**</span><span class="n">results</span><span class="p">:</span> <span class="n">ResultType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="FsspecResultTracker.put"><a class="viewcode-back" href="../../../../runtime/tracking.html#torchx.runtime.tracking.FsspecResultTracker.put">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">,</span> <span class="o">**</span><span class="n">results</span><span class="p">:</span> <span class="n">ResultType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">mapper</span> <span class="o">=</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">get_mapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracker_base</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># save results in pretty-print format so that the file is human readable</span>
-        <span class="n">mapper</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">mapper</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultType</span><span class="p">]:</span>
+<div class="viewcode-block" id="FsspecResultTracker.get"><a class="viewcode-back" href="../../../../runtime/tracking.html#torchx.runtime.tracking.FsspecResultTracker.get">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KeyType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultType</span><span class="p">]:</span>
         <span class="n">mapper</span> <span class="o">=</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">get_mapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracker_base</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">results</span> <span class="o">=</span> <span class="n">mapper</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{}</span></div>
+            <span class="k">return</span> <span class="p">{}</span></div></div>
 </pre></div>
 
      </article>
