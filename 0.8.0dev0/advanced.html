@@ -661,7 +661,13 @@ suggestion of close matches.</p>
 </section>
 <section id="registering-custom-components">
 <h2>Registering Custom Components<a class="headerlink" href="#registering-custom-components" title="Permalink to this heading">¶</a></h2>
-<p>Register custom components as CLI builtins:</p>
+<p>Register custom components as CLI builtins.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Components still use entry-point registration. The <code class="docutils literal notranslate"><span class="pre">&#64;register</span></code> decorator
+migration is pending for components (tracked for a future release). Use
+entry points as shown below.</p>
+</div>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
 </pre></div>
 </div>

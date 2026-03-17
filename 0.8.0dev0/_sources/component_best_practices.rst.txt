@@ -101,7 +101,7 @@ Composing Components
 Start from base component definitions rather than building ``AppDef`` from
 scratch:
 
-* :py:mod:`torchx.components.base` for simple single node components.
+* :doc:`custom_components` for simple single-node components.
 * :py:func:`torchx.components.dist.ddp` for distributed components.
 
 You can also merge roles from multiple components to run sidecars alongside

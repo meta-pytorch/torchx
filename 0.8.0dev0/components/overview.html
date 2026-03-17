@@ -586,7 +586,7 @@ the <a class="reference internal" href="distributed.html#torchx.components.dist.
 <span class="go">           specs.Role(</span>
 <span class="go">               name=&quot;trainer&quot;,</span>
 <span class="go">               image=image,</span>
-<span class="go">               resource=specs.named_resources[host],</span>
+<span class="go">               resource=specs.resource(h=host),</span>
 <span class="go">               num_replicas=nnodes,</span>
 <span class="go">               entrypoint=&quot;python&quot;,</span>
 <span class="go">               args=[</span>
