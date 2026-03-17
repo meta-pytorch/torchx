@@ -87,7 +87,7 @@ the :py:func:`torchx.components.dist.ddp` builtin.
             specs.Role(
                 name="trainer",
                 image=image,
-                resource=specs.named_resources[host],
+                resource=specs.resource(h=host),
                 num_replicas=nnodes,
                 entrypoint="python",
                 args=[
