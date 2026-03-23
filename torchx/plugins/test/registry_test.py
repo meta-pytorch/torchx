@@ -17,6 +17,7 @@ broken plugin modules.
 import sys
 import types
 import unittest
+import warnings
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -236,6 +237,67 @@ class RegistryTest(_RegistryTestBase):
             "local_cwd",
             result,
             "namespace plugins should still be discovered",
+        )
+
+    @mock_install_torchx_plugins()
+    def test_find_emits_deprecation_warning_for_entrypoints(self) -> None:
+        """_find() calls deprecated_entrypoint() when entry points are loaded."""
+        ep_result = {"my_sched": lambda: None}
+
+        with patch.object(entrypoints, "load_group", return_value=ep_result):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                registry().get(PluginType.SCHEDULER)
+
+        dep_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(
+            len(dep_warnings),
+            1,
+            "should emit exactly one DeprecationWarning when entry-point plugins are loaded",
+        )
+        msg = str(dep_warnings[0].message)
+        self.assertIn(
+            "torchx.schedulers",
+            msg,
+            "warning should mention the deprecated group",
+        )
+        self.assertIn(
+            "my_sched",
+            msg,
+            "warning should mention the entry-point plugin name",
+        )
+
+    @mock_install_torchx_plugins()
+    def test_find_no_warning_when_entrypoints_empty(self) -> None:
+        """No deprecation warning when entry points return empty."""
+        with patch.object(entrypoints, "load_group", return_value=None):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                registry().get(PluginType.SCHEDULER)
+
+        dep_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(
+            len(dep_warnings),
+            0,
+            "should not emit DeprecationWarning when no entry-point plugins are found",
+        )
+
+    @mock_install_torchx_plugins()
+    def test_find_no_warning_when_entrypoints_disabled(self) -> None:
+        """No deprecation warning when load_entrypoints=False."""
+        ep_result = {"my_sched": lambda: None}
+
+        with patch.object(entrypoints, "load_group", return_value=ep_result):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                reg = PluginRegistry(load_entrypoints=False)
+                reg.get(PluginType.SCHEDULER)
+
+        dep_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
+        self.assertEqual(
+            len(dep_warnings),
+            0,
+            "should not emit DeprecationWarning when entrypoints are disabled",
         )
 
     @mock_install_torchx_plugins()

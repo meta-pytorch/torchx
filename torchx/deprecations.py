@@ -23,7 +23,61 @@ from __future__ import annotations
 
 import functools
 import warnings
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
+
+
+# Entry-point groups that have ``torchx_plugins.*`` namespace-package
+# alternatives.  Only these groups trigger a deprecation warning.
+# Keep in sync with ``torchx.plugins._registry.PluginType``.
+_PLUGIN_GROUPS: frozenset[str] = frozenset(
+    {
+        "torchx.schedulers",
+        "torchx.named_resources",
+        "torchx.tracker",
+    }
+)
+
+
+def deprecated_entrypoint(
+    group: str,
+    ep_names: Iterable[str],
+    *,
+    stacklevel: int = 2,
+) -> None:
+    """Emit a deprecation warning for entry-point based plugins.
+
+    Only warns for groups that have ``torchx_plugins.*`` namespace-package
+    equivalents (i.e., groups listed in
+    :py:class:`~torchx.plugins.PluginType`).  Groups without namespace
+    alternatives (e.g., ``"torchx.schedulers.orchestrator"``,
+    ``"torchx.components"``) are silently ignored.
+
+    Args:
+        group: The entry-point group name (e.g., ``"torchx.schedulers"``).
+        ep_names: Names of the entry-point plugins that were loaded.
+        stacklevel: Stack level for :py:func:`warnings.warn`.  Default ``2``
+            points at the caller of this function.
+
+    Example::
+
+        >>> # In _registry._find():
+        >>> deprecated_entrypoint("torchx.schedulers", ["mast_conda"])
+
+    """
+    if group not in _PLUGIN_GROUPS:
+        return
+
+    names = ", ".join(sorted(ep_names))
+    namespace = f"torchx_plugins.{group.removeprefix('torchx.')}"
+    warnings.warn(
+        f"Entry-point plugins in group '{group}' are deprecated. "
+        f"Migrate to the '{namespace}' namespace package using "
+        f"the @register decorator. "
+        f"Set TORCHX_NO_ENTRYPOINTS=1 to opt out early. "
+        f"Deprecated entry-point plugins: {names}",
+        DeprecationWarning,
+        stacklevel=stacklevel,
+    )
 
 
 def deprecated_module(
@@ -66,10 +120,13 @@ def deprecated_module(
     )
 
 
+_F = Callable[..., object]
+
+
 def deprecated(
     *,
     replacement: str | None = None,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[_F], _F]:
     """Mark a function or class as deprecated.
 
     .. code-block:: python
@@ -88,17 +145,19 @@ def deprecated(
         on each call.
     """
 
-    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(fn: _F) -> _F:
         parts = [f"[Deprecated] {fn.__qualname__} is deprecated"]
         if replacement:
             parts.append(f"-- use {replacement} instead")
         msg: str = " ".join(parts) + "."
 
         @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        # pyre-ignore[3]: Wrapper preserves fn's signature at runtime via wraps
+        def wrapper(*args: Any, **kwargs: Any) -> object:
             warnings.warn(msg, UserWarning, stacklevel=2)
             return fn(*args, **kwargs)
 
+        # pyre-ignore[7]: wrapper has same runtime signature as fn via wraps
         return wrapper
 
     return decorator

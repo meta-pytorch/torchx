@@ -24,6 +24,7 @@ import pkgutil
 from types import ModuleType
 from typing import Any, Callable, overload
 
+from torchx.deprecations import deprecated_entrypoint
 from torchx.util import entrypoints
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -421,6 +422,8 @@ class PluginRegistry:
 
         if self._load_entrypoints:
             ep_plugins = entrypoints.load_group(group) or {}
+            if ep_plugins:
+                deprecated_entrypoint(group, ep_plugins.keys(), stacklevel=4)
             # Entry points override namespace plugins (higher priority).
             merged.update(ep_plugins)
             if ns_plugins and ep_plugins:
