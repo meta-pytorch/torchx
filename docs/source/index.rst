@@ -119,6 +119,7 @@ Documentation
    plugins
    schedulers
    workspace
+   deprecations
 
 .. toctree::
    :maxdepth: 1

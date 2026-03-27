@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import functools
 import warnings
-from typing import Any, Callable
+from typing import Callable, TypeVar
 
 
 def deprecated_module(
@@ -66,10 +66,14 @@ def deprecated_module(
     )
 
 
+_F = TypeVar("_F", bound=Callable[..., object])
+
+
 def deprecated(
     *,
     replacement: str | None = None,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    # pyre-ignore[34]: _F is bound when the returned decorator is called
+) -> Callable[[_F], _F]:
     """Mark a function or class as deprecated.
 
     .. code-block:: python
@@ -88,14 +92,14 @@ def deprecated(
         on each call.
     """
 
-    def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(fn: _F) -> _F:
         parts = [f"[Deprecated] {fn.__qualname__} is deprecated"]
         if replacement:
             parts.append(f"-- use {replacement} instead")
         msg: str = " ".join(parts) + "."
 
         @functools.wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: object, **kwargs: object) -> object:
             warnings.warn(msg, UserWarning, stacklevel=2)
             return fn(*args, **kwargs)
 
