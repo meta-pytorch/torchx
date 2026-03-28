@@ -151,6 +151,7 @@ def _test_invalid_fn_with_varags_and_kwargs(*args, id: int) -> AppDef:
 
 
 def current_file_path() -> str:
+    # lint-fixme: NoFileBasedResourceAccess
     return os.path.join(os.path.dirname(__file__), __file__)
 
 
