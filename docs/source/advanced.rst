@@ -725,7 +725,7 @@ the bottom.
 .. seealso::
 
    :doc:`plugins`
-      Plugin API reference (``@register``, ``find()``, ``PluginRegistry``).
+      Plugin API reference (``@register``, ``registry()``, ``PluginRegistry``).
 
    :doc:`cli`
       CLI module API reference.
