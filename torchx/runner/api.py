@@ -231,7 +231,7 @@ class Runner:
 
             event = ctx._torchx_event
             event.scheduler = scheduler
-            event.runcfg = json.dumps(cfg) if cfg else None
+            event.runcfg = json.dumps(dict(cfg)) if cfg else None
             event.workspace = str(workspace)
             event.app_id = parse_app_handle(handle)[2]
             event.app_image = none_throws(dryrun_info._app).roles[0].image
@@ -263,7 +263,7 @@ class Runner:
 
             event = ctx._torchx_event
             event.scheduler = scheduler
-            event.runcfg = json.dumps(cfg) if cfg else None
+            event.runcfg = json.dumps(dict(cfg)) if cfg else None
             event.app_id = app_id
             event.app_image = none_throws(dryrun_info._app).roles[0].image
             event.app_metadata = app.metadata
@@ -337,7 +337,7 @@ class Runner:
         with log_event(
             "dryrun",
             scheduler,
-            runcfg=json.dumps(cfg) if cfg else None,
+            runcfg=json.dumps(dict(cfg)) if cfg else None,
             workspace=str(workspace),
         ) as ctx:
             sched = self._scheduler(scheduler)
@@ -372,7 +372,7 @@ class Runner:
 
             event = ctx._torchx_event
             event.scheduler = scheduler
-            event.runcfg = json.dumps(cfg) if cfg else None
+            event.runcfg = json.dumps(dict(cfg)) if cfg else None
             event.app_id = app.name
             event.app_image = none_throws(dryrun_info._app).roles[0].image
             event.app_metadata = app.metadata
