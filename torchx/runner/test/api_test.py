@@ -52,6 +52,7 @@ SESSION_NAME = "test_session"
 
 
 def get_full_path(name: str) -> str:
+    # lint-fixme: NoFileBasedResourceAccess
     return os.path.join(os.path.dirname(__file__), "resource", name)
 
 
