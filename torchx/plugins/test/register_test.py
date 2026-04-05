@@ -469,6 +469,21 @@ class PowersOfTwoGpusTest(unittest.TestCase):
         with self.assertRaises(ValueError, msg="gpu=6 should raise"):
             register.powers_of_two_gpus(r)
 
+    def test_top_level_importable(self) -> None:
+        """``powers_of_two_gpus`` and ``halve_mem_down_to`` are importable from ``torchx.plugins``."""
+        from torchx.plugins import halve_mem_down_to, powers_of_two_gpus
+
+        self.assertIs(
+            powers_of_two_gpus,
+            register.powers_of_two_gpus,
+            "top-level import should be the same object as register.powers_of_two_gpus",
+        )
+        self.assertIs(
+            halve_mem_down_to,
+            register.halve_mem_down_to,
+            "top-level import should be the same object as register.halve_mem_down_to",
+        )
+
 
 class HalvingMemGiBTest(unittest.TestCase):
     """Unit tests for :meth:`register.halve_mem_down_to`."""
