@@ -20,6 +20,7 @@ import functools
 import importlib
 import logging
 import os
+import pathlib
 import pkgutil
 from types import ModuleType
 from typing import Any, Callable, overload
@@ -174,6 +175,12 @@ class PluginRegistry:
         Public submodules (not starting with ``_``) are imported.  Sub-packages
         are recursed into automatically (e.g. ``msl/``, ``fair/``).
 
+        After ``pkgutil.iter_modules``, also probes for **implicit namespace
+        sub-packages** — directories without ``__init__.py`` that contain
+        ``.py`` files.  This lets namespace packages like
+        ``torchx_plugins.named_resources`` host subdirectories (``mast/``,
+        ``mkube/``) without requiring ``__init__.py`` in each.
+
         **Fault tolerance**: any exception raised during submodule import
         is logged as a warning and the offending module is skipped.
         """
@@ -185,8 +192,10 @@ class PluginRegistry:
             self._errors.append(RegistrationError(module=namespace, error=msg))
             return
 
+        found_names: set[str] = set()
         for module_info in module_iter:
             name = module_info.name
+            found_names.add(name)
             if name.startswith("_"):
                 continue
             fqn = f"{namespace}.{name}"
@@ -202,6 +211,62 @@ class PluginRegistry:
 
             if module_info.ispkg:
                 self._scan_namespace_pkg(mod, fqn, expected_type, discovered)
+
+        # Discover implicit namespace sub-packages (directories without
+        # __init__.py that contain .py files).  pkgutil.iter_modules misses
+        # these because it only recognises directories with __init__.py as
+        # packages.
+        self._scan_implicit_subpackages(
+            pkg, namespace, expected_type, discovered, found_names
+        )
+
+    def _scan_implicit_subpackages(
+        self,
+        pkg: ModuleType,
+        namespace: str,
+        expected_type: PluginType | None,
+        discovered: dict[str, Any],
+        already_found: set[str],
+    ) -> None:
+        """Discover subdirectories that are implicit namespace packages.
+
+        Walks every directory on *pkg.__path__*, looking for child
+        directories that:
+
+        1. Are not private (no leading ``_``).
+        2. Were not already found by ``pkgutil.iter_modules``.
+        3. Contain at least one ``.py`` file (worth scanning).
+
+        Each qualifying directory is imported as a namespace package and
+        recursed into via :py:meth:`_scan_namespace_pkg`.
+        """
+        for search_path in pkg.__path__:
+            root = pathlib.Path(search_path)
+            if not root.is_dir():
+                continue
+            for child in sorted(root.iterdir()):
+                if not child.is_dir():
+                    continue
+                name = child.name
+                if name.startswith("_") or name in already_found:
+                    continue
+                # Only probe directories that contain at least one .py file.
+                if not any(child.glob("*.py")):
+                    continue
+                already_found.add(name)
+                fqn = f"{namespace}.{name}"
+                try:
+                    mod = importlib.import_module(fqn)
+                except Exception as e:
+                    msg = f"{type(e).__name__}: {e}"
+                    logger.warning("failed to import `%s`: %s", fqn, e)
+                    self._errors.append(RegistrationError(module=fqn, error=msg))
+                    continue
+
+                self._collect_plugins_from_module(mod, fqn, expected_type, discovered)
+
+                if hasattr(mod, "__path__"):
+                    self._scan_namespace_pkg(mod, fqn, expected_type, discovered)
 
     def _find_namespace_plugins(
         self,
