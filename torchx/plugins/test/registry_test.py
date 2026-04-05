@@ -312,6 +312,8 @@ named_resource:
     module: torchx_plugins.named_resources.aws
   - name: gcp_a3_highgpu_8g
     module: torchx_plugins.named_resources.gcp
+  - name: implicit_gpu
+    module: torchx_plugins.named_resources.implicit_sub.hardware
 tracker:
   - name: mlflow
     module: torchx_plugins.schedulers.mlflow
@@ -462,6 +464,15 @@ class NamedResourceDiscoveryTest(_RegistryTestBase):
 
         res_gcp = result["gcp_a3_highgpu_8g"]()
         self.assertEqual(res_gcp.cpu, 252, "gcp_a3_highgpu_8g should have 252 CPUs")
+
+        # --- implicit_sub/hardware.py: no __init__.py in implicit_sub/ ---
+        self.assertIn(
+            "implicit_gpu",
+            result,
+            "should discover implicit_gpu from a subdirectory without __init__.py",
+        )
+        res_implicit = result["implicit_gpu"]()
+        self.assertEqual(res_implicit.gpu, 4, "implicit_gpu should have 4 GPUs")
 
 
 # ── Fault-tolerance tests ────────────────────────────────────────────────────
