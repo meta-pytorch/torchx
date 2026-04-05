@@ -428,3 +428,14 @@ class _register_named_resource(register):
                 _set_module_attr(frac_name, frac_factory)
 
         return factory  # NB: returns _make_factory(fn), not fn
+
+
+# ── Module-level aliases ─────────────────────────────────────────────────────
+# Expose fractional helpers at package level so plugin authors can write
+# ``from torchx.plugins import powers_of_two_gpus`` instead of reaching
+# into ``register.powers_of_two_gpus``.
+
+powers_of_two_gpus: Callable[[Resource], dict[float, str]] = register.powers_of_two_gpus
+halve_mem_down_to: Callable[..., Callable[[Resource], dict[float, str]]] = (
+    register.halve_mem_down_to
+)
