@@ -555,10 +555,10 @@ and decorate it:</p>
 <p>Place your resources in a <code class="docutils literal notranslate"><span class="pre">torchx_plugins/named_resources/</span></code> namespace package
 and decorate them:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># torchx_plugins/named_resources/my_cluster.py</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">WHOLE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">powers_of_two_gpus</span><span class="p">,</span> <span class="n">register</span><span class="p">,</span> <span class="n">WHOLE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>
 
-<span class="nd">@register</span><span class="o">.</span><span class="n">named_resource</span><span class="p">(</span><span class="n">fractionals</span><span class="o">=</span><span class="n">register</span><span class="o">.</span><span class="n">powers_of_two_gpus</span><span class="p">)</span>
+<span class="nd">@register</span><span class="o">.</span><span class="n">named_resource</span><span class="p">(</span><span class="n">fractionals</span><span class="o">=</span><span class="n">powers_of_two_gpus</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">gpu_x</span><span class="p">(</span><span class="n">fractional</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WHOLE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">Resource</span><span class="p">(</span>
         <span class="n">cpu</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">64</span> <span class="o">*</span> <span class="n">fractional</span><span class="p">),</span>
@@ -573,8 +573,8 @@ and decorate them:</p>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">fractionals</span></code> argument auto-generates fractional variants. See
-<a class="reference internal" href="plugins.html#torchx.plugins.register.powers_of_two_gpus" title="torchx.plugins.register.powers_of_two_gpus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">powers_of_two_gpus()</span></code></a> and
-<a class="reference internal" href="plugins.html#torchx.plugins.register.halve_mem_down_to" title="torchx.plugins.register.halve_mem_down_to"><code class="xref py py-meth docutils literal notranslate"><span class="pre">halve_mem_down_to()</span></code></a> in <a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a>.</p>
+<a class="reference internal" href="plugins.html#torchx.plugins.powers_of_two_gpus" title="torchx.plugins.powers_of_two_gpus"><code class="xref py py-func docutils literal notranslate"><span class="pre">powers_of_two_gpus()</span></code></a> and
+<a class="reference internal" href="plugins.html#torchx.plugins.halve_mem_down_to" title="torchx.plugins.halve_mem_down_to"><code class="xref py py-func docutils literal notranslate"><span class="pre">halve_mem_down_to()</span></code></a> in <a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a>.</p>
 <p><strong>Legacy: entry points</strong> <em>(deprecated)</em></p>
 <p>For example, on an AWS cluster with p3.16xlarge nodes:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resource</span>

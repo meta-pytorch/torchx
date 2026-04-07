@@ -512,6 +512,114 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;``True`` when the resource is a fractional slice of a base resource.&quot;&quot;&quot;</span>
 
 
+<div class="viewcode-block" id="powers_of_two_gpus"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.powers_of_two_gpus">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">powers_of_two_gpus</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return fractional specs for every power-of-two GPU slice of *resource*.</span>
+
+<span class="sd">    For example, an 8-GPU resource produces::</span>
+
+<span class="sd">        {1.0: &quot;8&quot;, 0.5: &quot;4&quot;, 0.25: &quot;2&quot;, 0.125: &quot;1&quot;}</span>
+
+<span class="sd">    When passed as the ``fractionals`` argument of</span>
+<span class="sd">    :py:meth:`register.named_resource`, this auto-generates and registers</span>
+<span class="sd">    all power-of-two fractional variants (e.g. ``my_gpu_8``, ``my_gpu_4``,</span>
+<span class="sd">    …).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        resource: The base (whole-host) resource.  Must have ``gpu &gt; 0``</span>
+<span class="sd">            and ``gpu`` must be a power of two.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if ``resource.gpu`` is zero or not a power of two.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_pow2</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">((</span><span class="n">n</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">gpus</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">gpu</span>
+    <span class="k">if</span> <span class="n">gpus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;resource must have gpu &gt; 0 to generate power-of-two slices (got </span><span class="si">{</span><span class="n">gpus</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_pow2</span><span class="p">(</span><span class="n">gpus</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;resource.gpu must be a power of two to generate slices (got </span><span class="si">{</span><span class="n">gpus</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">fractionals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">fraction</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">fractional_gpus</span> <span class="o">:=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gpus</span> <span class="o">*</span> <span class="n">fraction</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fractionals</span><span class="p">[</span><span class="n">fraction</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fractional_gpus</span><span class="p">)</span>
+        <span class="n">fraction</span> <span class="o">/=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">fractionals</span></div>
+
+
+<div class="viewcode-block" id="halve_mem_down_to"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.halve_mem_down_to">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">halve_mem_down_to</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">minGiB</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate fractional suffixes by halving memory in GiB.</span>
+
+<span class="sd">    Returns a callable that produces a geometric series with r=1/2</span>
+<span class="sd">    starting from the resource&#39;s total memory in GiB down to ``minGiB``.</span>
+<span class="sd">    Each entry maps a fractional float to the corresponding memory</span>
+<span class="sd">    suffix string.</span>
+
+<span class="sd">    Example — 64 GiB host with ``minGiB=8``::</span>
+
+<span class="sd">        {1.0: &quot;64&quot;, 0.5: &quot;32&quot;, 0.25: &quot;16&quot;, 0.125: &quot;8&quot;}</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        @register.named_resource(fractionals=halve_mem_down_to(minGiB=16))</span>
+<span class="sd">        def t1(fractional: float = WHOLE) -&gt; Resource: ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        minGiB: Stop generating fractionals when memory drops below</span>
+<span class="sd">            this threshold in GiB.  Must be &gt;= the odd part of</span>
+<span class="sd">            ``memGiB`` (i.e. ``memGiB`` with all factors of 2</span>
+<span class="sd">            removed), otherwise halving would produce non-integer</span>
+<span class="sd">            GiB values.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if ``resource.memMB`` is zero, not GiB-aligned,</span>
+<span class="sd">            or ``minGiB`` is below the odd part of ``memGiB``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_odd_part</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the odd part of *n* (strip all factors of 2).&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">//=</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_factory</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="n">mem_mb</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">memMB</span>
+        <span class="k">if</span> <span class="n">mem_mb</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;resource must have memMB &gt; 0 to generate memory slices (got </span><span class="si">{</span><span class="n">mem_mb</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mem_mb</span> <span class="o">%</span> <span class="mi">1024</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;resource.memMB must be a whole number of GiB (got </span><span class="si">{</span><span class="n">mem_mb</span><span class="si">}</span><span class="s2"> MB)&quot;</span>
+            <span class="p">)</span>
+        <span class="n">mem_gib</span> <span class="o">=</span> <span class="n">mem_mb</span> <span class="o">//</span> <span class="mi">1024</span>
+        <span class="n">odd</span> <span class="o">=</span> <span class="n">_odd_part</span><span class="p">(</span><span class="n">mem_gib</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">minGiB</span> <span class="o">&lt;</span> <span class="n">odd</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`minGiB` must be &gt;= the odd part of `memGiB` (</span><span class="si">{</span><span class="n">odd</span><span class="si">}</span><span class="s2">) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;because halving </span><span class="si">{</span><span class="n">mem_gib</span><span class="si">}</span><span class="s2"> GiB below </span><span class="si">{</span><span class="n">odd</span><span class="si">}</span><span class="s2"> produces &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;non-integer GiB values (got minGiB=</span><span class="si">{</span><span class="n">minGiB</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">fractionals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">fraction</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">frac_gib</span> <span class="o">:=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mem_gib</span> <span class="o">*</span> <span class="n">fraction</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">minGiB</span><span class="p">:</span>
+            <span class="n">fractionals</span><span class="p">[</span><span class="n">fraction</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frac_gib</span><span class="p">)</span>
+            <span class="n">fraction</span> <span class="o">/=</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">fractionals</span>
+
+    <span class="k">return</span> <span class="n">_factory</span></div>
+
+
 <div class="viewcode-block" id="register"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.register">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">register</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that tags a function as a TorchX plugin.</span>
 
@@ -541,15 +649,14 @@
 <span class="sd">    Fractional resource helpers</span>
 <span class="sd">    ~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
 
-<span class="sd">    :py:meth:`powers_of_two_gpus` and :py:meth:`halve_mem_down_to` are</span>
-<span class="sd">    available as staticmethods so plugin authors can use them with a</span>
-<span class="sd">    single import::</span>
+<span class="sd">    :py:func:`powers_of_two_gpus` and :py:func:`halve_mem_down_to` are</span>
+<span class="sd">    module-level functions that plugin authors can use directly::</span>
 
-<span class="sd">        @register.named_resource(fractionals=register.powers_of_two_gpus)</span>
+<span class="sd">        @register.named_resource(fractionals=powers_of_two_gpus)</span>
 <span class="sd">        def my_gpu(fractional: float = 1.0) -&gt; Resource:</span>
 <span class="sd">            ...</span>
 
-<span class="sd">        @register.named_resource(fractionals=register.halve_mem_down_to(minGiB=16))</span>
+<span class="sd">        @register.named_resource(fractionals=halve_mem_down_to(minGiB=16))</span>
 <span class="sd">        def my_cpu(fractional: float = 1.0) -&gt; Resource:</span>
 <span class="sd">            ...</span>
 
@@ -600,117 +707,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_register_named_resource</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">aliases</span><span class="o">=</span><span class="n">aliases</span><span class="p">,</span> <span class="n">fractionals</span><span class="o">=</span><span class="n">fractionals</span>
-        <span class="p">)</span></div>
-
-    <span class="c1"># -- named-resource authoring utilities (staticmethods) ----------------</span>
-
-<div class="viewcode-block" id="register.powers_of_two_gpus"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.register.powers_of_two_gpus">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">powers_of_two_gpus</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return fractional specs for every power-of-two GPU slice of *resource*.</span>
-
-<span class="sd">        For example, an 8-GPU resource produces::</span>
-
-<span class="sd">            {1.0: &quot;8&quot;, 0.5: &quot;4&quot;, 0.25: &quot;2&quot;, 0.125: &quot;1&quot;}</span>
-
-<span class="sd">        When passed as the ``fractionals`` argument of</span>
-<span class="sd">        :py:meth:`register.named_resource`, this auto-generates and registers</span>
-<span class="sd">        all power-of-two fractional variants (e.g. ``my_gpu_8``, ``my_gpu_4``,</span>
-<span class="sd">        …).</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            resource: The base (whole-host) resource.  Must have ``gpu &gt; 0``</span>
-<span class="sd">                and ``gpu`` must be a power of two.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: if ``resource.gpu`` is zero or not a power of two.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_is_pow2</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">((</span><span class="n">n</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-
-        <span class="n">gpus</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">gpu</span>
-        <span class="k">if</span> <span class="n">gpus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;resource must have gpu &gt; 0 to generate power-of-two slices (got </span><span class="si">{</span><span class="n">gpus</span><span class="si">}</span><span class="s2">)&quot;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_pow2</span><span class="p">(</span><span class="n">gpus</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;resource.gpu must be a power of two to generate slices (got </span><span class="si">{</span><span class="n">gpus</span><span class="si">}</span><span class="s2">)&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">fractionals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">fraction</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="k">while</span> <span class="p">(</span><span class="n">fractional_gpus</span> <span class="o">:=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gpus</span> <span class="o">*</span> <span class="n">fraction</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">fractionals</span><span class="p">[</span><span class="n">fraction</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fractional_gpus</span><span class="p">)</span>
-            <span class="n">fraction</span> <span class="o">/=</span> <span class="mi">2</span>
-        <span class="k">return</span> <span class="n">fractionals</span></div>
-
-<div class="viewcode-block" id="register.halve_mem_down_to"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.register.halve_mem_down_to">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">halve_mem_down_to</span><span class="p">(</span>
-        <span class="o">*</span><span class="p">,</span>
-        <span class="n">minGiB</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate fractional suffixes by halving memory in GiB.</span>
-
-<span class="sd">        Returns a callable that produces a geometric series with r=1/2</span>
-<span class="sd">        starting from the resource&#39;s total memory in GiB down to ``minGiB``.</span>
-<span class="sd">        Each entry maps a fractional float to the corresponding memory</span>
-<span class="sd">        suffix string.</span>
-
-<span class="sd">        Example — 64 GiB host with ``minGiB=8``::</span>
-
-<span class="sd">            {1.0: &quot;64&quot;, 0.5: &quot;32&quot;, 0.25: &quot;16&quot;, 0.125: &quot;8&quot;}</span>
-
-<span class="sd">        Usage::</span>
-
-<span class="sd">            @register.named_resource(fractionals=register.halve_mem_down_to(minGiB=16))</span>
-<span class="sd">            def t1(fractional: float = WHOLE) -&gt; Resource: ...</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            minGiB: Stop generating fractionals when memory drops below</span>
-<span class="sd">                this threshold in GiB.  Must be &gt;= the odd part of</span>
-<span class="sd">                ``memGiB`` (i.e. ``memGiB`` with all factors of 2</span>
-<span class="sd">                removed), otherwise halving would produce non-integer</span>
-<span class="sd">                GiB values.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: if ``resource.memMB`` is zero, not GiB-aligned,</span>
-<span class="sd">                or ``minGiB`` is below the odd part of ``memGiB``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_odd_part</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Return the odd part of *n* (strip all factors of 2).&quot;&quot;&quot;</span>
-            <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">n</span> <span class="o">//=</span> <span class="mi">2</span>
-            <span class="k">return</span> <span class="n">n</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_factory</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-            <span class="n">mem_mb</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">memMB</span>
-            <span class="k">if</span> <span class="n">mem_mb</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;resource must have memMB &gt; 0 to generate memory slices (got </span><span class="si">{</span><span class="n">mem_mb</span><span class="si">}</span><span class="s2">)&quot;</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">mem_mb</span> <span class="o">%</span> <span class="mi">1024</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;resource.memMB must be a whole number of GiB (got </span><span class="si">{</span><span class="n">mem_mb</span><span class="si">}</span><span class="s2"> MB)&quot;</span>
-                <span class="p">)</span>
-            <span class="n">mem_gib</span> <span class="o">=</span> <span class="n">mem_mb</span> <span class="o">//</span> <span class="mi">1024</span>
-            <span class="n">odd</span> <span class="o">=</span> <span class="n">_odd_part</span><span class="p">(</span><span class="n">mem_gib</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">minGiB</span> <span class="o">&lt;</span> <span class="n">odd</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;`minGiB` must be &gt;= the odd part of `memGiB` (</span><span class="si">{</span><span class="n">odd</span><span class="si">}</span><span class="s2">) &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;because halving </span><span class="si">{</span><span class="n">mem_gib</span><span class="si">}</span><span class="s2"> GiB below </span><span class="si">{</span><span class="n">odd</span><span class="si">}</span><span class="s2"> produces &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;non-integer GiB values (got minGiB=</span><span class="si">{</span><span class="n">minGiB</span><span class="si">}</span><span class="s2">)&quot;</span>
-                <span class="p">)</span>
-
-            <span class="n">fractionals</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">fraction</span> <span class="o">=</span> <span class="mf">1.0</span>
-            <span class="k">while</span> <span class="p">(</span><span class="n">frac_gib</span> <span class="o">:=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mem_gib</span> <span class="o">*</span> <span class="n">fraction</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">minGiB</span><span class="p">:</span>
-                <span class="n">fractionals</span><span class="p">[</span><span class="n">fraction</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frac_gib</span><span class="p">)</span>
-                <span class="n">fraction</span> <span class="o">/=</span> <span class="mi">2</span>
-            <span class="k">return</span> <span class="n">fractionals</span>
-
-        <span class="k">return</span> <span class="n">_factory</span></div></div>
+        <span class="p">)</span></div></div>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_register_named_resource</span><span class="p">(</span><span class="n">register</span><span class="p">):</span>
@@ -737,7 +734,7 @@
 <span class="sd">      For every ``{fraction: suffix}`` entry, a zero-arg factory named</span>
 <span class="sd">      ``{base_name}_{suffix}`` is auto-generated and registered.</span>
 
-<span class="sd">      For example, an 8-GPU resource with :py:meth:`register.powers_of_two_gpus`</span>
+<span class="sd">      For example, an 8-GPU resource with :py:func:`powers_of_two_gpus`</span>
 <span class="sd">      produces ``my_gpu_8``, ``my_gpu_4``, ``my_gpu_2``, ``my_gpu_1`` —</span>
 <span class="sd">      each calling ``my_gpu(fractional=&lt;fraction&gt;)``.</span>
 
