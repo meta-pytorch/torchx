@@ -19,8 +19,13 @@ Registration
 -------------
 
 .. autoclass:: torchx.plugins.register
-   :members: scheduler, tracker, named_resource,
-             powers_of_two_gpus, halve_mem_down_to
+   :members: scheduler, tracker, named_resource
+
+Fractional Helpers
+-------------------
+
+.. autofunction:: torchx.plugins.powers_of_two_gpus
+.. autofunction:: torchx.plugins.halve_mem_down_to
 
 Constants
 ----------

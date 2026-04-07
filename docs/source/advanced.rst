@@ -143,10 +143,10 @@ and decorate them:
 .. code-block:: python
 
    # torchx_plugins/named_resources/my_cluster.py
-   from torchx.plugins import register, WHOLE
+   from torchx.plugins import powers_of_two_gpus, register, WHOLE
    from torchx.specs import Resource
 
-   @register.named_resource(fractionals=register.powers_of_two_gpus)
+   @register.named_resource(fractionals=powers_of_two_gpus)
    def gpu_x(fractional: float = WHOLE) -> Resource:
        return Resource(
            cpu=int(64 * fractional),
@@ -160,8 +160,8 @@ and decorate them:
        return Resource(cpu=32, gpu=0, memMB=131072)
 
 The ``fractionals`` argument auto-generates fractional variants. See
-:py:meth:`~torchx.plugins.register.powers_of_two_gpus` and
-:py:meth:`~torchx.plugins.register.halve_mem_down_to` in :doc:`plugins`.
+:py:func:`~torchx.plugins.powers_of_two_gpus` and
+:py:func:`~torchx.plugins.halve_mem_down_to` in :doc:`plugins`.
 
 **Legacy: entry points** *(deprecated)*
 
