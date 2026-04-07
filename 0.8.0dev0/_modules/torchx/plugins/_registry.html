@@ -456,6 +456,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pkgutil</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModuleType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">overload</span>
@@ -610,6 +611,12 @@
 <span class="sd">        Public submodules (not starting with ``_``) are imported.  Sub-packages</span>
 <span class="sd">        are recursed into automatically (e.g. ``msl/``, ``fair/``).</span>
 
+<span class="sd">        After ``pkgutil.iter_modules``, also probes for **implicit namespace</span>
+<span class="sd">        sub-packages** — directories without ``__init__.py`` that contain</span>
+<span class="sd">        ``.py`` files.  This lets namespace packages like</span>
+<span class="sd">        ``torchx_plugins.named_resources`` host subdirectories without</span>
+<span class="sd">        requiring ``__init__.py`` in each.</span>
+
 <span class="sd">        **Fault tolerance**: any exception raised during submodule import</span>
 <span class="sd">        is logged as a warning and the offending module is skipped.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -621,8 +628,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegistrationError</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
             <span class="k">return</span>
 
+        <span class="n">found_names</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">module_info</span> <span class="ow">in</span> <span class="n">module_iter</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">module_info</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">found_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
                 <span class="k">continue</span>
             <span class="n">fqn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -638,6 +647,62 @@
 
             <span class="k">if</span> <span class="n">module_info</span><span class="o">.</span><span class="n">ispkg</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_scan_namespace_pkg</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">,</span> <span class="n">discovered</span><span class="p">)</span>
+
+        <span class="c1"># Discover implicit namespace sub-packages (directories without</span>
+        <span class="c1"># __init__.py that contain .py files).  pkgutil.iter_modules misses</span>
+        <span class="c1"># these because it only recognises directories with __init__.py as</span>
+        <span class="c1"># packages.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scan_implicit_subpackages</span><span class="p">(</span>
+            <span class="n">pkg</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">,</span> <span class="n">discovered</span><span class="p">,</span> <span class="n">found_names</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_scan_implicit_subpackages</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pkg</span><span class="p">:</span> <span class="n">ModuleType</span><span class="p">,</span>
+        <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">expected_type</span><span class="p">:</span> <span class="n">PluginType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">discovered</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">already_found</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Discover subdirectories that are implicit namespace packages.</span>
+
+<span class="sd">        Walks every directory on *pkg.__path__*, looking for child</span>
+<span class="sd">        directories that:</span>
+
+<span class="sd">        1. Are not private (no leading ``_``).</span>
+<span class="sd">        2. Were not already found by ``pkgutil.iter_modules``.</span>
+<span class="sd">        3. Contain at least one ``.py`` file (worth scanning).</span>
+
+<span class="sd">        Each qualifying directory is imported as a namespace package and</span>
+<span class="sd">        recursed into via :py:meth:`_scan_namespace_pkg`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">search_path</span> <span class="ow">in</span> <span class="n">pkg</span><span class="o">.</span><span class="n">__path__</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">search_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">root</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span>
+                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">already_found</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Only probe directories that contain at least one .py file.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">)):</span>
+                    <span class="k">continue</span>
+                <span class="n">already_found</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">fqn</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">mod</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">fqn</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;failed to import `</span><span class="si">%s</span><span class="s2">`: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegistrationError</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">fqn</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
+                    <span class="k">continue</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_collect_plugins_from_module</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">,</span> <span class="n">discovered</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s2">&quot;__path__&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_scan_namespace_pkg</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">,</span> <span class="n">discovered</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_find_namespace_plugins</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
