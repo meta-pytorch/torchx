@@ -9,13 +9,13 @@
 
 """Generic named resources for testing namespace package discovery."""
 
-from torchx.plugins import register, WHOLE
+from torchx.plugins import halve_mem_down_to, powers_of_two_gpus, register, WHOLE
 from torchx.specs.api import Resource
 
 GiB: int = 1024
 
 
-@register.named_resource(aliases=["t4g"], fractionals=register.powers_of_two_gpus)
+@register.named_resource(aliases=["t4g"], fractionals=powers_of_two_gpus)
 def gpu(fractional: float = WHOLE) -> Resource:
     return Resource(
         cpu=int(64 * fractional),
@@ -24,7 +24,7 @@ def gpu(fractional: float = WHOLE) -> Resource:
     )
 
 
-@register.named_resource(fractionals=register.halve_mem_down_to(minGiB=8))
+@register.named_resource(fractionals=halve_mem_down_to(minGiB=8))
 def cpu(fractional: float = WHOLE) -> Resource:
     return Resource(
         cpu=int(16 * fractional),

@@ -34,6 +34,8 @@ Discover plugins and print a diagnostic report::
 from torchx.plugins._registration import (
     EIGHTH,
     HALF,
+    halve_mem_down_to,
+    powers_of_two_gpus,
     QUARTER,
     register,
     resource_tags,
@@ -52,6 +54,8 @@ __all__ = [
     # _registration.py
     "register",
     "resource_tags",
+    "powers_of_two_gpus",
+    "halve_mem_down_to",
     "WHOLE",
     "HALF",
     "QUARTER",

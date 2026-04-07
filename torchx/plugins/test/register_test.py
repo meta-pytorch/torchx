@@ -19,7 +19,12 @@ import types
 import unittest
 from typing import Any
 
-from torchx.plugins._registration import _register_named_resource, register
+from torchx.plugins._registration import (
+    _register_named_resource,
+    halve_mem_down_to,
+    powers_of_two_gpus,
+    register,
+)
 from torchx.plugins._registry import NAMED_RESOURCES_ATTR, PluginType, registry
 from torchx.specs.api import Resource
 
@@ -430,11 +435,11 @@ class NamedResourceRegisterTest(unittest.TestCase):
 
 
 class PowersOfTwoGpusTest(unittest.TestCase):
-    """Unit tests for :meth:`register.powers_of_two_gpus`."""
+    """Unit tests for :meth:`powers_of_two_gpus`."""
 
     def test_8_gpus(self) -> None:
         r = Resource(cpu=64, gpu=8, memMB=1024)
-        result = register.powers_of_two_gpus(r)
+        result = powers_of_two_gpus(r)
         self.assertEqual(
             result,
             {1.0: "8", 0.5: "4", 0.25: "2", 0.125: "1"},
@@ -443,7 +448,7 @@ class PowersOfTwoGpusTest(unittest.TestCase):
 
     def test_2_gpus(self) -> None:
         r = Resource(cpu=16, gpu=2, memMB=512)
-        result = register.powers_of_two_gpus(r)
+        result = powers_of_two_gpus(r)
         self.assertEqual(
             result,
             {1.0: "2", 0.5: "1"},
@@ -452,7 +457,7 @@ class PowersOfTwoGpusTest(unittest.TestCase):
 
     def test_1_gpu(self) -> None:
         r = Resource(cpu=8, gpu=1, memMB=256)
-        result = register.powers_of_two_gpus(r)
+        result = powers_of_two_gpus(r)
         self.assertEqual(
             result,
             {1.0: "1"},
@@ -462,22 +467,40 @@ class PowersOfTwoGpusTest(unittest.TestCase):
     def test_zero_gpus_raises(self) -> None:
         r = Resource(cpu=8, gpu=0, memMB=256)
         with self.assertRaises(ValueError, msg="gpu=0 should raise"):
-            register.powers_of_two_gpus(r)
+            powers_of_two_gpus(r)
 
     def test_non_power_of_two_gpus_raises(self) -> None:
         r = Resource(cpu=8, gpu=6, memMB=256)
         with self.assertRaises(ValueError, msg="gpu=6 should raise"):
-            register.powers_of_two_gpus(r)
+            powers_of_two_gpus(r)
+
+    def test_top_level_importable(self) -> None:
+        """``powers_of_two_gpus`` and ``halve_mem_down_to`` are importable from ``torchx.plugins``."""
+        from torchx.plugins import (
+            halve_mem_down_to as pkg_halve,
+            powers_of_two_gpus as pkg_pot,
+        )
+
+        self.assertIs(
+            pkg_pot,
+            powers_of_two_gpus,
+            "top-level import should be the same function",
+        )
+        self.assertIs(
+            pkg_halve,
+            halve_mem_down_to,
+            "top-level import should be the same function",
+        )
 
 
 class HalvingMemGiBTest(unittest.TestCase):
-    """Unit tests for :meth:`register.halve_mem_down_to`."""
+    """Unit tests for :meth:`halve_mem_down_to`."""
 
     GiB: int = 1024
 
     def test_64_gib_min_1(self) -> None:
         r = Resource(cpu=16, gpu=0, memMB=64 * self.GiB)
-        result = register.halve_mem_down_to(minGiB=1)(r)
+        result = halve_mem_down_to(minGiB=1)(r)
         self.assertEqual(
             result,
             {
@@ -494,7 +517,7 @@ class HalvingMemGiBTest(unittest.TestCase):
 
     def test_64_gib_min_8(self) -> None:
         r = Resource(cpu=16, gpu=0, memMB=64 * self.GiB)
-        factory = register.halve_mem_down_to(minGiB=8)
+        factory = halve_mem_down_to(minGiB=8)
         result = factory(r)
         self.assertEqual(
             result,
@@ -504,7 +527,7 @@ class HalvingMemGiBTest(unittest.TestCase):
 
     def test_256_gib_min_32(self) -> None:
         r = Resource(cpu=24, gpu=0, memMB=256 * self.GiB)
-        factory = register.halve_mem_down_to(minGiB=32)
+        factory = halve_mem_down_to(minGiB=32)
         result = factory(r)
         self.assertEqual(
             result,
@@ -515,7 +538,7 @@ class HalvingMemGiBTest(unittest.TestCase):
     def test_non_power_of_two_mem(self) -> None:
         """96 GiB (= 3 * 2^5) is valid, halves to 3."""
         r = Resource(cpu=16, gpu=0, memMB=96 * self.GiB)
-        factory = register.halve_mem_down_to(minGiB=3)
+        factory = halve_mem_down_to(minGiB=3)
         result = factory(r)
         self.assertEqual(
             result,
@@ -526,16 +549,16 @@ class HalvingMemGiBTest(unittest.TestCase):
     def test_min_below_odd_part_raises(self) -> None:
         """96 GiB has odd part 3; min=2 should raise."""
         r = Resource(cpu=16, gpu=0, memMB=96 * self.GiB)
-        factory = register.halve_mem_down_to(minGiB=2)
+        factory = halve_mem_down_to(minGiB=2)
         with self.assertRaises(ValueError, msg="min < odd part should raise"):
             factory(r)
 
     def test_zero_mem_raises(self) -> None:
         r = Resource(cpu=8, gpu=0, memMB=0)
         with self.assertRaises(ValueError, msg="memMB=0 should raise"):
-            register.halve_mem_down_to(minGiB=1)(r)
+            halve_mem_down_to(minGiB=1)(r)
 
     def test_non_gib_aligned_raises(self) -> None:
         r = Resource(cpu=8, gpu=0, memMB=500)
         with self.assertRaises(ValueError, msg="non-GiB-aligned memMB should raise"):
-            register.halve_mem_down_to(minGiB=1)(r)
+            halve_mem_down_to(minGiB=1)(r)
