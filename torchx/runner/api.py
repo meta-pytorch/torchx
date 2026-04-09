@@ -101,7 +101,9 @@ class Runner:
     ) -> None:
         self._name: str = name
         self._scheduler_factories: dict[str, SchedulerFactory] = (
-            scheduler_factories or {}
+            scheduler_factories
+            if scheduler_factories is not None
+            else get_scheduler_factories()
         )
         self._scheduler_params: dict[str, Any] = {
             **(self._get_scheduler_params_from_env()),
