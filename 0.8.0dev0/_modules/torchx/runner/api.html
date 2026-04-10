@@ -537,7 +537,9 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_factories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SchedulerFactory</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">scheduler_factories</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">scheduler_factories</span>
+            <span class="k">if</span> <span class="n">scheduler_factories</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">get_scheduler_factories</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_scheduler_params_from_env</span><span class="p">()),</span>
