@@ -762,6 +762,36 @@ class RunnerTest(TestWithTmpDir):
         runner = get_runner()
         self.assertEqual("torchx", runner._name)
 
+    def test_runner_autodiscovers_schedulers(self, _) -> None:
+        """Runner() auto-discovers plugins; explicit factories skip discovery."""
+        mock_factory = MagicMock()
+        with patch(
+            GET_SCHEDULER_FACTORIES,
+            return_value={"kubernetes": mock_factory},
+        ) as mock_get:
+            # No scheduler_factories → auto-discover
+            with Runner(name="my_session") as runner:
+                self.assertIn(
+                    "kubernetes",
+                    runner.scheduler_backends(),
+                    "Runner should auto-discover schedulers when none are provided",
+                )
+            mock_get.assert_called()
+            mock_get.reset_mock()
+
+            # Explicit scheduler_factories → skip discovery
+            with Runner(
+                name="my_session",
+                scheduler_factories={"local_cwd": mock_factory},
+            ) as runner:
+                self.assertIn("local_cwd", runner.scheduler_backends())
+                self.assertNotIn(
+                    "kubernetes",
+                    runner.scheduler_backends(),
+                    "explicit factories should skip auto-discovery",
+                )
+            mock_get.assert_not_called()
+
     def test_cfg_from_str(self, _) -> None:
         scheduler_mock = MagicMock()
         opts = runopts()
