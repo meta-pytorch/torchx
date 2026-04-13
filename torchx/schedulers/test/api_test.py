@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 import unittest
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Iterable, Mapping, TypeVar
 from unittest.mock import MagicMock, patch
@@ -516,3 +516,167 @@ class StructuredOptsTest(unittest.TestCase):
         # None values should be preserved
         self.assertIn("optional_tag", cfg)
         self.assertIsNone(cfg["optional_tag"])
+
+
+@dataclass
+class InnerOpts(StructuredOpts):
+    x: str | None = None
+    """An optional string."""
+
+    y: str | None = None
+    """Another optional string."""
+
+    z: str = "default_z"
+    """A string with default."""
+
+
+@dataclass
+class OuterOpts(StructuredOpts):
+    name: str = "default_name"
+    """A top-level string."""
+
+    inner: InnerOpts = field(default_factory=InnerOpts)
+    """Nested opts group."""
+
+
+@dataclass
+class DeepC(StructuredOpts):
+    flag: bool = False
+    """A boolean."""
+
+
+@dataclass
+class DeepB(StructuredOpts):
+    c: DeepC = field(default_factory=DeepC)
+    """Third level."""
+
+    val: int = 0
+    """An int."""
+
+
+@dataclass
+class DeepA(StructuredOpts):
+    b: DeepB = field(default_factory=DeepB)
+    """Second level."""
+
+    tag: str = "default_tag"
+    """A string."""
+
+
+class NestedStructuredOptsTest(unittest.TestCase):
+
+    def test_as_runopts(self) -> None:
+        opts = OuterOpts.as_runopts()
+        keys = [k for k, _ in opts]
+        self.assertEqual(
+            keys,
+            ["name", "inner.x", "inner.y", "inner.z"],
+        )
+        z_opt = opts.get("inner.z")
+        self.assertIsNotNone(z_opt)
+        self.assertEqual(z_opt.default, "default_z")
+        self.assertFalse(z_opt.is_required)
+
+    def test_from_cfg(self) -> None:
+        cfg = {
+            "name": "foo",
+            "inner.x": "bar",
+            "inner.z": "baz",
+        }
+        opts = OuterOpts.from_cfg(cfg)
+        self.assertEqual(opts.name, "foo")
+        self.assertEqual(opts.inner.x, "bar")
+        self.assertEqual(opts.inner.z, "baz")
+
+    def test_from_cfg_partial_uses_defaults(self) -> None:
+        opts = OuterOpts.from_cfg({"inner.x": "val"})
+        self.assertEqual(opts.inner.x, "val")
+        self.assertEqual(opts.inner.z, "default_z")
+        self.assertIsNone(opts.inner.y)
+        self.assertEqual(opts.name, "default_name")
+
+    def test_mapping_protocol(self) -> None:
+        opts = OuterOpts(inner=InnerOpts(x="a", z="b"))
+        self.assertEqual(
+            list(opts),
+            ["name", "inner.x", "inner.y", "inner.z"],
+        )
+        self.assertEqual(len(opts), 4)
+        self.assertEqual(opts["inner.x"], "a")
+        self.assertIn("inner.z", opts)
+        self.assertNotIn("inner.missing", opts)
+        with self.assertRaises(KeyError):
+            opts["inner.nonexistent"]
+
+    def test_get_docstrings(self) -> None:
+        docs = OuterOpts.get_docstrings()
+        self.assertEqual(docs.get("inner.x"), "An optional string.")
+        self.assertEqual(docs.get("inner.z"), "A string with default.")
+        self.assertEqual(docs.get("name"), "A top-level string.")
+
+    def test_or_merge(self) -> None:
+        merged = OuterOpts(name="a", inner=InnerOpts(x="b")) | SampleOpts(
+            cluster_name="c"
+        )
+        self.assertIsInstance(merged, dict)
+        self.assertEqual(merged["inner.x"], "b")
+        self.assertEqual(merged["name"], "a")
+        self.assertEqual(merged["cluster_name"], "c")
+
+    def test_three_levels_deep(self) -> None:
+        opts = DeepA.as_runopts()
+        keys = [k for k, _ in opts]
+        self.assertEqual(
+            keys,
+            ["b.c.flag", "b.val", "tag"],
+        )
+
+        cfg = {
+            "b.c.flag": True,
+            "b.val": 42,
+            "tag": "test",
+        }
+        deep = DeepA.from_cfg(cfg)
+        self.assertTrue(deep.b.c.flag)
+        self.assertEqual(deep.b.val, 42)
+        self.assertEqual(deep.tag, "test")
+        self.assertTrue(deep["b.c.flag"])
+
+    def test_optional_nested_none(self) -> None:
+        @dataclass
+        class OptsWithOptional(StructuredOpts):
+            name: str = "default_name"
+            inner: InnerOpts | None = None
+
+        opts = OptsWithOptional()
+        self.assertIsNone(opts.inner)
+        self.assertEqual(list(opts), ["name"])
+        self.assertEqual(len(opts), 1)
+        self.assertNotIn("inner.x", opts)
+        self.assertIsNone(opts.get("inner.x"))
+
+    def test_required_nested_from_cfg(self) -> None:
+        @dataclass
+        class OptsWithRequired(StructuredOpts):
+            inner: InnerOpts
+            name: str = "default_name"
+
+        opts = OptsWithRequired.from_cfg({"inner.x": "val"})
+        self.assertEqual(opts.inner.x, "val")
+        self.assertEqual(opts.inner.z, "default_z")
+
+        opts2 = OptsWithRequired.from_cfg({})
+        self.assertIsNone(opts2.inner.x)
+        self.assertEqual(opts2.inner.z, "default_z")
+
+    def test_camel_case_nested_prefix(self) -> None:
+        @dataclass
+        class ChildOpts(StructuredOpts):
+            val: str = "default_val"
+
+        @dataclass
+        class ParentOpts(StructuredOpts):
+            child_group: ChildOpts = field(default_factory=ChildOpts)
+
+        opts = ParentOpts(child_group=ChildOpts(val="custom"))
+        self.assertEqual(opts["childGroup.val"], "custom")
