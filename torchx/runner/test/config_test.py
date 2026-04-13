@@ -8,6 +8,7 @@
 # pyre-strict
 
 import os
+from dataclasses import dataclass, field
 from datetime import datetime
 from io import StringIO
 from typing import Dict, Iterable, List, Mapping
@@ -24,7 +25,12 @@ from torchx.runner.config import (
     load_sections,
 )
 from torchx.schedulers import get_scheduler_factories, Scheduler
-from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Stream
+from torchx.schedulers.api import (
+    DescribeAppResponse,
+    ListAppResponse,
+    Stream,
+    StructuredOpts,
+)
 from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts, Workspace
 from torchx.test.fixtures import TestWithTmpDir
 
@@ -540,3 +546,66 @@ workspace =
             },
             workspace.projects,
         )
+
+
+@dataclass
+class OptB(StructuredOpts):
+    x: str | None = None
+    """An optional string."""
+
+    y: str = "default_y"
+    """A string with default."""
+
+
+@dataclass
+class OptA(StructuredOpts):
+    name: str = "default_name"
+    """A top-level string."""
+
+    b: OptB = field(default_factory=OptB)
+    """Nested opts group."""
+
+
+class NestedTestScheduler(TestScheduler):
+    def __init__(self, session_name: str) -> None:
+        Scheduler.__init__(self, "nested_test", session_name)
+
+    def _run_opts(self) -> runopts:
+        return OptA.as_runopts()
+
+
+_NESTED_CONFIG = """#
+[nested_test]
+name = foo
+b.x = bar
+b.y = baz
+"""
+
+
+class NestedConfigTest(TestWithTmpDir):
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"nested_test": NestedTestScheduler},
+    )
+    def test_load_and_from_cfg(self, _) -> None:
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="nested_test", f=StringIO(_NESTED_CONFIG), cfg=cfg)
+        self.assertEqual("foo", cfg.get("name"))
+        self.assertEqual("bar", cfg.get("b.x"))
+        self.assertEqual("baz", cfg.get("b.y"))
+
+        opts = OptA.from_cfg(cfg)
+        self.assertEqual(opts.name, "foo")
+        self.assertEqual(opts.b.x, "bar")
+        self.assertEqual(opts.b.y, "baz")
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"nested_test": NestedTestScheduler},
+    )
+    def test_load_no_override_and_partial(self, _) -> None:
+        cfg: dict[str, CfgVal] = {"b.x": "cli-value"}
+        load(scheduler="nested_test", f=StringIO(_NESTED_CONFIG), cfg=cfg)
+        self.assertEqual("cli-value", cfg.get("b.x"))
+        self.assertEqual("baz", cfg.get("b.y"))

@@ -19,7 +19,6 @@ from enum import Enum
 from typing import (
     Generic,
     get_args,
-    get_origin,
     get_type_hints,
     Iterable,
     List,
@@ -53,6 +52,30 @@ DAYS_IN_2_WEEKS = 14
 # =============================================================================
 
 
+# pyre-fixme[24]: Generic type `type` expects 1 type parameter.
+def _unwrap_optional(tp: type) -> type:
+    """Strip ``None`` from union types (e.g. ``str | None`` -> ``str``)."""
+    args = [a for a in get_args(tp) if a is not types.NoneType]
+    if args and len(args) < len(get_args(tp)):
+        return args[0] if len(args) == 1 else Union[tuple(args)]
+    return tp
+
+
+# pyre-fixme[24]: Generic type `type` expects 1 type parameter.
+def _is_structured_opts(tp: type) -> bool:
+    """Return True if *tp* is a concrete ``StructuredOpts`` subclass."""
+    try:
+        return (
+            isinstance(tp, type)
+            and issubclass(tp, StructuredOpts)
+            and tp is not StructuredOpts
+        )
+    except TypeError:
+        # Generic aliases like list[str] or dict[str, str] can pass
+        # isinstance(tp, type) on some Python versions but fail issubclass().
+        return False
+
+
 class StructuredOpts(Mapping[str, CfgVal]):
     """Base class for typed scheduler configuration options.
 
@@ -65,6 +88,8 @@ class StructuredOpts(Mapping[str, CfgVal]):
         - Parses raw config dicts into typed instances via :py:meth:`from_cfg`
         - Supports snake_case field names with camelCase aliases
         - Extracts help text from field docstrings
+        - Supports nested ``StructuredOpts`` fields, flattened with dot-prefixed
+          keys (e.g., ``k8s.context``)
 
     Example:
         .. doctest::
@@ -96,11 +121,27 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
         Fields are snake_case but also accept camelCase aliases (e.g.,
         ``hpc_identity`` can be set via ``hpcIdentity``).
+        Nested :py:class:`StructuredOpts` fields are reconstructed from
+        dot-prefixed keys (e.g., ``k8s.context``).
         """
+        type_hints = get_type_hints(cls)
         kwargs = {}
         for f in fields(cls):
             name = f.name
-            # Check for snake_case key first, then camelCase alias
+            field_type = _unwrap_optional(type_hints.get(name, str))
+
+            if _is_structured_opts(field_type):
+                prefix = f"{name}."
+                nested_cfg = {
+                    k[len(prefix) :]: v for k, v in cfg.items() if k.startswith(prefix)
+                }
+                if nested_cfg:
+                    kwargs[name] = field_type.from_cfg(nested_cfg)
+                elif f.default is MISSING and f.default_factory is MISSING:
+                    # Required nested group — construct so its own validation runs.
+                    kwargs[name] = field_type.from_cfg({})
+                continue
+
             if name in cfg:
                 kwargs[name] = cfg[name]
             else:
@@ -129,17 +170,32 @@ class StructuredOpts(Mapping[str, CfgVal]):
             return None
 
     def __getitem__(self, key: str) -> CfgVal:
+        if "." in key:
+            prefix, rest = key.split(".", 1)
+            prefix = cases.camel_to_snake(prefix)
+            nested = getattr(self, prefix, None)
+            if isinstance(nested, StructuredOpts):
+                return nested[rest]
+            raise KeyError(key) from None
         snake_key = cases.camel_to_snake(key)
         if hasattr(self, snake_key):
             return getattr(self, snake_key)
         raise KeyError(key) from None
 
     def __len__(self) -> int:
-        return len(fields(self))
+        return sum(1 for _ in self)
 
     def __iter__(self) -> Iterator[str]:
+        type_hints = get_type_hints(type(self))
         for f in fields(self):
-            yield f.name
+            field_type = _unwrap_optional(type_hints.get(f.name, str))
+            if _is_structured_opts(field_type):
+                nested = getattr(self, f.name)
+                if nested is not None:
+                    for nested_key in nested:
+                        yield f"{f.name}.{nested_key}"
+            else:
+                yield f.name
 
     # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
     def __contains__(self, key: object) -> bool:
@@ -160,8 +216,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
         except (OSError, TypeError):
             return docstrings
 
-        # Pattern to match: field_name: type = value (optional) followed by docstring
-        # Captures: field name, then the triple-quoted docstring on the next line
+        # Match: field_name: type...\n    """docstring"""
         pattern = re.compile(
             r'^\s+(\w+):\s*[^\n]+\n\s+"""([^"]+)"""',
             re.MULTILINE,
@@ -171,41 +226,47 @@ class StructuredOpts(Mapping[str, CfgVal]):
             docstring = match.group(2).strip()
             docstrings[field_name] = docstring
 
+        type_hints = get_type_hints(cls)
+        for f in fields(cls):
+            field_type = _unwrap_optional(type_hints.get(f.name, str))
+            if _is_structured_opts(field_type):
+                for key, doc in field_type.get_docstrings().items():
+                    docstrings[f"{f.name}.{key}"] = doc
+
         return docstrings
 
     @classmethod
     def as_runopts(cls) -> runopts:
-        """Build :py:class:`~torchx.specs.runopts` from dataclass fields."""
+        """Build :py:class:`~torchx.specs.runopts` from dataclass fields.
+
+        Nested :py:class:`StructuredOpts` fields are flattened with
+        dot-prefixed keys (e.g., field ``k8s: K8sOpts`` with sub-field
+        ``context`` becomes ``k8s.context``).
+        """
         opts = runopts()
 
-        # Get resolved type hints (handles string annotations from __future__.annotations)
         type_hints = get_type_hints(cls)
-        # Get field docstrings parsed from source code
         docstrings = cls.get_docstrings()
 
         for f in fields(cls):
             name = f.name
+            field_type = _unwrap_optional(type_hints.get(name, str))
 
-            # Get help text from field docstring
+            if _is_structured_opts(field_type):
+                nested_opts = field_type.as_runopts()
+                for nested_key, nested_runopt in nested_opts:
+                    opts.add(
+                        f"{name}.{nested_key}",
+                        type_=nested_runopt.opt_type,
+                        default=nested_runopt.default,
+                        required=nested_runopt.is_required,
+                        help=nested_runopt.help,
+                    )
+                continue
+
             help_text = docstrings.get(name, name)
-
-            # Get type: extract base type from Union (e.g., int | None -> int)
-            field_type = type_hints.get(name, str)
-            origin = get_origin(field_type)
-            # Handle Union types to extract the base type for runopts.
-            # This logic handles field declarations like:
-            #   * foo: str | None = None  (types.UnionType without __future__.annotations)
-            #   * foo: Union[str, None] = None
-            #   * foo: Optional[str] = None  (equivalent to Union[str, None])
-            # Note: With `from __future__ import annotations`, get_type_hints() returns
-            # typing.Union for all syntaxes. The UnionType check handles the case
-            # without __future__.annotations where `str | None` creates types.UnionType.
-            if origin is Union or isinstance(field_type, types.UnionType):
-                args = [a for a in get_args(field_type) if a is not type(None)]
-                field_type = args[0] if args else str
             type_ = field_type
 
-            # Get default value
             has_default = f.default is not MISSING
             has_default_factory = f.default_factory is not MISSING
             if has_default:
@@ -215,10 +276,8 @@ class StructuredOpts(Mapping[str, CfgVal]):
             else:
                 default = None
 
-            # Determine if required (no default value)
             required = not has_default and not has_default_factory
 
-            # Add the option
             opts.add(
                 name,
                 type_=type_,
