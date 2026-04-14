@@ -1933,3 +1933,25 @@ class KubernetesSchedulerNoImportTest(unittest.TestCase):
 
         with self.assertRaises(ModuleNotFoundError):
             scheduler.submit_dryrun(app, cfg)
+
+
+class KueueSchedulerTest(unittest.TestCase):
+    def test_factory_returns_kueue_scheduler(self) -> None:
+        from torchx_plugins.schedulers.kueue import kueue_scheduler, KueueScheduler
+
+        sched = kueue_scheduler(session_name="test")
+        self.assertIsInstance(sched, KueueScheduler)
+        self.assertEqual(sched.session_name, "test")
+
+    def test_queue_label_added_to_metadata(self) -> None:
+        from torchx_plugins.schedulers.kueue import KUEUE_QUEUE_LABEL, KueueScheduler
+
+        resource: dict[str, object] = {"metadata": {"name": "my-job"}, "spec": {}}
+        mock_dryrun = MagicMock()
+        mock_dryrun.request.resource = resource
+        cfg = Opts(queue="my-kueue-queue")
+        with patch.object(KubernetesScheduler, "_submit_dryrun", return_value=mock_dryrun):
+            result = KueueScheduler(session_name="test")._submit_dryrun(MagicMock(), cfg)
+        labels = resource["metadata"]["labels"]  # type: ignore[index]
+        self.assertEqual(labels[KUEUE_QUEUE_LABEL], "my-kueue-queue")  # type: ignore[index]
+        self.assertIs(result, mock_dryrun)
