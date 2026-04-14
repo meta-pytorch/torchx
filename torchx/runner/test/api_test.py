@@ -188,6 +188,40 @@ class RunnerTest(TestWithTmpDir):
                 event = record_mock.call_args_list[i].args[0]
                 self.assertEqual(event.session, CURRENT_SESSION_ID)
 
+    def test_run_dryrun_true(self, record_mock: MagicMock) -> None:
+        with self.get_runner() as runner:
+            role = Role(
+                name="echo",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="echo",
+                args=["hello"],
+            )
+            app = AppDef("name", roles=[role])
+
+            result = runner.run(app, scheduler="local_dir", cfg=self.cfg, dryrun=True)
+            self.assertIsInstance(
+                result, AppDryRunInfo, "run(dryrun=True) returns AppDryRunInfo"
+            )
+
+    def test_run_dryrun_false(self, record_mock: MagicMock) -> None:
+        test_file = self.tmpdir / "test_run_dryrun_false"
+
+        with self.get_runner() as runner:
+            role = Role(
+                name="touch",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="touch.sh",
+                args=[str(test_file)],
+            )
+            app = AppDef("name", roles=[role])
+
+            result = runner.run(app, scheduler="local_dir", cfg=self.cfg, dryrun=False)
+            self.assertIsInstance(
+                result, str, "run(dryrun=False) returns AppHandle (str)"
+            )
+
     def test_dryrun(self, record_mock: MagicMock) -> None:
         scheduler_mock = MagicMock()
         scheduler_mock.run_opts.return_value.resolve.return_value = {

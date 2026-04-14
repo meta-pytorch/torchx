@@ -13,7 +13,16 @@ import time
 import warnings
 from datetime import datetime
 from types import TracebackType
-from typing import Any, Iterable, Mapping, Type, TYPE_CHECKING, TypeVar
+from typing import (
+    Any,
+    Iterable,
+    Literal,
+    Mapping,
+    overload,
+    Type,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 from torchx.runner.events import log_event
 from torchx.schedulers import get_scheduler_factories, SchedulerFactory
@@ -211,6 +220,30 @@ class Runner:
             parent_run_id=parent_run_id,
         )
 
+    @overload
+    def run(
+        self,
+        app: AppDef,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = ...,
+        workspace: Workspace | str | None = ...,
+        parent_run_id: str | None = ...,
+        *,
+        dryrun: Literal[True],
+    ) -> AppDryRunInfo: ...
+
+    @overload
+    def run(
+        self,
+        app: AppDef,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = ...,
+        workspace: Workspace | str | None = ...,
+        parent_run_id: str | None = ...,
+        *,
+        dryrun: Literal[False] = ...,
+    ) -> AppHandle: ...
+
     def run(
         self,
         app: AppDef,
@@ -218,8 +251,26 @@ class Runner:
         cfg: Mapping[str, CfgVal] | None = None,
         workspace: Workspace | str | None = None,
         parent_run_id: str | None = None,
-    ) -> AppHandle:
-        """Submits an :py:class:`~torchx.specs.AppDef` and returns its :py:data:`~torchx.specs.AppHandle`."""
+        *,
+        dryrun: bool = False,
+    ) -> AppHandle | AppDryRunInfo:
+        """Submits an :py:class:`~torchx.specs.AppDef` or returns its dry-run info.
+
+        .. code-block:: python
+
+            # Submit
+            handle = runner.run(app, "mkube", cfg=cfg)
+
+            # Dryrun — inspect without submitting
+            info = runner.run(app, "mkube", cfg=cfg, dryrun=True)
+            print(info)
+
+        Args:
+            dryrun: If ``True``, only validate and render the request
+                without submitting.  Returns :py:class:`~torchx.specs.AppDryRunInfo`.
+                If ``False`` (default), submit and return the
+                :py:data:`~torchx.specs.AppHandle`.
+        """
 
         with log_event(api="run") as ctx:
             dryrun_info = self.dryrun(
@@ -229,6 +280,10 @@ class Runner:
                 workspace=workspace,
                 parent_run_id=parent_run_id,
             )
+
+            if dryrun:
+                return dryrun_info
+
             handle = self.schedule(dryrun_info)
 
             event = ctx._torchx_event
