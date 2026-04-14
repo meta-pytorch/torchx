@@ -449,7 +449,16 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracebackType</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeVar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">overload</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_event</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_scheduler_factories</span><span class="p">,</span> <span class="n">SchedulerFactory</span>
@@ -647,6 +656,30 @@
             <span class="n">parent_run_id</span><span class="o">=</span><span class="n">parent_run_id</span><span class="p">,</span>
         <span class="p">)</span></div>
 
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">dryrun</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">dryrun</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span> <span class="o">...</span>
+
 <div class="viewcode-block" id="Runner.run"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.run">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
@@ -654,8 +687,26 @@
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits an :py:class:`~torchx.specs.AppDef` and returns its :py:data:`~torchx.specs.AppHandle`.&quot;&quot;&quot;</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">dryrun</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span> <span class="o">|</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits an :py:class:`~torchx.specs.AppDef` or returns its dry-run info.</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            # Submit</span>
+<span class="sd">            handle = runner.run(app, &quot;mkube&quot;, cfg=cfg)</span>
+
+<span class="sd">            # Dryrun — inspect without submitting</span>
+<span class="sd">            info = runner.run(app, &quot;mkube&quot;, cfg=cfg, dryrun=True)</span>
+<span class="sd">            print(info)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dryrun: If ``True``, only validate and render the request</span>
+<span class="sd">                without submitting.  Returns :py:class:`~torchx.specs.AppDryRunInfo`.</span>
+<span class="sd">                If ``False`` (default), submit and return the</span>
+<span class="sd">                :py:data:`~torchx.specs.AppHandle`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="n">api</span><span class="o">=</span><span class="s2">&quot;run&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
             <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun</span><span class="p">(</span>
@@ -665,6 +716,10 @@
                 <span class="n">workspace</span><span class="o">=</span><span class="n">workspace</span><span class="p">,</span>
                 <span class="n">parent_run_id</span><span class="o">=</span><span class="n">parent_run_id</span><span class="p">,</span>
             <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dryrun</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dryrun_info</span>
+
             <span class="n">handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">dryrun_info</span><span class="p">)</span>
 
             <span class="n">event</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">_torchx_event</span>
