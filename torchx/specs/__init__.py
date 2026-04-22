@@ -88,11 +88,12 @@ CUSTOM_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
 def _load_named_resources() -> dict[str, Callable[[], Resource]]:
     materialized_resources: dict[str, Callable[[], Resource]] = {}
 
+    # Priority low → high (later wins on name collision).
     for name, resource in {
+        **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
         **GENERIC_NAMED_RESOURCES,
         **AWS_NAMED_RESOURCES,
         **CUSTOM_NAMED_RESOURCES,
-        **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
     }.items():
         materialized_resources[name] = resource
 
