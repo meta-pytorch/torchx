@@ -219,6 +219,40 @@ class RegistryTest(_RegistryTestBase):
         )
 
     @mock_install_torchx_plugins()
+    def test_specs_resource_custom_beats_namespace_plugin(self) -> None:
+        """``specs.resource(h=name)`` must resolve to ``CUSTOM_NAMED_RESOURCES``
+        when a downstream ``torchx_plugins.named_resources.*`` registers the
+        same name. Exercises the full scanner → ``_load_named_resources`` →
+        ``specs.resource`` path (the user-visible API).
+        """
+        import torchx.specs
+        from torchx.specs.api import Resource
+
+        # Fixture already registers `gpu` with alias `t4g` under
+        # torchx_plugins.named_resources.generic via @register.named_resource.
+        # Install a colliding custom-layer factory with a distinguishing capability.
+        def custom_gpu() -> Resource:
+            return Resource(
+                cpu=999, gpu=999, memMB=999, capabilities={"layer": "custom"}
+            )
+
+        with patch(
+            "torchx.specs.CUSTOM_NAMED_RESOURCES",
+            {"gpu": custom_gpu, "t4g": custom_gpu},
+        ):
+            factories = torchx.specs._load_named_resources()
+            with patch.object(torchx.specs, "_named_resource_factories", factories):
+                by_name = torchx.specs.resource(h="gpu")
+                by_alias = torchx.specs.resource(h="t4g")
+
+        for r, how in ((by_name, "base name"), (by_alias, "alias")):
+            self.assertEqual(
+                r.capabilities.get("layer"),
+                "custom",
+                f"CUSTOM_NAMED_RESOURCES did not win over namespace plugin via {how!r}",
+            )
+
+    @mock_install_torchx_plugins()
     def test_load_entrypoints_false(self) -> None:
         """load_entrypoints=False skips entry-point loading."""
         ep_result = {"ep_only": "ep_value"}
