@@ -456,11 +456,11 @@ sufficient.</p>
 <p><span class="versionmodified deprecated">Deprecated since version Entry-point: </span>based plugin registration (<code class="docutils literal notranslate"><span class="pre">[torchx.*]</span></code> sections in
 <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> / <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>) is deprecated. Use the <code class="docutils literal notranslate"><span class="pre">&#64;register</span></code>
 decorator with <code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code> namespace packages instead.</p>
-<p>Namespace plugins are <strong>always</strong> loaded. By default
-(<code class="docutils literal notranslate"><span class="pre">TORCHX_NO_ENTRYPOINTS=0</span></code> or unset), entry points are also loaded
-for backward compatibility. Set <code class="docutils literal notranslate"><span class="pre">TORCHX_NO_ENTRYPOINTS=1</span></code> to load
-only namespace plugins. Entry-point loading will be removed in a
-future release. See <a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a> for the full API reference.</p>
+<p>By default both namespace plugins and entry points are loaded for
+backward compatibility. Set <code class="docutils literal notranslate"><span class="pre">TORCHX_PLUGINS_SOURCE=1</span></code> (namespace
+package only) to opt out of entry-point discovery early; entry-point
+loading will be removed in a future release. See
+<a class="reference internal" href="plugins.html"><span class="doc">torchx.plugins</span></a> for the full API reference.</p>
 </div>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌──────────────────────────────────────────────────────────────┐
 │                     TorchX Extension Points                  │

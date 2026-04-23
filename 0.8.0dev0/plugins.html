@@ -460,7 +460,8 @@
 </div>
 <div class="deprecated">
 <p><span class="versionmodified deprecated">Deprecated since version Entry-point: </span>based registration (<code class="docutils literal notranslate"><span class="pre">[torchx.*]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>)
-is deprecated.  Set <code class="docutils literal notranslate"><span class="pre">TORCHX_NO_ENTRYPOINTS=1</span></code> to opt out early.</p>
+is deprecated.  Set <code class="docutils literal notranslate"><span class="pre">TORCHX_PLUGINS_SOURCE=1</span></code> (namespace package
+only) to opt out of entry-point discovery early.</p>
 </div>
 <section id="core-api">
 <h2>Core API<a class="headerlink" href="#core-api" title="Permalink to this heading">¶</a></h2>
@@ -470,9 +471,11 @@ is deprecated.  Set <code class="docutils literal notranslate"><span class="pre"
 <dd><p>Return the cached <a class="reference internal" href="#torchx.plugins.PluginRegistry" title="torchx.plugins.PluginRegistry"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a> singleton.</p>
 <p>The registry lazily discovers plugins per-group on first
 <a class="reference internal" href="#torchx.plugins.PluginRegistry.get" title="torchx.plugins.PluginRegistry.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> access and caches the results.</p>
-<p>Namespace plugins (<code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code>) are <strong>always</strong> loaded.
-Entry points from <code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code> are additionally merged in
-unless <code class="docutils literal notranslate"><span class="pre">TORCHX_NO_ENTRYPOINTS=1</span></code> is set.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">TORCHX_PLUGINS_SOURCE</span></code> environment variable selects which
+discovery channels are enabled.  Its value is parsed as the integer
+representation of a <code class="xref py py-class docutils literal notranslate"><span class="pre">PluginSource</span></code> bitmask: <code class="docutils literal notranslate"><span class="pre">0</span></code> for
+none, <code class="docutils literal notranslate"><span class="pre">1</span></code> for namespace package only, <code class="docutils literal notranslate"><span class="pre">2</span></code> for entry points only,
+<code class="docutils literal notranslate"><span class="pre">3</span></code> for both.  Defaults to all channels enabled when unset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The cached <a class="reference internal" href="#torchx.plugins.PluginRegistry" title="torchx.plugins.PluginRegistry"><code class="xref py py-class docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a> instance.</p>
@@ -491,7 +494,7 @@ unless <code class="docutils literal notranslate"><span class="pre">TORCHX_NO_EN
 
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.plugins.PluginRegistry">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">PluginRegistry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_entrypoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">PluginRegistry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plugin_sources</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PluginSource</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PluginSource.NAMESPACE_PKG</span> <span class="pre">|</span> <span class="pre">ENTRYPOINT</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Immutable, lazily-populated plugin registry.</p>
 <p>Created by <a class="reference internal" href="#torchx.plugins.registry" title="torchx.plugins.registry"><code class="xref py py-func docutils literal notranslate"><span class="pre">registry()</span></code></a>.  Each plugin group is discovered on first
 access via <a class="reference internal" href="#torchx.plugins.PluginRegistry.get" title="torchx.plugins.PluginRegistry.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> and cached for subsequent calls.</p>
@@ -503,15 +506,14 @@ access via <a class="reference internal" href="#torchx.plugins.PluginRegistry.ge
 <span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Namespace plugins (<code class="docutils literal notranslate"><span class="pre">torchx_plugins.*</span></code>) are <strong>always</strong> loaded.
-The <em>load_entrypoints</em> flag only controls whether <code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code>
-entry points are additionally merged in.</p>
+<p>Discovery channels are selected via <em>plugin_sources</em>, a <code class="xref py py-class docutils literal notranslate"><span class="pre">PluginSource</span></code>
+bitmask.  Defaults to all channels enabled; pass <code class="xref py py-attr docutils literal notranslate"><span class="pre">PluginSource.NONE</span></code>
+for an empty registry or any combination of <code class="docutils literal notranslate"><span class="pre">NAMESPACE_PKG</span></code> / <code class="docutils literal notranslate"><span class="pre">ENTRYPOINT</span></code>
+to enable a subset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>load_entrypoints</strong> – Whether to <strong>also</strong> load plugins from
-<code class="docutils literal notranslate"><span class="pre">importlib.metadata</span></code> entry points.  Set to <code class="docutils literal notranslate"><span class="pre">False</span></code> to
-disable entry-point loading (namespace plugins are still
-discovered).  Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code> for backward compatibility.</p>
+<dd class="field-odd"><p><strong>plugin_sources</strong> – Bitmask of discovery channels to enable.
+Defaults to <code class="docutils literal notranslate"><span class="pre">NAMESPACE_PKG</span> <span class="pre">|</span> <span class="pre">ENTRYPOINT</span></code>.</p>
 </dd>
 </dl>
 <dl class="py method">

@@ -20,11 +20,11 @@ sufficient.
    ``setup.py`` / ``pyproject.toml``) is deprecated. Use the ``@register``
    decorator with ``torchx_plugins.*`` namespace packages instead.
 
-   Namespace plugins are **always** loaded. By default
-   (``TORCHX_NO_ENTRYPOINTS=0`` or unset), entry points are also loaded
-   for backward compatibility. Set ``TORCHX_NO_ENTRYPOINTS=1`` to load
-   only namespace plugins. Entry-point loading will be removed in a
-   future release. See :doc:`plugins` for the full API reference.
+   By default both namespace plugins and entry points are loaded for
+   backward compatibility. Set ``TORCHX_PLUGINS_SOURCE=1`` (namespace
+   package only) to opt out of entry-point discovery early; entry-point
+   loading will be removed in a future release. See
+   :doc:`plugins` for the full API reference.
 
 .. code-block:: text
 
