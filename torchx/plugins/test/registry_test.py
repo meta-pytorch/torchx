@@ -14,6 +14,7 @@ priority, named resource discovery, and fault-tolerance of discovery against
 broken plugin modules.
 """
 
+import os
 import sys
 import types
 import unittest
@@ -24,6 +25,7 @@ from unittest.mock import patch
 from torchx.plugins._registration import register
 from torchx.plugins._registry import (
     PluginRegistry,
+    PluginSource,
     PluginType,
     RegistrationError,
     registry,
@@ -83,7 +85,7 @@ class RegistryTest(_RegistryTestBase):
     """Tests ``registry()`` and ``PluginRegistry`` caching, discovery, and merge priority."""
 
     def test_returns_empty_when_not_installed(self) -> None:
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         result = reg.get(PluginType.SCHEDULER)
         self.assertEqual(
             result,
@@ -111,7 +113,7 @@ class RegistryTest(_RegistryTestBase):
 
     @mock_install_torchx_plugins()
     def test_discovers_decorated_plugins(self) -> None:
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         result = reg.get(PluginType.SCHEDULER)
 
         self.assertIn(
@@ -137,7 +139,7 @@ class RegistryTest(_RegistryTestBase):
 
     @mock_install_torchx_plugins()
     def test_skips_private_modules(self) -> None:
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         result = reg.get(PluginType.SCHEDULER)
 
         # _private.py should have been skipped.
@@ -163,9 +165,55 @@ class RegistryTest(_RegistryTestBase):
         )
 
     @mock_install_torchx_plugins()
+    def test_registry_env_var_gates_discovery(self) -> None:
+        """``registry()`` honours TORCHX_PLUGINS_SOURCE via reg.get()."""
+        ep_result = {"ep_only": "ep_value"}
+        # env var value → (namespace plugin expected?, entry-point plugin expected?)
+        cases = [
+            (None, (True, True)),  # unset → ALL
+            ("3", (True, True)),  # NAMESPACE_PKG | ENTRYPOINT
+            ("1", (True, False)),  # NAMESPACE_PKG
+            ("2", (False, True)),  # ENTRYPOINT
+            ("0", (False, False)),  # NONE
+        ]
+        for value, (want_ns, want_ep) in cases:
+            with self.subTest(TORCHX_PLUGINS_SOURCE=value):
+                registry.cache_clear()
+                with patch.dict("os.environ", {}, clear=False):
+                    os.environ.pop("TORCHX_PLUGINS_SOURCE", None)
+                    if value is not None:
+                        os.environ["TORCHX_PLUGINS_SOURCE"] = value
+                    with patch.object(
+                        entrypoints, "load_group", return_value=ep_result
+                    ):
+                        result = registry().get(PluginType.SCHEDULER)
+                self.assertEqual(
+                    "local_cwd" in result,
+                    want_ns,
+                    f"namespace plugin presence for {value}",
+                )
+                self.assertEqual(
+                    "ep_only" in result,
+                    want_ep,
+                    f"entry-point plugin presence for {value}",
+                )
+        registry.cache_clear()
+
+    def test_registry_env_var_invalid_raises(self) -> None:
+        """``registry()`` raises a clear ValueError on invalid TORCHX_PLUGINS_SOURCE."""
+        for bad in ("namespace", "1a", "-1", "4"):
+            with self.subTest(TORCHX_PLUGINS_SOURCE=bad):
+                registry.cache_clear()
+                with patch.dict("os.environ", {"TORCHX_PLUGINS_SOURCE": bad}):
+                    with self.assertRaises(ValueError) as ctx:
+                        registry()
+                    self.assertIn("TORCHX_PLUGINS_SOURCE", str(ctx.exception))
+        registry.cache_clear()
+
+    @mock_install_torchx_plugins()
     def test_get_returns_cached_dict(self) -> None:
         """Second .get() call returns the same dict object (lazy cache)."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         first = reg.get(PluginType.SCHEDULER)
         second = reg.get(PluginType.SCHEDULER)
 
@@ -219,29 +267,36 @@ class RegistryTest(_RegistryTestBase):
         )
 
     @mock_install_torchx_plugins()
-    def test_load_entrypoints_false(self) -> None:
-        """load_entrypoints=False skips entry-point loading."""
+    def test_plugin_sources_gate_discovery(self) -> None:
+        """``plugin_sources`` bitmask selects which discovery channels run."""
         ep_result = {"ep_only": "ep_value"}
-
-        with patch.object(entrypoints, "load_group", return_value=ep_result):
-            reg = PluginRegistry(load_entrypoints=False)
-            result = reg.get(PluginType.SCHEDULER)
-
-        self.assertNotIn(
-            "ep_only",
-            result,
-            "should not include entry-point-only plugins when load_entrypoints=False",
-        )
-        self.assertIn(
-            "local_cwd",
-            result,
-            "namespace plugins should still be discovered",
-        )
+        # plugin_sources → (namespace plugin expected?, entry-point plugin expected?)
+        cases = [
+            (PluginSource.NAMESPACE_PKG | PluginSource.ENTRYPOINT, (True, True)),
+            (PluginSource.NAMESPACE_PKG, (True, False)),
+            (PluginSource.ENTRYPOINT, (False, True)),
+            (PluginSource.NONE, (False, False)),
+        ]
+        for plugin_sources, (want_ns, want_ep) in cases:
+            with self.subTest(plugin_sources=plugin_sources):
+                with patch.object(entrypoints, "load_group", return_value=ep_result):
+                    reg = PluginRegistry(plugin_sources=plugin_sources)
+                    result = reg.get(PluginType.SCHEDULER)
+                self.assertEqual(
+                    "local_cwd" in result,
+                    want_ns,
+                    f"namespace plugin presence for plugin_sources={plugin_sources!r}",
+                )
+                self.assertEqual(
+                    "ep_only" in result,
+                    want_ep,
+                    f"entry-point plugin presence for plugin_sources={plugin_sources!r}",
+                )
 
     @mock_install_torchx_plugins()
     def test_info_returns_all_groups(self) -> None:
         """info() returns dict[PluginType, dict[str, Callable]]."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         all_plugins = reg.info()
 
         self.assertIsInstance(all_plugins, dict, "info() should return a dict")
@@ -270,7 +325,7 @@ class RegistryTest(_RegistryTestBase):
     @mock_install_torchx_plugins()
     def test_info_single_type(self) -> None:
         """info(PluginType) returns dict[str, Callable] for that group."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         scheds = reg.info(PluginType.SCHEDULER)
 
         self.assertIsInstance(scheds, dict, "info(type) should return a dict")
@@ -287,7 +342,7 @@ class RegistryTest(_RegistryTestBase):
     @mock_install_torchx_plugins()
     def test_str(self) -> None:
         """Snapshot of str(registry) YAML output with test fixtures."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         output = str(reg)
 
         expected = """\
@@ -335,7 +390,7 @@ errors:
         """str(registry) is valid YAML that round-trips through to_dict()."""
         import yaml
 
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         output = str(reg)
         expected = reg.to_dict()
 
@@ -349,7 +404,7 @@ errors:
     @mock_install_torchx_plugins()
     def test_to_dict(self) -> None:
         """to_dict() returns the expected structure."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         data = reg.to_dict()
 
         # Schedulers.
@@ -408,7 +463,7 @@ class NamedResourceDiscoveryTest(_RegistryTestBase):
     """Tests named resource discovery via ``registry().get(PluginType.NAMED_RESOURCE)``."""
 
     def test_returns_empty_when_not_installed(self) -> None:
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         result = reg.get(PluginType.NAMED_RESOURCE)
         self.assertEqual(
             result,
@@ -423,7 +478,7 @@ class NamedResourceDiscoveryTest(_RegistryTestBase):
         Covers: base resources, fractionals, cross-package namespace merging,
         and fractional resource value correctness.
         """
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         result = reg.get(PluginType.NAMED_RESOURCE)
 
         # --- generic.py: gpu resource (powers_of_two_gpus fractionals) ---
@@ -495,7 +550,7 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
     @mock_install_torchx_plugins()
     def test_bad_plugins_do_not_prevent_good_plugins(self) -> None:
         """Broken plugins in torchx-plugins-bad don't crash healthy discovery."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         scheds = reg.get(PluginType.SCHEDULER)
 
         # Good plugins from torchx-plugins-default still work.
@@ -513,7 +568,7 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
     @mock_install_torchx_plugins()
     def test_errors_captured_from_bad_package(self) -> None:
         """All error types from torchx-plugins-bad are captured in errors list."""
-        reg = PluginRegistry(load_entrypoints=False)
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
         reg.info()  # trigger full discovery
 
         error_modules = {e.module for e in reg.errors}
@@ -574,7 +629,7 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
         dummy_mod.fake_local_cwd = fake_local_cwd  # type: ignore[attr-defined]
 
         try:
-            reg = PluginRegistry(load_entrypoints=False)
+            reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
             result = reg._find_namespace_plugins(
                 "torchx_plugins.schedulers",
                 expected_type=PluginType.SCHEDULER,
@@ -603,7 +658,7 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
                 "torchx.plugins._registry.pkgutil.iter_modules",
                 side_effect=OSError("broken __path__"),
             ):
-                reg = PluginRegistry(load_entrypoints=False)
+                reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
                 result = reg._find_namespace_plugins("torchx_plugins.broken_ns")
 
             self.assertEqual(

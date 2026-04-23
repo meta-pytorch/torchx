@@ -28,7 +28,8 @@ Discover plugins and print a diagnostic report::
 
 .. deprecated::
     Entry-point based registration (``[torchx.*]`` in ``pyproject.toml``)
-    is deprecated.  Set ``TORCHX_NO_ENTRYPOINTS=1`` to opt out early.
+    is deprecated.  Set ``TORCHX_PLUGINS_SOURCE=1`` (namespace package
+    only) to opt out of entry-point discovery early.
 """
 
 from torchx.plugins._registration import (
