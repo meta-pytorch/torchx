@@ -193,6 +193,7 @@ _1 = torchx.specs.test.components.c.d
 
 
 def current_file_path() -> str:
+    # lint-fixme: NoFileBasedResourceAccess
     return os.path.join(os.path.dirname(__file__), __file__)
 
 
