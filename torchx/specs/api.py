@@ -17,7 +17,7 @@ import re
 import shutil
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from enum import Enum, IntEnum
+from enum import Enum
 from json import JSONDecodeError
 from string import Template
 from typing import (
@@ -479,7 +479,11 @@ class Role:
             ov = {}
         if attrname in ov:
             if inspect.isawaitable(ov[attrname]):
-                result = asyncio.get_event_loop().run_until_complete(ov[attrname])
+                try:
+                    loop = asyncio.get_event_loop()
+                    result = loop.run_until_complete(ov[attrname])
+                except RuntimeError:
+                    result = asyncio.run(ov[attrname])
             else:
                 result = ov[attrname]()
             setattr(self, attrname, result)
