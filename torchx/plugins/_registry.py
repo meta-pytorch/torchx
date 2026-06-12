@@ -22,6 +22,7 @@ import logging
 import os
 import pathlib
 import pkgutil
+from enum import auto
 from types import ModuleType
 from typing import Any, Callable, overload
 
@@ -46,6 +47,19 @@ class PluginType(str, enum.Enum):
     SCHEDULER = "torchx.schedulers"
     NAMED_RESOURCE = "torchx.named_resources"
     TRACKER = "torchx.tracker"
+
+
+class PluginSource(enum.IntFlag):
+    """Bitmask of plugin discovery channels.
+
+    Combine with ``|`` and test with ``in``.  The value of the
+    ``TORCHX_PLUGINS_SOURCE`` env var is parsed as the integer
+    representation of this flag.
+    """
+
+    NONE = 0
+    NAMESPACE_PKG = auto()
+    ENTRYPOINT = auto()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -80,19 +94,24 @@ class PluginRegistry:
         scheds = reg.get(plugins.PluginType.SCHEDULER)
         print(reg)
 
-    Namespace plugins (``torchx_plugins.*``) are **always** loaded.
-    The *load_entrypoints* flag only controls whether ``importlib.metadata``
-    entry points are additionally merged in.
+    Discovery channels are selected via *plugin_sources*, a :py:class:`PluginSource`
+    bitmask.  Defaults to all channels enabled; pass :py:attr:`PluginSource.NONE`
+    for an empty registry or any combination of ``NAMESPACE_PKG`` / ``ENTRYPOINT``
+    to enable a subset.
 
     Args:
-        load_entrypoints: Whether to **also** load plugins from
-            ``importlib.metadata`` entry points.  Set to ``False`` to
-            disable entry-point loading (namespace plugins are still
-            discovered).  Defaults to ``True`` for backward compatibility.
+        plugin_sources: Bitmask of discovery channels to enable.
+            Defaults to ``NAMESPACE_PKG | ENTRYPOINT``.
     """
 
-    def __init__(self, *, load_entrypoints: bool = True) -> None:
-        self._load_entrypoints: bool = load_entrypoints
+    def __init__(
+        self,
+        *,
+        plugin_sources: PluginSource = (
+            PluginSource.NAMESPACE_PKG | PluginSource.ENTRYPOINT
+        ),
+    ) -> None:
+        self._plugin_sources: PluginSource = plugin_sources
         # pyre-ignore[4]: plugin factories are heterogeneously typed
         self._cache: dict[PluginType, dict[str, Callable[..., Any]]] = {}
         self._errors: list[RegistrationError] = []
@@ -476,28 +495,20 @@ class PluginRegistry:
 
         Merge priority (highest → lowest):
 
-        1. ``importlib.metadata`` entry points (when *load_entrypoints* is True)
-        2. ``torchx_plugins.<suffix>`` namespace submodules
+        1. ``importlib.metadata`` entry points (when ``ENTRYPOINT`` is set)
+        2. ``torchx_plugins.<suffix>`` namespace submodules (when
+           ``NAMESPACE_PKG`` is set)
         """
         group: str = plugin_type.value
         namespace = self._namespace_for_type(plugin_type)
-        ns_plugins = self._find_namespace_plugins(namespace, plugin_type)
-        merged = dict(ns_plugins)
-
-        if self._load_entrypoints:
-            ep_plugins = entrypoints.load_group(group) or {}
-            # Entry points override namespace plugins (higher priority).
-            merged.update(ep_plugins)
-            if ns_plugins and ep_plugins:
-                new_keys = set(ns_plugins) - set(ep_plugins)
-                if new_keys:
-                    logger.debug(
-                        "namespace plugins added keys %s for group `%s`",
-                        new_keys,
-                        group,
-                    )
-
-        return merged
+        plugins = (
+            self._find_namespace_plugins(namespace, plugin_type)
+            if PluginSource.NAMESPACE_PKG in self._plugin_sources
+            else {}
+        )
+        if PluginSource.ENTRYPOINT in self._plugin_sources:
+            plugins |= entrypoints.load_group(group) or {}
+        return plugins
 
 
 @functools.lru_cache(maxsize=1)
@@ -507,9 +518,11 @@ def registry() -> PluginRegistry:
     The registry lazily discovers plugins per-group on first
     :py:meth:`~PluginRegistry.get` access and caches the results.
 
-    Namespace plugins (``torchx_plugins.*``) are **always** loaded.
-    Entry points from ``importlib.metadata`` are additionally merged in
-    unless ``TORCHX_NO_ENTRYPOINTS=1`` is set.
+    The ``TORCHX_PLUGINS_SOURCE`` environment variable selects which
+    discovery channels are enabled.  Its value is parsed as the integer
+    representation of a :py:class:`PluginSource` bitmask: ``0`` for
+    none, ``1`` for namespace package only, ``2`` for entry points only,
+    ``3`` for both.  Defaults to all channels enabled when unset.
 
     Returns:
         The cached :py:class:`PluginRegistry` instance.
@@ -523,5 +536,17 @@ def registry() -> PluginRegistry:
         named = reg.get(plugins.PluginType.NAMED_RESOURCE)
         print(reg)
     """
-    load_entrypoints = os.environ.get("TORCHX_NO_ENTRYPOINTS") != "1"
-    return PluginRegistry(load_entrypoints=load_entrypoints)
+    all_sources = PluginSource.NAMESPACE_PKG | PluginSource.ENTRYPOINT
+    raw = os.environ.get("TORCHX_PLUGINS_SOURCE", str(int(all_sources)))
+    try:
+        value = int(raw)
+        if not 0 <= value <= int(all_sources):
+            raise ValueError
+        plugin_sources = PluginSource(value)
+    except ValueError as e:
+        raise ValueError(
+            f"TORCHX_PLUGINS_SOURCE={raw!r} is invalid; expected one of"
+            " 0 (none), 1 (namespace only), 2 (entry points only),"
+            " 3 (both)."
+        ) from e
+    return PluginRegistry(plugin_sources=plugin_sources)

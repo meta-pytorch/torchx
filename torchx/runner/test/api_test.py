@@ -188,6 +188,40 @@ class RunnerTest(TestWithTmpDir):
                 event = record_mock.call_args_list[i].args[0]
                 self.assertEqual(event.session, CURRENT_SESSION_ID)
 
+    def test_run_dryrun_true(self, record_mock: MagicMock) -> None:
+        with self.get_runner() as runner:
+            role = Role(
+                name="echo",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="echo",
+                args=["hello"],
+            )
+            app = AppDef("name", roles=[role])
+
+            result = runner.run(app, scheduler="local_dir", cfg=self.cfg, dryrun=True)
+            self.assertIsInstance(
+                result, AppDryRunInfo, "run(dryrun=True) returns AppDryRunInfo"
+            )
+
+    def test_run_dryrun_false(self, record_mock: MagicMock) -> None:
+        test_file = self.tmpdir / "test_run_dryrun_false"
+
+        with self.get_runner() as runner:
+            role = Role(
+                name="touch",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="touch.sh",
+                args=[str(test_file)],
+            )
+            app = AppDef("name", roles=[role])
+
+            result = runner.run(app, scheduler="local_dir", cfg=self.cfg, dryrun=False)
+            self.assertIsInstance(
+                result, str, "run(dryrun=False) returns AppHandle (str)"
+            )
+
     def test_dryrun(self, record_mock: MagicMock) -> None:
         scheduler_mock = MagicMock()
         scheduler_mock.run_opts.return_value.resolve.return_value = {
@@ -761,6 +795,36 @@ class RunnerTest(TestWithTmpDir):
     def test_get_default_runner(self, _) -> None:
         runner = get_runner()
         self.assertEqual("torchx", runner._name)
+
+    def test_runner_autodiscovers_schedulers(self, _) -> None:
+        """Runner() auto-discovers plugins; explicit factories skip discovery."""
+        mock_factory = MagicMock()
+        with patch(
+            GET_SCHEDULER_FACTORIES,
+            return_value={"kubernetes": mock_factory},
+        ) as mock_get:
+            # No scheduler_factories → auto-discover
+            with Runner(name="my_session") as runner:
+                self.assertIn(
+                    "kubernetes",
+                    runner.scheduler_backends(),
+                    "Runner should auto-discover schedulers when none are provided",
+                )
+            mock_get.assert_called()
+            mock_get.reset_mock()
+
+            # Explicit scheduler_factories → skip discovery
+            with Runner(
+                name="my_session",
+                scheduler_factories={"local_cwd": mock_factory},
+            ) as runner:
+                self.assertIn("local_cwd", runner.scheduler_backends())
+                self.assertNotIn(
+                    "kubernetes",
+                    runner.scheduler_backends(),
+                    "explicit factories should skip auto-discovery",
+                )
+            mock_get.assert_not_called()
 
     def test_cfg_from_str(self, _) -> None:
         scheduler_mock = MagicMock()
