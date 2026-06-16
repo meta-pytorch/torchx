@@ -188,6 +188,20 @@ class CmdLogTest(unittest.TestCase):
         self.assertIn("Waiting", "\n".join(cm.output))
 
     @patch(RUNNER, new_callable=MockRunner)
+    def test_cmd_log_app_not_found(self, mock_runner: MagicMock) -> None:
+        # A non-existent app id makes status() return None; cmd_log must log a
+        # warning and return gracefully instead of polling the scheduler forever.
+        out = io.StringIO()
+        with patch.object(mock_runner, "status", return_value=None):
+            with self.assertLogs(level="WARNING") as cm:
+                get_logs(
+                    out,
+                    "local_docker://test-session/NonExistentApp/trainer",
+                    regex=None,
+                )
+        self.assertIn("not found", "\n".join(cm.output))
+
+    @patch(RUNNER, new_callable=MockRunner)
     def test_print_log_lines_throws(self, mock_runner: MagicMock) -> None:
         # makes sure that when the function executed in the threadpool
         # errors out; we raise the exception all the way through

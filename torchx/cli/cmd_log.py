@@ -72,6 +72,32 @@ def print_log_lines(
         raise
 
 
+def _wait_for_app_started(runner: Runner, app_handle: str) -> bool:
+    """Block until ``app_handle`` has started.
+
+    Returns ``True`` once the app has started. Returns ``False`` (after logging
+    a warning) if the app does not exist: ``status()`` returns ``None`` only for
+    a missing / mistyped app id; a submitted-but-pending app returns a
+    non-``None`` status. Without this, ``torchx log`` polled ``status()`` forever
+    and RPC-spammed the scheduler until the process was killed.
+    """
+    display_waiting = True
+    while True:
+        status = runner.status(app_handle)
+        if status is None:
+            logger.warning(
+                "app `%s` not found; it does not exist or the app id is incorrect",
+                app_handle,
+            )
+            return False
+        elif is_started(status.state):
+            return True
+        elif display_waiting:
+            logger.info("Waiting for app state response before fetching logs...")
+            display_waiting = False
+        time.sleep(1)
+
+
 def get_logs(
     file: TextIO,
     identifier: str,
@@ -96,16 +122,8 @@ def get_logs(
     if len(path) == 4:
         replica_ids = [(role_name, int(id)) for id in path[3].split(",") if id]
     else:
-        display_waiting = True
-        while True:
-            status = runner.status(app_handle)
-            if status and is_started(status.state):
-                break
-            elif display_waiting:
-                logger.info("Waiting for app state response before fetching logs...")
-                display_waiting = False
-            time.sleep(1)
-
+        if not _wait_for_app_started(runner, app_handle):
+            return
         app = none_throws(runner.describe(app_handle))
         # print all replicas for the role
         replica_ids = find_role_replicas(app, role_name)
