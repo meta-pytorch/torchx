@@ -645,6 +645,43 @@ app:
 </dl>
 </dd></dl>
 
+<p><code class="docutils literal notranslate"><span class="pre">utils.hydra</span></code> builds an <a class="reference internal" href="../specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> from a
+<a class="reference external" href="https://hydra.cc">Hydra</a> config, letting you declare jobs as YAML with
+config groups, interpolation, and CLI overrides instead of Python kwargs.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p><code class="docutils literal notranslate"><span class="pre">utils.hydra</span></code> requires <code class="docutils literal notranslate"><span class="pre">hydra-core</span></code> (which also pulls in <code class="docutils literal notranslate"><span class="pre">omegaconf</span></code>).
+It is <strong>not</strong> installed by default – install it explicitly:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>hydra-core
+</pre></div>
+</div>
+</div>
+<p>The config must have an <code class="docutils literal notranslate"><span class="pre">app</span></code> key whose <code class="docutils literal notranslate"><span class="pre">_target_</span></code> is
+<code class="docutils literal notranslate"><span class="pre">torchx.specs.AppDef</span></code>. Example <code class="docutils literal notranslate"><span class="pre">.torchx/my_job.yaml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">app</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torchx.specs.AppDef</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_job</span>
+<span class="w">  </span><span class="nt">roles</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">_target_</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torchx.specs.Role</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">trainer</span>
+<span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">alpine:latest</span>
+<span class="w">      </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">echo</span>
+<span class="w">      </span><span class="nt">num_replicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">      </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello</span>
+</pre></div>
+</div>
+<p>Run it (with optional Hydra-style overrides after <code class="docutils literal notranslate"><span class="pre">--</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># uses config_dir=.torchx by default</span>
+$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>utils.hydra<span class="w"> </span>-cn<span class="w"> </span>my_job
+
+<span class="c1"># override any field from the CLI</span>
+$<span class="w"> </span>torchx<span class="w"> </span>run<span class="w"> </span>utils.hydra<span class="w"> </span>-cn<span class="w"> </span>my_job<span class="w"> </span>--<span class="w"> </span>app.roles.0.num_replicas<span class="o">=</span><span class="m">3</span>
+</pre></div>
+</div>
+<p>TorchX macros are exposed as OmegaConf resolvers and can be referenced from
+configs: <code class="docutils literal notranslate"><span class="pre">${torchx.app_id:}</span></code>, <code class="docutils literal notranslate"><span class="pre">${torchx.replica_id:}</span></code>,
+<code class="docutils literal notranslate"><span class="pre">${torchx.rank0_env:}</span></code>, <code class="docutils literal notranslate"><span class="pre">${torchx.img_root:}</span></code>.</p>
 </section>
 
 
