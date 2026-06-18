@@ -46,6 +46,9 @@ from torchx.specs.named_resources_aws import (
     aws_p5_48xlarge,
     aws_p5e_48xlarge,
     aws_p5en_48xlarge,
+    aws_p6_b200_48xlarge,
+    aws_p6_b300_48xlarge,
+    aws_p6e_gb200_36xlarge,
     aws_t3_medium,
     aws_trn1_2xlarge,
     aws_trn1_32xlarge,
@@ -113,6 +116,35 @@ class NamedResourcesTest(unittest.TestCase):
         self.assertEqual(8, p5en.gpu)
         self.assertEqual(2048 * GiB, p5en.memMB)
         self.assertEqual({EFA_DEVICE: 16}, p5en.devices)
+
+    def test_aws_p6(self) -> None:
+        p6_b200 = aws_p6_b200_48xlarge()
+        p6_b300 = aws_p6_b300_48xlarge()
+        p6e_gb200 = aws_p6e_gb200_36xlarge()
+
+        # p6-b200.48xlarge: 192 vCPU, 8 Blackwell GPUs, 2048 GiB system memory,
+        # 8 EFA-capable network cards
+        self.assertEqual(192, p6_b200.cpu)
+        self.assertEqual(8, p6_b200.gpu)
+        self.assertEqual(2048 * GiB, p6_b200.memMB)
+        self.assertEqual({EFA_DEVICE: 8}, p6_b200.devices)
+        self.assertEqual("p6-b200.48xlarge", p6_b200.capabilities[K8S_ITYPE])
+
+        # p6-b300.48xlarge: 192 vCPU, 8 Blackwell Ultra GPUs, 4096 GiB system
+        # memory, 16 EFA-capable network cards (NCI 0 is ENA-only)
+        self.assertEqual(192, p6_b300.cpu)
+        self.assertEqual(8, p6_b300.gpu)
+        self.assertEqual(4096 * GiB, p6_b300.memMB)
+        self.assertEqual({EFA_DEVICE: 16}, p6_b300.devices)
+        self.assertEqual("p6-b300.48xlarge", p6_b300.capabilities[K8S_ITYPE])
+
+        # p6e-gb200.36xlarge: 144 vCPU (Grace CPU), 4 Blackwell GPUs, 960 GiB
+        # system memory, up to 16 EFA-capable network cards
+        self.assertEqual(144, p6e_gb200.cpu)
+        self.assertEqual(4, p6e_gb200.gpu)
+        self.assertEqual(960 * GiB, p6e_gb200.memMB)
+        self.assertEqual({EFA_DEVICE: 16}, p6e_gb200.devices)
+        self.assertEqual("p6e-gb200.36xlarge", p6e_gb200.capabilities[K8S_ITYPE])
 
     def test_aws_g6e(self) -> None:
         g6e = aws_g6e_xlarge()
