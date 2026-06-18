@@ -36,7 +36,24 @@ from torchx.specs.named_resources_aws import (
     aws_inf2_48xlarge,
     aws_inf2_8xlarge,
     aws_inf2_xlarge,
+    aws_m5_12xlarge,
+    aws_m5_16xlarge,
+    aws_m5_24xlarge,
     aws_m5_2xlarge,
+    aws_m5_4xlarge,
+    aws_m5_8xlarge,
+    aws_m5_large,
+    aws_m5_metal,
+    aws_m5_xlarge,
+    aws_m5d_12xlarge,
+    aws_m5d_16xlarge,
+    aws_m5d_24xlarge,
+    aws_m5d_2xlarge,
+    aws_m5d_4xlarge,
+    aws_m5d_8xlarge,
+    aws_m5d_large,
+    aws_m5d_metal,
+    aws_m5d_xlarge,
     aws_p3_16xlarge,
     aws_p3_2xlarge,
     aws_p3_8xlarge,
@@ -312,6 +329,72 @@ class NamedResourcesTest(unittest.TestCase):
         self.assertEqual(8, resource.cpu)
         self.assertEqual(0, resource.gpu)
         self.assertEqual(32 * GiB, resource.memMB)
+
+    def test_aws_m5(self) -> None:
+        # (size_label, factory, expected_cpu, expected_mem_gib, k8s_itype)
+        # m5 sizes per https://aws.amazon.com/ec2/instance-types/m5/
+        # m5.metal provides 96 logical processors on 48 physical cores.
+        m5_specs = [
+            ("large", aws_m5_large, 2, 8, "m5.large"),
+            ("xlarge", aws_m5_xlarge, 4, 16, "m5.xlarge"),
+            ("2xlarge", aws_m5_2xlarge, 8, 32, "m5.2xlarge"),
+            ("4xlarge", aws_m5_4xlarge, 16, 64, "m5.4xlarge"),
+            ("8xlarge", aws_m5_8xlarge, 32, 128, "m5.8xlarge"),
+            ("12xlarge", aws_m5_12xlarge, 48, 192, "m5.12xlarge"),
+            ("16xlarge", aws_m5_16xlarge, 64, 256, "m5.16xlarge"),
+            ("24xlarge", aws_m5_24xlarge, 96, 384, "m5.24xlarge"),
+            ("metal", aws_m5_metal, 96, 384, "m5.metal"),
+        ]
+        for size, factory, cpu, mem_gib, k8s in m5_specs:
+            with self.subTest(size=f"m5.{size}"):
+                r = factory()
+                self.assertEqual(cpu, r.cpu)
+                self.assertEqual(0, r.gpu)
+                self.assertEqual(mem_gib * GiB, r.memMB)
+                self.assertEqual(k8s, r.capabilities[K8S_ITYPE])
+
+    def test_aws_m5d(self) -> None:
+        # m5d.* matches m5.* in vCPU/memory; differs only by local NVMe SSD.
+        # m5d.metal provides 96 logical processors on 48 physical cores.
+        m5d_specs = [
+            ("large", aws_m5d_large, 2, 8, "m5d.large"),
+            ("xlarge", aws_m5d_xlarge, 4, 16, "m5d.xlarge"),
+            ("2xlarge", aws_m5d_2xlarge, 8, 32, "m5d.2xlarge"),
+            ("4xlarge", aws_m5d_4xlarge, 16, 64, "m5d.4xlarge"),
+            ("8xlarge", aws_m5d_8xlarge, 32, 128, "m5d.8xlarge"),
+            ("12xlarge", aws_m5d_12xlarge, 48, 192, "m5d.12xlarge"),
+            ("16xlarge", aws_m5d_16xlarge, 64, 256, "m5d.16xlarge"),
+            ("24xlarge", aws_m5d_24xlarge, 96, 384, "m5d.24xlarge"),
+            ("metal", aws_m5d_metal, 96, 384, "m5d.metal"),
+        ]
+        for size, factory, cpu, mem_gib, k8s in m5d_specs:
+            with self.subTest(size=f"m5d.{size}"):
+                r = factory()
+                self.assertEqual(cpu, r.cpu)
+                self.assertEqual(0, r.gpu)
+                self.assertEqual(mem_gib * GiB, r.memMB)
+                self.assertEqual(k8s, r.capabilities[K8S_ITYPE])
+
+        # Confirm m5d matches m5 by size for vCPU/memory
+        for (_, m5_factory, *_), (_, m5d_factory, *_) in zip(
+            [
+                ("large", aws_m5_large, 2, 8, "m5.large"),
+                ("xlarge", aws_m5_xlarge, 4, 16, "m5.xlarge"),
+                ("2xlarge", aws_m5_2xlarge, 8, 32, "m5.2xlarge"),
+                ("4xlarge", aws_m5_4xlarge, 16, 64, "m5.4xlarge"),
+                ("8xlarge", aws_m5_8xlarge, 32, 128, "m5.8xlarge"),
+                ("12xlarge", aws_m5_12xlarge, 48, 192, "m5.12xlarge"),
+                ("16xlarge", aws_m5_16xlarge, 64, 256, "m5.16xlarge"),
+                ("24xlarge", aws_m5_24xlarge, 96, 384, "m5.24xlarge"),
+                ("metal", aws_m5_metal, 96, 384, "m5.metal"),
+            ],
+            m5d_specs,
+        ):
+            m5r = m5_factory()
+            m5dr = m5d_factory()
+            self.assertEqual(m5r.cpu, m5dr.cpu)
+            self.assertEqual(m5r.memMB, m5dr.memMB)
+            self.assertEqual(m5r.gpu, m5dr.gpu)
 
     def test_aws_c5_18xlarge(self) -> None:
         resource = aws_c5_18xlarge()
