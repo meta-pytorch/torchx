@@ -28,6 +28,7 @@ Usage:
      print(named_resources["aws_m5.2xlarge"])
      print(named_resources["aws_p3.2xlarge"])
      print(named_resources["aws_p3.8xlarge"])
+     print(named_resources["aws_p6-b200.48xlarge"])
 
 """
 
@@ -136,6 +137,50 @@ def aws_p5en_48xlarge() -> Resource:
         gpu=8,
         memMB=2048 * GiB,
         capabilities={K8S_ITYPE: "p5en.48xlarge"},
+        devices={EFA_DEVICE: 16},
+    )
+
+
+def aws_p6_b200_48xlarge() -> Resource:
+    # 8x NVIDIA Blackwell B200 GPUs (1,432 GB HBM3e total),
+    # 192 vCPUs (5th Gen Intel Xeon Scalable - Emerald Rapids), 2,048 GiB system memory,
+    # 3.2 Tbps EFAv4 networking via 8 network cards (400 Gbps each).
+    # See: https://aws.amazon.com/ec2/instance-types/p6/
+    return Resource(
+        cpu=192,
+        gpu=8,
+        memMB=2048 * GiB,
+        capabilities={K8S_ITYPE: "p6-b200.48xlarge"},
+        devices={EFA_DEVICE: 8},
+    )
+
+
+def aws_p6_b300_48xlarge() -> Resource:
+    # 8x NVIDIA Blackwell Ultra B300 GPUs (2,144 GB HBM3e total),
+    # 192 vCPUs, 4,096 GiB system memory,
+    # 6.4 Tbps EFAv4 networking via 17 network cards (NCI 0 is ENA-only,
+    # NCIs 1-16 are EFA-capable at 400 Gbps each).
+    # See: https://aws.amazon.com/ec2/instance-types/p6/
+    return Resource(
+        cpu=192,
+        gpu=8,
+        memMB=4096 * GiB,
+        capabilities={K8S_ITYPE: "p6-b300.48xlarge"},
+        devices={EFA_DEVICE: 16},
+    )
+
+
+def aws_p6e_gb200_36xlarge() -> Resource:
+    # 4x NVIDIA Blackwell GB200 GPUs (740 GB HBM3e total),
+    # 144 vCPUs (NVIDIA Grace CPU), 960 GiB system memory.
+    # Up to 17 network cards (NCI 0 is ENA-only, NCIs 1-16 are EFA-capable).
+    # Available only as part of P6e-GB200 UltraServers.
+    # See: https://aws.amazon.com/ec2/instance-types/p6/
+    return Resource(
+        cpu=144,
+        gpu=4,
+        memMB=960 * GiB,
+        capabilities={K8S_ITYPE: "p6e-gb200.36xlarge"},
         devices={EFA_DEVICE: 16},
     )
 
@@ -431,6 +476,9 @@ NAMED_RESOURCES: Mapping[str, Callable[[], Resource]] = {
     "aws_p5.48xlarge": aws_p5_48xlarge,
     "aws_p5e.48xlarge": aws_p5e_48xlarge,
     "aws_p5en.48xlarge": aws_p5en_48xlarge,
+    "aws_p6-b200.48xlarge": aws_p6_b200_48xlarge,
+    "aws_p6-b300.48xlarge": aws_p6_b300_48xlarge,
+    "aws_p6e-gb200.36xlarge": aws_p6e_gb200_36xlarge,
     "aws_g4dn.xlarge": aws_g4dn_xlarge,
     "aws_g4dn.2xlarge": aws_g4dn_2xlarge,
     "aws_g4dn.4xlarge": aws_g4dn_4xlarge,
