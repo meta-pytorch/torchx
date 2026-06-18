@@ -189,9 +189,112 @@ def aws_t3_medium() -> Resource:
     return Resource(cpu=2, gpu=0, memMB=4 * GiB, capabilities={K8S_ITYPE: "t3.medium"})
 
 
+def aws_m5_large() -> Resource:
+    return Resource(cpu=2, gpu=0, memMB=8 * GiB, capabilities={K8S_ITYPE: "m5.large"})
+
+
+def aws_m5_xlarge() -> Resource:
+    return Resource(cpu=4, gpu=0, memMB=16 * GiB, capabilities={K8S_ITYPE: "m5.xlarge"})
+
+
 def aws_m5_2xlarge() -> Resource:
     return Resource(
         cpu=8, gpu=0, memMB=32 * GiB, capabilities={K8S_ITYPE: "m5.2xlarge"}
+    )
+
+
+def aws_m5_4xlarge() -> Resource:
+    return Resource(
+        cpu=16, gpu=0, memMB=64 * GiB, capabilities={K8S_ITYPE: "m5.4xlarge"}
+    )
+
+
+def aws_m5_8xlarge() -> Resource:
+    return Resource(
+        cpu=32, gpu=0, memMB=128 * GiB, capabilities={K8S_ITYPE: "m5.8xlarge"}
+    )
+
+
+def aws_m5_12xlarge() -> Resource:
+    return Resource(
+        cpu=48, gpu=0, memMB=192 * GiB, capabilities={K8S_ITYPE: "m5.12xlarge"}
+    )
+
+
+def aws_m5_16xlarge() -> Resource:
+    return Resource(
+        cpu=64, gpu=0, memMB=256 * GiB, capabilities={K8S_ITYPE: "m5.16xlarge"}
+    )
+
+
+def aws_m5_24xlarge() -> Resource:
+    return Resource(
+        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5.24xlarge"}
+    )
+
+
+def aws_m5_metal() -> Resource:
+    # m5.metal: 96 logical processors on 48 physical cores, 384 GiB memory
+    return Resource(
+        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5.metal"}
+    )
+
+
+# m5d.* matches m5.* in vCPU/memory but adds local NVMe SSD storage.
+# See: https://aws.amazon.com/ec2/instance-types/m5/
+
+
+def aws_m5d_large() -> Resource:
+    return Resource(cpu=2, gpu=0, memMB=8 * GiB, capabilities={K8S_ITYPE: "m5d.large"})
+
+
+def aws_m5d_xlarge() -> Resource:
+    return Resource(
+        cpu=4, gpu=0, memMB=16 * GiB, capabilities={K8S_ITYPE: "m5d.xlarge"}
+    )
+
+
+def aws_m5d_2xlarge() -> Resource:
+    return Resource(
+        cpu=8, gpu=0, memMB=32 * GiB, capabilities={K8S_ITYPE: "m5d.2xlarge"}
+    )
+
+
+def aws_m5d_4xlarge() -> Resource:
+    return Resource(
+        cpu=16, gpu=0, memMB=64 * GiB, capabilities={K8S_ITYPE: "m5d.4xlarge"}
+    )
+
+
+def aws_m5d_8xlarge() -> Resource:
+    return Resource(
+        cpu=32, gpu=0, memMB=128 * GiB, capabilities={K8S_ITYPE: "m5d.8xlarge"}
+    )
+
+
+def aws_m5d_12xlarge() -> Resource:
+    return Resource(
+        cpu=48, gpu=0, memMB=192 * GiB, capabilities={K8S_ITYPE: "m5d.12xlarge"}
+    )
+
+
+def aws_m5d_16xlarge() -> Resource:
+    return Resource(
+        cpu=64, gpu=0, memMB=256 * GiB, capabilities={K8S_ITYPE: "m5d.16xlarge"}
+    )
+
+
+def aws_m5d_24xlarge() -> Resource:
+    return Resource(
+        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5d.24xlarge"}
+    )
+
+
+def aws_m5d_metal() -> Resource:
+    # m5d.metal: 96 logical processors on 48 physical cores, 384 GiB memory,
+    # plus 4 x 900 NVMe SSD local storage.
+    return Resource(
+        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5d.metal"}
     )
 
 
@@ -465,7 +568,24 @@ def aws_inf2_48xlarge() -> Resource:
 
 NAMED_RESOURCES: Mapping[str, Callable[[], Resource]] = {
     "aws_t3.medium": aws_t3_medium,
+    "aws_m5.large": aws_m5_large,
+    "aws_m5.xlarge": aws_m5_xlarge,
     "aws_m5.2xlarge": aws_m5_2xlarge,
+    "aws_m5.4xlarge": aws_m5_4xlarge,
+    "aws_m5.8xlarge": aws_m5_8xlarge,
+    "aws_m5.12xlarge": aws_m5_12xlarge,
+    "aws_m5.16xlarge": aws_m5_16xlarge,
+    "aws_m5.24xlarge": aws_m5_24xlarge,
+    "aws_m5.metal": aws_m5_metal,
+    "aws_m5d.large": aws_m5d_large,
+    "aws_m5d.xlarge": aws_m5d_xlarge,
+    "aws_m5d.2xlarge": aws_m5d_2xlarge,
+    "aws_m5d.4xlarge": aws_m5d_4xlarge,
+    "aws_m5d.8xlarge": aws_m5d_8xlarge,
+    "aws_m5d.12xlarge": aws_m5d_12xlarge,
+    "aws_m5d.16xlarge": aws_m5d_16xlarge,
+    "aws_m5d.24xlarge": aws_m5d_24xlarge,
+    "aws_m5d.metal": aws_m5d_metal,
     "aws_c5.18xlarge": aws_c5_18xlarge,
     "aws_p3.2xlarge": aws_p3_2xlarge,
     "aws_p3.8xlarge": aws_p3_8xlarge,
