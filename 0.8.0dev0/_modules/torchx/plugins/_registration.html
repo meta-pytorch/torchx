@@ -496,20 +496,32 @@
 <span class="sd">    return so that downstream code can recover the registered name and</span>
 <span class="sd">    whether the resource is a fractional slice.</span>
 
+<span class="sd">    Use :py:meth:`Resource.is_fractional() &lt;torchx.specs.api.Resource.is_fractional&gt;`</span>
+<span class="sd">    and :py:meth:`Resource.get_resource_name() &lt;torchx.specs.api.Resource.get_resource_name&gt;`</span>
+<span class="sd">    instead of querying these keys directly.</span>
+
 <span class="sd">    Example::</span>
 
 <span class="sd">        from torchx.plugins import resource_tags</span>
 
 <span class="sd">        res = result[&quot;gpu_4&quot;]()</span>
 <span class="sd">        assert res.tags[resource_tags.RESOURCE_NAME] == &quot;gpu_4&quot;</span>
-<span class="sd">        assert res.tags[resource_tags.IS_FRACTIONAL] is True</span>
+<span class="sd">        assert res.is_fractional() is True</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">RESOURCE_NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx/named_resources.name&quot;</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Registered name that produced this :py:class:`Resource`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Registered name that produced this :py:class:`Resource`.</span>
+
+<span class="sd">    Prefer :py:meth:`Resource.get_resource_name() &lt;torchx.specs.api.Resource.get_resource_name&gt;`</span>
+<span class="sd">    over reading this tag directly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">IS_FRACTIONAL</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx/named_resources.is_fractional&quot;</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;``True`` when the resource is a fractional slice of a base resource.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;``True`` when the resource is a fractional slice of a base resource.</span>
+
+<span class="sd">    Prefer :py:meth:`Resource.is_fractional() &lt;torchx.specs.api.Resource.is_fractional&gt;`</span>
+<span class="sd">    over reading this tag directly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="powers_of_two_gpus"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.powers_of_two_gpus">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">powers_of_two_gpus</span><span class="p">(</span><span class="n">resource</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -738,11 +750,20 @@
 <span class="sd">      produces ``my_gpu_8``, ``my_gpu_4``, ``my_gpu_2``, ``my_gpu_1`` —</span>
 <span class="sd">      each calling ``my_gpu(fractional=&lt;fraction&gt;)``.</span>
 
-<span class="sd">    Subclasses override the two hook methods to inject platform-specific</span>
-<span class="sd">    metadata:</span>
+<span class="sd">    The decorator automatically populates :py:attr:`resource_tags.RESOURCE_NAME`</span>
+<span class="sd">    and :py:attr:`resource_tags.IS_FRACTIONAL` on every :py:class:`Resource`</span>
+<span class="sd">    returned by the registered factories:</span>
 
-<span class="sd">    * :py:meth:`_make_factory` — wrap the base factory (e.g. add tags).</span>
-<span class="sd">    * :py:meth:`_make_fractional` — wrap each fractional factory.</span>
+<span class="sd">    * **Base factory** — ``RESOURCE_NAME=name``, ``IS_FRACTIONAL=False``.</span>
+<span class="sd">    * **Alias** — delegates to the base factory, inheriting its tags.</span>
+<span class="sd">    * **Fractional (fraction == 1.0)** — ``RESOURCE_NAME=name_suffix``,</span>
+<span class="sd">      ``IS_FRACTIONAL=False``.</span>
+<span class="sd">    * **Fractional (fraction &lt; 1.0)** — ``RESOURCE_NAME=name_suffix``,</span>
+<span class="sd">      ``IS_FRACTIONAL=True``.</span>
+
+<span class="sd">    Use :py:meth:`Resource.is_fractional() &lt;torchx.specs.api.Resource.is_fractional&gt;`</span>
+<span class="sd">    to check whether a resource is fractional rather than reading the tag</span>
+<span class="sd">    directly.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -766,37 +787,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_fractionals</span> <span class="o">=</span> <span class="n">fractionals</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fractionals</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="p">{}</span>
-
-    <span class="c1"># -- hooks for subclasses ------------------------------------------------</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap the base factory before registration.</span>
-
-<span class="sd">        The default implementation returns *fn* unchanged.  Subclasses</span>
-<span class="sd">        override to inject metadata (e.g. whole-host flags, resource tags).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">fn</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_make_fractional</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
-        <span class="n">fraction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">frac_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a zero-arg factory for a fractional resource variant.</span>
-
-<span class="sd">        The default implementation returns ``lambda: fn(fraction)``.</span>
-<span class="sd">        Subclasses override to inject fractional-specific metadata.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">fractional_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">fraction</span><span class="p">)</span>
-
-        <span class="n">fractional_factory</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__module__</span>
-        <span class="n">fractional_factory</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="n">frac_name</span>
-        <span class="k">return</span> <span class="n">fractional_factory</span>
-
-    <span class="c1"># -- registration orchestration ------------------------------------------</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Resource</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Resource</span><span class="p">]:</span>
         <span class="n">mod</span><span class="p">:</span> <span class="n">ModuleType</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">fn</span><span class="o">.</span><span class="vm">__module__</span><span class="p">]</span>
@@ -825,8 +815,15 @@
                 <span class="p">)</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
 
-        <span class="c1"># [1] Base factory</span>
-        <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_factory</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c1"># [1] Base factory — sets RESOURCE_NAME and IS_FRACTIONAL=False.</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">factory</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">resource</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">RESOURCE_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">resource</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">IS_FRACTIONAL</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">resource</span>
+
+        <span class="n">factory</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__module__</span>
+        <span class="n">factory</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__qualname__</span>
         <span class="n">_tag_and_register</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
@@ -855,12 +852,22 @@
             <span class="n">base_resource</span> <span class="o">=</span> <span class="n">fn</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fractionals</span><span class="p">(</span><span class="n">base_resource</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">frac_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="n">frac_factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_fractional</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">frac_name</span><span class="p">)</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">frac_factory</span><span class="p">(</span>
+                    <span class="n">_frac</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">fraction</span><span class="p">,</span> <span class="n">_fname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">frac_name</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+                    <span class="n">resource</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">_frac</span><span class="p">)</span>
+                    <span class="n">resource</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">RESOURCE_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="n">_fname</span>
+                    <span class="n">resource</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">IS_FRACTIONAL</span><span class="p">]</span> <span class="o">=</span> <span class="n">_frac</span> <span class="o">!=</span> <span class="n">WHOLE</span>
+                    <span class="k">return</span> <span class="n">resource</span>
+
+                <span class="n">frac_factory</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">=</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__module__</span>
+                <span class="n">frac_factory</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="n">frac_name</span>
                 <span class="n">frac_factory</span><span class="o">.</span><span class="n">_plugin_base_name</span> <span class="o">=</span> <span class="n">name</span>  <span class="c1"># type: ignore[attr-defined]</span>
                 <span class="n">_tag_and_register</span><span class="p">(</span><span class="n">frac_name</span><span class="p">,</span> <span class="n">frac_factory</span><span class="p">)</span>
                 <span class="n">_set_module_attr</span><span class="p">(</span><span class="n">frac_name</span><span class="p">,</span> <span class="n">frac_factory</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">factory</span>  <span class="c1"># NB: returns _make_factory(fn), not fn</span>
+        <span class="k">return</span> <span class="n">factory</span>
 </pre></div>
 
      </article>
