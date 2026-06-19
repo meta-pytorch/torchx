@@ -60,20 +60,32 @@ class resource_tags:
     return so that downstream code can recover the registered name and
     whether the resource is a fractional slice.
 
+    Use :py:meth:`Resource.is_fractional() <torchx.specs.api.Resource.is_fractional>`
+    and :py:meth:`Resource.get_resource_name() <torchx.specs.api.Resource.get_resource_name>`
+    instead of querying these keys directly.
+
     Example::
 
         from torchx.plugins import resource_tags
 
         res = result["gpu_4"]()
         assert res.tags[resource_tags.RESOURCE_NAME] == "gpu_4"
-        assert res.tags[resource_tags.IS_FRACTIONAL] is True
+        assert res.is_fractional() is True
     """
 
     RESOURCE_NAME: str = "torchx/named_resources.name"
-    """Registered name that produced this :py:class:`Resource`."""
+    """Registered name that produced this :py:class:`Resource`.
+
+    Prefer :py:meth:`Resource.get_resource_name() <torchx.specs.api.Resource.get_resource_name>`
+    over reading this tag directly.
+    """
 
     IS_FRACTIONAL: str = "torchx/named_resources.is_fractional"
-    """``True`` when the resource is a fractional slice of a base resource."""
+    """``True`` when the resource is a fractional slice of a base resource.
+
+    Prefer :py:meth:`Resource.is_fractional() <torchx.specs.api.Resource.is_fractional>`
+    over reading this tag directly.
+    """
 
 
 def powers_of_two_gpus(resource: Any) -> dict[float, str]:
@@ -302,11 +314,20 @@ class _register_named_resource(register):
       produces ``my_gpu_8``, ``my_gpu_4``, ``my_gpu_2``, ``my_gpu_1`` —
       each calling ``my_gpu(fractional=<fraction>)``.
 
-    Subclasses override the two hook methods to inject platform-specific
-    metadata:
+    The decorator automatically populates :py:attr:`resource_tags.RESOURCE_NAME`
+    and :py:attr:`resource_tags.IS_FRACTIONAL` on every :py:class:`Resource`
+    returned by the registered factories:
 
-    * :py:meth:`_make_factory` — wrap the base factory (e.g. add tags).
-    * :py:meth:`_make_fractional` — wrap each fractional factory.
+    * **Base factory** — ``RESOURCE_NAME=name``, ``IS_FRACTIONAL=False``.
+    * **Alias** — delegates to the base factory, inheriting its tags.
+    * **Fractional (fraction == 1.0)** — ``RESOURCE_NAME=name_suffix``,
+      ``IS_FRACTIONAL=False``.
+    * **Fractional (fraction < 1.0)** — ``RESOURCE_NAME=name_suffix``,
+      ``IS_FRACTIONAL=True``.
+
+    Use :py:meth:`Resource.is_fractional() <torchx.specs.api.Resource.is_fractional>`
+    to check whether a resource is fractional rather than reading the tag
+    directly.
     """
 
     def __init__(
@@ -330,37 +351,6 @@ class _register_named_resource(register):
             self._fractionals = fractionals
         else:
             self._fractionals = lambda _: {}
-
-    # -- hooks for subclasses ------------------------------------------------
-
-    def _make_factory(self, fn: Callable[..., Any], name: str) -> Callable[..., Any]:
-        """Wrap the base factory before registration.
-
-        The default implementation returns *fn* unchanged.  Subclasses
-        override to inject metadata (e.g. whole-host flags, resource tags).
-        """
-        return fn
-
-    def _make_fractional(
-        self,
-        fn: Callable[..., Any],
-        fraction: float,
-        frac_name: str,
-    ) -> Callable[..., Any]:
-        """Create a zero-arg factory for a fractional resource variant.
-
-        The default implementation returns ``lambda: fn(fraction)``.
-        Subclasses override to inject fractional-specific metadata.
-        """
-
-        def fractional_factory() -> Any:
-            return fn(fraction)
-
-        fractional_factory.__module__ = fn.__module__
-        fractional_factory.__qualname__ = frac_name
-        return fractional_factory
-
-    # -- registration orchestration ------------------------------------------
 
     def __call__(self, fn: Callable[..., Resource]) -> Callable[..., Resource]:
         mod: ModuleType = sys.modules[fn.__module__]
@@ -389,8 +379,15 @@ class _register_named_resource(register):
                 )
             setattr(mod, attr_name, factory)
 
-        # [1] Base factory
-        factory = self._make_factory(fn, name)
+        # [1] Base factory — sets RESOURCE_NAME and IS_FRACTIONAL=False.
+        def factory(*args: Any, **kwargs: Any) -> Any:
+            resource = fn(*args, **kwargs)
+            resource.tags[resource_tags.RESOURCE_NAME] = name
+            resource.tags[resource_tags.IS_FRACTIONAL] = False
+            return resource
+
+        factory.__module__ = fn.__module__
+        factory.__qualname__ = fn.__qualname__
         _tag_and_register(name, factory)
 
         if name != fn.__name__:
@@ -419,9 +416,19 @@ class _register_named_resource(register):
             base_resource = fn()
             for fraction, suffix in self._fractionals(base_resource).items():
                 frac_name = f"{name}_{suffix}"
-                frac_factory = self._make_fractional(fn, fraction, frac_name)
+
+                def frac_factory(
+                    _frac: float = fraction, _fname: str = frac_name
+                ) -> Any:
+                    resource = fn(_frac)
+                    resource.tags[resource_tags.RESOURCE_NAME] = _fname
+                    resource.tags[resource_tags.IS_FRACTIONAL] = _frac != WHOLE
+                    return resource
+
+                frac_factory.__module__ = fn.__module__
+                frac_factory.__qualname__ = frac_name
                 frac_factory._plugin_base_name = name  # type: ignore[attr-defined]
                 _tag_and_register(frac_name, frac_factory)
                 _set_module_attr(frac_name, frac_factory)
 
-        return factory  # NB: returns _make_factory(fn), not fn
+        return factory

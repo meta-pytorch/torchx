@@ -20,10 +20,10 @@ import unittest
 from typing import Any
 
 from torchx.plugins._registration import (
-    _register_named_resource,
     halve_mem_down_to,
     powers_of_two_gpus,
     register,
+    resource_tags,
 )
 from torchx.plugins._registry import NAMED_RESOURCES_ATTR, PluginType, registry
 from torchx.specs.api import Resource
@@ -378,56 +378,164 @@ class NamedResourceRegisterTest(unittest.TestCase):
             ):
                 register.named_resource(name="same")(res_b)
 
-    def test_make_factory_hook(self) -> None:
-        """Subclass override of ``_make_factory`` is called."""
-        with _ModuleContextManager("test_nr_hook_factory"):
-            make_factory_calls: list[str] = []
+    def test_base_factory_sets_resource_name_tag(self) -> None:
+        """Base factory sets ``resource_tags.RESOURCE_NAME`` on the returned Resource."""
+        with _ModuleContextManager("test_nr_tag_base"):
 
-            class custom_nr(_register_named_resource):
-                def _make_factory(self, fn: Any, name: str) -> Any:
-                    make_factory_calls.append(name)
-                    return fn
+            def gpu8(fractional: float = 1.0) -> Resource:
+                return Resource(
+                    cpu=int(8 * fractional), gpu=int(8 * fractional), memMB=1024
+                )
 
-            def my_res() -> Resource:
-                return Resource(cpu=1, gpu=0, memMB=128)
-
-            my_res.__module__ = "test_nr_hook_factory"
-            custom_nr()(my_res)
-
+            gpu8.__module__ = "test_nr_tag_base"
+            factory = register.named_resource()(gpu8)
+            res = factory()
             self.assertEqual(
-                make_factory_calls,
-                ["my_res"],
-                "_make_factory hook should be called with the resource name",
+                res.tags[resource_tags.RESOURCE_NAME],
+                "gpu8",
+                "base factory should set RESOURCE_NAME to the registered name",
+            )
+            self.assertFalse(
+                res.tags[resource_tags.IS_FRACTIONAL],
+                "base factory should set IS_FRACTIONAL=False",
             )
 
-    def test_make_fractional_hook(self) -> None:
-        """Subclass override of ``_make_fractional`` is called for each fraction."""
-        with _ModuleContextManager("test_nr_hook_frac"):
-            frac_calls: list[tuple[float, str]] = []
+    def test_fractional_factory_sets_tags(self) -> None:
+        """Fractional factories set ``RESOURCE_NAME`` and ``IS_FRACTIONAL``."""
+        with _ModuleContextManager("test_nr_tag_frac") as mod:
 
-            class custom_nr(_register_named_resource):
-                def _make_fractional(
-                    self, fn: Any, fraction: float, frac_name: str
-                ) -> Any:
-                    frac_calls.append((fraction, frac_name))
-                    return super()._make_fractional(fn, fraction, frac_name)
+            def gpu8(fractional: float = 1.0) -> Resource:
+                return Resource(
+                    cpu=int(8 * fractional), gpu=int(8 * fractional), memMB=1024
+                )
 
-            def host(fractional: float = 1.0) -> Resource:
-                return Resource(cpu=int(8 * fractional), gpu=0, memMB=512)
+            gpu8.__module__ = "test_nr_tag_frac"
+            register.named_resource(fractionals={1.0: "8", 0.5: "4", 0.25: "2"})(gpu8)
 
-            host.__module__ = "test_nr_hook_frac"
-            custom_nr(fractionals={1.0: "8", 0.5: "4"})(host)
-
+            whole = mod.gpu8_8()
             self.assertEqual(
-                len(frac_calls),
-                2,
-                "_make_fractional should be called once per fractional entry",
+                whole.tags[resource_tags.RESOURCE_NAME],
+                "gpu8_8",
+                "whole fractional should set RESOURCE_NAME to fractional name",
             )
-            frac_names = {name for _, name in frac_calls}
+            self.assertFalse(
+                whole.tags[resource_tags.IS_FRACTIONAL],
+                "whole fractional (1.0) should set IS_FRACTIONAL=False",
+            )
+
+            half = mod.gpu8_4()
             self.assertEqual(
-                frac_names,
-                {"host_8", "host_4"},
-                "_make_fractional should receive correct fractional names",
+                half.tags[resource_tags.RESOURCE_NAME],
+                "gpu8_4",
+                "half fractional should set RESOURCE_NAME to fractional name",
+            )
+            self.assertTrue(
+                half.tags[resource_tags.IS_FRACTIONAL],
+                "half fractional (0.5) should set IS_FRACTIONAL=True",
+            )
+
+            quarter = mod.gpu8_2()
+            self.assertTrue(
+                quarter.tags[resource_tags.IS_FRACTIONAL],
+                "quarter fractional (0.25) should set IS_FRACTIONAL=True",
+            )
+
+    def test_alias_inherits_canonical_resource_name(self) -> None:
+        """Alias factory returns the canonical RESOURCE_NAME, not the alias."""
+        with _ModuleContextManager("test_nr_tag_alias") as mod:
+
+            def gpu8(fractional: float = 1.0) -> Resource:
+                return Resource(
+                    cpu=int(8 * fractional), gpu=int(8 * fractional), memMB=1024
+                )
+
+            gpu8.__module__ = "test_nr_tag_alias"
+            factory = register.named_resource(aliases=["my_alias"])(gpu8)
+
+            canonical = factory()
+            alias = mod.my_alias()
+            self.assertEqual(
+                canonical.tags[resource_tags.RESOURCE_NAME],
+                "gpu8",
+                "canonical factory should set RESOURCE_NAME to its own name",
+            )
+            self.assertEqual(
+                alias.tags[resource_tags.RESOURCE_NAME],
+                "gpu8",
+                "alias should set RESOURCE_NAME to canonical name, not alias",
+            )
+            self.assertFalse(
+                alias.tags[resource_tags.IS_FRACTIONAL],
+                "alias should inherit IS_FRACTIONAL=False from base factory",
+            )
+
+    def test_tags_match_fbcode_named_resource_behavior(self) -> None:
+        """Verify tag behavior across all factory types.
+
+        - base factory: RESOURCE_NAME=name, IS_FRACTIONAL=False
+        - alias: RESOURCE_NAME=canonical_name, IS_FRACTIONAL=False
+        - fractional(1.0): RESOURCE_NAME=frac_name, IS_FRACTIONAL=False
+        - fractional(<1.0): RESOURCE_NAME=frac_name, IS_FRACTIONAL=True
+        """
+        with _ModuleContextManager("test_nr_tag_parity") as mod:
+
+            def my_gpu(fractional: float = 1.0) -> Resource:
+                return Resource(
+                    cpu=int(8 * fractional), gpu=int(8 * fractional), memMB=1024
+                )
+
+            my_gpu.__module__ = "test_nr_tag_parity"
+            factory = register.named_resource(
+                aliases=["gpu_alias"],
+                fractionals={1.0: "8", 0.5: "4"},
+            )(my_gpu)
+
+            # base factory: RESOURCE_NAME=name, IS_FRACTIONAL=False
+            base = factory()
+            self.assertEqual(
+                base.tags[resource_tags.RESOURCE_NAME],
+                "my_gpu",
+                "base: RESOURCE_NAME should be function name",
+            )
+            self.assertFalse(
+                base.tags[resource_tags.IS_FRACTIONAL],
+                "base: IS_FRACTIONAL should be False",
+            )
+
+            # alias: RESOURCE_NAME=canonical name, IS_FRACTIONAL=False
+            alias = mod.gpu_alias()
+            self.assertEqual(
+                alias.tags[resource_tags.RESOURCE_NAME],
+                "my_gpu",
+                "alias: RESOURCE_NAME should be canonical name",
+            )
+            self.assertFalse(
+                alias.tags[resource_tags.IS_FRACTIONAL],
+                "alias: IS_FRACTIONAL should be False",
+            )
+
+            # fractional(1.0): IS_FRACTIONAL=False
+            whole = mod.my_gpu_8()
+            self.assertEqual(
+                whole.tags[resource_tags.RESOURCE_NAME],
+                "my_gpu_8",
+                "whole fractional: RESOURCE_NAME should be fractional name",
+            )
+            self.assertFalse(
+                whole.tags[resource_tags.IS_FRACTIONAL],
+                "whole fractional: IS_FRACTIONAL should be False",
+            )
+
+            # fractional(0.5): IS_FRACTIONAL=True
+            half = mod.my_gpu_4()
+            self.assertEqual(
+                half.tags[resource_tags.RESOURCE_NAME],
+                "my_gpu_4",
+                "half fractional: RESOURCE_NAME should be fractional name",
+            )
+            self.assertTrue(
+                half.tags[resource_tags.IS_FRACTIONAL],
+                "half fractional: IS_FRACTIONAL should be True",
             )
 
 
