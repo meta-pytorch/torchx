@@ -31,18 +31,21 @@ from docutils import nodes
 from sphinx import addnodes
 from sphinx.util.docfields import TypedField
 
-sys.path.append(os.path.abspath("./ext"))
+sys.path.insert(0, os.path.abspath("./ext"))
 
 if True:  # stop isort from reordering
     sys.path.append(os.path.abspath("../.."))
     import torchx
 
-FBCODE = os.environ.get(
-    "TORCHX_DOCS_FBCODE", str("fbcode" in os.getcwd())
-).lower() not in (
-    "0",
-    "false",
-)
+
+def _is_fbcode() -> bool:
+    value = os.environ.get("TORCHX_DOCS_FBCODE")
+    if value is not None:
+        return value.lower() not in ("0", "false")
+    return "fbcode" in os.getcwd()
+
+
+FBCODE = _is_fbcode()
 
 # -- General configuration ------------------------------------------------
 
@@ -110,6 +113,15 @@ autodoc_mock_imports = [
     "sagemaker",
     "kubernetes",
 ]
+if not FBCODE:
+    autodoc_mock_imports += [
+        "torchx.specs.fb",
+        "torchx.specs.fb.overlay_mast",
+        "torchx.workspace.fb",
+        "torchx.workspace.fb.conda_env_workspace",
+        "torchx.workspace.fb.jetter_workspace",
+        "torchx.workspace.fb.sapling_workspace",
+    ]
 
 # The master toctree document.
 master_doc = "index"
@@ -139,10 +151,17 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
+META_ONLY_PATTERNS = [
+    "fb/**",
+    "components/fb/**",
+    "pipelines/fb/**",
+    "schedulers/fb/**",
+    "workspaces/fb/**",
+]
+
 exclude_patterns = []
 if not FBCODE:
-    # fb/ contains Meta-internal docs only available in the fbcode build.
-    exclude_patterns += ["fb/**"]
+    exclude_patterns += META_ONLY_PATTERNS
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -158,6 +177,7 @@ todo_include_todos = True
 #
 html_theme = "pytorch_sphinx_theme"
 html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
+html_style = "css/theme.css"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -188,6 +208,10 @@ html_js_files = [
 ]
 
 
+def _add_legacy_style_context(app, _pagename, _templatename, context, _doctree):
+    context.setdefault("style", app.config.html_style)
+
+
 def setup(app):
     # NOTE: in Sphinx 1.8+ `html_css_files` is an official configuration value
     # and can be moved outside of this function (and the setup(app) function
@@ -200,6 +224,8 @@ def setup(app):
     )  # noqa B009
     for css_file in html_css_files:
         add_css(css_file)
+
+    app.connect("html-page-context", _add_legacy_style_context)
 
 
 # -- Options for HTMLHelp output ------------------------------------------

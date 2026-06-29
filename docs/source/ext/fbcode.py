@@ -14,6 +14,13 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import nested_parse_with_titles
 
 
+def _is_fbcode() -> bool:
+    value = os.environ.get("TORCHX_DOCS_FBCODE")
+    if value is not None:
+        return value.lower() not in ("0", "false")
+    return "fbcode" in os.getcwd()
+
+
 class FbcodeDirective(SphinxDirective):
     """
     Includes the content of this directive if running in fbcode.
@@ -53,7 +60,7 @@ class FbcodeDirective(SphinxDirective):
 
     def run(self):
         exclude_in_fbcode = "exclude" in self.options
-        is_fbcode = "fbcode" in os.getcwd()
+        is_fbcode = _is_fbcode()
 
         if is_fbcode ^ exclude_in_fbcode:
             node = nodes.section()
