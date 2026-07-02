@@ -57,6 +57,7 @@ def _unwrap_optional(tp: type) -> type:
     """Strip ``None`` from union types (e.g. ``str | None`` -> ``str``)."""
     args = [a for a in get_args(tp) if a is not types.NoneType]
     if args and len(args) < len(get_args(tp)):
+        # pyrefly: ignore [not-a-type]
         return args[0] if len(args) == 1 else Union[tuple(args)]
     return tp
 
@@ -116,6 +117,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
     """
 
     @classmethod
+    # pyrefly: ignore [not-a-type]
     def from_cfg(cls, cfg: Mapping[str, CfgVal]) -> Self:
         """Create an instance from a raw config dict.
 
@@ -126,6 +128,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
         """
         type_hints = get_type_hints(cls)
         kwargs = {}
+        # pyrefly: ignore [bad-argument-type]
         for f in fields(cls):
             name = f.name
             field_type = _unwrap_optional(type_hints.get(name, str))
@@ -187,6 +190,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     def __iter__(self) -> Iterator[str]:
         type_hints = get_type_hints(type(self))
+        # pyrefly: ignore [bad-argument-type]
         for f in fields(self):
             field_type = _unwrap_optional(type_hints.get(f.name, str))
             if _is_structured_opts(field_type):
@@ -227,6 +231,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             docstrings[field_name] = docstring
 
         type_hints = get_type_hints(cls)
+        # pyrefly: ignore [bad-argument-type]
         for f in fields(cls):
             field_type = _unwrap_optional(type_hints.get(f.name, str))
             if _is_structured_opts(field_type):
@@ -248,6 +253,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
         type_hints = get_type_hints(cls)
         docstrings = cls.get_docstrings()
 
+        # pyrefly: ignore [bad-argument-type]
         for f in fields(cls):
             name = f.name
             field_type = _unwrap_optional(type_hints.get(name, str))
@@ -281,6 +287,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             opts.add(
                 name,
                 type_=type_,
+                # pyrefly: ignore [bad-argument-type]
                 default=default,
                 required=required,
                 help=help_text,

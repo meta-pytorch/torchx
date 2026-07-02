@@ -120,6 +120,7 @@ class KubernetesSchedulerTest(unittest.TestCase):
     def test_create_scheduler(self) -> None:
         client = MagicMock()
         docker_client = MagicMock
+        # pyrefly: ignore [bad-argument-type]
         scheduler = create_scheduler("foo", client=client, docker_client=docker_client)
         self.assertIsInstance(scheduler, kubernetes_scheduler.KubernetesScheduler)
         self.assertEqual(scheduler._docker_client, docker_client)

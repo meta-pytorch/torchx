@@ -545,7 +545,9 @@ def _register_termination_signals() -> None:
     if threading.current_thread() is threading.main_thread():
         # Register termination handlers for SIGTERM and SIGINT
         # Temporary disable signal handler registration
+        # pyrefly: ignore [bad-argument-type]
         signal.signal(signal.SIGTERM, _terminate_process_handler)
+        # pyrefly: ignore [bad-argument-type]
         signal.signal(signal.SIGINT, _terminate_process_handler)
 
 

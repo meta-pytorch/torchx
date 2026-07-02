@@ -963,10 +963,15 @@ class GetTypeNameTest(unittest.TestCase):
         self.assertEqual("int", get_type_name(int))
         self.assertEqual("list", get_type_name(list))
         self.assertEqual("typing.Union[str, int]", get_type_name(Union[str, int]))
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual("typing.List[int]", get_type_name(List[int]))
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual("typing.Dict[str, int]", get_type_name(Dict[str, int]))
         self.assertEqual(
-            "typing.List[typing.List[int]]", get_type_name(List[List[int]])
+            # pyrefly: ignore [bad-argument-type]
+            "typing.List[typing.List[int]]",
+            # pyrefly: ignore [bad-argument-type]
+            get_type_name(List[List[int]]),
         )
 
 

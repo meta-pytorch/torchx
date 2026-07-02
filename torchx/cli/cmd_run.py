@@ -301,6 +301,7 @@ class CmdRun(SubCommand):
                     parent_run_id=args.parent_run_id,
                 )
                 print(
+                    # pyrefly: ignore [bad-argument-type]
                     "\n=== APPLICATION ===\n"
                     f"{pformat(asdict(dryrun_info._app), indent=2, width=80)}"
                 )
