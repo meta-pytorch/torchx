@@ -50,6 +50,7 @@ class SchedulerTest(unittest.TestCase):
             assert app is not None
             return app.name
 
+        # pyrefly: ignore [bad-override]
         def _submit_dryrun(
             self,
             app: AppDef,
@@ -162,6 +163,7 @@ class SchedulerTest(unittest.TestCase):
         cfg = {"foo": "bar"}
         scheduler_mock.submit_dryrun(app_mock, cfg)
         role_mock = app_mock.roles[0]
+        # pyrefly: ignore [missing-attribute]
         role_mock.pre_proc.assert_called_once()
 
     def test_validate(self) -> None:

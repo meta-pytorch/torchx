@@ -341,36 +341,50 @@ def parse_mounts(opts: list[str]) -> list[BindMount | VolumeMount | DeviceMount]
         cur[key] = val
 
     mounts = []
+    # pyrefly: ignore [bad-assignment]
     for opts in mount_opts:
+        # pyrefly: ignore [missing-attribute]
         typ = opts.get("type")
         if typ == MountType.BIND:
+            # pyrefly: ignore [bad-index]
             src_path = opts["src"]
             if src_path.startswith("~"):
                 src_path = os.path.expanduser(src_path)
             mounts.append(
                 BindMount(
                     src_path=src_path,
+                    # pyrefly: ignore [bad-index]
                     dst_path=opts["dst"],
                     read_only="readonly" in opts,
                 )
             )
         elif typ == MountType.VOLUME:
             mounts.append(
+                # pyrefly: ignore [bad-argument-type]
                 VolumeMount(
-                    src=opts["src"], dst_path=opts["dst"], read_only="readonly" in opts
+                    # pyrefly: ignore [bad-index]
+                    src=opts["src"],
+                    # pyrefly: ignore [bad-index]
+                    dst_path=opts["dst"],
+                    read_only="readonly" in opts,
                 )
             )
         elif typ == MountType.DEVICE:
+            # pyrefly: ignore [bad-index]
             src = opts["src"]
+            # pyrefly: ignore [missing-attribute]
             dst = opts.get("dst", src)
+            # pyrefly: ignore [missing-attribute]
             perm = opts.get("perm", "rwm")
             for c in perm:
                 if c not in "rwm":
                     raise ValueError(
                         f"{c} is not a valid permission flags must one of r,w,m"
                     )
+            # pyrefly: ignore [bad-argument-type]
             mounts.append(DeviceMount(src_path=src, dst_path=dst, permissions=perm))
         else:
             valid = list(str(item.value) for item in MountType)
             raise ValueError(f"invalid mount type {repr(typ)}, must be one of {valid}")
+    # pyrefly: ignore [bad-return]
     return mounts

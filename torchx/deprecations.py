@@ -103,6 +103,7 @@ def deprecated(
             warnings.warn(msg, UserWarning, stacklevel=2)
             return fn(*args, **kwargs)
 
+        # pyrefly: ignore [bad-return]
         return wrapper
 
     return decorator

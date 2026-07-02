@@ -43,6 +43,7 @@ def run(
         match = re.search(filter_output_regexp, raw_output)
         if match is None:
             return None
+        # pyrefly: ignore [bad-return]
         return match.group(1)
 
     # pyre-fixme[7]: Expected `Optional[Tuple[int, bytes, bytes]]` but got

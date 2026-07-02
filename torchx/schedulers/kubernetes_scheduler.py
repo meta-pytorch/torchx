@@ -187,6 +187,7 @@ def _apply_pod_overlay(
 
     apply_overlay(pod_dict, overlay)
 
+    # pyrefly: ignore [missing-attribute]
     merged_pod = api._ApiClient__deserialize(pod_dict, "V1Pod")
     pod.spec = merged_pod.spec
     pod.metadata = merged_pod.metadata
