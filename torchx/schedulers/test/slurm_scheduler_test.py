@@ -455,6 +455,7 @@ JobID|JobName|Partition|Account|AllocCPUS|State|ExitCode
 
     def test_describe_squeue(self) -> None:
         with (
+            # pyrefly: ignore [bad-argument-type]
             resources.path(__package__, "slurm-squeue-output.json") as path,
             open(path) as fp,
         ):

@@ -133,6 +133,7 @@ class Runner:
                 scheduler_params[key.removeprefix("torchx_")] = value
         return scheduler_params
 
+    # pyrefly: ignore [not-a-type]
     def __enter__(self) -> "Self":
         return self
 

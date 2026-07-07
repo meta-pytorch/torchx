@@ -135,6 +135,7 @@ def get_generic_type(arg: ast.expr) -> ast.expr:
     assert isinstance(arg, ast.Subscript)  # e.g. arg = C[T]
 
     if isinstance(arg.slice, ast.Index):  # python>=3.10
+        # pyrefly: ignore [missing-attribute]
         return arg.slice.value
     else:  # python-3.9
         return arg.slice
@@ -148,6 +149,7 @@ def get_optional_type(arg: ast.expr) -> ast.expr | None:
         2.  ``T | None`` or ``None | T`` (python>=3.10 - PEP 604)
     """
     # case 1: 'a: Optional[T]'
+    # pyrefly: ignore [missing-attribute]
     if isinstance(arg, ast.Subscript) and arg.value.id == "Optional":
         return get_generic_type(arg)
 
@@ -218,6 +220,7 @@ class ArgTypeValidator(ComponentFunctionValidator):
             return ok()
         # Case 4: Containers (Dict, List, Tuple)
         elif isinstance(arg_type, ast.Subscript):
+            # pyrefly: ignore [missing-attribute]
             container_type = arg_type.value.id
 
             if container_type in ["Dict", "dict"]:
@@ -268,8 +271,10 @@ class ReturnTypeValidator(ComponentFunctionValidator):
         elif isinstance(return_def, ast.Name):
             return return_def.id
         elif isinstance(return_def, ast.Str):
+            # pyrefly: ignore [bad-return]
             return return_def.s
         elif isinstance(return_def, ast.Constant):
+            # pyrefly: ignore [bad-return]
             return return_def.value
         else:
             return None

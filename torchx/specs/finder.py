@@ -315,6 +315,7 @@ def _load_custom_components(
         for name, load_fn in
         # load_group() defers the module load so you have to call
         # the deferred load_fn to actually load the module
+        # pyrefly: ignore [missing-attribute]
         entrypoints.load_group("torchx.components", default={}).items()
     }
 

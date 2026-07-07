@@ -48,7 +48,9 @@ class CmdConfigure(SubCommand):
         required_only = not args.all
 
         if args.print:
+            # pyrefly: ignore [bad-argument-type]
             dump(f=sys.stdout, schedulers=schedulers, required_only=required_only)
         else:
             with open(".torchxconfig", "w") as f:
+                # pyrefly: ignore [bad-argument-type]
                 dump(f=f, schedulers=schedulers, required_only=required_only)

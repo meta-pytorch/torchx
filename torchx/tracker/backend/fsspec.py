@@ -281,9 +281,11 @@ def create(config_file: str) -> TrackerBase:
     if "protocol" not in config or "root_path" not in config:
         raise Exception(f"Please specify 'protocol' and 'root_path' in {config_file}")
     protocol = config["protocol"]
+    # pyrefly: ignore [unsupported-operation]
     del config["protocol"]
 
     root = config["root_path"]
+    # pyrefly: ignore [unsupported-operation]
     del config["root_path"]
 
     fs = fsspec.filesystem(protocol, **config)

@@ -116,8 +116,10 @@ def main() -> None:
             module=provider,
             scheduler=scheduler,
             image=params["image"],
+            # pyrefly: ignore [bad-argument-type]
             cfg=params["cfg"],
             dryrun=dryrun,
+            # pyrefly: ignore [bad-argument-type]
             workspace=params.get("workspace"),
         )
 

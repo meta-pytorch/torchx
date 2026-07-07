@@ -370,6 +370,7 @@ def _thread_local_cache(f: Callable[[], T]) -> Callable[[], T]:
 
 
 @_thread_local_cache
+# pyrefly: ignore [unknown-name]
 def _local_session() -> "boto3.session.Session":  # noqa: F821
     import boto3.session
 
@@ -594,6 +595,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             name=name,
             queue=opts.queue,
             share_id=opts.share_id,
+            # pyrefly: ignore [bad-argument-type]
             job_def=job_def,
             images_to_push=images_to_push,
         )
@@ -820,6 +822,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             # pyre-fixme[66]: Exception handler type annotation `unknown` must
             #  extend BaseException.
             except self._log_client.exceptions.ResourceNotFoundException:
+                # pyrefly: ignore [bad-return]
                 return []  # noqa: B901
             if response["nextForwardToken"] == next_token:
                 if (

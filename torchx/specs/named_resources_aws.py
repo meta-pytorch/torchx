@@ -59,6 +59,7 @@ def instance_type_from_resource(resource: Resource) -> str:
         warnings.warn(
             "Cannot determine resource instance type which can cause issues for non-homogeneous CEs and multinode jobs. Consider providing torchx.specs.named_resources_aws:K8S_TYPE resource capability."
         )
+    # pyrefly: ignore [bad-return]
     return instance_type
 
 

@@ -32,6 +32,7 @@ def has_docker() -> bool:
 
         docker.from_env()
         return True
+    # pyrefly: ignore [unbound-name]
     except (ImportError, docker.errors.DockerException):
         return False
 

@@ -208,6 +208,7 @@ def _get_scheduler(name: str) -> Scheduler:
         raise ValueError(
             f"`{name}` is not a registered scheduler. Valid scheduler names: {schedulers.keys()}"
         )
+    # pyrefly: ignore [not-callable]
     sched = schedulers[name](session_name="_")
     return sched
 

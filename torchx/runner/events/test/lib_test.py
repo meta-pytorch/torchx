@@ -155,4 +155,5 @@ class LogEventTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             with log_event("test_call", "local", "test_app_id", cfg) as ctx:
                 raise RuntimeError("test error")
+        # pyrefly: ignore [not-iterable]
         self.assertTrue("test error" in ctx._torchx_event.raw_exception)

@@ -169,6 +169,7 @@ def build_trackers(
             logger.info(f"No tracker config specified for `{factory_name}`")
         tracker = factory(config)
         trackers.append(tracker)
+    # pyrefly: ignore [bad-return]
     return trackers
 
 

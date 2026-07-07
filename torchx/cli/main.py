@@ -66,6 +66,7 @@ def get_sub_cmds() -> dict[str, SubCommand]:
         "torchx.cli.cmds",
         default={},
     )
+    # pyrefly: ignore [missing-attribute]
     for cmd_name, cmd_cls in override_sub_cmds.items():
         sub_cmds[cmd_name] = cmd_cls()
     return sub_cmds

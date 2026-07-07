@@ -240,6 +240,7 @@ if has_docker():
 
     class DockerSchedulerLiveTest(unittest.TestCase, LocalSchedulerTestUtil):
         def setUp(self) -> None:
+            # pyrefly: ignore [bad-override-mutable-attribute]
             self.scheduler: DockerScheduler = create_scheduler(
                 session_name="test_session",
             )
