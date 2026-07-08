@@ -12,6 +12,7 @@ from logging import getLogger, Logger
 from pathlib import Path
 from tempfile import gettempdir
 from typing import Any, Iterable, Mapping, Sequence
+from urllib.parse import urlparse
 
 import mlflow
 from mlflow import MlflowClient
@@ -64,11 +65,15 @@ class MLflowTracker(TrackerBase):
     def __init__(
         self,
         experiment_name: str | None = None,
-        tracking_uri: str = f"file://{Path(gettempdir()) / 'torchx' / 'mlruns'}",
+        tracking_uri: str = f"sqlite:///{Path(gettempdir()) / 'torchx' / 'mlruns.db'}",
         artifact_location: str | None = None,
     ) -> None:
         if experiment_name is None:
             experiment_name = self.default_experiment_name()
+
+        parsed = urlparse(tracking_uri)
+        if parsed.scheme.startswith("sqlite"):
+            Path(parsed.path).parent.mkdir(parents=True, exist_ok=True)
 
         self.tracking_uri = tracking_uri
         mlflow.set_tracking_uri(tracking_uri)

@@ -57,7 +57,7 @@ class MLflowTrackerTest(TestWithTmpDir):
         super().setUp()
         self.tracker = MLflowTracker(
             experiment_name=_generate_random_name(),
-            tracking_uri=str(self.tmpdir / "experiments"),
+            tracking_uri=f"sqlite:///{self.tmpdir / 'experiments.db'}",
             artifact_location=str(self.tmpdir / "artifacts"),
         )
 
@@ -202,7 +202,7 @@ class MLflowTrackerTest(TestWithTmpDir):
 [tracker:mlflow]
 config = {confdir}
 
-tracking_uri = {str(self.tmpdir / 'experiments')}
+tracking_uri = sqlite:///{self.tmpdir / 'experiments.db'}
 artifact_location = {str(self.tmpdir / 'artifacts')}
 experiment_name = foobar
         """
@@ -210,7 +210,9 @@ experiment_name = foobar
         )
 
         tracker = create_tracker(config=confdir)
-        self.assertEqual(str(self.tmpdir / "experiments"), tracker.tracking_uri)
+        self.assertEqual(
+            f"sqlite:///{self.tmpdir / 'experiments.db'}", tracker.tracking_uri
+        )
         self.assertEqual(str(self.tmpdir / "artifacts"), tracker.artifact_location)
         self.assertEqual("foobar", tracker.experiment.name)
 
@@ -269,7 +271,7 @@ class MlflowTrackerMultiRankTest(DistributedTestCase):
             "mlflow_test.conf",
             content=[
                 "[tracker:mlflow]",
-                f"tracking_uri = {self.tmpdir / 'mlruns'}",
+                f"tracking_uri = sqlite:///{self.tmpdir / 'mlruns.db'}",
             ],
         )
         run_name = "test-run"
