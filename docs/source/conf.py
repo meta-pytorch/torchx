@@ -74,7 +74,13 @@ if not FBCODE:
         "sphinxcontrib.katex",
     ]
 
-html_context = {"fbcode": FBCODE}
+html_context = {
+    "fbcode": FBCODE,
+    # Sphinx 7.2 removed the `style` template variable, but
+    # pytorch_sphinx_theme's layout.html still references it. Inject the
+    # value Sphinx < 7.2 derived from the theme's `stylesheet` setting.
+    "style": "css/theme.css",
+}
 
 # coverage options
 
