@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -644,6 +644,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` is not a registered scheduler. Valid scheduler names: </span><span class="si">{</span><span class="n">schedulers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [not-callable]</span>
     <span class="n">sched</span> <span class="o">=</span> <span class="n">schedulers</span><span class="p">[</span><span class="n">name</span><span class="p">](</span><span class="n">session_name</span><span class="o">=</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sched</span>
 
@@ -653,7 +654,9 @@
     <span class="k">return</span> <span class="n">ph</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ph</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_len</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ph</span><span class="p">[:</span><span class="n">max_len</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span>
 
 
-<div class="viewcode-block" id="dump"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.dump">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">dump</span><span class="p">(</span>
+<div class="viewcode-block" id="dump">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.dump">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dump</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">schedulers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">required_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -728,7 +731,10 @@
     <span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">space_around_delimiters</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="apply"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.apply">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span>
+
+<div class="viewcode-block" id="apply">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.apply">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span>
     <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
     <span class="n">dirs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -769,7 +775,10 @@
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loaded configs from </span><span class="si">{</span><span class="n">configfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="load_sections"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.load_sections">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">load_sections</span><span class="p">(</span>
+
+<div class="viewcode-block" id="load_sections">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.load_sections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_sections</span><span class="p">(</span>
     <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">dirs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
@@ -854,7 +863,10 @@
     <span class="k">return</span> <span class="n">sections</span></div>
 
 
-<div class="viewcode-block" id="get_configs"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.get_configs">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_configs</span><span class="p">(</span>
+
+<div class="viewcode-block" id="get_configs">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.get_configs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_configs</span><span class="p">(</span>
     <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">dirs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -879,7 +891,10 @@
     <span class="k">return</span> <span class="n">sections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">{})</span></div>
 
 
-<div class="viewcode-block" id="get_config"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.get_config">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span>
+
+<div class="viewcode-block" id="get_config">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.get_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span>
     <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -906,7 +921,10 @@
     <span class="k">return</span> <span class="n">get_configs</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dirs</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="find_configs"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.find_configs">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">find_configs</span><span class="p">(</span><span class="n">dirs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="find_configs">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.find_configs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_configs</span><span class="p">(</span><span class="n">dirs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds and returns the filepath to ``.torchxconfig`` files based</span>
 <span class="sd">    on the following logic:</span>
@@ -942,7 +960,10 @@
     <span class="k">return</span> <span class="n">config_files</span></div>
 
 
-<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.load">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="load">
+<a class="viewcode-back" href="../../../runner.config.html#torchx.runner.config.load">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    loads the section ``[{scheduler}]`` from the given</span>
 <span class="sd">    configfile ``f`` (in .INI format) into the provided ``runcfg``, only adding</span>
@@ -990,6 +1011,7 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># pyre-ignore[29]</span>
                         <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">opt_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
 </pre></div>
 
      </article>
@@ -1038,16 +1060,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

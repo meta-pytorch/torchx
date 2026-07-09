@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -774,7 +774,9 @@
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_idx</span> <span class="ow">or</span> <span class="s2">&quot;0&quot;</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_idx</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">num_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 
 
-<div class="viewcode-block" id="BatchJob"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.BatchJob">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="BatchJob">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.BatchJob">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BatchJob</span><span class="p">:</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span>
@@ -787,6 +789,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
 
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
@@ -808,6 +811,7 @@
 
 
 <span class="nd">@_thread_local_cache</span>
+<span class="c1"># pyrefly: ignore [unknown-name]</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_local_session</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;boto3.session.Session&quot;</span><span class="p">:</span>  <span class="c1"># noqa: F821</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">boto3.session</span>
 
@@ -849,7 +853,9 @@
 <span class="n">AWSBatchOpts</span> <span class="o">=</span> <span class="n">Opts</span>
 
 
-<div class="viewcode-block" id="AWSBatchScheduler"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AWSBatchScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
+<div class="viewcode-block" id="AWSBatchScheduler">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AWSBatchScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    AWSBatchScheduler is a TorchX scheduling interface to AWS Batch.</span>
 
@@ -933,7 +939,9 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__log_client</span>
         <span class="k">return</span> <span class="n">_local_session</span><span class="p">()</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s2">&quot;logs&quot;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="AWSBatchScheduler.schedule"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.schedule">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">BatchJob</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="AWSBatchScheduler.schedule">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.schedule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">BatchJob</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">_cfg</span>
         <span class="k">assert</span> <span class="n">cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dryrun_info</span><span class="si">}</span><span class="s2"> missing cfg&quot;</span>
 
@@ -955,6 +963,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="o">**</span><span class="n">batch_job_req</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">queue</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">req</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">BatchJob</span><span class="p">]:</span>
         <span class="n">opts</span> <span class="o">=</span> <span class="n">Opts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
@@ -1032,6 +1041,7 @@
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
             <span class="n">queue</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
             <span class="n">share_id</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">share_id</span><span class="p">,</span>
+            <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
             <span class="n">job_def</span><span class="o">=</span><span class="n">job_def</span><span class="p">,</span>
             <span class="n">images_to_push</span><span class="o">=</span><span class="n">images_to_push</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1070,7 +1080,9 @@
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">jobs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-<div class="viewcode-block" id="AWSBatchScheduler.describe"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="AWSBatchScheduler.describe">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.describe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_job</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -1108,7 +1120,10 @@
             <span class="n">ui_url</span><span class="o">=</span><span class="n">_job_ui_url</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;jobArn&quot;</span><span class="p">]),</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="AWSBatchScheduler.log_iter"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.log_iter">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">log_iter</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AWSBatchScheduler.log_iter">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.log_iter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_iter</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1178,7 +1193,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">iterator</span></div>
 
-<div class="viewcode-block" id="AWSBatchScheduler.list"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="AWSBatchScheduler.list">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.AWSBatchScheduler.list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="c1"># TODO: get queue name input instead of iterating over all queues?</span>
         <span class="n">all_apps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">resp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="s2">&quot;describe_job_queues&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">paginate</span><span class="p">():</span>
@@ -1186,6 +1204,7 @@
             <span class="k">for</span> <span class="n">qn</span> <span class="ow">in</span> <span class="n">queue_names</span><span class="p">:</span>
                 <span class="n">all_apps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list_by_queue</span><span class="p">(</span><span class="n">qn</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">all_apps</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_list_by_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="c1"># By default, only running jobs are listed by batch/boto client&#39;s list_jobs API</span>
@@ -1258,6 +1277,7 @@
             <span class="c1"># pyre-fixme[66]: Exception handler type annotation `unknown` must</span>
             <span class="c1">#  extend BaseException.</span>
             <span class="k">except</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_client</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ResourceNotFoundException</span><span class="p">:</span>
+                <span class="c1"># pyrefly: ignore [bad-return]</span>
                 <span class="k">return</span> <span class="p">[]</span>  <span class="c1"># noqa: B901</span>
             <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="s2">&quot;nextForwardToken&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">next_token</span><span class="p">:</span>
                 <span class="k">if</span> <span class="p">(</span>
@@ -1275,7 +1295,10 @@
                 <span class="k">yield</span> <span class="n">event</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span></div>
 
 
-<div class="viewcode-block" id="create_scheduler"><a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.create_scheduler">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span>
+
+<div class="viewcode-block" id="create_scheduler">
+<a class="viewcode-back" href="../../../schedulers/aws_batch.html#torchx.schedulers.aws_batch_scheduler.create_scheduler">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span>
     <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="c1"># pyre-fixme[2]: Parameter annotation cannot be `Any`.</span>
     <span class="n">client</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1290,6 +1313,7 @@
         <span class="n">log_client</span><span class="o">=</span><span class="n">log_client</span><span class="p">,</span>
         <span class="n">docker_client</span><span class="o">=</span><span class="n">docker_client</span><span class="p">,</span>
     <span class="p">)</span></div>
+
 </pre></div>
 
      </article>
@@ -1338,16 +1362,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

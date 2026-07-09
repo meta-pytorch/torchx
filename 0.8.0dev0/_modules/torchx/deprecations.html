@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -462,7 +462,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 
-<div class="viewcode-block" id="deprecated_module"><a class="viewcode-back" href="../../deprecations.html#torchx.deprecations.deprecated_module">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">deprecated_module</span><span class="p">(</span>
+<div class="viewcode-block" id="deprecated_module">
+<a class="viewcode-back" href="../../deprecations.html#torchx.deprecations.deprecated_module">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">deprecated_module</span><span class="p">(</span>
     <span class="n">old_import</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">new_import</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -502,10 +504,13 @@
     <span class="p">)</span></div>
 
 
+
 <span class="n">_F</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;_F&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span>
 
 
-<div class="viewcode-block" id="deprecated"><a class="viewcode-back" href="../../deprecations.html#torchx.deprecations.deprecated">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">deprecated</span><span class="p">(</span>
+<div class="viewcode-block" id="deprecated">
+<a class="viewcode-back" href="../../deprecations.html#torchx.deprecations.deprecated">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">deprecated</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">replacement</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="c1"># pyre-ignore[34]: _F is bound when the returned decorator is called</span>
@@ -539,9 +544,11 @@
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
+        <span class="c1"># pyrefly: ignore [bad-return]</span>
         <span class="k">return</span> <span class="n">wrapper</span>
 
     <span class="k">return</span> <span class="n">decorator</span></div>
+
 </pre></div>
 
      </article>
@@ -590,16 +597,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-         <script src="../../_static/jquery.js"></script>
-         <script src="../../_static/underscore.js"></script>
-         <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../_static/doctools.js"></script>
-         <script src="../../_static/sphinx_highlight.js"></script>
-         <script src="../../_static/katex.min.js"></script>
-         <script src="../../_static/auto-render.min.js"></script>
-         <script src="../../_static/katex_autorenderer.js"></script>
-         <script src="../../_static/js/torchx.js"></script>
+         <script src="../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

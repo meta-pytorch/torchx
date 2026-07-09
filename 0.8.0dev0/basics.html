@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -439,7 +439,7 @@
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
   <section id="basic-concepts">
-<h1>Basic Concepts<a class="headerlink" href="#basic-concepts" title="Permalink to this heading">¶</a></h1>
+<h1>Basic Concepts<a class="headerlink" href="#basic-concepts" title="Link to this heading">¶</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>This page covers the core TorchX abstractions – AppDef, Component,
@@ -447,7 +447,7 @@ Runner, and Scheduler – and how they fit together. For a hands-on
 walkthrough, see the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a>.</p>
 </div>
 <section id="project-structure">
-<h2>Project Structure<a class="headerlink" href="#project-structure" title="Permalink to this heading">¶</a></h2>
+<h2>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading">¶</a></h2>
 <p>TorchX has three layers: <strong>define</strong> (what to run), <strong>launch</strong> (where to run
 it), and <strong>manage</strong> (monitor, log, cancel):</p>
 <table class="docutils align-default">
@@ -487,9 +487,9 @@ it), and <strong>manage</strong> (monitor, log, cancel):</p>
 <img alt="_images/torchx_module_uml.jpg" src="_images/torchx_module_uml.jpg" />
 </section>
 <section id="concepts">
-<h2>Concepts<a class="headerlink" href="#concepts" title="Permalink to this heading">¶</a></h2>
+<h2>Concepts<a class="headerlink" href="#concepts" title="Link to this heading">¶</a></h2>
 <section id="appdefs">
-<h3>AppDefs<a class="headerlink" href="#appdefs" title="Permalink to this heading">¶</a></h3>
+<h3>AppDefs<a class="headerlink" href="#appdefs" title="Link to this heading">¶</a></h3>
 <p>An <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> is a job definition — similar to a
 Kubernetes <code class="docutils literal notranslate"><span class="pre">spec.yaml</span></code> or a scheduler <code class="docutils literal notranslate"><span class="pre">JobDefinition</span></code>. It’s a pure Python
 dataclass understood by <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a>.</p>
@@ -515,7 +515,7 @@ jobs (e.g. multi-node training).</p>
 <p>See the <a class="reference internal" href="specs.html#torchx-specs"><span class="std std-ref">torchx.specs</span></a> API docs for full details.</p>
 </section>
 <section id="components">
-<h3>Components<a class="headerlink" href="#components" title="Permalink to this heading">¶</a></h3>
+<h3>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h3>
 <p>A <strong>component</strong> is a factory function that returns an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 
@@ -539,7 +539,7 @@ jobs (e.g. multi-node training).</p>
 Browse the <a class="reference internal" href="components/overview.html"><span class="doc">builtin components</span></a> library before writing your own.</p>
 </section>
 <section id="runner-and-schedulers">
-<h3>Runner and Schedulers<a class="headerlink" href="#runner-and-schedulers" title="Permalink to this heading">¶</a></h3>
+<h3>Runner and Schedulers<a class="headerlink" href="#runner-and-schedulers" title="Link to this heading">¶</a></h3>
 <p>The <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> submits AppDefs as jobs. Use it from
 the CLI <strong>or</strong> from Python – both are first-class interfaces:</p>
 <p><strong>CLI:</strong></p>
@@ -576,7 +576,7 @@ the CLI <strong>or</strong> from Python – both are first-class interfaces:</p>
 <a class="reference internal" href="api_reference.html"><span class="doc">API Quick Reference</span></a> for complete recipes.</p>
 </section>
 <section id="runtime">
-<h3>Runtime<a class="headerlink" href="#runtime" title="Permalink to this heading">¶</a></h3>
+<h3>Runtime<a class="headerlink" href="#runtime" title="Link to this heading">¶</a></h3>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p><code class="docutils literal notranslate"><span class="pre">torchx.runtime</span></code> is optional. Your application binary has <strong>zero</strong>
@@ -594,7 +594,7 @@ for storage abstraction:</p>
 <p>This works with <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, <code class="docutils literal notranslate"><span class="pre">gs://</span></code>, <code class="docutils literal notranslate"><span class="pre">file://</span></code>, and other backends.</p>
 </section>
 <section id="when-to-use-torchx-and-when-not-to">
-<h3>When to Use TorchX (and When Not To)<a class="headerlink" href="#when-to-use-torchx-and-when-not-to" title="Permalink to this heading">¶</a></h3>
+<h3>When to Use TorchX (and When Not To)<a class="headerlink" href="#when-to-use-torchx-and-when-not-to" title="Link to this heading">¶</a></h3>
 <p>TorchX is a good fit when you launch PyTorch jobs across multiple backends
 without maintaining separate configurations for each:</p>
 <ul class="simple">
@@ -645,47 +645,47 @@ launches.</p></td>
 </tbody>
 </table>
 <dl class="simple glossary">
-<dt id="term-AppDef">AppDef<a class="headerlink" href="#term-AppDef" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> is a job definition containing one or
+<dt id="term-AppDef">AppDef<a class="headerlink" href="#term-AppDef" title="Link to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> is a job definition containing one or
 more Roles. It is the primary unit that the Runner submits to a Scheduler.</p>
 </dd>
-<dt id="term-Role">Role<a class="headerlink" href="#term-Role" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> describes a set of identical containers
+<dt id="term-Role">Role<a class="headerlink" href="#term-Role" title="Link to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> describes a set of identical containers
 (replicas) within an AppDef. Roles specify the entrypoint, image,
 arguments, and resource requirements.</p>
 </dd>
-<dt id="term-Resource">Resource<a class="headerlink" href="#term-Resource" title="Permalink to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a> specifies the hardware requirements
+<dt id="term-Resource">Resource<a class="headerlink" href="#term-Resource" title="Link to this term">¶</a></dt><dd><p>A <a class="reference internal" href="specs.html#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a> specifies the hardware requirements
 (CPU, GPU, memory) for a Role. Named resources provide t-shirt-sized
 presets.</p>
 </dd>
-<dt id="term-Component">Component<a class="headerlink" href="#term-Component" title="Permalink to this term">¶</a></dt><dd><p>A Python function that returns an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>. Components are the
+<dt id="term-Component">Component<a class="headerlink" href="#term-Component" title="Link to this term">¶</a></dt><dd><p>A Python function that returns an <code class="docutils literal notranslate"><span class="pre">AppDef</span></code>. Components are the
 recommended way to define reusable, shareable job specifications.</p>
 </dd>
-<dt id="term-Runner">Runner<a class="headerlink" href="#term-Runner" title="Permalink to this term">¶</a></dt><dd><p>The <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> submits AppDefs as jobs to a
+<dt id="term-Runner">Runner<a class="headerlink" href="#term-Runner" title="Link to this term">¶</a></dt><dd><p>The <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> submits AppDefs as jobs to a
 Scheduler and manages their lifecycle.</p>
 </dd>
-<dt id="term-Scheduler">Scheduler<a class="headerlink" href="#term-Scheduler" title="Permalink to this term">¶</a></dt><dd><p>A backend that executes jobs (e.g. Kubernetes, Slurm, local Docker).
+<dt id="term-Scheduler">Scheduler<a class="headerlink" href="#term-Scheduler" title="Link to this term">¶</a></dt><dd><p>A backend that executes jobs (e.g. Kubernetes, Slurm, local Docker).
 See <a class="reference internal" href="schedulers.html"><span class="doc">Schedulers</span></a> for the full list.</p>
 </dd>
-<dt id="term-Workspace">Workspace<a class="headerlink" href="#term-Workspace" title="Permalink to this term">¶</a></dt><dd><p>A local directory containing your source code. TorchX can automatically
+<dt id="term-Workspace">Workspace<a class="headerlink" href="#term-Workspace" title="Link to this term">¶</a></dt><dd><p>A local directory containing your source code. TorchX can automatically
 <strong>patch</strong> (overlay) your workspace onto a base image so that remote jobs
 run your latest code without a manual image rebuild. See <a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a>.</p>
 </dd>
-<dt id="term-Image">Image<a class="headerlink" href="#term-Image" title="Permalink to this term">¶</a></dt><dd><p>The base runtime environment for a job. For container-based schedulers
+<dt id="term-Image">Image<a class="headerlink" href="#term-Image" title="Link to this term">¶</a></dt><dd><p>The base runtime environment for a job. For container-based schedulers
 (<code class="docutils literal notranslate"><span class="pre">local_docker</span></code>, <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code>) this is a Docker
 container image. For <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code> and <code class="docutils literal notranslate"><span class="pre">slurm</span></code> it is the current
 working directory or shared filesystem path.</p>
 </dd>
-<dt id="term-Dryrun">Dryrun<a class="headerlink" href="#term-Dryrun" title="Permalink to this term">¶</a></dt><dd><p>A preview of what TorchX <em>would</em> submit to a scheduler without actually
+<dt id="term-Dryrun">Dryrun<a class="headerlink" href="#term-Dryrun" title="Link to this term">¶</a></dt><dd><p>A preview of what TorchX <em>would</em> submit to a scheduler without actually
 submitting. Useful for debugging job definitions. The Runner’s
 <a class="reference internal" href="runner.html#torchx.runner.Runner.dryrun" title="torchx.runner.Runner.dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun()</span></code></a> method returns an
 <a class="reference internal" href="specs.html#torchx.specs.AppDryRunInfo" title="torchx.specs.AppDryRunInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code></a> containing the native request.</p>
 </dd>
-<dt id="term-AppHandle">AppHandle<a class="headerlink" href="#term-AppHandle" title="Permalink to this term">¶</a></dt><dd><p>A URI string returned by <a class="reference internal" href="runner.html#torchx.runner.Runner.run" title="torchx.runner.Runner.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a> with the
+<dt id="term-AppHandle">AppHandle<a class="headerlink" href="#term-AppHandle" title="Link to this term">¶</a></dt><dd><p>A URI string returned by <a class="reference internal" href="runner.html#torchx.runner.Runner.run" title="torchx.runner.Runner.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code></a> with the
 format <code class="docutils literal notranslate"><span class="pre">{scheduler}://{session_name}/{app_id}</span></code> (e.g.
 <code class="docutils literal notranslate"><span class="pre">kubernetes://torchx/my_job_123</span></code>). Passed to <code class="docutils literal notranslate"><span class="pre">status</span></code>, <code class="docutils literal notranslate"><span class="pre">wait</span></code>,
 <code class="docutils literal notranslate"><span class="pre">cancel</span></code>, <code class="docutils literal notranslate"><span class="pre">log_lines</span></code>, and <code class="docutils literal notranslate"><span class="pre">delete</span></code>. See
 <a class="reference internal" href="specs.html#torchx.specs.parse_app_handle" title="torchx.specs.parse_app_handle"><code class="xref py py-func docutils literal notranslate"><span class="pre">parse_app_handle()</span></code></a>.</p>
 </dd>
-<dt id="term-Entry-Point">Entry Point<a class="headerlink" href="#term-Entry-Point" title="Permalink to this term">¶</a></dt><dd><p>A standard Python packaging mechanism that lets installed packages
+<dt id="term-Entry-Point">Entry Point<a class="headerlink" href="#term-Entry-Point" title="Link to this term">¶</a></dt><dd><p>A standard Python packaging mechanism that lets installed packages
 advertise plugins. TorchX uses entry points to discover schedulers,
 components, trackers, and CLI commands at runtime. Defined in
 <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> or <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. See the
@@ -695,7 +695,7 @@ components, trackers, and CLI commands at runtime. Defined in
 </section>
 </section>
 <section id="next-steps">
-<h2>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">¶</a></h2>
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>If you haven’t already, work through the <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart Guide</span></a>.</p></li>
 <li><p>Explore the <a class="reference internal" href="runner.html"><span class="doc">Runner Python API</span></a> for launching jobs programmatically.</p></li>
@@ -785,16 +785,13 @@ components, trackers, and CLI commands at runtime. Defined in
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-         <script src="_static/jquery.js"></script>
-         <script src="_static/underscore.js"></script>
-         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="_static/doctools.js"></script>
-         <script src="_static/sphinx_highlight.js"></script>
-         <script src="_static/katex.min.js"></script>
-         <script src="_static/auto-render.min.js"></script>
-         <script src="_static/katex_autorenderer.js"></script>
-         <script src="_static/js/torchx.js"></script>
+         <script src="_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="_static/doctools.js?v=9bcbadda"></script>
+         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="_static/js/torchx.js?v=211227c7"></script>
      
 
   

@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -532,7 +532,9 @@
 <span class="c1"># ========================================</span>
 <span class="c1"># ==== Distributed AppDef API =======</span>
 <span class="c1"># ========================================</span>
-<div class="viewcode-block" id="Resource"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="Resource">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Resource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents resource requirements for a :py:class:`Role`.</span>
@@ -562,7 +564,9 @@
     <span class="n">devices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Resource.is_fractional"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.is_fractional">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_fractional</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="Resource.is_fractional">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.is_fractional">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_fractional</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``True`` if this resource is a fractional slice of a base resource.</span>
 
 <span class="sd">        Set automatically by :py:meth:`register.named_resource` when a</span>
@@ -572,7 +576,10 @@
 
         <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">IS_FRACTIONAL</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Resource.get_resource_name"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.get_resource_name">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_resource_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Resource.get_resource_name">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.get_resource_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_resource_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the registered named-resource name, or ``None``.</span>
 
 <span class="sd">        Set automatically by :py:meth:`register.named_resource` on every</span>
@@ -583,7 +590,10 @@
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">RESOURCE_NAME</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
 
-<div class="viewcode-block" id="Resource.copy"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.copy">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="Resource.copy">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Resource.copy">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="n">original</span><span class="p">:</span> <span class="s2">&quot;Resource&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">capabilities</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Resource&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies a resource, merging in the given ``capabilities``.&quot;&quot;&quot;</span>
 
@@ -595,7 +605,9 @@
             <span class="n">memMB</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">memMB</span><span class="p">,</span>
             <span class="n">capabilities</span><span class="o">=</span><span class="n">res_capabilities</span><span class="p">,</span>
             <span class="n">devices</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">devices</span><span class="p">,</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># sentinel value used for cases when resource does not matter (e.g. ignored)</span>
@@ -618,7 +630,9 @@
 <span class="n">NONE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;NONE&gt;&quot;</span>
 
 
-<div class="viewcode-block" id="macros"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">macros</span><span class="p">:</span>
+<div class="viewcode-block" id="macros">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.macros">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">macros</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Template variables substituted at runtime in :py:attr:`Role.args`,</span>
 <span class="sd">    :py:attr:`Role.env`, and :py:attr:`Role.metadata`.</span>
@@ -659,7 +673,9 @@
     <span class="c1"># This may not be available on all schedulers.</span>
     <span class="n">rank0_env</span> <span class="o">=</span> <span class="s2">&quot;$</span><span class="si">{rank0_env}</span><span class="s2">&quot;</span>
 
-<div class="viewcode-block" id="macros.Values"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values">[docs]</a>    <span class="nd">@dataclass</span>
+<div class="viewcode-block" id="macros.Values">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values">[docs]</a>
+    <span class="nd">@dataclass</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">Values</span><span class="p">:</span>
         <span class="n">img_root</span><span class="p">:</span> <span class="nb">str</span>
         <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span>
@@ -667,7 +683,9 @@
         <span class="n">rank0_env</span><span class="p">:</span> <span class="nb">str</span>
         <span class="n">base_img_root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DEPRECATED&quot;</span>
 
-<div class="viewcode-block" id="macros.Values.apply"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.apply">[docs]</a>        <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="s2">&quot;Role&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
+<div class="viewcode-block" id="macros.Values.apply">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.apply">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="s2">&quot;Role&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns a deep copy of ``role`` with macros substituted.&quot;&quot;&quot;</span>
 
             <span class="c1"># Overrides might contain future values which can&#39;t be serialized so taken out for the copy</span>
@@ -686,6 +704,7 @@
 
             <span class="k">return</span> <span class="n">role</span></div>
 
+
         <span class="k">def</span><span class="w"> </span><span class="nf">_apply_nested</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>  <span class="c1"># noqa: D102</span>
             <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">]</span>
             <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
@@ -703,16 +722,26 @@
                                 <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="k">return</span> <span class="n">d</span>
 
-<div class="viewcode-block" id="macros.Values.to_dict"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.to_dict">[docs]</a>        <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="macros.Values.to_dict">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.to_dict">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns the macro values as a plain dict.&quot;&quot;&quot;</span>
             <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="macros.Values.substitute"><a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.substitute">[docs]</a>        <span class="k">def</span><span class="w"> </span><span class="nf">substitute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="macros.Values.substitute">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.macros.Values.substitute">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">substitute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Substitutes macro placeholders in ``arg``.&quot;&quot;&quot;</span>
-            <span class="k">return</span> <span class="n">Template</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div></div></div>
+            <span class="k">return</span> <span class="n">Template</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="o">.</span><span class="n">safe_substitute</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div>
+</div>
+</div>
 
 
-<div class="viewcode-block" id="RetryPolicy"><a class="viewcode-back" href="../../../specs.html#torchx.specs.RetryPolicy">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RetryPolicy</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+
+<div class="viewcode-block" id="RetryPolicy">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.RetryPolicy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RetryPolicy</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Defines the retry policy for the ``Roles`` in the ``AppDef``.</span>
 <span class="sd">    The policy defines the behavior when the role replica encounters a failure:</span>
@@ -742,13 +771,16 @@
     <span class="n">ROLE</span> <span class="o">=</span> <span class="s2">&quot;ROLE&quot;</span></div>
 
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">MountType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
     <span class="n">BIND</span> <span class="o">=</span> <span class="s2">&quot;bind&quot;</span>
     <span class="n">VOLUME</span> <span class="o">=</span> <span class="s2">&quot;volume&quot;</span>
     <span class="n">DEVICE</span> <span class="o">=</span> <span class="s2">&quot;device&quot;</span>
 
 
-<div class="viewcode-block" id="BindMount"><a class="viewcode-back" href="../../../specs.html#torchx.specs.BindMount">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="BindMount">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.BindMount">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BindMount</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Bind-mounts a host path into the worker container.&quot;&quot;&quot;</span>
 
@@ -757,7 +789,10 @@
     <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="VolumeMount"><a class="viewcode-back" href="../../../specs.html#torchx.specs.VolumeMount">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="VolumeMount">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.VolumeMount">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">VolumeMount</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mounts a persistent volume into the worker container.&quot;&quot;&quot;</span>
 
@@ -766,7 +801,10 @@
     <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="DeviceMount"><a class="viewcode-back" href="../../../specs.html#torchx.specs.DeviceMount">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="DeviceMount">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.DeviceMount">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceMount</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mounts a host device into the container.&quot;&quot;&quot;</span>
 
@@ -775,7 +813,10 @@
     <span class="n">permissions</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rwm&quot;</span></div>
 
 
-<div class="viewcode-block" id="Workspace"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="Workspace">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Workspace</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Maps local project directories to remote workspace locations. At submit-time,</span>
@@ -809,11 +850,16 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
 
-<div class="viewcode-block" id="Workspace.is_unmapped_single_project"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace.is_unmapped_single_project">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_unmapped_single_project</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="Workspace.is_unmapped_single_project">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace.is_unmapped_single_project">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_unmapped_single_project</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;``True`` if this is a single-project workspace with no target sub-directory.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
 
-<div class="viewcode-block" id="Workspace.merge_into"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace.merge_into">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">merge_into</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Workspace.merge_into">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Workspace.merge_into">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge_into</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outdir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies each project into ``{outdir}/{target}``.&quot;&quot;&quot;</span>
 
         <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">projects</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -822,6 +868,7 @@
                 <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># src is dir</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="p">,</span> <span class="n">dirs_exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_str</span><span class="p">(</span><span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Workspace&quot;</span><span class="p">:</span>
@@ -849,7 +896,10 @@
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Role"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Role">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="Role">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Role">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Role</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A set of nodes that perform a specific duty within an :py:class:`AppDef`.</span>
@@ -928,7 +978,9 @@
             <span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">result</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Role.pre_proc"><a class="viewcode-back" href="../../../specs.html#torchx.specs.Role.pre_proc">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">pre_proc</span><span class="p">(</span>
+<div class="viewcode-block" id="Role.pre_proc">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.Role.pre_proc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pre_proc</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="c1"># pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object</span>
@@ -940,10 +992,14 @@
 <span class="sd">        Called per-role during :py:meth:`Scheduler.submit_dryrun &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`,</span>
 <span class="sd">        in the order they appear in :py:attr:`AppDef.roles`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">dryrun_info</span></div></div>
+        <span class="k">return</span> <span class="n">dryrun_info</span></div>
+</div>
 
 
-<div class="viewcode-block" id="AppDef"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDef">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="AppDef">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDef">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A distributed application composed of one or more :py:class:`Role` s.</span>
 
@@ -964,7 +1020,10 @@
     <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="AppState"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppState">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AppState</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AppState">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.AppState">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AppState</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    State of the application. An application starts from an initial</span>
 <span class="sd">    ``UNSUBMITTED`` state and moves through ``SUBMITTED``, ``PENDING``,</span>
@@ -1002,6 +1061,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
 
 
 <span class="n">_TERMINAL_STATES</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">AppState</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
@@ -1066,7 +1126,9 @@
         <span class="p">}</span>
 
 
-<div class="viewcode-block" id="AppStatus"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="AppStatus">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppStatus</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Runtime status of an :py:class:`AppDef`.</span>
 
@@ -1097,10 +1159,13 @@
 
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;AppStatus&quot;</span><span class="p">:</span> <span class="n">app_status_dict</span><span class="p">})</span>
 
-<div class="viewcode-block" id="AppStatus.raise_for_status"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.raise_for_status">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">raise_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="AppStatus.raise_for_status">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.raise_for_status">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raise_for_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Raises :py:class:`AppStatusError` if state is not ``SUCCEEDED``.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">SUCCEEDED</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">AppStatusError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;job did not succeed: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_format_error_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">80</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">width</span>
@@ -1187,7 +1252,9 @@
             <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ui_url</span><span class="p">,</span>
         <span class="p">}</span>
 
-<div class="viewcode-block" id="AppStatus.format"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.format">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span>
+<div class="viewcode-block" id="AppStatus.format">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.AppStatus.format">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">filter_roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1204,7 +1271,9 @@
             <span class="n">msg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">,</span>
             <span class="n">structured_error_msg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">structured_error_msg</span><span class="p">,</span>
             <span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ui_url</span><span class="p">,</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">AppStatusError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
@@ -1223,7 +1292,9 @@
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="AppDryRunInfo"><a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDryRunInfo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<div class="viewcode-block" id="AppDryRunInfo">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDryRunInfo">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returned by :py:meth:`Scheduler.submit_dryrun &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`.</span>
 
 <span class="sd">    Wraps the scheduler ``request`` that *would* have been submitted.</span>
@@ -1250,6 +1321,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">)</span></div>
 
 
+
 <span class="k">def</span><span class="w"> </span><span class="nf">get_type_name</span><span class="p">(</span><span class="n">tp</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a human-readable name for ``tp`` (handles generic types like ``list[str]``).&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">tp</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">!=</span> <span class="s2">&quot;typing&quot;</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">):</span>
@@ -1273,7 +1345,9 @@
         <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([a-z0-9])([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1_\2&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="runopt"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopt">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="runopt">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopt">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">runopt</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata for a single scheduler run option.&quot;&quot;&quot;</span>
 
@@ -1290,7 +1364,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">is_type_dict_of_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span>
 
-<div class="viewcode-block" id="runopt.cast_to_type"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopt.cast_to_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cast_to_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
+<div class="viewcode-block" id="runopt.cast_to_type">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopt.cast_to_type">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cast_to_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Casts the given `value` (in its string representation) to the type of this run option.</span>
 <span class="sd">        Below are the cast rules for each option type and value literal:</span>
 
@@ -1321,10 +1397,14 @@
             <span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="runopts"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">runopts</span><span class="p">:</span>
+
+<div class="viewcode-block" id="runopts">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">runopts</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Schema for scheduler run configuration.</span>
 
@@ -1353,7 +1433,9 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">)</span>
 
-<div class="viewcode-block" id="runopts.is_type"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.is_type">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="runopts.is_type">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.is_type">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_type</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">tp</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Like ``isinstance()`` but supports generic types (e.g. ``list[str]``).&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1368,7 +1450,10 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="runopts.get"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.get">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopt</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="runopts.get">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopt</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the registered option, or ``None``.</span>
 
 <span class="sd">        Accepts camelCase names (e.g. ``&quot;clusterName&quot;`` resolves ``&quot;cluster_name&quot;``).</span>
@@ -1382,7 +1467,10 @@
                 <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="runopts.resolve"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.resolve">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="runopts.resolve">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.resolve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates ``cfg`` against registered options, filling defaults.</span>
 
 <span class="sd">        Raises :py:class:`InvalidRunConfigException` for missing required options</span>
@@ -1423,7 +1511,10 @@
                 <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">runopt</span><span class="o">.</span><span class="n">default</span>
         <span class="k">return</span> <span class="n">resolved_cfg</span></div>
 
-<div class="viewcode-block" id="runopts.cfg_from_str"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.cfg_from_str">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="runopts.cfg_from_str">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.cfg_from_str">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parses scheduler ``cfg`` from a string literal and returns</span>
 <span class="sd">        a cfg map where the cfg values have been cast into the appropriate</span>
@@ -1490,7 +1581,10 @@
                 <span class="p">)</span>
         <span class="k">return</span> <span class="n">cfg</span></div>
 
-<div class="viewcode-block" id="runopts.cfg_from_json_repr"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.cfg_from_json_repr">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_json_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_repr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="runopts.cfg_from_json_repr">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.cfg_from_json_repr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_json_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_repr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts the given dict to a valid cfg for this ``runopts`` object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1512,7 +1606,10 @@
                     <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="n">cfg</span></div>
 
-<div class="viewcode-block" id="runopts.add"><a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.add">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span>
+
+<div class="viewcode-block" id="runopts.add">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.add">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cfg_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">type_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CfgVal</span><span class="p">],</span>
@@ -1539,6 +1636,7 @@
             <span class="n">help</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_opts</span><span class="p">)</span>
@@ -1592,6 +1690,7 @@
         <span class="k">return</span> <span class="n">out</span></div>
 
 
+
 <span class="k">class</span><span class="w"> </span><span class="nc">InvalidRunConfigException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when run cfg is missing required options or has type mismatches.&quot;&quot;&quot;</span>
 
@@ -1625,12 +1724,15 @@
 <span class="n">AppHandle</span> <span class="o">=</span> <span class="nb">str</span>
 
 
-<div class="viewcode-block" id="ParsedAppHandle"><a class="viewcode-back" href="../../../specs.html#torchx.specs.ParsedAppHandle">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ParsedAppHandle</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<div class="viewcode-block" id="ParsedAppHandle">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.ParsedAppHandle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParsedAppHandle</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parsed components of an :py:data:`AppHandle`.&quot;&quot;&quot;</span>
 
     <span class="n">scheduler_backend</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span></div>
+
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">UnknownAppException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
@@ -1643,7 +1745,9 @@
         <span class="p">)</span>
 
 
-<div class="viewcode-block" id="parse_app_handle"><a class="viewcode-back" href="../../../specs.html#torchx.specs.parse_app_handle">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedAppHandle</span><span class="p">:</span>
+<div class="viewcode-block" id="parse_app_handle">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.parse_app_handle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedAppHandle</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses ``{scheduler}://{session_name}/{app_id}`` into its components.</span>
 
 <span class="sd">    .. doctest::</span>
@@ -1666,6 +1770,7 @@
         <span class="k">raise</span> <span class="n">MalformedAppHandleException</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
     <span class="n">gd</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">ParsedAppHandle</span><span class="p">(</span><span class="n">gd</span><span class="p">[</span><span class="s2">&quot;scheduler_backend&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;session_name&quot;</span><span class="p">],</span> <span class="n">gd</span><span class="p">[</span><span class="s2">&quot;app_id&quot;</span><span class="p">])</span></div>
+
 </pre></div>
 
      </article>
@@ -1714,16 +1819,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

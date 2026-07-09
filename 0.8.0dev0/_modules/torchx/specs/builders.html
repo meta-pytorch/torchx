@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -746,7 +746,9 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="parse_mounts"><a class="viewcode-back" href="../../../specs.html#torchx.specs.parse_mounts">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">parse_mounts</span><span class="p">(</span><span class="n">opts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BindMount</span> <span class="o">|</span> <span class="n">VolumeMount</span> <span class="o">|</span> <span class="n">DeviceMount</span><span class="p">]:</span>
+<div class="viewcode-block" id="parse_mounts">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.parse_mounts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_mounts</span><span class="p">(</span><span class="n">opts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">BindMount</span> <span class="o">|</span> <span class="n">VolumeMount</span> <span class="o">|</span> <span class="n">DeviceMount</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    parse_mounts parses a list of options into typed mounts following a similar</span>
 <span class="sd">    format to Dockers bind mount.</span>
@@ -779,39 +781,54 @@
         <span class="n">cur</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
     <span class="n">mounts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># pyrefly: ignore [bad-assignment]</span>
     <span class="k">for</span> <span class="n">opts</span> <span class="ow">in</span> <span class="n">mount_opts</span><span class="p">:</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="n">typ</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">typ</span> <span class="o">==</span> <span class="n">MountType</span><span class="o">.</span><span class="n">BIND</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [bad-index]</span>
             <span class="n">src_path</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">src_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">):</span>
                 <span class="n">src_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">src_path</span><span class="p">)</span>
             <span class="n">mounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">BindMount</span><span class="p">(</span>
                     <span class="n">src_path</span><span class="o">=</span><span class="n">src_path</span><span class="p">,</span>
+                    <span class="c1"># pyrefly: ignore [bad-index]</span>
                     <span class="n">dst_path</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;dst&quot;</span><span class="p">],</span>
                     <span class="n">read_only</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="n">MountType</span><span class="o">.</span><span class="n">VOLUME</span><span class="p">:</span>
             <span class="n">mounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
                 <span class="n">VolumeMount</span><span class="p">(</span>
-                    <span class="n">src</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span> <span class="n">dst_path</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;dst&quot;</span><span class="p">],</span> <span class="n">read_only</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span> <span class="ow">in</span> <span class="n">opts</span>
+                    <span class="c1"># pyrefly: ignore [bad-index]</span>
+                    <span class="n">src</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">],</span>
+                    <span class="c1"># pyrefly: ignore [bad-index]</span>
+                    <span class="n">dst_path</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;dst&quot;</span><span class="p">],</span>
+                    <span class="n">read_only</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">typ</span> <span class="o">==</span> <span class="n">MountType</span><span class="o">.</span><span class="n">DEVICE</span><span class="p">:</span>
+            <span class="c1"># pyrefly: ignore [bad-index]</span>
             <span class="n">src</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">]</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="n">dst</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dst&quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="n">perm</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;perm&quot;</span><span class="p">,</span> <span class="s2">&quot;rwm&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">perm</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">&quot;rwm&quot;</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2"> is not a valid permission flags must one of r,w,m&quot;</span>
                     <span class="p">)</span>
+            <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
             <span class="n">mounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DeviceMount</span><span class="p">(</span><span class="n">src_path</span><span class="o">=</span><span class="n">src</span><span class="p">,</span> <span class="n">dst_path</span><span class="o">=</span><span class="n">dst</span><span class="p">,</span> <span class="n">permissions</span><span class="o">=</span><span class="n">perm</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">valid</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">MountType</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid mount type </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">typ</span><span class="p">)</span><span class="si">}</span><span class="s2">, must be one of </span><span class="si">{</span><span class="n">valid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">mounts</span></div>
+
 </pre></div>
 
      </article>
@@ -860,16 +877,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

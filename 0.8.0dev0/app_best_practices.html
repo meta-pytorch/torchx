@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -439,7 +439,7 @@
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
   <section id="app-best-practices">
-<h1>App Best Practices<a class="headerlink" href="#app-best-practices" title="Permalink to this heading">¶</a></h1>
+<h1>App Best Practices<a class="headerlink" href="#app-best-practices" title="Link to this heading">¶</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>This page covers practical recommendations for TorchX applications:
@@ -449,7 +449,7 @@ for component authoring guidance.</p>
 </div>
 <p><strong>Prerequisites:</strong> <a class="reference internal" href="quickstart.html"><span class="doc">Quickstart</span></a> and <a class="reference internal" href="basics.html"><span class="doc">Basic Concepts</span></a>.</p>
 <section id="data-passing-and-storage">
-<h2>Data Passing and Storage<a class="headerlink" href="#data-passing-and-storage" title="Permalink to this heading">¶</a></h2>
+<h2>Data Passing and Storage<a class="headerlink" href="#data-passing-and-storage" title="Link to this heading">¶</a></h2>
 <p>Use <a class="reference external" href="https://filesystem-spec.readthedocs.io">fsspec (Filesystem Spec)</a> for
 storage access. fsspec provides a unified interface to many storage backends
 (local, S3, GCS, etc.), so apps run on different infrastructures by changing
@@ -462,7 +462,7 @@ paths alone.</p>
 </div>
 </section>
 <section id="train-loops">
-<h2>Train Loops<a class="headerlink" href="#train-loops" title="Permalink to this heading">¶</a></h2>
+<h2>Train Loops<a class="headerlink" href="#train-loops" title="Link to this heading">¶</a></h2>
 <p>Common choices:</p>
 <ul class="simple">
 <li><p>Pure PyTorch</p></li>
@@ -472,55 +472,55 @@ paths alone.</p>
 <p>See <a class="reference internal" href="components/train.html#module-torchx.components.train"><span class="std std-ref">Train</span></a> for more information.</p>
 </section>
 <section id="metrics">
-<h2>Metrics<a class="headerlink" href="#metrics" title="Permalink to this heading">¶</a></h2>
+<h2>Metrics<a class="headerlink" href="#metrics" title="Link to this heading">¶</a></h2>
 <p>Use <a class="reference external" href="https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html">TensorBoard</a>
 for logging metrics. TensorBoard supports remote storage (S3, GCS) for viewing
 metrics during training.</p>
 <p>See <a class="reference internal" href="components/metrics.html#module-torchx.components.metrics"><span class="std std-ref">Metrics</span></a> for TorchX metric components.</p>
 </section>
 <section id="checkpointing">
-<h2>Checkpointing<a class="headerlink" href="#checkpointing" title="Permalink to this heading">¶</a></h2>
+<h2>Checkpointing<a class="headerlink" href="#checkpointing" title="Link to this heading">¶</a></h2>
 <p>Periodic checkpoints enable failure recovery and training resumption. PyTorch
 Lightning provides
 <a class="reference external" href="https://lightning.ai/docs/pytorch/stable/common/checkpointing.html">standardized checkpointing</a>.</p>
 </section>
 <section id="fine-tuning">
-<h2>Fine Tuning<a class="headerlink" href="#fine-tuning" title="Permalink to this heading">¶</a></h2>
+<h2>Fine Tuning<a class="headerlink" href="#fine-tuning" title="Link to this heading">¶</a></h2>
 <p>Provide a command line argument to your app that resumes from a checkpoint file.
 This enables transfer learning, fine tuning, and failure recovery with a single
 application.</p>
 </section>
 <section id="interpretability">
-<h2>Interpretability<a class="headerlink" href="#interpretability" title="Permalink to this heading">¶</a></h2>
+<h2>Interpretability<a class="headerlink" href="#interpretability" title="Link to this heading">¶</a></h2>
 <p>Use <a class="reference external" href="https://captum.ai/">Captum</a> for model interpretability.
 See <a class="reference internal" href="components/interpret.html#module-torchx.components.interpret"><span class="std std-ref">Interpret</span></a> for built-in components.</p>
 </section>
 <section id="model-packaging">
-<h2>Model Packaging<a class="headerlink" href="#model-packaging" title="Permalink to this heading">¶</a></h2>
+<h2>Model Packaging<a class="headerlink" href="#model-packaging" title="Link to this heading">¶</a></h2>
 <section id="python-saved-weights">
-<h3>Python + Saved Weights<a class="headerlink" href="#python-saved-weights" title="Permalink to this heading">¶</a></h3>
+<h3>Python + Saved Weights<a class="headerlink" href="#python-saved-weights" title="Link to this heading">¶</a></h3>
 <p>The most common format. Load a model definition from Python, then load weights
 from a <code class="docutils literal notranslate"><span class="pre">.ckpt</span></code> or <code class="docutils literal notranslate"><span class="pre">.pt</span></code> file.</p>
 </section>
 <section id="torchscript-models">
-<h3>TorchScript Models<a class="headerlink" href="#torchscript-models" title="Permalink to this heading">¶</a></h3>
+<h3>TorchScript Models<a class="headerlink" href="#torchscript-models" title="Link to this heading">¶</a></h3>
 <p>Serializable, optimized models executable without Python.
 See the <a class="reference external" href="https://pytorch.org/docs/stable/jit.html">TorchScript docs</a>.</p>
 </section>
 <section id="torch-export">
-<h3><code class="docutils literal notranslate"><span class="pre">torch.export</span></code><a class="headerlink" href="#torch-export" title="Permalink to this heading">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">torch.export</span></code><a class="headerlink" href="#torch-export" title="Link to this heading">¶</a></h3>
 <p>PyTorch’s modern export path for production deployment. Produces
 <a class="reference external" href="https://pytorch.org/docs/stable/export.html">ExportedProgram</a> artifacts
 that work with <code class="docutils literal notranslate"><span class="pre">torch.compile</span></code> and inference runtimes.</p>
 </section>
 </section>
 <section id="serving-inference">
-<h2>Serving / Inference<a class="headerlink" href="#serving-inference" title="Permalink to this heading">¶</a></h2>
+<h2>Serving / Inference<a class="headerlink" href="#serving-inference" title="Link to this heading">¶</a></h2>
 <p>Use <a class="reference external" href="https://github.com/pytorch/serve">TorchServe</a> for standard use cases.
 See <a class="reference internal" href="components/serve.html#module-torchx.components.serve"><span class="std std-ref">Serve</span></a> for built-in components.</p>
 </section>
 <section id="testing">
-<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this heading">¶</a></h2>
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
 <p>Since TorchX apps are standard Python, test them like any other Python code:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">your.custom.app</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span>
@@ -618,16 +618,13 @@ See <a class="reference internal" href="components/serve.html#module-torchx.comp
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-         <script src="_static/jquery.js"></script>
-         <script src="_static/underscore.js"></script>
-         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="_static/doctools.js"></script>
-         <script src="_static/sphinx_highlight.js"></script>
-         <script src="_static/katex.min.js"></script>
-         <script src="_static/auto-render.min.js"></script>
-         <script src="_static/katex_autorenderer.js"></script>
-         <script src="_static/js/torchx.js"></script>
+         <script src="_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="_static/doctools.js?v=9bcbadda"></script>
+         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="_static/js/torchx.js?v=211227c7"></script>
      
 
   

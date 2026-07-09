@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -457,7 +457,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">specs</span>
 
 
-<div class="viewcode-block" id="echo"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.echo">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">echo</span><span class="p">(</span>
+<div class="viewcode-block" id="echo">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.echo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">echo</span><span class="p">(</span>
     <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;hello world&quot;</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">,</span> <span class="n">num_replicas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -484,7 +486,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="touch"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.touch">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">touch</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
+
+<div class="viewcode-block" id="touch">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.touch">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">touch</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Touches a file (calls touch)</span>
 
@@ -508,7 +513,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="sh"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.sh">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">sh</span><span class="p">(</span>
+
+<div class="viewcode-block" id="sh">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.sh">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sh</span><span class="p">(</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">,</span>
     <span class="n">num_replicas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -570,7 +578,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="python"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.python">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">python</span><span class="p">(</span>
+
+<div class="viewcode-block" id="python">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.python">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">python</span><span class="p">(</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">m</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -636,7 +647,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="binary"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.binary">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">binary</span><span class="p">(</span>
+
+<div class="viewcode-block" id="binary">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.binary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">binary</span><span class="p">(</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">entrypoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx_utils_binary&quot;</span><span class="p">,</span>
@@ -674,7 +688,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="copy"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.copy">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
+
+<div class="viewcode-block" id="copy">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.copy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    copy copies the file from src to dst. src and dst can be any valid fsspec</span>
 <span class="sd">    url.</span>
@@ -708,7 +725,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="booth"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.booth">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">booth</span><span class="p">(</span>
+
+<div class="viewcode-block" id="booth">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.booth">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">booth</span><span class="p">(</span>
     <span class="n">x1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">x2</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">trial_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
@@ -751,7 +771,10 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="hydra"><a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.hydra">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">hydra</span><span class="p">(</span>
+
+<div class="viewcode-block" id="hydra">
+<a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.hydra">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hydra</span><span class="p">(</span>
     <span class="o">*</span><span class="n">overrides</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">config_name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;-cn&quot;</span><span class="p">],</span>
     <span class="n">config_dir</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;-cd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;.torchx&quot;</span><span class="p">,</span>
@@ -812,6 +835,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">instantiate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">_convert_</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span></div>
+
 </pre></div>
 
      </article>
@@ -860,16 +884,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

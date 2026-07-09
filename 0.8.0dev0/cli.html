@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -439,7 +439,7 @@
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
   <section id="cli">
-<h1>CLI<a class="headerlink" href="#cli" title="Permalink to this heading">¶</a></h1>
+<h1>CLI<a class="headerlink" href="#cli" title="Link to this heading">¶</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI provides subcommands for launching jobs, querying
@@ -451,7 +451,7 @@ custom subcommands via <a class="reference internal" href="basics.html#term-Entr
 <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> Python API provides the same capabilities
 programmatically (see <a class="reference internal" href="runner.html"><span class="doc">torchx.runner</span></a>).</p>
 <section id="built-in-commands">
-<h2>Built-in Commands<a class="headerlink" href="#built-in-commands" title="Permalink to this heading">¶</a></h2>
+<h2>Built-in Commands<a class="headerlink" href="#built-in-commands" title="Link to this heading">¶</a></h2>
 <table class="docutils align-default">
 <colgroup>
 <col style="width: 20.0%" />
@@ -499,7 +499,7 @@ programmatically (see <a class="reference internal" href="runner.html"><span cla
 </tbody>
 </table>
 <section id="torchx-run-key-flags">
-<h3><code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> Key Flags<a class="headerlink" href="#torchx-run-key-flags" title="Permalink to this heading">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> Key Flags<a class="headerlink" href="#torchx-run-key-flags" title="Link to this heading">¶</a></h3>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span><span class="o">[</span>--scheduler<span class="w"> </span>SCHED<span class="o">]</span><span class="w"> </span><span class="o">[</span>-cfg<span class="w"> </span><span class="nv">KEY</span><span class="o">=</span>VAL,...<span class="o">]</span><span class="w"> </span><span class="o">[</span>--workspace<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span>COMPONENT<span class="w"> </span><span class="o">[</span>ARGS...<span class="o">]</span>
 </pre></div>
 </div>
@@ -560,7 +560,7 @@ most other CLI flags are disallowed.</p></td>
 </section>
 </section>
 <section id="extending-the-cli">
-<h2>Extending the CLI<a class="headerlink" href="#extending-the-cli" title="Permalink to this heading">¶</a></h2>
+<h2>Extending the CLI<a class="headerlink" href="#extending-the-cli" title="Link to this heading">¶</a></h2>
 <p>Subclass <a class="reference internal" href="#torchx.cli.cmd_base.SubCommand" title="torchx.cli.cmd_base.SubCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">SubCommand</span></code></a> and register via the
 <code class="docutils literal notranslate"><span class="pre">torchx.cli.cmds</span></code> entry-point group. Implement two methods:</p>
 <ul class="simple">
@@ -571,7 +571,7 @@ and positional arguments.</p></li>
 <p>See <a class="reference internal" href="advanced.html#registering-custom-cli-commands"><span class="std std-ref">Registering Custom CLI Commands</span></a> in
 the Advanced Usage guide for a complete walkthrough with code examples.</p>
 <section id="testing-your-subcommand">
-<h3>Testing Your SubCommand<a class="headerlink" href="#testing-your-subcommand" title="Permalink to this heading">¶</a></h3>
+<h3>Testing Your SubCommand<a class="headerlink" href="#testing-your-subcommand" title="Link to this heading">¶</a></h3>
 <p>Construct an <code class="docutils literal notranslate"><span class="pre">argparse.Namespace</span></code> and call <code class="docutils literal notranslate"><span class="pre">run()</span></code> directly:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
@@ -588,7 +588,7 @@ the Advanced Usage guide for a complete walkthrough with code examples.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">torchx/cli/test/</span></code> for tests of the built-in subcommands.</p>
 </section>
 <section id="common-pitfalls">
-<h3>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permalink to this heading">¶</a></h3>
+<h3>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><strong>Entry-point key becomes the subcommand name</strong>: Choose a short, descriptive
 name – it is the exact string users type after <code class="docutils literal notranslate"><span class="pre">torchx</span></code>.</p></li>
@@ -600,7 +600,7 @@ trackers, CLI entry points reference the <code class="docutils literal notransla
 </section>
 </section>
 <section id="components-library">
-<span id="components"></span><h2>Components Library<a class="headerlink" href="#components-library" title="Permalink to this heading">¶</a></h2>
+<span id="components"></span><h2>Components Library<a class="headerlink" href="#components-library" title="Link to this heading">¶</a></h2>
 <p>Components are reusable job templates that the CLI discovers via entry points.
 Run <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">builtins</span></code> to list all registered components, or <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span>
 <span class="pre">COMPONENT</span> <span class="pre">--help</span></code> to see the arguments for a specific component.</p>
@@ -617,7 +617,7 @@ Run <code class="docutils literal notranslate"><span class="pre">torchx</span> <
 </div>
 </section>
 <section id="module-torchx.cli">
-<span id="api-reference"></span><h2>API Reference<a class="headerlink" href="#module-torchx.cli" title="Permalink to this heading">¶</a></h2>
+<span id="api-reference"></span><h2>API Reference<a class="headerlink" href="#module-torchx.cli" title="Link to this heading">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI is a commandline tool around <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchx.runner.Runner</span></code></a>.
 It allows users to launch <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchx.specs.AppDef</span></code></a> directly onto
 one of the supported schedulers without authoring a pipeline (aka workflow).
@@ -629,7 +629,7 @@ dealing with pipelines.</p>
 <p>When in doubt use <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">--help</span></code>.</p>
 </div>
 <section id="listing-the-builtin-components">
-<h3>Listing the builtin components<a class="headerlink" href="#listing-the-builtin-components" title="Permalink to this heading">¶</a></h3>
+<h3>Listing the builtin components<a class="headerlink" href="#listing-the-builtin-components" title="Link to this heading">¶</a></h3>
 <p>Most of the components under the <code class="docutils literal notranslate"><span class="pre">torchx.components</span></code> module are what the CLI
 considers “built-in” apps. Before you write your own component you should
 browse through the builtins to see if there is one that fits your needs already.
@@ -644,7 +644,7 @@ If so, no need to even author an app spec!</p>
 </div>
 </section>
 <section id="listing-the-supported-schedulers-and-arguments">
-<h3>Listing the supported schedulers and arguments<a class="headerlink" href="#listing-the-supported-schedulers-and-arguments" title="Permalink to this heading">¶</a></h3>
+<h3>Listing the supported schedulers and arguments<a class="headerlink" href="#listing-the-supported-schedulers-and-arguments" title="Link to this heading">¶</a></h3>
 <p>To get a list of supported schedulers that you can launch your job into run:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>runopts
 <span class="go">local_docker:</span>
@@ -661,7 +661,7 @@ If so, no need to even author an app spec!</p>
 </div>
 </section>
 <section id="running-a-component-as-a-job">
-<h3>Running a component as a job<a class="headerlink" href="#running-a-component-as-a-job" title="Permalink to this heading">¶</a></h3>
+<h3>Running a component as a job<a class="headerlink" href="#running-a-component-as-a-job" title="Link to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">run</span></code>  subcommand takes either one of:</p>
 <ol class="arabic">
 <li><p>name of the builtin</p>
@@ -743,7 +743,7 @@ the default scheduler, see: <a class="reference internal" href="advanced.html#re
 </div>
 </section>
 <section id="inspecting-what-will-run-dryrun">
-<h3>Inspecting what will run (dryrun)<a class="headerlink" href="#inspecting-what-will-run-dryrun" title="Permalink to this heading">¶</a></h3>
+<h3>Inspecting what will run (dryrun)<a class="headerlink" href="#inspecting-what-will-run-dryrun" title="Link to this heading">¶</a></h3>
 <p>When you are authoring or debugging a component, you may want to find out and
 inspect both the scheduler request object that the runner submits as well as
 the <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> object that is created by the component function. To do this,
@@ -791,7 +791,7 @@ translates the <code class="docutils literal notranslate"><span class="pre">AppD
 </div>
 </section>
 <section id="describing-and-querying-the-status-of-a-job">
-<h3>Describing and querying the status of a job<a class="headerlink" href="#describing-and-querying-the-status-of-a-job" title="Permalink to this heading">¶</a></h3>
+<h3>Describing and querying the status of a job<a class="headerlink" href="#describing-and-querying-the-status-of-a-job" title="Link to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">describe</span></code> subcommand is essentially the inverse of the <code class="docutils literal notranslate"><span class="pre">run</span></code> command.
 That is, it prints the app spec given an <code class="docutils literal notranslate"><span class="pre">app_handle</span></code>.</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>describe<span class="w"> </span>&lt;app<span class="w"> </span>handle&gt;
@@ -819,7 +819,7 @@ your app spec. It is simply there to help you spot check things.</p>
 <p>Filtering by <code class="docutils literal notranslate"><span class="pre">--role</span></code> is useful for large jobs that have multiple roles.</p>
 </section>
 <section id="viewing-logs">
-<h3>Viewing Logs<a class="headerlink" href="#viewing-logs" title="Permalink to this heading">¶</a></h3>
+<h3>Viewing Logs<a class="headerlink" href="#viewing-logs" title="Link to this heading">¶</a></h3>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This functionality depends on how long your scheduler setup retains logs
@@ -858,7 +858,7 @@ the local host. Please use your best judgment when using the logs API.</p>
 </div>
 </section>
 <section id="listing-jobs">
-<h3>Listing Jobs<a class="headerlink" href="#listing-jobs" title="Permalink to this heading">¶</a></h3>
+<h3>Listing Jobs<a class="headerlink" href="#listing-jobs" title="Link to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">list</span></code> subcommand lets you list app handles and statuses of apps launched on a scheduler.
 You can then use the app handles to further describe the app, view the logs, etc.</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>list<span class="w"> </span>-s<span class="w"> </span>&lt;scheduler_name&gt;
@@ -875,17 +875,17 @@ You can then use the app handles to further describe the app, view the logs, etc
 </section>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.cli.cmd_base.SubCommand">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.cli.cmd_base.</span></span><span class="sig-name descname"><span class="pre">SubCommand</span></span><a class="reference internal" href="_modules/torchx/cli/cmd_base.html#SubCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_base.SubCommand" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.cli.cmd_base.</span></span><span class="sig-name descname"><span class="pre">SubCommand</span></span><a class="reference internal" href="_modules/torchx/cli/cmd_base.html#SubCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_base.SubCommand" title="Link to this definition">¶</a></dt>
 <dd><p>Base sub command class, all subcommands should implement this base class</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.cli.cmd_base.SubCommand.add_arguments">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.14)"><span class="pre">ArgumentParser</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/cli/cmd_base.html#SubCommand.add_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_base.SubCommand.add_arguments" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparser</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.14)"><span class="pre">ArgumentParser</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/cli/cmd_base.html#SubCommand.add_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_base.SubCommand.add_arguments" title="Link to this definition">¶</a></dt>
 <dd><p>Adds the arguments to this sub command</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.cli.cmd_base.SubCommand.run">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.14)"><span class="pre">Namespace</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/cli/cmd_base.html#SubCommand.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_base.SubCommand.run" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.14)"><span class="pre">Namespace</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/cli/cmd_base.html#SubCommand.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.cli.cmd_base.SubCommand.run" title="Link to this definition">¶</a></dt>
 <dd><p>Runs the sub command. Parsed arguments are available as <code class="docutils literal notranslate"><span class="pre">args</span></code>.</p>
 </dd></dl>
 
@@ -988,16 +988,13 @@ components.</p>
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-         <script src="_static/jquery.js"></script>
-         <script src="_static/underscore.js"></script>
-         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="_static/doctools.js"></script>
-         <script src="_static/sphinx_highlight.js"></script>
-         <script src="_static/katex.min.js"></script>
-         <script src="_static/auto-render.min.js"></script>
-         <script src="_static/katex_autorenderer.js"></script>
-         <script src="_static/js/torchx.js"></script>
+         <script src="_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="_static/doctools.js?v=9bcbadda"></script>
+         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="_static/js/torchx.js?v=211227c7"></script>
      
 
   

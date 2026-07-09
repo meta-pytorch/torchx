@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -466,16 +466,24 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.finder</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_component</span>
 
 
-<div class="viewcode-block" id="ComponentTestCase"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ComponentTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
-<div class="viewcode-block" id="ComponentTestCase.setUp"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.setUp">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="ComponentTestCase">
+<a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComponentTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="ComponentTestCase.setUp">
+<a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.setUp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">test_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="s2">&quot;torchx_component_test&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">old_cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span></div>
 
-<div class="viewcode-block" id="ComponentTestCase.tearDown"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.tearDown">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="ComponentTestCase.tearDown">
+<a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.tearDown">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dir</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_cwd</span><span class="p">)</span></div>
+
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    ComponentTestCase is an extension of TestCase with helper methods for use</span>
@@ -493,7 +501,9 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ComponentTestCase.validate"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.validate">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">ModuleType</span><span class="p">,</span> <span class="n">function_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="ComponentTestCase.validate">
+<a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.validate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">ModuleType</span><span class="p">,</span> <span class="n">function_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validates the component by effectively running:</span>
 
@@ -516,7 +526,10 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">SystemExit</span><span class="p">):</span>
             <span class="n">_</span> <span class="o">=</span> <span class="n">_create_args_parser</span><span class="p">(</span><span class="n">component_def</span><span class="o">.</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s2">&quot;--help&quot;</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="ComponentTestCase.run_component"><a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.run_component">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_component</span><span class="p">(</span>
+
+<div class="viewcode-block" id="ComponentTestCase.run_component">
+<a class="viewcode-back" href="../../../component_best_practices.html#torchx.components.component_test_base.ComponentTestCase.run_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_component</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">component</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">AppDef</span><span class="p">],</span>
         <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -554,7 +567,9 @@
             <span class="n">elapsed</span> <span class="o">+=</span> <span class="n">interval</span>
             <span class="n">status</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">status</span></div></div>
+        <span class="k">return</span> <span class="n">status</span></div>
+</div>
+
 </pre></div>
 
      </article>
@@ -603,16 +618,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

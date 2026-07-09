@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -523,7 +523,9 @@
     <span class="k">return</span> <span class="n">tracker_names_with_config</span>
 
 
-<div class="viewcode-block" id="Runner"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Runner</span><span class="p">:</span>
+<div class="viewcode-block" id="Runner">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Runner</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Submits, monitors, and manages :py:class:`~torchx.specs.AppDef` jobs.</span>
 
 <span class="sd">    Use :py:func:`get_runner` to create an instance with all registered schedulers.</span>
@@ -569,6 +571,7 @@
                 <span class="n">scheduler_params</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">&quot;torchx_&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">return</span> <span class="n">scheduler_params</span>
 
+    <span class="c1"># pyrefly: ignore [not-a-type]</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Self&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -586,13 +589,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="Runner.close"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.close">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Runner.close">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.close">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Closes the runner and all scheduler instances. Safe to call multiple times.&quot;&quot;&quot;</span>
 
         <span class="k">for</span> <span class="n">scheduler</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_instances</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">scheduler</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Runner.run_component"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.run_component">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_component</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Runner.run_component">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.run_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_component</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">component_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
@@ -629,7 +637,10 @@
             <span class="n">ctx</span><span class="o">.</span><span class="n">_torchx_event</span><span class="o">.</span><span class="n">app_metadata</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">metadata</span>
             <span class="k">return</span> <span class="n">handle</span></div>
 
-<div class="viewcode-block" id="Runner.dryrun_component"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.dryrun_component">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_component</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Runner.dryrun_component">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.dryrun_component">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_component</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">component</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">component_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
@@ -656,6 +667,7 @@
             <span class="n">parent_run_id</span><span class="o">=</span><span class="n">parent_run_id</span><span class="p">,</span>
         <span class="p">)</span></div>
 
+
     <span class="nd">@overload</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -680,7 +692,9 @@
         <span class="n">dryrun</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span> <span class="o">...</span>
 
-<div class="viewcode-block" id="Runner.run"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.run">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+<div class="viewcode-block" id="Runner.run">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -732,7 +746,10 @@
 
             <span class="k">return</span> <span class="n">handle</span></div>
 
-<div class="viewcode-block" id="Runner.schedule"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.schedule">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.schedule">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.schedule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppHandle</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits a previously dry-run request, allowing request mutation.</span>
 
 <span class="sd">        .. code-block:: python</span>
@@ -763,10 +780,13 @@
 
             <span class="k">return</span> <span class="n">app_handle</span></div>
 
+
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
-<div class="viewcode-block" id="Runner.dryrun"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.dryrun">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun</span><span class="p">(</span>
+<div class="viewcode-block" id="Runner.dryrun">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.dryrun">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -872,11 +892,17 @@
 
             <span class="k">return</span> <span class="n">dryrun_info</span></div>
 
-<div class="viewcode-block" id="Runner.scheduler_run_opts"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_run_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.scheduler_run_opts">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_run_opts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the :py:class:`~torchx.specs.runopts` for the given scheduler.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Runner.cfg_from_str"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.cfg_from_str">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">cfg_literal</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="Runner.cfg_from_str">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.cfg_from_str">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">cfg_literal</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convenience function around the scheduler&#39;s ``runopts.cfg_from_str()`` method.</span>
 
@@ -897,11 +923,17 @@
             <span class="n">cfg</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">cfg</span></div>
 
-<div class="viewcode-block" id="Runner.scheduler_backends"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_backends">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_backends</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="Runner.scheduler_backends">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.scheduler_backends">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scheduler_backends</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all registered scheduler backend names.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_factories</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="Runner.status"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.status">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppStatus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.status">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.status">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppStatus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns app status, or ``None`` if the app no longer exists.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span>
             <span class="n">app_handle</span><span class="p">,</span> <span class="n">check_session</span><span class="o">=</span><span class="kc">False</span>
@@ -926,7 +958,10 @@
                 <span class="n">app_status</span><span class="o">.</span><span class="n">ui_url</span> <span class="o">=</span> <span class="n">desc</span><span class="o">.</span><span class="n">ui_url</span>
             <span class="k">return</span> <span class="n">app_status</span></div>
 
-<div class="viewcode-block" id="Runner.wait"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.wait">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">wait</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Runner.wait">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.wait">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wait</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">,</span> <span class="n">wait_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppStatus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Blocks until the app reaches a terminal state.</span>
@@ -948,7 +983,10 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">wait_interval</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Runner.cancel"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.cancel">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.cancel">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.cancel">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Requests cancellation. The app transitions to ``CANCELLED`` asynchronously.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;cancel&quot;</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span><span class="p">):</span>
@@ -956,7 +994,10 @@
             <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">is_terminal</span><span class="p">():</span>
                 <span class="n">scheduler</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Runner.delete"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.delete">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.delete">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.delete">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes the app from the scheduler.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;delete&quot;</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span><span class="p">):</span>
@@ -964,7 +1005,10 @@
             <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">scheduler</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Runner.stop"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.stop">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.stop">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;.. deprecated:: Use :py:meth:`cancel` instead.&quot;&quot;&quot;</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s2">&quot;This method will be deprecated in the future, please use `cancel` instead.&quot;</span><span class="p">,</span>
@@ -972,7 +1016,10 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Runner.describe"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Runner.describe">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.describe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reconstructs the :py:class:`~torchx.specs.AppDef` from the scheduler.</span>
 
 <span class="sd">        Completeness is scheduler-dependent. Returns ``None`` if the app no longer exists.</span>
@@ -990,7 +1037,10 @@
                     <span class="n">app</span> <span class="o">=</span> <span class="n">AppDef</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">app_id</span><span class="p">,</span> <span class="n">roles</span><span class="o">=</span><span class="n">desc</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">desc</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">app</span></div>
 
-<div class="viewcode-block" id="Runner.log_lines"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.log_lines">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">log_lines</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Runner.log_lines">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.log_lines">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_lines</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">,</span>
         <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1036,7 +1086,10 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">log_iter</span></div>
 
-<div class="viewcode-block" id="Runner.list"><a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span>
+
+<div class="viewcode-block" id="Runner.list">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1052,6 +1105,7 @@
             <span class="k">for</span> <span class="n">app</span> <span class="ow">in</span> <span class="n">apps</span><span class="p">:</span>
                 <span class="n">app</span><span class="o">.</span><span class="n">app_handle</span> <span class="o">=</span> <span class="n">make_app_handle</span><span class="p">(</span><span class="n">scheduler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">app_id</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">apps</span></div>
+
 
     <span class="c1"># pyre-fixme[24]: SchedulerOpts is a generic, and we don&#39;t have access to the corresponding type</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
@@ -1082,7 +1136,10 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Runner(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2">, schedulers=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_factories</span><span class="si">}</span><span class="s2">, apps=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<div class="viewcode-block" id="get_runner"><a class="viewcode-back" href="../../../runner.html#torchx.runner.get_runner">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_runner</span><span class="p">(</span>
+
+<div class="viewcode-block" id="get_runner">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.get_runner">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_runner</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">component_defaults</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">scheduler_params</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -1113,6 +1170,7 @@
     <span class="k">return</span> <span class="n">Runner</span><span class="p">(</span>
         <span class="n">name</span><span class="p">,</span> <span class="n">scheduler_factories</span><span class="p">,</span> <span class="n">component_defaults</span><span class="p">,</span> <span class="n">scheduler_params</span><span class="o">=</span><span class="n">scheduler_params</span>
     <span class="p">)</span></div>
+
 </pre></div>
 
      </article>
@@ -1161,16 +1219,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

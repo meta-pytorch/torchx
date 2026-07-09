@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -462,7 +462,9 @@
 <span class="n">ENV_TORCHX_JOB_ID</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_JOB_ID</span>
 
 
-<div class="viewcode-block" id="TrackerSource"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerSource">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="TrackerSource">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerSource">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TrackerSource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A source link at the backend tracker level.</span>
 
@@ -474,13 +476,17 @@
     <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="TrackerArtifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerArtifact">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="TrackerArtifact">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerArtifact">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TrackerArtifact</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;An artifact stored by a backend tracker (name, path, and optional metadata).&quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span></div>
+
 
 
 <span class="nd">@dataclass</span>
@@ -494,7 +500,9 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Lineage</span><span class="p">:</span> <span class="o">...</span>
 
 
-<div class="viewcode-block" id="TrackerBase"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TrackerBase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<div class="viewcode-block" id="TrackerBase">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TrackerBase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base for tracker backend implementations.</span>
 
 <span class="sd">    .. warning::</span>
@@ -502,7 +510,9 @@
 <span class="sd">        This API is experimental and may change significantly.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="TrackerBase.add_artifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_artifact">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="TrackerBase.add_artifact">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_artifact">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -513,22 +523,34 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an artifact with the given name, path, and optional metadata.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.artifacts"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.artifacts">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.artifacts">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.artifacts">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">artifacts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all artifacts for the given run.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.add_metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_metadata">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.add_metadata">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_metadata">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store arbitrary key-value metadata for the given run.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.metadata">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.metadata">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.metadata">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return metadata for the given run.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.add_source"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_source">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.add_source">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.add_source">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -538,7 +560,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Link a source run (lineage) to the given run.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.sources"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.sources">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.sources">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.sources">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -547,15 +572,23 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return sources for the given run, optionally filtered by ``artifact_name``.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.lineage"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.lineage">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.lineage">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.lineage">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return full lineage (parents and consumers) for the given run.&quot;&quot;&quot;</span>
         <span class="o">...</span></div>
 
-<div class="viewcode-block" id="TrackerBase.run_ids"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.run_ids">[docs]</a>    <span class="nd">@abstractmethod</span>
+
+<div class="viewcode-block" id="TrackerBase.run_ids">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.TrackerBase.run_ids">[docs]</a>
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return run IDs, optionally filtered by keyword arguments.&quot;&quot;&quot;</span>
-        <span class="o">...</span></div></div>
+        <span class="o">...</span></div>
+</div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">tracker_config_env_var_name</span><span class="p">(</span><span class="n">entrypoint_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -605,6 +638,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No tracker config specified for `</span><span class="si">{</span><span class="n">factory_name</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
         <span class="n">tracker</span> <span class="o">=</span> <span class="n">factory</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="n">trackers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tracker</span><span class="p">)</span>
+    <span class="c1"># pyrefly: ignore [bad-return]</span>
     <span class="k">return</span> <span class="n">trackers</span>
 
 
@@ -621,7 +655,9 @@
     <span class="k">return</span> <span class="p">[]</span>
 
 
-<div class="viewcode-block" id="AppRun"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="AppRun">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppRun</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Job-level tracker API that delegates to one or more :py:class:`TrackerBase` backends.</span>
 
@@ -642,7 +678,9 @@
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">backends</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TrackerBase</span><span class="p">]</span>
 
-<div class="viewcode-block" id="AppRun.run_from_env"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.run_from_env">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AppRun.run_from_env">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.run_from_env">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># noqa: B019</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_from_env</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AppRun</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a singleton :py:class:`AppRun` from environment variables.</span>
@@ -674,28 +712,43 @@
 
         <span class="k">return</span> <span class="n">AppRun</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">torchx_job_id</span><span class="p">,</span> <span class="n">backends</span><span class="o">=</span><span class="n">trackers</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AppRun.add_metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AppRun.add_metadata">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store key-value metadata for this run.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
             <span class="n">backend</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AppRun.add_artifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_artifact">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
+
+<div class="viewcode-block" id="AppRun.add_artifact">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_artifact">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store an artifact (name, path, optional metadata) for this run.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
             <span class="n">backend</span><span class="o">.</span><span class="n">add_artifact</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AppRun.job_id"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.job_id">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AppRun.job_id">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.job_id">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">job_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the run ID.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span></div>
 
-<div class="viewcode-block" id="AppRun.add_source"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_source">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="AppRun.add_source">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.add_source">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Link a source (TorchX run or external entity) to this run for lineage tracking.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
             <span class="n">backend</span><span class="o">.</span><span class="n">add_source</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">source_id</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AppRun.sources"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.sources">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AppRunTrackableSource</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="AppRun.sources">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.AppRun.sources">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AppRunTrackableSource</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return source links for this run (queries the first backend).&quot;&quot;&quot;</span>
         <span class="n">model_run_sources</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backends</span><span class="p">:</span>
@@ -708,7 +761,9 @@
 
         <span class="k">return</span> <span class="n">model_run_sources</span></div>
 
+
     <span class="k">def</span><span class="w"> </span><span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">AppRun</span><span class="p">]:</span> <span class="o">...</span></div>
+
 </pre></div>
 
      </article>
@@ -757,16 +812,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

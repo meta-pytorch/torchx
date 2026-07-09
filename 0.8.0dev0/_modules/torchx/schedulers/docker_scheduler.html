@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -501,14 +501,19 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="DockerContainer"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerContainer">[docs]</a><span class="nd">@dataclass</span>
+<div class="viewcode-block" id="DockerContainer">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerContainer">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DockerContainer</span><span class="p">:</span>
     <span class="n">image</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="DockerJob"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerJob">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="DockerJob">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerJob">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DockerJob</span><span class="p">:</span>
     <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">containers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DockerContainer</span><span class="p">]</span>
@@ -518,6 +523,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
 
 
 <span class="n">LABEL_VERSION</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DockerWorkspaceMixin</span><span class="o">.</span><span class="n">LABEL_VERSION</span>
@@ -531,14 +537,18 @@
 <span class="n">NETWORK</span> <span class="o">=</span> <span class="s2">&quot;torchx&quot;</span>
 
 
-<div class="viewcode-block" id="has_docker"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.has_docker">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">has_docker</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="has_docker">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.has_docker">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_docker</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">docker</span>
 
         <span class="n">docker</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">True</span>
+    <span class="c1"># pyrefly: ignore [unbound-name]</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="n">docker</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">DockerException</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">ensure_network</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="s2">&quot;DockerClient | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -579,7 +589,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`.&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="DockerScheduler"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DockerScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
+<div class="viewcode-block" id="DockerScheduler">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DockerScheduler</span><span class="p">(</span><span class="n">DockerWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    DockerScheduler is a TorchX scheduling interface to Docker.</span>
 
@@ -627,7 +639,9 @@
         <span class="c1"># NOTE: make sure any new init options are supported in create_scheduler(...)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;docker&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
 
-<div class="viewcode-block" id="DockerScheduler.schedule"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.schedule">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">DockerJob</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="DockerScheduler.schedule">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.schedule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">DockerJob</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_docker_client</span>
 
         <span class="n">req</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
@@ -655,6 +669,7 @@
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">req</span><span class="o">.</span><span class="n">app_id</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">DockerJob</span><span class="p">]:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">docker.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeviceRequest</span><span class="p">,</span> <span class="n">Mount</span>
@@ -833,7 +848,9 @@
             <span class="n">state</span> <span class="o">=</span> <span class="n">CONTAINER_STATE</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">status</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">state</span>
 
-<div class="viewcode-block" id="DockerScheduler.describe"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.describe">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="DockerScheduler.describe">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.describe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">roles</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">roles_statuses</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -881,7 +898,10 @@
             <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="DockerScheduler.log_iter"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.log_iter">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">log_iter</span><span class="p">(</span>
+
+<div class="viewcode-block" id="DockerScheduler.log_iter">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.log_iter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_iter</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -917,7 +937,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">logs</span></div>
 
-<div class="viewcode-block" id="DockerScheduler.list"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.list">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="DockerScheduler.list">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.DockerScheduler.list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="n">unique_apps</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">ListAppResponse</span><span class="p">(</span>
                 <span class="n">app_id</span><span class="o">=</span><span class="n">cntr</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">LABEL_APP_ID</span><span class="p">],</span> <span class="n">state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_app_state</span><span class="p">(</span><span class="n">cntr</span><span class="p">)</span>
@@ -926,7 +949,9 @@
                 <span class="nb">all</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">LABEL_APP_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
             <span class="p">)</span>
         <span class="p">}</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">unique_apps</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">unique_apps</span><span class="p">)</span></div>
+</div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_to_str</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -935,10 +960,13 @@
     <span class="k">return</span> <span class="n">a</span>
 
 
-<div class="viewcode-block" id="create_scheduler"><a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.create_scheduler">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DockerScheduler</span><span class="p">:</span>
+<div class="viewcode-block" id="create_scheduler">
+<a class="viewcode-back" href="../../../schedulers/docker.html#torchx.schedulers.docker_scheduler.create_scheduler">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DockerScheduler</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">DockerScheduler</span><span class="p">(</span>
         <span class="n">session_name</span><span class="o">=</span><span class="n">session_name</span><span class="p">,</span>
     <span class="p">)</span></div>
+
 </pre></div>
 
      </article>
@@ -987,16 +1015,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

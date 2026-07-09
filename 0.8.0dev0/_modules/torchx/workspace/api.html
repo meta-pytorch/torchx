@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -512,7 +512,9 @@
         <span class="k">pass</span>
 
 
-<div class="viewcode-block" id="WorkspaceMixin"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">WorkspaceMixin</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<div class="viewcode-block" id="WorkspaceMixin">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkspaceMixin</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Scheduler mix-in that auto-builds a local workspace into a deployable image or patch.</span>
 
 <span class="sd">    .. warning::</span>
@@ -526,11 +528,16 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="WorkspaceMixin.workspace_opts"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.workspace_opts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+<div class="viewcode-block" id="WorkspaceMixin.workspace_opts">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.workspace_opts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the :py:class:`~torchx.specs.api.runopts` accepted by this workspace.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">runopts</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="WorkspaceMixin.build_workspaces"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspaces">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspaces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Role</span><span class="p">],</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WorkspaceMixin.build_workspaces">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspaces">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspaces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Role</span><span class="p">],</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds workspaces for each role and updates ``role.image`` in-place.</span>
 
 <span class="sd">        .. important::</span>
@@ -552,7 +559,10 @@
                         <span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
                     <span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkspaceMixin.caching_build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">caching_build_workspace_and_update_role</span><span class="p">(</span>
+
+<div class="viewcode-block" id="WorkspaceMixin.caching_build_workspace_and_update_role">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">caching_build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
@@ -589,7 +599,10 @@
                 <span class="n">workspace</span><span class="o">.</span><span class="n">merge_into</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkspaceMixin.build_workspace_and_update_role"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
+
+<div class="viewcode-block" id="WorkspaceMixin.build_workspace_and_update_role">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.build_workspace_and_update_role">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace_and_update_role</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
         <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -602,7 +615,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;implement `caching_build_workspace_and_update_role`&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkspaceMixin.dryrun_push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.dryrun_push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WorkspaceMixin.dryrun_push_images">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.dryrun_push_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dry-run the image push: updates *app* with final image names.</span>
 
 <span class="sd">        Only called for remote jobs. :py:meth:`push_images` must be called</span>
@@ -610,9 +626,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;dryrun_push is not implemented&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkspaceMixin.push_images"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.push_images">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WorkspaceMixin.push_images">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.WorkspaceMixin.push_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo.&quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;push is not implemented&quot;</span><span class="p">)</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;push is not implemented&quot;</span><span class="p">)</span></div>
+</div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_ignore</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">patterns</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
@@ -631,7 +652,9 @@
     <span class="k">return</span> <span class="n">last_matching_pattern</span><span class="p">,</span> <span class="n">match</span>
 
 
-<div class="viewcode-block" id="walk_workspace"><a class="viewcode-back" href="../../../workspace.html#torchx.workspace.walk_workspace">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">walk_workspace</span><span class="p">(</span>
+<div class="viewcode-block" id="walk_workspace">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.walk_workspace">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">walk_workspace</span><span class="p">(</span>
     <span class="n">fs</span><span class="p">:</span> <span class="s2">&quot;AbstractFileSystem&quot;</span><span class="p">,</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">ignore_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TORCHX_IGNORE</span><span class="p">,</span>
@@ -681,6 +704,7 @@
             <span class="k">yield</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">last_matching_pattern_index</span><span class="p">,</span> <span class="n">dirs</span><span class="p">):</span>
                 <span class="n">paths_to_walk</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">d</span><span class="p">)))</span></div>
+
 </pre></div>
 
      </article>
@@ -729,16 +753,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

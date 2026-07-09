@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -448,6 +448,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">gettempdir</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlparse</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">mlflow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mlflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">MlflowClient</span>
@@ -466,7 +467,9 @@
 <span class="n">TAG_ARTIFACT_MD_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;torchx.artifact.metadata&quot;</span>
 
 
-<div class="viewcode-block" id="MLflowTracker"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">MLflowTracker</span><span class="p">(</span><span class="n">TrackerBase</span><span class="p">):</span>
+<div class="viewcode-block" id="MLflowTracker">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MLflowTracker</span><span class="p">(</span><span class="n">TrackerBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An implementation of a ``Tracker`` that uses mlflow as the backend.</span>
 <span class="sd">    Don&#39;t forget to call the ``close()`` method for orderly shutdown.</span>
@@ -500,11 +503,15 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">experiment_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">tracking_uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;file://</span><span class="si">{</span><span class="n">Path</span><span class="p">(</span><span class="n">gettempdir</span><span class="p">())</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;torchx&#39;</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;mlruns&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">tracking_uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sqlite:///</span><span class="si">{</span><span class="n">Path</span><span class="p">(</span><span class="n">gettempdir</span><span class="p">())</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;torchx&#39;</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">&#39;mlruns.db&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="n">artifact_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">experiment_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">experiment_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_experiment_name</span><span class="p">()</span>
+
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">tracking_uri</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parsed</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sqlite&quot;</span><span class="p">):</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">tracking_uri</span> <span class="o">=</span> <span class="n">tracking_uri</span>
         <span class="n">mlflow</span><span class="o">.</span><span class="n">set_tracking_uri</span><span class="p">(</span><span class="n">tracking_uri</span><span class="p">)</span>
@@ -561,7 +568,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">artifact_location</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span><span class="o">.</span><span class="n">artifact_location</span>
 
-<div class="viewcode-block" id="MLflowTracker.get_run"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Run</span><span class="p">:</span>
+<div class="viewcode-block" id="MLflowTracker.get_run">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Run</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gets mlflow&#39;s ``Run`` object for the given ``run_name`` in the current experiment.</span>
 <span class="sd">        If no such run exists, this method creates a new run under</span>
@@ -612,7 +621,10 @@
             <span class="c1"># need to query mlflow again so that the run reflects any newly written logs</span>
             <span class="k">return</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">active_run</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.get_run_id"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run_id">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_run_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="MLflowTracker.get_run_id">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.get_run_id">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_run_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Gets the mlflow run&#39;s run_id for the given ``run_name`` and additionally sets</span>
 <span class="sd">        this run as the active run. Hence this method has a side-effect where all subsequent</span>
@@ -620,10 +632,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">run_name</span><span class="p">)</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">run_id</span></div>
 
+
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">mlflow</span><span class="o">.</span><span class="n">end_run</span><span class="p">()</span>
 
-<div class="viewcode-block" id="MLflowTracker.add_artifact"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.add_artifact">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
+<div class="viewcode-block" id="MLflowTracker.add_artifact">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.add_artifact">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_artifact</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -644,7 +659,10 @@
                 <span class="p">}</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.artifacts"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.artifacts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">artifacts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="MLflowTracker.artifacts">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.artifacts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">artifacts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">]:</span>
         <span class="n">artifacts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">mlflow_client</span><span class="p">:</span> <span class="n">MlflowClient</span> <span class="o">=</span> <span class="n">MlflowClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracking_uri</span><span class="p">)</span>
 
@@ -682,20 +700,32 @@
         <span class="n">get_artifacts</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">artifacts</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.add_metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.add_metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="MLflowTracker.add_metadata">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.add_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
         <span class="n">mlflow</span><span class="o">.</span><span class="n">set_tags</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.metadata"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.metadata">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="MLflowTracker.metadata">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">tags</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.run_ids"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.run_ids">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="MLflowTracker.run_ids">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.run_ids">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">runs</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">search_runs</span><span class="p">(</span>
             <span class="n">experiment_ids</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_id</span><span class="p">],</span> <span class="n">output_format</span><span class="o">=</span><span class="s2">&quot;list&quot;</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">run_name</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.log_params_flat"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.log_params_flat">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">log_params_flat</span><span class="p">(</span>
+
+<div class="viewcode-block" id="MLflowTracker.log_params_flat">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.log_params_flat">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_params_flat</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">run_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># pyre-ignore[2]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -769,24 +799,35 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">log_params_flat</span><span class="p">(</span><span class="n">run_name</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_prefix</span><span class="si">}{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.add_source"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.add_source">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span>
+
+<div class="viewcode-block" id="MLflowTracker.add_source">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.add_source">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_source</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Job&#39;s tracker sources is currently unsupported for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.sources"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.sources">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span>
+
+<div class="viewcode-block" id="MLflowTracker.sources">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.sources">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sources</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TrackerSource</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Job&#39;s tracker sources is currently unsupported for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="MLflowTracker.lineage"><a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.lineage">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span>
+
+<div class="viewcode-block" id="MLflowTracker.lineage">
+<a class="viewcode-back" href="../../../tracker.html#torchx.tracker.mlflow.MLflowTracker.lineage">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Job&#39;s lineage is currently unsupported for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">create_tracker</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MLflowTracker</span><span class="p">:</span>
@@ -858,16 +899,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

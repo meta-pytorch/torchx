@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -470,7 +470,9 @@
 <span class="n">NAMED_RESOURCES_ATTR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;NAMED_RESOURCES&quot;</span>
 
 
-<div class="viewcode-block" id="PluginType"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginType">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">PluginType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="PluginType">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PluginType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of TorchX plugin.</span>
 
 <span class="sd">    Values are the entry-point group names (e.g. ``&quot;torchx.schedulers&quot;``).</span>
@@ -483,6 +485,7 @@
     <span class="n">SCHEDULER</span> <span class="o">=</span> <span class="s2">&quot;torchx.schedulers&quot;</span>
     <span class="n">NAMED_RESOURCE</span> <span class="o">=</span> <span class="s2">&quot;torchx.named_resources&quot;</span>
     <span class="n">TRACKER</span> <span class="o">=</span> <span class="s2">&quot;torchx.tracker&quot;</span></div>
+
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">PluginSource</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntFlag</span><span class="p">):</span>
@@ -516,7 +519,9 @@
     <span class="n">plugin_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<div class="viewcode-block" id="PluginRegistry"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">PluginRegistry</span><span class="p">:</span>
+<div class="viewcode-block" id="PluginRegistry">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PluginRegistry</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Immutable, lazily-populated plugin registry.</span>
 
 <span class="sd">    Created by :py:func:`registry`.  Each plugin group is discovered on first</span>
@@ -743,7 +748,9 @@
 
     <span class="c1"># ── Public API ───────────────────────────────────────────────────────</span>
 
-<div class="viewcode-block" id="PluginRegistry.get"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry.get">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plugin_type</span><span class="p">:</span> <span class="n">PluginType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<div class="viewcode-block" id="PluginRegistry.get">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plugin_type</span><span class="p">:</span> <span class="n">PluginType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Discover plugins for *plugin_type*.  Cached after first call.</span>
 
 <span class="sd">        Returns a ``dict`` mapping plugin names to their factory callables.</span>
@@ -753,13 +760,16 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">plugin_type</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">plugin_type</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">plugin_type</span><span class="p">]</span></div>
 
+
     <span class="nd">@overload</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">PluginType</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span> <span class="o">...</span>
 
     <span class="nd">@overload</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plugin_type</span><span class="p">:</span> <span class="n">PluginType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span> <span class="o">...</span>
 
-<div class="viewcode-block" id="PluginRegistry.info"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry.info">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span>
+<div class="viewcode-block" id="PluginRegistry.info">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry.info">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">plugin_type</span><span class="p">:</span> <span class="n">PluginType</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
         <span class="nb">dict</span><span class="p">[</span><span class="n">PluginType</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
@@ -787,6 +797,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="p">{</span><span class="n">pt</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="p">{}))</span> <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">PluginType</span><span class="p">}</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset this instance and invalidate the :py:func:`registry` singleton.</span>
@@ -947,7 +958,10 @@
         <span class="k">return</span> <span class="n">plugins</span></div>
 
 
-<div class="viewcode-block" id="registry"><a class="viewcode-back" href="../../../plugins.html#torchx.plugins.registry">[docs]</a><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="registry">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.registry">[docs]</a>
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">registry</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">PluginRegistry</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the cached :py:class:`PluginRegistry` singleton.</span>
 
@@ -986,6 +1000,7 @@
             <span class="s2">&quot; 3 (both).&quot;</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
     <span class="k">return</span> <span class="n">PluginRegistry</span><span class="p">(</span><span class="n">plugin_sources</span><span class="o">=</span><span class="n">plugin_sources</span><span class="p">)</span></div>
+
 </pre></div>
 
      </article>
@@ -1034,16 +1049,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

@@ -29,11 +29,11 @@
   <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/katex-math.css" type="text/css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
+  <link rel="stylesheet" href="../../../https://cdn.jsdelivr.net/npm/katex@0.10.0-beta/dist/katex.min.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -495,7 +495,9 @@
         <span class="k">return</span> <span class="n">help</span>
 
 
-<div class="viewcode-block" id="get_fn_docstring"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.get_fn_docstring">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_fn_docstring</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<div class="viewcode-block" id="get_fn_docstring">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.get_fn_docstring">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fn_docstring</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parses the function and arguments description from the provided function. Docstring should be in</span>
 <span class="sd">    `google-style format &lt;https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html&gt;`_</span>
@@ -528,13 +530,17 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">short_func_description</span> <span class="ow">or</span> <span class="n">default_fn_desc</span><span class="p">,</span> <span class="n">args_description</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="LinterMessage"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.LinterMessage">[docs]</a><span class="nd">@dataclass</span>
+
+<div class="viewcode-block" id="LinterMessage">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.LinterMessage">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LinterMessage</span><span class="p">:</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">line</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">char</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">severity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span></div>
+
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ComponentFunctionValidator</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
@@ -573,6 +579,7 @@
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">)</span>  <span class="c1"># e.g. arg = C[T]</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">slice</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>  <span class="c1"># python&gt;=3.10</span>
+        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
         <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">slice</span><span class="o">.</span><span class="n">value</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># python-3.9</span>
         <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">slice</span>
@@ -586,6 +593,7 @@
 <span class="sd">        2.  ``T | None`` or ``None | T`` (python&gt;=3.10 - PEP 604)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># case 1: &#39;a: Optional[T]&#39;</span>
+    <span class="c1"># pyrefly: ignore [missing-attribute]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s2">&quot;Optional&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">get_generic_type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
 
@@ -656,6 +664,7 @@
             <span class="k">return</span> <span class="n">ok</span><span class="p">()</span>
         <span class="c1"># Case 4: Containers (Dict, List, Tuple)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_type</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">):</span>
+            <span class="c1"># pyrefly: ignore [missing-attribute]</span>
             <span class="n">container_type</span> <span class="o">=</span> <span class="n">arg_type</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">id</span>
 
             <span class="k">if</span> <span class="n">container_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Dict&quot;</span><span class="p">,</span> <span class="s2">&quot;dict&quot;</span><span class="p">]:</span>
@@ -706,8 +715,10 @@
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_def</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">id</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_def</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Str</span><span class="p">):</span>
+            <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">s</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_def</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">):</span>
+            <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -786,7 +797,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">linter_errors</span> <span class="o">+=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="validate"><a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.validate">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span>
+<div class="viewcode-block" id="validate">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.validate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">component_function</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">validators</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ComponentFunctionValidator</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -833,6 +846,7 @@
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">linter_errors</span></div>
+
 </pre></div>
 
      </article>
@@ -881,16 +895,13 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/sphinx_highlight.js"></script>
-         <script src="../../../_static/katex.min.js"></script>
-         <script src="../../../_static/auto-render.min.js"></script>
-         <script src="../../../_static/katex_autorenderer.js"></script>
-         <script src="../../../_static/js/torchx.js"></script>
+         <script src="../../../_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="../../../_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="../../../_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="../../../_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="../../../_static/js/torchx.js?v=211227c7"></script>
      
 
   

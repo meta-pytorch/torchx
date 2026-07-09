@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -438,7 +438,7 @@
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
   <section id="component-best-practices">
-<h1>Component Best Practices<a class="headerlink" href="#component-best-practices" title="Permalink to this heading">¶</a></h1>
+<h1>Component Best Practices<a class="headerlink" href="#component-best-practices" title="Link to this heading">¶</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Best practices for authoring reusable TorchX
@@ -449,7 +449,7 @@ composition, and testing.</p>
 <p>These practices reflect conventions used in the builtin components. Deviate
 when your use case demands it.</p>
 <section id="entrypoints">
-<h2>Entrypoints<a class="headerlink" href="#entrypoints" title="Permalink to this heading">¶</a></h2>
+<h2>Entrypoints<a class="headerlink" href="#entrypoints" title="Link to this heading">¶</a></h2>
 <p>Prefer <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">&lt;module&gt;</span></code> over a path to the main module. Module
 resolution works across environments (Docker, Slurm) regardless of directory
 structure.</p>
@@ -469,10 +469,10 @@ structure.</p>
 </div>
 </section>
 <section id="simplify">
-<h2>Simplify<a class="headerlink" href="#simplify" title="Permalink to this heading">¶</a></h2>
+<h2>Simplify<a class="headerlink" href="#simplify" title="Link to this heading">¶</a></h2>
 <p>Keep each component as simple as possible.</p>
 <section id="argument-processing">
-<h3>Argument Processing<a class="headerlink" href="#argument-processing" title="Permalink to this heading">¶</a></h3>
+<h3>Argument Processing<a class="headerlink" href="#argument-processing" title="Link to this heading">¶</a></h3>
 <p>Pass <code class="docutils literal notranslate"><span class="pre">image</span></code> directly to <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> without manipulation – processing
 breaks portability across environments.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
@@ -481,7 +481,7 @@ breaks portability across environments.</p>
 </div>
 </section>
 <section id="branching-logic">
-<h3>Branching Logic<a class="headerlink" href="#branching-logic" title="Permalink to this heading">¶</a></h3>
+<h3>Branching Logic<a class="headerlink" href="#branching-logic" title="Link to this heading">¶</a></h3>
 <p>Avoid <code class="docutils literal notranslate"><span class="pre">if</span></code> statements in components. Create multiple components with shared
 private helpers instead.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">trainer_test</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
@@ -500,12 +500,12 @@ private helpers instead.</p>
 </div>
 </section>
 <section id="documentation">
-<h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading">¶</a></h3>
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h3>
 <p>Document component functions. See <a class="reference internal" href="components/overview.html"><span class="doc">Overview</span></a> for examples.</p>
 </section>
 </section>
 <section id="named-resources">
-<h2>Named Resources<a class="headerlink" href="#named-resources" title="Permalink to this heading">¶</a></h2>
+<h2>Named Resources<a class="headerlink" href="#named-resources" title="Link to this heading">¶</a></h2>
 <p>Use <a class="reference internal" href="basics.html#term-Resource"><span class="xref std std-term">named resources</span></a> instead of hard-coding CPU and memory
 values:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource</span>
@@ -517,7 +517,7 @@ values:</p>
 resources.</p>
 </section>
 <section id="composing-components">
-<h2>Composing Components<a class="headerlink" href="#composing-components" title="Permalink to this heading">¶</a></h2>
+<h2>Composing Components<a class="headerlink" href="#composing-components" title="Link to this heading">¶</a></h2>
 <p>Start from base component definitions rather than building <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> from
 scratch:</p>
 <ul class="simple">
@@ -528,17 +528,17 @@ scratch:</p>
 the main job.</p>
 </section>
 <section id="distributed-components">
-<h2>Distributed Components<a class="headerlink" href="#distributed-components" title="Permalink to this heading">¶</a></h2>
+<h2>Distributed Components<a class="headerlink" href="#distributed-components" title="Link to this heading">¶</a></h2>
 <p>Use <a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> for distributed training. Extend it
 by writing a wrapper that calls <code class="docutils literal notranslate"><span class="pre">ddp</span></code> with your configuration.</p>
 </section>
 <section id="define-all-arguments">
-<h2>Define All Arguments<a class="headerlink" href="#define-all-arguments" title="Permalink to this heading">¶</a></h2>
+<h2>Define All Arguments<a class="headerlink" href="#define-all-arguments" title="Link to this heading">¶</a></h2>
 <p>Define all arguments as function parameters instead of consuming a dictionary.
 This enables discoverability and static type checking.</p>
 </section>
 <section id="module-torchx.components.component_test_base">
-<span id="unit-tests"></span><h2>Unit Tests<a class="headerlink" href="#module-torchx.components.component_test_base" title="Permalink to this heading">¶</a></h2>
+<span id="unit-tests"></span><h2>Unit Tests<a class="headerlink" href="#module-torchx.components.component_test_base" title="Link to this heading">¶</a></h2>
 <p>You can unit test the component definitions as you would normal Python code
 since they are valid Python definitions.</p>
 <p>We do recommend using <a class="reference internal" href="#torchx.components.component_test_base.ComponentTestCase" title="torchx.components.component_test_base.ComponentTestCase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComponentTestCase</span></code></a> to ensure that your
@@ -547,10 +547,10 @@ on the doc string than pure Python as the doc string is used for parsing CLI
 args.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="torchx.components.component_test_base.ComponentTestCase">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.components.component_test_base.</span></span><span class="sig-name descname"><span class="pre">ComponentTestCase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.components.component_test_base.</span></span><span class="sig-name descname"><span class="pre">ComponentTestCase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase" title="Link to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="torchx.components.component_test_base.ComponentTestCase.run_component">
-<span class="sig-name descname"><span class="pre">run_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'local_cwd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.AppStatus" title="torchx.specs.api.AppStatus"><span class="pre">torchx.specs.api.AppStatus</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.run_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.run_component" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">run_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'local_cwd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.AppStatus" title="torchx.specs.api.AppStatus"><span class="pre">AppStatus</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.run_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.run_component" title="Link to this definition">¶</a></dt>
 <dd><p>Helper function that hides complexity of setting up the runner and polling results.
 Note: method is blocking until either scheduler exits or timeout is reached (for non-blocking schedulers).</p>
 <dl class="field-list simple">
@@ -569,19 +569,19 @@ Note: method is blocking until either scheduler exits or timeout is reached (for
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.components.component_test_base.ComponentTestCase.setUp">
-<span class="sig-name descname"><span class="pre">setUp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.setUp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.setUp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setUp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.setUp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.setUp" title="Link to this definition">¶</a></dt>
 <dd><p>Hook method for setting up the test fixture before exercising it.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.components.component_test_base.ComponentTestCase.tearDown">
-<span class="sig-name descname"><span class="pre">tearDown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.tearDown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.tearDown" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">tearDown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.tearDown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.tearDown" title="Link to this definition">¶</a></dt>
 <dd><p>Hook method for deconstructing the test fixture after testing it.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.components.component_test_base.ComponentTestCase.validate">
-<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.validate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.validate" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/types.html#types.ModuleType" title="(in Python v3.14)"><span class="pre">ModuleType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/components/component_test_base.html#ComponentTestCase.validate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.components.component_test_base.ComponentTestCase.validate" title="Link to this definition">¶</a></dt>
 <dd><p>Validates the component by effectively running:</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>COMPONENT.py:FN<span class="w"> </span>--help
 </pre></div>
@@ -592,7 +592,7 @@ Note: method is blocking until either scheduler exits or timeout is reached (for
 
 </section>
 <section id="integration-tests">
-<h2>Integration Tests<a class="headerlink" href="#integration-tests" title="Permalink to this heading">¶</a></h2>
+<h2>Integration Tests<a class="headerlink" href="#integration-tests" title="Link to this heading">¶</a></h2>
 <p>Use the <a class="reference internal" href="runner.html#torchx.runner.Runner" title="torchx.runner.Runner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Runner</span></code></a> API or CLI scripts. See the
 <a class="reference external" href="https://github.com/meta-pytorch/torchx/tree/main/.github/workflows">scheduler integration tests</a>
 for examples.</p>
@@ -693,16 +693,13 @@ for examples.</p>
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-         <script src="_static/jquery.js"></script>
-         <script src="_static/underscore.js"></script>
-         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="_static/doctools.js"></script>
-         <script src="_static/sphinx_highlight.js"></script>
-         <script src="_static/katex.min.js"></script>
-         <script src="_static/auto-render.min.js"></script>
-         <script src="_static/katex_autorenderer.js"></script>
-         <script src="_static/js/torchx.js"></script>
+         <script src="_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="_static/doctools.js?v=9bcbadda"></script>
+         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="_static/js/torchx.js?v=211227c7"></script>
      
 
   

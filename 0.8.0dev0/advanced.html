@@ -6,7 +6,7 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
@@ -439,7 +439,7 @@
      <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
       
   <section id="advanced-usage">
-<h1>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permalink to this heading">¶</a></h1>
+<h1>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Link to this heading">¶</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>This guide covers TorchX’s extension points: registering custom schedulers,
@@ -502,7 +502,7 @@ loading will be removed in a future release. See
 Decorate your factory with <code class="docutils literal notranslate"><span class="pre">&#64;register.&lt;type&gt;()</span></code> and TorchX finds it
 automatically after <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>.</p>
 <section id="registering-custom-schedulers">
-<h2>Registering Custom Schedulers<a class="headerlink" href="#registering-custom-schedulers" title="Permalink to this heading">¶</a></h2>
+<h2>Registering Custom Schedulers<a class="headerlink" href="#registering-custom-schedulers" title="Link to this heading">¶</a></h2>
 <p>Implement the <code class="xref py py-class docutils literal notranslate"><span class="pre">Scheduler</span></code> interface (see
 <a class="reference internal" href="schedulers.html#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> for a full skeleton). The factory function
 signature:</p>
@@ -548,7 +548,7 @@ and decorate it:</p>
 </div>
 </section>
 <section id="registering-named-resources">
-<h2>Registering Named Resources<a class="headerlink" href="#registering-named-resources" title="Permalink to this heading">¶</a></h2>
+<h2>Registering Named Resources<a class="headerlink" href="#registering-named-resources" title="Link to this heading">¶</a></h2>
 <p>A <a class="reference internal" href="basics.html#term-Resource"><span class="xref std std-term">Named Resource</span></a> maps a human-readable name (e.g.
 <code class="docutils literal notranslate"><span class="pre">gpu_x2</span></code>) to a <a class="reference internal" href="specs.html#torchx.specs.Resource" title="torchx.specs.Resource"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resource</span></code></a>.</p>
 <p><strong>Recommended: ``&#64;register`` decorator</strong></p>
@@ -661,7 +661,7 @@ resource is discoverable:</p>
 suggestion of close matches.</p>
 </section>
 <section id="registering-custom-components">
-<h2>Registering Custom Components<a class="headerlink" href="#registering-custom-components" title="Permalink to this heading">¶</a></h2>
+<h2>Registering Custom Components<a class="headerlink" href="#registering-custom-components" title="Link to this heading">¶</a></h2>
 <p>Register custom components as CLI builtins.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -779,7 +779,7 @@ builtins without the <code class="docutils literal notranslate"><span class="pre
 </div>
 </section>
 <section id="registering-custom-trackers">
-<span id="id1"></span><h2>Registering Custom Trackers<a class="headerlink" href="#registering-custom-trackers" title="Permalink to this heading">¶</a></h2>
+<span id="id1"></span><h2>Registering Custom Trackers<a class="headerlink" href="#registering-custom-trackers" title="Link to this heading">¶</a></h2>
 <p>TorchX ships with <a class="reference internal" href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a> and
 <a class="reference internal" href="tracker.html#torchx.tracker.mlflow.MLflowTracker" title="torchx.tracker.mlflow.MLflowTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a>. Implement your own by
 subclassing <a class="reference internal" href="tracker.html#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>.</p>
@@ -887,7 +887,7 @@ and configure each in <code class="docutils literal notranslate"><span class="pr
 </div>
 </section>
 <section id="registering-custom-cli-commands">
-<span id="id2"></span><h2>Registering Custom CLI Commands<a class="headerlink" href="#registering-custom-cli-commands" title="Permalink to this heading">¶</a></h2>
+<span id="id2"></span><h2>Registering Custom CLI Commands<a class="headerlink" href="#registering-custom-cli-commands" title="Link to this heading">¶</a></h2>
 <p>Extend the <code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI by implementing
 <a class="reference internal" href="cli.html#torchx.cli.cmd_base.SubCommand" title="torchx.cli.cmd_base.SubCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">SubCommand</span></code></a>.</p>
 <p><strong>The SubCommand ABC</strong> defines two abstract methods:</p>
@@ -934,7 +934,7 @@ becomes the subcommand name:</p>
 and <code class="docutils literal notranslate"><span class="pre">tracker</span></code>.</p>
 </section>
 <section id="packaging-a-plugin">
-<h2>Packaging a Plugin<a class="headerlink" href="#packaging-a-plugin" title="Permalink to this heading">¶</a></h2>
+<h2>Packaging a Plugin<a class="headerlink" href="#packaging-a-plugin" title="Link to this heading">¶</a></h2>
 <p>To create a TorchX plugin distribution, use
 <a class="reference external" href="https://packaging.python.org/en/latest/guides/packaging-namespace-packages/#native-namespace-packages">native namespace packages</a>
 – do <strong>not</strong> add <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> files under <code class="docutils literal notranslate"><span class="pre">torchx_plugins/</span></code>. This allows
@@ -1005,7 +1005,7 @@ into the same virtual environment. TorchX discovers the
 <code class="docutils literal notranslate"><span class="pre">&#64;register</span></code>-decorated plugins automatically — no entry points needed.</p>
 </section>
 <section id="diagnostics">
-<h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading">¶</a></h2>
+<h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Link to this heading">¶</a></h2>
 <p>Print a diagnostic report of all discovered plugins:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">())</span>
@@ -1106,16 +1106,13 @@ the bottom.</p>
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-         <script src="_static/jquery.js"></script>
-         <script src="_static/underscore.js"></script>
-         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="_static/doctools.js"></script>
-         <script src="_static/sphinx_highlight.js"></script>
-         <script src="_static/katex.min.js"></script>
-         <script src="_static/auto-render.min.js"></script>
-         <script src="_static/katex_autorenderer.js"></script>
-         <script src="_static/js/torchx.js"></script>
+         <script src="_static/documentation_options.js?v=a8da1a53"></script>
+         <script src="_static/doctools.js?v=9bcbadda"></script>
+         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+         <script src="_static/katex.min.js?v=5cc8ed51"></script>
+         <script src="_static/auto-render.min.js?v=af98beb9"></script>
+         <script src="_static/katex_autorenderer.js?v=21d3f600"></script>
+         <script src="_static/js/torchx.js?v=211227c7"></script>
      
 
   
