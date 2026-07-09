@@ -313,7 +313,17 @@ class Runner:
         cfg = dryrun_info._cfg
         with log_event("schedule") as ctx:
             sched = self._scheduler(scheduler)
-            app_id = sched.schedule(dryrun_info)
+            try:
+                app_id = sched.schedule(dryrun_info)
+            except BaseException as e:
+                # Classify the failure for monitoring; a bad classifier must
+                # never mask the original launch exception.
+                try:
+                    code = sched.error_code(e)
+                except Exception:
+                    code = None
+                ctx.set_scheduler_error_code(code)
+                raise
             app_handle = make_app_handle(scheduler, self._name, app_id)
 
             app = none_throws(dryrun_info._app)

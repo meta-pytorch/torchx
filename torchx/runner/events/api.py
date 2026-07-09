@@ -56,6 +56,7 @@ class TorchxEvent:
     exception_type: str | None = None
     exception_message: str | None = None
     exception_source_location: str | None = None
+    error_code: int | None = None
 
     def __str__(self) -> str:
         return self.serialize()

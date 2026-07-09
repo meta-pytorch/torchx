@@ -25,6 +25,7 @@ import logging
 import sys
 import time
 import traceback
+from contextvars import ContextVar
 from types import TracebackType
 from typing import Type
 
@@ -36,6 +37,14 @@ from .api import SourceType, TorchxEvent  # noqa F401
 _events_logger: logging.Logger | None = None
 
 log: logging.Logger = logging.getLogger(__name__)
+
+
+# Carries a scheduler-classified error code from the inner schedule event out to
+# every enclosing log_event -- including the top-level event monitoring reads.
+# See log_event.set_scheduler_error_code and Scheduler.error_code().
+_scheduler_error_code: ContextVar[int | None] = ContextVar[int | None](
+    "torchx_scheduler_error_code", default=None
+)
 
 
 def _get_or_create_logger(destination: str = "null") -> logging.Logger:
@@ -115,11 +124,22 @@ class log_event:
         self._start_epoch_time_usec = 0
 
     def __enter__(self) -> "log_event":
+        # Reset per launch so a prior launch's code can't leak in. Not a token
+        # save/restore: the value must outlive __exit__ for enclosing events to read.
+        _scheduler_error_code.set(None)
         self._start_cpu_time_ns = time.process_time_ns()
         self._start_wall_time_ns = time.perf_counter_ns()
         self._torchx_event.start_epoch_time_usec = int(time.time() * 1_000_000)
 
         return self
+
+    def set_scheduler_error_code(self, error_code: int | None) -> None:
+        """Record a scheduler-classified error code (see ``Scheduler.error_code``)
+        on this launch event and, via a contextvar, on every enclosing
+        ``log_event`` -- including the top-level event monitoring reads.
+        """
+        self._torchx_event.error_code = error_code
+        _scheduler_error_code.set(error_code)
 
     def __exit__(
         self,
@@ -149,6 +169,9 @@ class log_event:
             self._torchx_event.exception_type = exec_type.__name__
         if exec_value:
             self._torchx_event.exception_message = str(exec_value)
+        error_code = _scheduler_error_code.get(None)
+        if error_code is not None:
+            self._torchx_event.error_code = error_code
         record(self._torchx_event)
 
     def _generate_torchx_event(

@@ -519,6 +519,17 @@ class Scheduler(abc.ABC, Generic[T]):
             f"{self.__class__.__qualname__} does not support application log iteration"
         )
 
+    def error_code(self, exc: BaseException) -> int | None:
+        """Classify a scheduler-raised exception into a structured error code for
+        failure analytics (e.g. HTTP-style 4xx user vs 5xx infra). Returns ``None``
+        when there is no structured code for this exception. Schedulers whose
+        backend exposes an error code override this; the value is recorded on
+        torchx launch events so monitoring can separate user from infra failures
+        without parsing exception message text. Overrides must not raise --
+        classification must never mask the launch failure.
+        """
+        return None
+
     def _pre_build_validate(self, app: AppDef, scheduler: str, cfg: T) -> None:
         # Hook for pre-workspace-build validation. Override to add checks.
         pass
