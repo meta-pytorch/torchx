@@ -307,6 +307,89 @@ Traceback (most recent call last):
         # Split and compare to aviod AssertionError.
         self.assertEqual(expected_message.split(), actual_message.split())
 
+    def _get_test_app_status_with_error_msg(self, error_msg: str) -> AppStatus:
+        replica = ReplicaStatus(
+            id=0,
+            state=AppState.FAILED,
+            role="worker",
+            hostname="localhost",
+            structured_error_msg=error_msg,
+        )
+        role_status = RoleStatus(role="worker", replicas=[replica])
+        return AppStatus(state=AppState.RUNNING, roles=[role_status])
+
+    def test_format_app_status_flat_error_schema(self) -> None:
+        # Flat reply-file schema (e.g. MAST's MastReplyFileMessage): "message"
+        # is a string and timestamp/errorCode live at the top level.
+        os.environ["TZ"] = "Europe/London"
+        time.tzset()
+
+        app_status = self._get_test_app_status_with_error_msg(
+            '{"message": "InjectedFailure: Injected failure exception",'
+            ' "timestamp": 1293182, "timestamp_us": 1293182000000,'
+            ' "errorService": "Mast", "errorCode": 1,'
+            ' "pyCallStack": "Traceback (most recent call last): ..."}'
+        )
+        actual_message = app_status.format()
+        expected_message = """AppStatus:
+    State: RUNNING
+    Num Restarts: 0
+    Roles:
+ *worker[0]:FAILED (exitcode: 1)
+        timestamp: 1970-01-16 00:13:02
+        hostname: localhost
+        error_msg: InjectedFailure: Injected failure exception
+    Msg:
+    Structured Error Msg: <NONE>
+    UI URL: None
+    """
+        self.assertEqual(expected_message.split(), actual_message.split())
+
+    def test_format_app_status_flat_error_schema_missing_fields(self) -> None:
+        app_status = self._get_test_app_status_with_error_msg(
+            '{"message": "InjectedFailure: Injected failure exception"}'
+        )
+        actual_message = app_status.format()
+        self.assertIn("FAILED (exitcode: <N/A>)", actual_message)
+        self.assertIn("timestamp: <N/A>", actual_message)
+        self.assertIn(
+            "error_msg: InjectedFailure: Injected failure exception", actual_message
+        )
+
+    def test_format_app_status_nested_error_schema_missing_fields(self) -> None:
+        app_status = self._get_test_app_status_with_error_msg(
+            '{"message":{"message":"test error"}}'
+        )
+        actual_message = app_status.format()
+        self.assertIn("FAILED (exitcode: <N/A>)", actual_message)
+        self.assertIn("timestamp: <N/A>", actual_message)
+        self.assertIn("error_msg: test error", actual_message)
+
+    def test_format_app_status_unrecognized_error_schema(self) -> None:
+        # Valid JSON that matches neither known reply-file schema renders
+        # verbatim instead of raising.
+        for error_msg in (
+            '["not", "a", "dict"]',
+            '{"error": "no message key"}',
+            '{"message": {"message": 5}}',
+            '{"message": null}',
+            '"just a quoted string"',
+        ):
+            with self.subTest(error_msg=error_msg):
+                app_status = self._get_test_app_status_with_error_msg(error_msg)
+                self.assertIn(error_msg, app_status.format())
+
+    def test_serialize_non_json_error(self) -> None:
+        status = AppStatus(
+            AppState.FAILED, structured_error_msg="worker terminated by SIGKILL"
+        )
+        self.assertIn("worker terminated by SIGKILL", repr(status))
+
+        with self.assertRaisesRegex(
+            AppStatusError, r"(?s)job did not succeed:.*FAILED.*"
+        ):
+            status.raise_for_status()
+
     def test_app_status_in_json(self) -> None:
         app_status = self._get_test_app_status()
         result = app_status.to_json()

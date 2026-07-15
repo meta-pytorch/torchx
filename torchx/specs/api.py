@@ -649,7 +649,12 @@ class AppStatus:
         app_status_dict = asdict(self)
         structured_error_msg = app_status_dict.pop("structured_error_msg")
         if structured_error_msg != NONE:
-            structured_error_msg_parsed = json.loads(structured_error_msg)
+            try:
+                structured_error_msg_parsed = json.loads(structured_error_msg)
+            except JSONDecodeError:
+                # reply-file content is job-authored and not always JSON;
+                # embed it verbatim rather than failing repr()
+                structured_error_msg_parsed = structured_error_msg
         else:
             structured_error_msg_parsed = NONE
         app_status_dict["structured_error_msg"] = structured_error_msg_parsed
@@ -692,15 +697,44 @@ class AppStatus:
                 error_data = json.loads(replica_status.structured_error_msg)
             except JSONDecodeError:
                 return replica_status.structured_error_msg
+            # Reply files carry one of two known schemas: the torchelastic
+            # error file nests the error under "message"
+            # ({"message": {"message": ..., "errorCode": ...,
+            #   "extraInfo": {"timestamp": ...}}}) while scheduler-written
+            # reply files are flat
+            # ({"message": "...", "errorCode": ..., "timestamp": ...}).
+            # The content is authored by the job or the scheduler, not by
+            # torchx, so render anything unrecognized verbatim instead of
+            # raising while formatting the status.
+            error = error_data.get("message") if isinstance(error_data, dict) else None
+            if isinstance(error, dict) and isinstance(error.get("message"), str):
+                msg = error["message"]
+                extra_info = error.get("extraInfo")
+                timestamp = (
+                    extra_info.get("timestamp")
+                    if isinstance(extra_info, dict)
+                    else None
+                )
+                exitcode = error.get("errorCode")
+            elif isinstance(error, str):
+                msg = error
+                timestamp = error_data.get("timestamp")
+                exitcode = error_data.get("errorCode")
+            else:
+                return replica_status.structured_error_msg
             error_message = self._format_error_message(
-                msg=error_data["message"]["message"], header="    error_msg: "
+                msg=msg, header="    error_msg: "
             )
-            timestamp = int(error_data["message"]["extraInfo"]["timestamp"])
-            exitcode = error_data["message"]["errorCode"]
+            timestamp_str = "<N/A>"
+            if timestamp is not None:
+                try:
+                    timestamp_str = str(datetime.fromtimestamp(int(timestamp)))
+                except (TypeError, ValueError, OverflowError, OSError):
+                    pass
             if not exitcode:
                 exitcode = "<N/A>"
             data = f"""{str(replica_status.state)} (exitcode: {exitcode})
-        timestamp: {datetime.fromtimestamp(timestamp)}
+        timestamp: {timestamp_str}
         hostname: {replica_status.hostname}
     {error_message}"""
         else:
