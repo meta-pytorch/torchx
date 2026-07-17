@@ -33,7 +33,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout TorchX
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v6.2.0
         with:
