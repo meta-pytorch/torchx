@@ -102,6 +102,13 @@ redirect_url: "/torchx/main"
 REDIRECT
 
 git add .
+# A docs-neutral commit (e.g. a CI/dependency bump) produces no change to the
+# generated HTML, so there is nothing to commit. Exit cleanly instead of letting
+# `git commit` fail under `set -e` and turn the Docs Build workflow red.
+if git diff --cached --quiet; then
+    echo "No documentation changes to publish; nothing to commit."
+    exit 0
+fi
 git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirects: ${redirects[*]} -> $torchx_ver."
 
 if [ $dry_run -eq 1 ]; then
