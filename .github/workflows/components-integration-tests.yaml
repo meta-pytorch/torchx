@@ -35,7 +35,7 @@ jobs:
       - name: Checkout TorchX
         uses: actions/checkout@v7
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6.2.0
+        uses: aws-actions/configure-aws-credentials@6.2.2
         with:
           aws-region: us-west-1
           role-to-assume: ${{ secrets.TF_AWS_ROLE_ARN }}
