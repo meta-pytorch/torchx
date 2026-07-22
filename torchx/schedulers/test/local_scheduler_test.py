@@ -499,7 +499,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
                         )
 
     @patch(LOCAL_DIR_IMAGE_PROVIDER_FETCH, return_value="")
-    def test_submit_dryrun_without_log_dir_cfg(self, _) -> None:
+    def test_submit_dryrun_without_log_dir_cfg(self, _: MagicMock) -> None:
         master = Role(
             "master",
             image=self.test_dir,
