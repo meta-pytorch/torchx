@@ -26,7 +26,6 @@ from torchx.cli.cmd_tracker import CmdTracker
 from torchx.util.colors import BLUE, ENDC, GRAY
 from torchx.util.entrypoints import load_group
 
-
 sub_parser_description = """Use the following commands to run operations, e.g.:
 torchx run ${JOB_NAME}
 """

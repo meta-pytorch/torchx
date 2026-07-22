@@ -43,7 +43,6 @@ from torchx.specs import (
 from torchx.workspace import WorkspaceMixin
 from typing_extensions import Self
 
-
 DAYS_IN_2_WEEKS = 14
 
 

@@ -25,6 +25,7 @@ Examples:
     with an experiment tracker. The ``/`` delimiter is a natural way to group runs within experiments.
 
 """
+
 import warnings
 from dataclasses import dataclass
 from pathlib import Path

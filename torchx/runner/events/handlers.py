@@ -9,7 +9,6 @@
 
 import logging
 
-
 _log_handlers: dict[str, logging.Handler] = {
     "console": logging.StreamHandler(),
     "null": logging.NullHandler(),

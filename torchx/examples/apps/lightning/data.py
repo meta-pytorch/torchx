@@ -27,7 +27,6 @@ from torchvision import datasets, transforms
 from torchvision.datasets.folder import is_image_file
 from tqdm import tqdm
 
-
 # %%
 # This uses torchvision to define a dataset that we will then later use in our
 # Pytorch Lightning data module.

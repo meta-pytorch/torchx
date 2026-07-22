@@ -20,7 +20,6 @@ from torchx.runner import get_runner
 from torchx.specs import AppHandle, AppState, AppStatus, CfgVal
 from torchx.util.types import none_throws
 
-
 log: logging.Logger = logging.getLogger(__name__)
 
 

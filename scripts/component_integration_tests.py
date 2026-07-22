@@ -10,6 +10,7 @@
 """
 Kubernetes integration tests.
 """
+
 import argparse
 import logging
 import os
@@ -21,7 +22,6 @@ from integ_test_utils import build_images, BuildInfo, push_images
 from torchx.components.integration_tests.integ_tests import IntegComponentTest
 from torchx.schedulers import get_scheduler_factories
 from torchx.util.colors import BLUE, ENDC, GRAY
-
 
 logging.basicConfig(
     level=logging.INFO,

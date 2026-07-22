@@ -32,7 +32,6 @@ from torchx.plugins._registry import (
 )
 from torchx.util import entrypoints
 
-
 # ── Test namespace package setup ─────────────────────────────────────────────
 
 # Four directories simulate four independently pip-installed packages

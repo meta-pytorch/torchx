@@ -11,7 +11,6 @@ from pathlib import Path
 
 from torchx.util import entrypoints
 
-
 COMPONENTS_DIR: Path = Path("torchx/components")
 
 

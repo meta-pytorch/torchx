@@ -28,7 +28,6 @@ from torchx.plugins._registration import (
 from torchx.plugins._registry import NAMED_RESOURCES_ATTR, PluginType, registry
 from torchx.specs.api import Resource
 
-
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 

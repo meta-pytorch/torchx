@@ -10,7 +10,6 @@
 import os
 import struct
 
-
 START_CANDIDATES: str = "bcdfghjklmnpqrstvwxz"
 END_CANDIDATES: str = START_CANDIDATES + "012345679"
 

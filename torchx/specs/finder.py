@@ -29,7 +29,6 @@ from torchx.util import entrypoints
 from torchx.util.io import read_conf_file
 from torchx.util.types import none_throws
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 

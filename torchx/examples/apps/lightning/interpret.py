@@ -58,7 +58,6 @@ from torchx.examples.apps.lightning.data import (
 )
 from torchx.examples.apps.lightning.model import TinyImageNetModel
 
-
 # ensure data and module are on the path
 sys.path.append(".")
 

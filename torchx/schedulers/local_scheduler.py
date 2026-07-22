@@ -901,8 +901,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
 
         if not cfg.auto_set_cuda_visible_devices or total_requested_gpus <= 0:
             if total_requested_gpus > 0:
-                log.warning(
-                    """\n
+                log.warning("""\n
 ======================================================================
 Running multiple role replicas that require GPUs without
 setting `CUDA_VISIBLE_DEVICES` may result in multiple
@@ -913,14 +912,12 @@ To have TorchX set `CUDA_VISIBLE_DEVICES` to divide the
 available GPUs on this host equally among the role replicas
 set the `auto_set_cuda_visible_devices = True` scheduler runopt
 ======================================================================
-                            """
-                )
+                            """)
             return
 
         device_count = self._cuda_device_count()
         if total_requested_gpus > device_count:
-            log.warning(
-                f"""\n
+            log.warning(f"""\n
 ======================================================================
 Cannot auto-set `CUDA_VISIBLE_DEVICES`
 Available GPUs: {device_count} is less than the
@@ -928,8 +925,7 @@ number of requested GPUs: {total_requested_gpus}."
 
 Reduce requested GPU resources or use a host with more GPUs
 ======================================================================
-                """
-            )
+                """)
             return
 
         start_idx = 0

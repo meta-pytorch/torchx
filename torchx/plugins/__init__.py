@@ -50,7 +50,6 @@ from torchx.plugins._registry import (
     registry,
 )
 
-
 __all__ = [
     # _registration.py
     "register",

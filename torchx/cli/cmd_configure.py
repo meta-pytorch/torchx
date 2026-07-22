@@ -15,7 +15,6 @@ from torchx.cli.cmd_base import SubCommand
 from torchx.runner.config import dump
 from torchx.schedulers import get_scheduler_factories
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 

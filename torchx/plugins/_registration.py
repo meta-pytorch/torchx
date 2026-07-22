@@ -28,7 +28,6 @@ F = TypeVar("F", bound=Callable[..., object])
 
 from torchx.plugins._registry import NAMED_RESOURCES_ATTR, PluginType
 
-
 # ── Named-resource authoring utilities ────────────────────────────────────────
 
 

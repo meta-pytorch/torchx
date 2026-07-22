@@ -12,7 +12,6 @@ import json
 
 import fsspec
 
-
 KeyType = int | str
 ResultType = int | float | str
 

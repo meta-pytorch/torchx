@@ -71,7 +71,6 @@ from torchx.examples.apps.lightning.model import (
 )
 from torchx.examples.apps.lightning.profiler import SimpleLoggingProfiler
 
-
 # ensure data and module are on the path
 sys.path.append(".")
 

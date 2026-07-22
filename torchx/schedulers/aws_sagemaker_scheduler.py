@@ -30,7 +30,6 @@ from torchx.schedulers.ids import make_unique
 from torchx.specs.api import AppDef, AppDryRunInfo, AppState, CfgVal, runopts
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
-
 if TYPE_CHECKING:
     from docker import DockerClient  # pragma: no cover
 

@@ -17,7 +17,6 @@ from torchx.cli.argparse_util import ArgOnceAction, torchxconfig
 from torchx.cli.cmd_base import SubCommand
 from torchx.cli.main import get_sub_cmds, main
 
-
 _root: Path = Path(__file__).parent
 
 _SIMPLE_CONF: str = str(Path(__file__).parent / "components.py:simple")

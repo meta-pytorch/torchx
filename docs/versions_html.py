@@ -26,8 +26,7 @@ from string import Template
 
 from packaging.version import InvalidVersion, Version
 
-VERSIONS_HTML_TEMPLATE = Template(
-    """
+VERSIONS_HTML_TEMPLATE = Template("""
 <html>
   <head>
     <meta charset="utf-8">
@@ -53,8 +52,7 @@ $ver_list
     </div></div>
   </body>
 </html>
-"""
-)
+""")
 # fmt: off
 VERSION_TEMPLATE = Template("""
         <li class="toctree-l1">

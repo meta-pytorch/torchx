@@ -46,7 +46,6 @@ from torchx.specs.api import (
 )
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
-
 if TYPE_CHECKING:
     from docker import DockerClient
     from docker.models.containers import Container

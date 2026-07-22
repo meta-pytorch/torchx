@@ -37,6 +37,7 @@ rather than using these defaults long term.
     have 8 cpus.
 
 """
+
 from typing import Callable, Mapping
 
 from torchx.specs.api import Resource

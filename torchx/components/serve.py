@@ -11,7 +11,6 @@ These components aim to make it easier to interact with inference and serving
 tools such as `torchserve <https://pytorch.org/serve/>`_.
 """
 
-
 import torchx
 import torchx.specs as specs
 
