@@ -147,8 +147,11 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
 if not FBCODE:
-    # fb/ contains Meta-internal docs only available in the fbcode build.
-    exclude_patterns += ["fb/**"]
+    # fb/ dirs contain Meta-internal docs only available in the fbcode build.
+    # These reference `torchx.*.fb.*` modules that are stripped from the OSS
+    # export, so autodoc'ing them fails. Exclude both the top-level `fb/` tree
+    # and nested `<section>/fb/` trees (e.g. `schedulers/fb/`, `workspaces/fb/`).
+    exclude_patterns += ["fb/**", "**/fb/**"]
     # The ``.. fbcode::`` directive (docs/source/ext/fbcode.py) hides the
     # Meta-internal ``torchx.specs.fb`` / ``torchx.workspace.fb`` automodule
     # blocks from the OSS build, but autosummary's pre-parse source scan still
