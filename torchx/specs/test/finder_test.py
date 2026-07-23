@@ -65,10 +65,14 @@ def invalid_component(name, role_name: str = "worker") -> AppDef:
 
 
 class FinderTest(unittest.TestCase):
-    _ENTRY_POINTS: EntryPoints = EntryPoints(EntryPoint_from_text("""
+    _ENTRY_POINTS: EntryPoints = EntryPoints(
+        EntryPoint_from_text(
+            """
 [torchx.components]
 _ = torchx.specs.test.finder_test
-        """))
+        """
+        )
+    )
 
     def setUp(self) -> None:
         # clear caches since find_component() has side-effects
@@ -122,11 +126,15 @@ _ = torchx.specs.test.finder_test
 
     @patch(
         _METADATA_EPS,
-        return_value=EntryPoints(EntryPoint_from_text("""
+        return_value=EntryPoints(
+            EntryPoint_from_text(
+                """
 [torchx.components]
 foo = torchx.specs.test.components.a
 bar = torchx.specs.test.components.c.d
-""")),
+"""
+            )
+        ),
     )
     def test_load_custom_components(self, _: MagicMock) -> None:
         components = _load_components(None)
@@ -141,11 +149,15 @@ bar = torchx.specs.test.components.c.d
 
     @patch(
         _METADATA_EPS,
-        return_value=EntryPoints(EntryPoint_from_text("""
+        return_value=EntryPoints(
+            EntryPoint_from_text(
+                """
 [torchx.components]
 _0 = torchx.specs.test.components.a
 _1 = torchx.specs.test.components.c.d
-""")),
+"""
+            )
+        ),
     )
     def test_load_custom_components_nogroup(self, _: MagicMock) -> None:
         components = _load_components(None)

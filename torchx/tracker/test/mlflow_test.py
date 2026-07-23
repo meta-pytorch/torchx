@@ -197,14 +197,16 @@ class MLflowTrackerTest(TestWithTmpDir):
         confdir = str(self.tmpdir)
         self.write(
             ".torchxconfig",
-            [f"""
+            [
+                f"""
 [tracker:mlflow]
 config = {confdir}
 
 tracking_uri = sqlite:///{self.tmpdir / 'experiments.db'}
 artifact_location = {str(self.tmpdir / 'artifacts')}
 experiment_name = foobar
-        """],
+        """
+            ],
         )
 
         tracker = create_tracker(config=confdir)

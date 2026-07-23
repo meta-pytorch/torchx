@@ -67,7 +67,8 @@ class DirWorkspaceTest(unittest.TestCase):
         for file in files:
             fs.touch("torchxignore/" + file)
         with fs.open("torchxignore/.torchxignore", "wt") as f:
-            f.write("""
+            f.write(
+                """
                 # comment
 
                 # dirs/files
@@ -86,7 +87,8 @@ class DirWorkspaceTest(unittest.TestCase):
 
                 # ignore .
                 .
-            """)
+            """
+            )
 
         _copy_to_dir("memory://torchxignore", "memory://torchxignoredest")
 

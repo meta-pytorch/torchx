@@ -142,10 +142,12 @@ class WorkspaceTest(TestWithTmpDir):
                 "/home/foo/bar": "",
                 "/home/foo/third-party/verl": "verl",
             },
-            Workspace.from_str("""#
+            Workspace.from_str(
+                """#
 /home/foo/bar:
 /home/foo/third-party/verl: verl
-""").projects,
+"""
+            ).projects,
         )
 
     def test_merge(self) -> None:
@@ -960,7 +962,9 @@ class RunConfigTest(unittest.TestCase):
                 "complex_dict": {"k1": "v1", "k2": "v2"},
                 "default_none": None,
             },
-            opts.resolve(opts.cfg_from_json_repr("""{
+            opts.resolve(
+                opts.cfg_from_json_repr(
+                    """{
                         "foo": "bar",
                         "test_key": "test_value",
                         "default_time": 42,
@@ -969,7 +973,9 @@ class RunConfigTest(unittest.TestCase):
                         "complex_list": ["v1", "v2", "v3"],
                         "complex_dict": {"k1": "v1", "k2": "v2"},
                         "default_none": null
-                    }""")),
+                    }"""
+                )
+            ),
         )
 
     def test_runopts_is_type(self) -> None:

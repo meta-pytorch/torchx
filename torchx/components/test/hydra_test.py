@@ -22,7 +22,8 @@ class HydraComponentTest(unittest.TestCase):
     def test_hydra_simple(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "test_config.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 app:
   _target_: torchx.specs.AppDef
   name: test_job
@@ -34,7 +35,8 @@ app:
       num_replicas: 1
       args:
         - hello
-""")
+"""
+                )
 
             app = hydra(config_name="test_config", config_dir=tmpdir)
 
@@ -48,7 +50,8 @@ app:
     def test_hydra_with_resource(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "test_resource.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 app:
   _target_: torchx.specs.AppDef
   name: training_job
@@ -63,7 +66,8 @@ app:
         cpu: 4
         gpu: 2
         memMB: 8192
-""")
+"""
+                )
 
             app = hydra(config_name="test_resource", config_dir=tmpdir)
 
@@ -76,7 +80,8 @@ app:
     def test_hydra_multiple_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "test_multi.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 app:
   _target_: torchx.specs.AppDef
   name: multi_role_job
@@ -91,7 +96,8 @@ app:
       image: alpine:latest
       entrypoint: python
       num_replicas: 4
-""")
+"""
+                )
 
             app = hydra(config_name="test_multi", config_dir=tmpdir)
 
@@ -105,7 +111,8 @@ app:
     def test_hydra_with_env_interpolation(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "test_env.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 app:
   _target_: torchx.specs.AppDef
   name: env_test
@@ -115,7 +122,8 @@ app:
       image: ${oc.env:TEST_IMAGE}
       entrypoint: echo
       num_replicas: 1
-""")
+"""
+                )
 
             app = hydra(config_name="test_env", config_dir=tmpdir)
             self.assertEqual(app.roles[0].image, "test:v1")
@@ -124,15 +132,18 @@ app:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.makedirs(os.path.join(tmpdir, "role"))
             with open(os.path.join(tmpdir, "role", "python.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 _target_: torchx.specs.Role
 name: python
 image: alpine:latest
 entrypoint: python
 num_replicas: 1
-""")
+"""
+                )
             with open(os.path.join(tmpdir, "test_override.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 defaults:
   - role: python
 
@@ -141,7 +152,8 @@ app:
   name: override_test
   roles:
     - ${role}
-""")
+"""
+                )
 
             app = hydra(
                 "role.num_replicas=3", config_name="test_override", config_dir=tmpdir
@@ -151,7 +163,8 @@ app:
     def test_hydra_with_torchx_resolvers(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "test_resolvers.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 app:
   _target_: torchx.specs.AppDef
   name: test_resolvers
@@ -169,7 +182,8 @@ app:
         RANK0: ${torchx.rank0_env:}
         REPLICA: ${torchx.replica_id:}
         IMG_ROOT: ${torchx.img_root:}
-""")
+"""
+                )
 
             app = hydra(config_name="test_resolvers", config_dir=tmpdir)
 
@@ -183,7 +197,8 @@ app:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(os.path.join(tmpdir, "test_macros.yaml"), "w") as f:
-                f.write("""
+                f.write(
+                    """
 app:
   _target_: torchx.specs.AppDef
   name: test
@@ -196,7 +211,8 @@ app:
       env:
         APP_ID: ${torchx.app_id:}
         RANK0: ${torchx.rank0_env:}
-""")
+"""
+                )
 
             app = hydra(config_name="test_macros", config_dir=tmpdir)
 

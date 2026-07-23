@@ -809,7 +809,8 @@ PARTITION,MEMORY
             with open("sbatch.sh", "w") as f:
                 f.write(script)
             with open("test.sh", "w") as f:
-                f.write("""#!/bin/bash
+                f.write(
+                    """#!/bin/bash
 set -evx
 
 srun () {
@@ -821,7 +822,8 @@ scontrol () {
 }
 
 source sbatch.sh
-                """)
+                """
+                )
             return os.WEXITSTATUS(os.system("bash test.sh"))
 
     @patch(

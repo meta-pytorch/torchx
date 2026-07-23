@@ -331,10 +331,12 @@ class CmdRunTest(unittest.TestCase):
         dirs = [str(self.tmpdir)]
 
         with open(Path(self.tmpdir) / ".torchxconfig", "w") as f:
-            f.write("""#
+            f.write(
+                """#
 [cli:run]
 component = custom.echo
-            """)
+            """
+            )
 
         self.assertEqual(
             ("utils.echo", []), _parse_component_name_and_args(["utils.echo"], sp, dirs)

@@ -196,7 +196,8 @@ class DockerWorkspaceMockTest(unittest.TestCase):
         for file in files:
             fs.touch(file)
         with fs.open("dockerignore/.dockerignore", "wt") as f:
-            f.write("""
+            f.write(
+                """
                 # comment
 
                 # dirs/files
@@ -214,7 +215,8 @@ class DockerWorkspaceMockTest(unittest.TestCase):
 
                 # ignore .
                 .
-            """)
+            """
+            )
 
         with _build_context("img", "memory://dockerignore") as f:
             with tarfile.open(fileobj=f, mode="r") as tf:
@@ -249,7 +251,8 @@ class DockerWorkspaceMockTest(unittest.TestCase):
         for file in files:
             fs.touch(file)
         with fs.open("dockerignore/.dockerignore", "wt") as f:
-            f.write("""
+            f.write(
+                """
                     *
                     !timm_app.py
                     **/a
@@ -257,7 +260,8 @@ class DockerWorkspaceMockTest(unittest.TestCase):
                     **/ignore1
                     some_dir/ignore2
                     some_dir/subdir/ignore3
-                    """)
+                    """
+            )
 
         with _build_context("img", "memory://dockerignore") as f:
             with tarfile.open(fileobj=f, mode="r") as tf:
