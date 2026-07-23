@@ -1397,23 +1397,26 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">cfg</span><span class="o">.</span><span class="n">auto_set_cuda_visible_devices</span> <span class="ow">or</span> <span class="n">total_requested_gpus</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">total_requested_gpus</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\n</span>
-<span class="s2">======================================================================</span>
-<span class="s2">Running multiple role replicas that require GPUs without</span>
-<span class="s2">setting `CUDA_VISIBLE_DEVICES` may result in multiple</span>
-<span class="s2">processes using the same GPU device with undesired consequences</span>
-<span class="s2">such as CUDA OutOfMemory errors.</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot;\n</span>
+<span class="sd">======================================================================</span>
+<span class="sd">Running multiple role replicas that require GPUs without</span>
+<span class="sd">setting `CUDA_VISIBLE_DEVICES` may result in multiple</span>
+<span class="sd">processes using the same GPU device with undesired consequences</span>
+<span class="sd">such as CUDA OutOfMemory errors.</span>
 
-<span class="s2">To have TorchX set `CUDA_VISIBLE_DEVICES` to divide the</span>
-<span class="s2">available GPUs on this host equally among the role replicas</span>
-<span class="s2">set the `auto_set_cuda_visible_devices = True` scheduler runopt</span>
-<span class="s2">======================================================================</span>
-<span class="s2">                            &quot;&quot;&quot;</span><span class="p">)</span>
+<span class="sd">To have TorchX set `CUDA_VISIBLE_DEVICES` to divide the</span>
+<span class="sd">available GPUs on this host equally among the role replicas</span>
+<span class="sd">set the `auto_set_cuda_visible_devices = True` scheduler runopt</span>
+<span class="sd">======================================================================</span>
+<span class="sd">                            &quot;&quot;&quot;</span>
+                <span class="p">)</span>
             <span class="k">return</span>
 
         <span class="n">device_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_device_count</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">total_requested_gpus</span> <span class="o">&gt;</span> <span class="n">device_count</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\n</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\n</span>
 <span class="s2">======================================================================</span>
 <span class="s2">Cannot auto-set `CUDA_VISIBLE_DEVICES`</span>
 <span class="s2">Available GPUs: </span><span class="si">{</span><span class="n">device_count</span><span class="si">}</span><span class="s2"> is less than the</span>
@@ -1421,7 +1424,8 @@
 
 <span class="s2">Reduce requested GPU resources or use a host with more GPUs</span>
 <span class="s2">======================================================================</span>
-<span class="s2">                &quot;&quot;&quot;</span><span class="p">)</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+            <span class="p">)</span>
             <span class="k">return</span>
 
         <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">0</span>
