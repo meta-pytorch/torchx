@@ -230,8 +230,9 @@ class RunnerTest(TestWithTmpDir):
         }
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role = Role(
                 name="touch",
@@ -258,8 +259,9 @@ class RunnerTest(TestWithTmpDir):
         scheduler_mock = MagicMock()
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -288,8 +290,9 @@ class RunnerTest(TestWithTmpDir):
         expected_parent_run_id = "123"
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -328,8 +331,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -377,8 +381,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -461,12 +466,13 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            # pyre-fixme[6]: scheduler factory type
             scheduler_factories={
-                "no-build-img": lambda name, **kwargs: TestScheduler(
+                "no-build-img": lambda session_name, **kwargs: TestScheduler(
                     build_new_img=False
                 ),
-                "builds-img": lambda name, **kwargs: TestScheduler(build_new_img=True),
+                "builds-img": lambda session_name, **kwargs: TestScheduler(
+                    build_new_img=True
+                ),
             },
         ) as runner:
             app = AppDef(
@@ -585,8 +591,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name="test_ui_url_session",
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: mock_scheduler},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: mock_scheduler
+            },
         ) as runner:
             role = Role(
                 "ignored",
@@ -610,8 +617,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name="test_structured_msg",
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: mock_scheduler},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: mock_scheduler
+            },
         ) as runner:
             role = Role(
                 "ignored",
@@ -662,8 +670,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role_name = "trainer"
             replica_id = 2
@@ -707,8 +716,9 @@ class RunnerTest(TestWithTmpDir):
         ]
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"kubernetes": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "kubernetes": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             apps = runner.list("kubernetes")
             self.assertEqual(apps, apps_expected)
@@ -720,13 +730,11 @@ class RunnerTest(TestWithTmpDir):
         json_dumps_mock.return_value = "{}"
         local_sched_mock = MagicMock()
         scheduler_factories = {
-            "local_dir": lambda name, **kwargs: local_dir_sched_mock,
-            "local": lambda name, **kwargs: local_sched_mock,
+            "local_dir": lambda session_name, **kwargs: local_dir_sched_mock,
+            "local": lambda session_name, **kwargs: local_sched_mock,
         }
         with Runner(
-            # pyrefly: ignore [bad-argument-type]
             name="test_session",
-            # pyrefly: ignore [bad-argument-type]
             scheduler_factories=scheduler_factories,
         ) as runner:
             role = Role(
@@ -761,10 +769,9 @@ class RunnerTest(TestWithTmpDir):
     def test_run_from_file_no_function_found(self, _) -> None:
         local_sched_mock = MagicMock()
         schedulers = {
-            "local_dir": lambda name, **kwargs: local_sched_mock,
-            "local": lambda name, **kwargs: local_sched_mock,
+            "local_dir": lambda session_name, **kwargs: local_sched_mock,
+            "local": lambda session_name, **kwargs: local_sched_mock,
         }
-        # pyrefly: ignore [bad-argument-type]
         with Runner(name="test_session", scheduler_factories=schedulers) as runner:
             component_path = get_full_path("distributed.py")
             with patch.object(runner, "run"):
@@ -857,8 +864,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            # pyrefly: ignore [bad-argument-type]
-            scheduler_factories={"local_dir": lambda name, **kwargs: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             self.assertDictEqual(
                 {
