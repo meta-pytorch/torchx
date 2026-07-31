@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Trainer Example
 =============================================
@@ -52,12 +54,12 @@ import argparse
 import os
 import sys
 import tempfile
-from typing import List, Optional
 
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
+from torch.distributed.elastic.multiprocessing import errors
 from torchx.examples.apps.lightning.data import (
     create_random_data,
     download_data,
@@ -69,12 +71,11 @@ from torchx.examples.apps.lightning.model import (
 )
 from torchx.examples.apps.lightning.profiler import SimpleLoggingProfiler
 
-
 # ensure data and module are on the path
 sys.path.append(".")
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="pytorch lightning TorchX example app")
     parser.add_argument(
         "--epochs", type=int, default=3, help="number of epochs to train"
@@ -83,7 +84,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--batch_size", type=int, default=32, help="batch size to use for training"
     )
-    parser.add_argument("--num_samples", type=int, default=10, help="num_samples")
+    parser.add_argument(
+        "--num_samples",
+        type=int,
+        default=32,
+        help="number of samples in the dataset",
+    )
     parser.add_argument(
         "--data_path",
         type=str,
@@ -111,7 +117,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def get_model_checkpoint(args: argparse.Namespace) -> Optional[ModelCheckpoint]:
+def get_model_checkpoint(args: argparse.Namespace) -> ModelCheckpoint | None:
     if not args.output_path:
         return None
     # Note: It is important that each rank behaves the same.
@@ -124,7 +130,8 @@ def get_model_checkpoint(args: argparse.Namespace) -> Optional[ModelCheckpoint]:
     )
 
 
-def main(argv: List[str]) -> None:
+@errors.record
+def main(argv: list[str]) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         args = parse_args(argv)
 
@@ -136,7 +143,7 @@ def main(argv: List[str]) -> None:
         if not args.data_path:
             data_path = os.path.join(tmpdir, "data")
             os.makedirs(data_path)
-            create_random_data(data_path)
+            create_random_data(data_path, args.num_samples)
         else:
             data_path = download_data(args.data_path, tmpdir)
 

@@ -5,8 +5,9 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import unittest
-from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, patch
 
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
@@ -14,19 +15,27 @@ from torchx.schedulers.docker_scheduler import DockerScheduler
 from torchx.schedulers.local_scheduler import LocalScheduler
 
 
-class spy_load_group:
-    def __call__(
-        self,
-        group: str,
-        default: Dict[str, Any],
-        ignore_missing: Optional[bool] = False,
-    ) -> Dict[str, Any]:
-        return default
-
-
 class SchedulersTest(unittest.TestCase):
-    @patch("torchx.schedulers.load_group", new_callable=spy_load_group)
-    def test_get_local_schedulers(self, mock_load_group: MagicMock) -> None:
+    @patch("torchx.schedulers.plugins")
+    def test_plugins_override_defaults(self, plugins_mock: MagicMock) -> None:
+        """When plugins return non-empty dict, defaults are not used."""
+        sentinel = MagicMock()
+        plugins_mock.registry.return_value.get.return_value = {"custom_sched": sentinel}
+        result = get_scheduler_factories()
+        self.assertEqual(
+            result,
+            {"custom_sched": sentinel},
+            "should return plugin result when non-empty",
+        )
+        self.assertNotIn(
+            "local_cwd",
+            result,
+            "defaults should be skipped when plugins return non-empty",
+        )
+
+    @patch("torchx.schedulers.plugins")
+    def test_get_local_schedulers(self, plugins_mock: MagicMock) -> None:
+        plugins_mock.registry.return_value.get.return_value = {}
         schedulers = {}
         for k, v in get_scheduler_factories().items():
             try:

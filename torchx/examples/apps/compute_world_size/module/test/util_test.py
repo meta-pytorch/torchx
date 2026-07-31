@@ -3,6 +3,8 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 import os
 import random
 import unittest
@@ -24,8 +26,8 @@ class UtilTest(unittest.TestCase):
                     "rank": 0,
                     "world_size": 1,
                     "master_addr": "localhost",
-                    # ephemeral port range in linux
-                    "master_port": random.randint(32768, 60999),
+                    # specifying 0 as master_port makes TCPStore chose a free random port
+                    "master_port": 0,
                     "backend": "gloo",
                 }
             }

@@ -81,14 +81,14 @@ class ArgJTest(unittest.TestCase):
         )
         self.assertEqual(
             StructuredJArgument(nnodes=2, nproc_per_node=8),
-            StructuredJArgument.parse_from(h="aws_trn1.2xl", j="2x8"),
+            StructuredJArgument.parse_from(h="aws_trn1.2xlarge", j="2x8"),
         )
 
         with self.assertRaisesRegex(
             ValueError,
-            "nproc_per_node cannot be inferred from GPU count. `aws_trn1.32xl` is not a GPU instance.",
+            "nproc_per_node cannot be inferred from GPU count. `aws_trn1.32xlarge` is not a GPU instance.",
         ):
-            StructuredJArgument.parse_from(h="aws_trn1.32xl", j="2")
+            StructuredJArgument.parse_from(h="aws_trn1.32xlarge", j="2")
 
         with self.assertRaisesRegex(ValueError, "Invalid format for `-j"):
             StructuredJArgument.parse_from(h="aws_p4d.24xlarge", j="2x2x2")

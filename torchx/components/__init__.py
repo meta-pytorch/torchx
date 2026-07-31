@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module contains a collection of builtin TorchX components. The directory
 structure is organized by component category. Components are simply
@@ -12,7 +14,7 @@ of job definitions. The functions that return ``specs.AppDef`` in this
 module are what we refer to as components.
 
 You can browse the library of components in the ``torchx.components`` module
-or on our :ref:`docs page<index:Components Library>`.
+or on our :doc:`docs page</components/overview>`.
 
 Using Builtins
 ---------------------------
@@ -82,10 +84,10 @@ the :py:func:`torchx.components.dist.ddp` builtin.
     return specs.AppDef(
         name=os.path.basename(script),
         roles=[
-            spec.Role(
+            specs.Role(
                 name="trainer",
                 image=image,
-                resource=specs.named_resources[host],
+                resource=specs.resource(h=host),
                 num_replicas=nnodes,
                 entrypoint="python",
                 args=[
@@ -94,7 +96,7 @@ the :py:func:`torchx.components.dist.ddp` builtin.
                     "--rdzv_backend=c10d",
                     "--rdzv_endpoint=localhost:5900",
                     f"--nnodes={nnodes}",
-                    f"--nprocs_per_node={nprocs_per_node}",
+                    f"--nprocs_per_node={nproc_per_node}",
                     "-m",
                     script,
                     *script_args,
@@ -179,7 +181,7 @@ To validate that you've defined your component correctly you can either:
 
 1. (easiest) Dryrun your component's ``--help`` with the cli: ``torchx run --dryrun ~/component.py:train --help``
 2. Use the component :ref:`linter<specs:Component Linter>`
-   (see `dist_test.py <https://github.com/pytorch/torchx/blob/main/torchx/components/test/dist_test.py>`_ as an example)
+   (see `dist_test.py <https://github.com/meta-pytorch/torchx/blob/main/torchx/components/test/dist_test.py>`_ as an example)
 
 
 Running as a Job
@@ -187,7 +189,7 @@ Running as a Job
 
 You can run a component as a job with the :ref:`torchx cli<cli:CLI>` or programmatically with
 the :ref:`torchx.runner<runner:torchx.runner>`. Both are identical, in fact the
-cli uses the runner under the hood, so the choice is yours. The `quickstart <../quickstart.md>`_
+cli uses the runner under the hood, so the choice is yours. The :doc:`quickstart </quickstart>`
 guide walks though the basics for you to get started.
 
 Programmatic Run
@@ -296,20 +298,13 @@ imagine the component is defined as:
    * ``*args=["--help"]``: ``torchx run comp.py:f -- --help``
    * ``*args=["--i", "2"]``: ``torchx run comp.py:f --i 1 -- --i 2``
 
-Run in a Pipeline
---------------------------------
-
-The :ref:`torchx.pipelines<pipelines:torchx.pipelines>` define adapters that
-convert a torchx component into the object that represents a pipeline "stage" in the
-target pipeline platform (see :ref:`Pipelines` for a list of supported pipeline orchestrators).
-
 Additional Resources
 -----------------------
 
 See:
 
 1. Components defined in this module as expository examples
-2. Defining your own component `quick start guide <../quickstart.md>`_
+2. Defining your own component :doc:`quick start guide </quickstart>`
 3. Component best practices :ref:`guide<component_best_practices:Component Best Practices>`
 4. App best practices :ref:`guide<app_best_practices:App Best Practices>`
 

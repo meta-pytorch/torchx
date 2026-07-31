@@ -1,11 +1,20 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+import importlib.resources
+
 from torchx.util.entrypoints import load
+
+
+def _version() -> str:
+    # use importlib.resources to support zipped packages and single-file executables
+    return importlib.resources.read_text("torchx", "version.txt").strip()
+
 
 # Follows PEP-0440 version scheme guidelines
 # https://www.python.org/dev/peps/pep-0440/#version-scheme
@@ -16,7 +25,7 @@ from torchx.util.entrypoints import load
 # 0.1.0bN  # Beta release
 # 0.1.0rcN  # Release Candidate
 # 0.1.0  # Final release
-__version__ = "0.7.0dev0"
+__version__: str = _version()
 
 
 # Use the github container registry images corresponding to the current package

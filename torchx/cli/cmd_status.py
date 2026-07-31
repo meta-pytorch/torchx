@@ -5,10 +5,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
+import json
 import logging
 import sys
-from typing import List, Optional
 
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner import get_runner
@@ -28,7 +30,7 @@ _REPLICA_FORMAT_TEMPLATE_DETAILED = """\n  ${role}[${replica_id}]:
 _LINE_WIDTH = 100
 
 
-def parse_list_arg(arg: str) -> Optional[List[str]]:
+def parse_list_arg(arg: str) -> list[str] | None:
     if not arg:
         return None
     return arg.split(",")
@@ -44,6 +46,11 @@ class CmdStatus(SubCommand):
         subparser.add_argument(
             "--roles", type=str, default="", help="comma separated roles to filter"
         )
+        subparser.add_argument(
+            "--json",
+            action="store_true",
+            help="output the status in JSON format",
+        )
 
     def run(self, args: argparse.Namespace) -> None:
         app_handle = args.app_handle
@@ -52,7 +59,10 @@ class CmdStatus(SubCommand):
         app_status = runner.status(app_handle)
         filter_roles = parse_list_arg(args.roles)
         if app_status:
-            print(app_status.format(filter_roles))
+            if args.json:
+                print(json.dumps(app_status.to_json(filter_roles)))
+            else:
+                print(app_status.format(filter_roles))
         else:
             logger.error(
                 f"AppDef: {app_id},"

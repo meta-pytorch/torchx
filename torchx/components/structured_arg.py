@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Defines methods for structured (higher order) component argument parsing.
 Use the functionalities defined in this module to author components
@@ -23,12 +25,10 @@ Examples:
     with an experiment tracker. The ``/`` delimiter is a natural way to group runs within experiments.
 
 """
+
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-
-from pyre_extensions import none_throws
 
 from torchx import specs
 
@@ -44,8 +44,8 @@ class StructuredNameArgument:
     @staticmethod
     def parse_from(
         name: str,
-        m: Optional[str] = None,
-        script: Optional[str] = None,
+        m: str | None = None,
+        script: str | None = None,
         default_experiment_name: str = "default-experiment",
     ) -> "StructuredNameArgument":
         """
@@ -146,7 +146,8 @@ class StructuredNameArgument:
             if m:  # use the last module name
                 run_name = m.rpartition(".")[2]
             else:  # use script name w/ no extension
-                run_name = Path(none_throws(script)).stem
+                assert script, "`script` can't be `None` here due checks above"
+                run_name = Path(script).stem
         return StructuredNameArgument(
             experiment_name or default_experiment_name, run_name
         )
@@ -191,12 +192,12 @@ class StructuredJArgument:
 
             .. doctest::
 
-                >>> str(StructuredJArgument.parse_from(h="aws_trn1.32xl", j="2"))
+                >>> str(StructuredJArgument.parse_from(h="aws_trn1.32xlarge", j="2"))
                 Traceback (most recent call last):
                     ...
-                ValueError: nproc_per_node cannot be inferred from GPU count. `trn1.32xl` is not a GPU instance. ...
+                ValueError: nproc_per_node cannot be inferred from GPU count. `trn1.32xlarge` is not a GPU instance. ...
 
-                >>> str(StructuredJArgument.parse_from(h="aws_trn1.32xl", j="2x16"))
+                >>> str(StructuredJArgument.parse_from(h="aws_trn1.32xlarge", j="2x16"))
                 '2x16'
 
         """

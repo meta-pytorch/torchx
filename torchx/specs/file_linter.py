@@ -5,22 +5,24 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import abc
 import argparse
 import ast
 import inspect
+import sys
 from dataclasses import dataclass
-from typing import Callable, cast, Dict, List, Optional, Tuple
+from typing import Callable
 
 from docstring_parser import parse
 from torchx.util.io import read_conf_file
 from torchx.util.types import none_throws
 
-
 # pyre-ignore-all-errors[16]
 
 
-def _get_default_arguments_descriptions(fn: Callable[..., object]) -> Dict[str, str]:
+def _get_default_arguments_descriptions(fn: Callable[..., object]) -> dict[str, str]:
     parameters = inspect.signature(fn).parameters
     args_decs = {}
     for parameter_name in parameters.keys():
@@ -29,7 +31,11 @@ def _get_default_arguments_descriptions(fn: Callable[..., object]) -> Dict[str, 
     return args_decs
 
 
-class TorchXArgumentHelpFormatter(argparse.HelpFormatter):
+class TorchXArgumentHelpFormatter(
+    argparse.RawDescriptionHelpFormatter,
+    argparse.ArgumentDefaultsHelpFormatter,
+    argparse.MetavarTypeHelpFormatter,
+):
     """Help message formatter which adds default values and required to argument help.
 
     If the argument is required, the class appends `(required)` at the end of the help message.
@@ -50,7 +56,7 @@ class TorchXArgumentHelpFormatter(argparse.HelpFormatter):
         return help
 
 
-def get_fn_docstring(fn: Callable[..., object]) -> Tuple[str, Dict[str, str]]:
+def get_fn_docstring(fn: Callable[..., object]) -> tuple[str, dict[str, str]]:
     """
     Parses the function and arguments description from the provided function. Docstring should be in
     `google-style format <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_
@@ -68,7 +74,7 @@ def get_fn_docstring(fn: Callable[..., object]) -> Tuple[str, Dict[str, str]]:
             if the description
     """
     default_fn_desc = f"""{fn.__name__} TIP: improve this help string by adding a docstring
-to your component (see: https://pytorch.org/torchx/latest/component_best_practices.html)"""
+to your component (see: https://meta-pytorch.org/torchx/latest/component_best_practices.html)"""
     args_description = _get_default_arguments_descriptions(fn)
     func_description = inspect.getdoc(fn)
     if not func_description:
@@ -79,7 +85,7 @@ to your component (see: https://pytorch.org/torchx/latest/component_best_practic
             args_description[param.arg_name] = param.description
     short_func_description = docstring.short_description or default_fn_desc
     if docstring.long_description:
-        short_func_description += " ..."
+        short_func_description += "\n" + docstring.long_description
     return (short_func_description or default_fn_desc, args_description)
 
 
@@ -92,9 +98,9 @@ class LinterMessage:
     severity: str = "error"
 
 
-class TorchxFunctionValidator(abc.ABC):
+class ComponentFunctionValidator(abc.ABC):
     @abc.abstractmethod
-    def validate(self, app_specs_func_def: ast.FunctionDef) -> List[LinterMessage]:
+    def validate(self, app_specs_func_def: ast.FunctionDef) -> list[LinterMessage]:
         """
         Method to call to validate the provided function def.
         """
@@ -110,8 +116,58 @@ class TorchxFunctionValidator(abc.ABC):
         )
 
 
-class TorchxFunctionArgsValidator(TorchxFunctionValidator):
-    def validate(self, app_specs_func_def: ast.FunctionDef) -> List[LinterMessage]:
+def OK() -> list[LinterMessage]:
+    return []  # empty linter error means validation passes
+
+
+def is_primitive(arg: ast.expr) -> bool:
+    # whether the arg is a primitive type (e.g. int, float, str, bool)
+    return isinstance(arg, ast.Name)
+
+
+def get_generic_type(arg: ast.expr) -> ast.expr:
+    # returns the slice expr of a subscripted type
+    # `arg` must be an instance of ast.Subscript (caller checks)
+    # in this validator's context, this is the generic type of a container type
+    # e.g. for Optional[str] returns the expr for str
+
+    assert isinstance(arg, ast.Subscript)  # e.g. arg = C[T]
+
+    if isinstance(arg.slice, ast.Index):  # python>=3.10
+        # pyrefly: ignore [missing-attribute]
+        return arg.slice.value
+    else:  # python-3.9
+        return arg.slice
+
+
+def get_optional_type(arg: ast.expr) -> ast.expr | None:
+    """
+    Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if ``arg``
+    is not an ``Optional``. Handles both:
+        1. ``typing.Optional[T]`` (python<3.10)
+        2.  ``T | None`` or ``None | T`` (python>=3.10 - PEP 604)
+    """
+    # case 1: 'a: Optional[T]'
+    # pyrefly: ignore [missing-attribute]
+    if isinstance(arg, ast.Subscript) and arg.value.id == "Optional":
+        return get_generic_type(arg)
+
+    # case 2: 'a: T | None' or 'a: None | T'
+    if sys.version_info >= (3, 10):  # PEP 604 introduced in python-3.10
+        if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.BitOr):
+            if isinstance(arg.right, ast.Constant) and arg.right.value is None:
+                return arg.left
+            if isinstance(arg.left, ast.Constant) and arg.left.value is None:
+                return arg.right
+
+    # case 3: is not optional
+    return None
+
+
+class ArgTypeValidator(ComponentFunctionValidator):
+    """Validates component function's argument types."""
+
+    def validate(self, app_specs_func_def: ast.FunctionDef) -> list[LinterMessage]:
         linter_errors = []
         for arg_def in app_specs_func_def.args.args:
             arg_linter_errors = self._validate_arg_def(app_specs_func_def.name, arg_def)
@@ -127,56 +183,85 @@ class TorchxFunctionArgsValidator(TorchxFunctionValidator):
         return linter_errors
 
     def _validate_arg_def(
-        self, function_name: str, arg_def: ast.arg
-    ) -> List[LinterMessage]:
-        if not arg_def.annotation:
-            return [
-                self._gen_linter_message(
-                    f"Arg {arg_def.arg} missing type annotation", arg_def.lineno
-                )
-            ]
-        if isinstance(arg_def.annotation, ast.Name):
+        self, function_name: str, arg: ast.arg
+    ) -> list[LinterMessage]:
+        arg_type = arg.annotation  # type hint
+
+        def ok() -> list[LinterMessage]:
+            # return value when validation passes (e.g. no linter errors)
             return []
-        complex_type_def = cast(ast.Subscript, none_throws(arg_def.annotation))
-        if complex_type_def.value.id == "Optional":
-            # ast module in python3.9 does not have ast.Index wrapper
-            if isinstance(complex_type_def.slice, ast.Index):
-                complex_type_def = complex_type_def.slice.value
-            else:
-                complex_type_def = complex_type_def.slice
-            # Check if type is Optional[primitive_type]
-            if isinstance(complex_type_def, ast.Name):
-                return []
-        # Check if type is Union[Dict,List]
-        type_name = complex_type_def.value.id
-        if type_name != "Dict" and type_name != "List":
-            desc = (
-                f"`{function_name}` allows only Dict, List as complex types."
-                f"Argument `{arg_def.arg}` has: {type_name}"
-            )
-            return [self._gen_linter_message(desc, arg_def.lineno)]
-        linter_errors = []
-        # ast module in python3.9 does not have objects wrapped in ast.Index
-        if isinstance(complex_type_def.slice, ast.Index):
-            sub_type = complex_type_def.slice.value
+
+        def err(reason: str) -> list[LinterMessage]:
+            msg = f"{reason} for argument {ast.unparse(arg)!r} in function {function_name!r}"
+            return [self._gen_linter_message(msg, arg.lineno)]
+
+        if not arg_type:
+            return err("Missing type annotation")
+
+        # Case 1: Annotated - extract the actual type
+        if (
+            isinstance(arg_type, ast.Subscript)
+            and hasattr(arg_type.value, "id")
+            and arg_type.value.id == "Annotated"
+        ):
+            generic_type = get_generic_type(arg_type)
+            if isinstance(generic_type, ast.Tuple) and len(generic_type.elts) > 0:
+                arg_type = generic_type.elts[0]
+
+        # Case 2: optional
+        if T := get_optional_type(arg_type):
+            # NOTE: optional types can be primitives or any of the allowed container types
+            #   so check if arg is an optional, and if so, run the rest of the validation with the unpacked type
+            arg_type = T
+
+        # Case 3: int, float, str, bool
+        if is_primitive(arg_type):
+            return ok()
+        # Case 4: Containers (Dict, List, Tuple)
+        elif isinstance(arg_type, ast.Subscript):
+            # pyrefly: ignore [missing-attribute]
+            container_type = arg_type.value.id
+
+            if container_type in ["Dict", "dict"]:
+                KV = get_generic_type(arg_type)
+
+                assert isinstance(KV, ast.Tuple)  # dict[K,V] has ast.Tuple slice
+
+                K, V = KV.elts
+                if not is_primitive(K):
+                    return err(f"Non-primitive key type {ast.unparse(K)!r}")
+                if not is_primitive(V):
+                    return err(f"Non-primitive value type {ast.unparse(V)!r}")
+                return ok()
+            elif container_type in ["List", "list"]:
+                T = get_generic_type(arg_type)
+                if is_primitive(T):
+                    return ok()
+                else:
+                    return err(f"Non-primitive element type {ast.unparse(T)!r}")
+            elif container_type in ["Tuple", "tuple"]:
+                E_N = get_generic_type(arg_type)
+                assert isinstance(E_N, ast.Tuple)  # tuple[...] has ast.Tuple slice
+
+                for e in E_N.elts:
+                    if not is_primitive(e):
+                        return err(f"Non-primitive element type '{ast.unparse(e)!r}'")
+
+                return ok()
+
+            return err(f"Unsupported container type {container_type!r}")
         else:
-            sub_type = complex_type_def.slice
-        if type_name == "Dict":
-            sub_type_tuple = cast(ast.Tuple, sub_type)
-            for el in sub_type_tuple.elts:
-                if not isinstance(el, ast.Name):
-                    desc = "Dict can only have primitive types"
-                    linter_errors.append(self._gen_linter_message(desc, arg_def.lineno))
-        elif not isinstance(sub_type, ast.Name):
-            desc = "List can only have primitive types"
-            linter_errors.append(self._gen_linter_message(desc, arg_def.lineno))
-        return linter_errors
+            return err(f"Unsupported argument type {ast.unparse(arg_type)!r}")
 
 
-class TorchxReturnValidator(TorchxFunctionValidator):
-    def _get_return_annotation(
-        self, app_specs_func_def: ast.FunctionDef
-    ) -> Optional[str]:
+class ReturnTypeValidator(ComponentFunctionValidator):
+    """Validates that component functions always return AppDef type"""
+
+    def __init__(self, supported_return_type: str) -> None:
+        super().__init__()
+        self._supported_return_type = supported_return_type
+
+    def _get_return_annotation(self, app_specs_func_def: ast.FunctionDef) -> str | None:
         return_def = app_specs_func_def.returns
         if not return_def:
             return None
@@ -185,19 +270,21 @@ class TorchxReturnValidator(TorchxFunctionValidator):
         elif isinstance(return_def, ast.Name):
             return return_def.id
         elif isinstance(return_def, ast.Str):
+            # pyrefly: ignore [bad-return]
             return return_def.s
         elif isinstance(return_def, ast.Constant):
+            # pyrefly: ignore [bad-return]
             return return_def.value
         else:
             return None
 
-    def validate(self, app_specs_func_def: ast.FunctionDef) -> List[LinterMessage]:
+    def validate(self, app_specs_func_def: ast.FunctionDef) -> list[LinterMessage]:
         """
         Validates return annotation of the torchx function. Current allowed annotations:
             * AppDef
             * specs.AppDef
         """
-        supported_return_annotation = "AppDef"
+        supported_return_annotation = self._supported_return_type
         return_annotation = self._get_return_annotation(app_specs_func_def)
         linter_errors = []
         if not return_annotation:
@@ -220,7 +307,7 @@ class TorchxReturnValidator(TorchxFunctionValidator):
         return linter_errors
 
 
-class TorchFunctionVisitor(ast.NodeVisitor):
+class ComponentFnVisitor(ast.NodeVisitor):
     """
     Visitor that finds the component_function and runs registered validators on it.
     Current registered validators:
@@ -238,12 +325,19 @@ class TorchFunctionVisitor(ast.NodeVisitor):
 
     """
 
-    def __init__(self, component_function_name: str) -> None:
-        self.validators = [
-            TorchxFunctionArgsValidator(),
-            TorchxReturnValidator(),
-        ]
-        self.linter_errors: List[LinterMessage] = []
+    def __init__(
+        self,
+        component_function_name: str,
+        validators: list[ComponentFunctionValidator] | None,
+    ) -> None:
+        if validators is None:
+            self.validators: list[ComponentFunctionValidator] = [
+                ArgTypeValidator(),
+                ReturnTypeValidator("AppDef"),
+            ]
+        else:
+            self.validators = validators
+        self.linter_errors: list[LinterMessage] = []
         self.component_function_name = component_function_name
         self.visited_function = False
 
@@ -258,7 +352,11 @@ class TorchFunctionVisitor(ast.NodeVisitor):
             self.linter_errors += validator.validate(node)
 
 
-def validate(path: str, component_function: str) -> List[LinterMessage]:
+def validate(
+    path: str,
+    component_function: str,
+    validators: list[ComponentFunctionValidator] | None = None,
+) -> list[LinterMessage]:
     """
     Validates the function to make sure it complies the component standard.
 
@@ -287,7 +385,7 @@ def validate(path: str, component_function: str) -> List[LinterMessage]:
             severity="error",
         )
         return [linter_message]
-    visitor = TorchFunctionVisitor(component_function)
+    visitor = ComponentFnVisitor(component_function, validators)
     visitor.visit(module)
     linter_errors = visitor.linter_errors
     if not visitor.visited_function:

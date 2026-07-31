@@ -4,12 +4,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import inspect
 import unittest
-from typing import cast, Dict, List, Optional, Union
+from typing import Annotated, cast, Optional, Union
 
-import typing_inspect
 from torchx.util.types import (
+    decode,
     decode_from_string,
     decode_optional,
     get_argparse_param_type,
@@ -22,20 +24,26 @@ from torchx.util.types import (
 
 
 def _test_complex_args(
-    arg1: int, arg2: Optional[List[str]], arg3: Union[float, int]
+    arg1: int,
+    arg2: list[str] | None,
+    arg3: Union[float, int],
 ) -> int:
     return 42
 
 
-def _test_dict(arg1: Dict[int, float]) -> int:
+def _test_dict(arg1: dict[int, float]) -> int:
     return 42
 
 
-def _test_list(arg1: List[float]) -> int:
+def _test_nested_object(arg1: dict[str, list[str]]) -> int:
     return 42
 
 
-def _test_complex_list(arg1: List[List[float]]) -> int:
+def _test_list(arg1: list[float]) -> int:
+    return 42
+
+
+def _test_complex_list(arg1: list[list[float]]) -> int:
     return 42
 
 
@@ -50,24 +58,21 @@ class TypesTest(unittest.TestCase):
         arg1_parameter = parameters["arg1"]
         arg1_type = decode_optional(arg1_parameter.annotation)
         self.assertTrue(arg1_type is int)
-
-        arg2_parameter = parameters["arg2"]
         arg2_type = decode_optional(parameters["arg2"].annotation)
-        self.assertTrue(typing_inspect.get_origin(arg2_type) is list)
-
+        self.assertTrue(getattr(arg2_type, "__origin__", None) is list)
         arg3_parameter = parameters["arg3"]
         arg3_type = decode_optional(arg3_parameter.annotation)
-        self.assertTrue(typing_inspect.get_origin(arg3_type) is Union)
+        self.assertTrue(
+            hasattr(arg3_type, "__origin__") and arg3_type.__origin__ is Union
+        )
 
     def test_is_primitive(self) -> None:
         parameters = inspect.signature(_test_complex_args).parameters
 
         arg1_parameter = parameters["arg1"]
-        arg1_type = decode_optional(arg1_parameter.annotation)
         self.assertTrue(is_primitive(arg1_parameter.annotation))
 
         arg2_parameter = parameters["arg2"]
-        arg2_type = decode_optional(parameters["arg2"].annotation)
         self.assertFalse(is_primitive(arg2_parameter.annotation))
 
     def test_is_bool(self) -> None:
@@ -80,7 +85,7 @@ class TypesTest(unittest.TestCase):
         encoded_value = "1=1.0,2=42.1,3=10"
 
         value = decode_from_string(encoded_value, parameters["arg1"].annotation)
-        value = cast(Dict[int, float], value)
+        value = cast(dict[int, float], value)
         self.assertEqual(3, len(value))
         self.assertEqual(float(1.0), value[1])
         self.assertEqual(float(42.1), value[2])
@@ -92,11 +97,30 @@ class TypesTest(unittest.TestCase):
         encoded_value = "1.0,42.2,3.9"
 
         value = decode_from_string(encoded_value, parameters["arg1"].annotation)
-        value = cast(List[float], value)
+        value = cast(list[float], value)
         self.assertEqual(3, len(value))
         self.assertEqual(float(1.0), value[0])
         self.assertEqual(float(42.2), value[1])
         self.assertEqual(float(3.9), value[2])
+
+    def test_decode(self) -> None:
+        encoded_value = "1.0,42.2,3.9"
+
+        dict_parameters = inspect.signature(_test_nested_object).parameters
+        list_parameters = inspect.signature(_test_list).parameters
+
+        value = {"a": ["1", "2"], "b": ["3", "4"]}
+        self.assertDictEqual(value, decode(value, dict_parameters["arg1"].annotation))
+
+        self.assertEqual(decode("true", bool), True)
+        self.assertEqual(decode("false", bool), False)
+
+        self.assertEqual(decode(None, int), None)
+
+        self.assertEqual(
+            decode_from_string(encoded_value, list_parameters["arg1"].annotation),
+            decode(encoded_value, list_parameters["arg1"].annotation),
+        )
 
     def test_decode_from_string_empty(self) -> None:
         parameters = inspect.signature(_test_list).parameters
@@ -121,6 +145,10 @@ class TypesTest(unittest.TestCase):
 
         self.assertDictEqual({"FOO": "v1,v2"}, to_dict("FOO=v1,v2"))
         self.assertDictEqual({"FOO": "v1;v2"}, to_dict("FOO=v1;v2"))
+
+        # Handles empty strings as a special case
+        self.assertDictEqual({"FOO": ""}, to_dict("FOO=''"))
+        self.assertDictEqual({"FOO": ""}, to_dict('FOO=""'))
 
         # trailing delimiters preserved
         # a delim without the next key should be interpreted as the value for FOO
@@ -165,6 +193,11 @@ class TypesTest(unittest.TestCase):
             to_dict("key1=value1,,foo=bar"),
         )
 
+        self.assertDictEqual(
+            {"FOO": "value with = and , and ;"},
+            to_dict('FOO="value with = and , and ;"'),
+        )
+
     def test_to_dict_malformed_literal(self) -> None:
         for malformed in ["FOO", "FOO,", "FOO;", "FOO=", "FOO=;BAR=v1"]:
             with self.subTest(malformed=malformed):
@@ -180,8 +213,8 @@ class TypesTest(unittest.TestCase):
             f: float,
             s: str,
             b: bool,
-            l: List[str],
-            m: Dict[str, str],
+            l: list[str],
+            m: dict[str, str],
             o: Optional[int],
         ) -> None:
             # component has to return an AppDef
@@ -196,6 +229,25 @@ class TypesTest(unittest.TestCase):
         self.assertEqual(str, get_argparse_param_type(params["l"]))
         self.assertEqual(str, get_argparse_param_type(params["m"]))
         self.assertEqual(str, get_argparse_param_type(params["o"]))
+
+    def test_get_argparse_param_type_annotated(self) -> None:
+        def fake_component(
+            s: Annotated[str, "-s"],
+            i: Annotated[int, "-i"],
+            l: Annotated[list[str], "-l"],
+        ) -> None:
+            pass
+
+        params = inspect.signature(fake_component).parameters
+        self.assertEqual(str, get_argparse_param_type(params["s"]))
+        self.assertEqual(int, get_argparse_param_type(params["i"]))
+        self.assertEqual(str, get_argparse_param_type(params["l"]))
+
+    def test_decode_annotated(self) -> None:
+        self.assertEqual("test", decode("test", Annotated[str, "-s"]))
+        self.assertTrue(decode("true", Annotated[bool, "-b"]))
+        self.assertFalse(decode("false", Annotated[bool, "-b"]))
+        self.assertEqual(["a", "b"], decode("a,b", Annotated[list[str], "-l"]))
 
     def test_none_throws(self) -> None:
         self.assertEqual(none_throws(10), 10)

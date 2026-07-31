@@ -4,31 +4,37 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import fnmatch
 import logging
 import os.path
+import re
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, TYPE_CHECKING, Union
+from typing import Any, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
+from torchx import settings
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
     Scheduler,
     split_lines,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.devices import get_device_mounts
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     BindMount,
+    CfgVal,
     DeviceMount,
     is_terminal,
     macros,
@@ -39,8 +45,6 @@ from torchx.specs.api import (
     VolumeMount,
 )
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
-from typing_extensions import TypedDict
-
 
 if TYPE_CHECKING:
     from docker import DockerClient
@@ -48,7 +52,7 @@ if TYPE_CHECKING:
 
 log: logging.Logger = logging.getLogger(__name__)
 
-CONTAINER_STATE: Dict[str, AppState] = {
+CONTAINER_STATE: dict[str, AppState] = {
     "created": AppState.SUBMITTED,
     "restarting": AppState.PENDING,
     "running": AppState.RUNNING,
@@ -61,14 +65,14 @@ CONTAINER_STATE: Dict[str, AppState] = {
 @dataclass
 class DockerContainer:
     image: str
-    command: List[str]
-    kwargs: Dict[str, object]
+    command: list[str]
+    kwargs: dict[str, object]
 
 
 @dataclass
 class DockerJob:
     app_id: str
-    containers: List[DockerContainer]
+    containers: list[DockerContainer]
 
     def __str__(self) -> str:
         return yaml.dump(self.containers)
@@ -82,6 +86,9 @@ LABEL_APP_ID: str = "torchx.pytorch.org/app-id"
 LABEL_ROLE_NAME: str = "torchx.pytorch.org/role-name"
 LABEL_REPLICA_ID: str = "torchx.pytorch.org/replica-id"
 
+# BC re-export — new code should import from torchx.settings
+ENV_TORCHX_IMAGE: str = settings.ENV_TORCHX_IMAGE
+
 NETWORK = "torchx"
 
 
@@ -91,11 +98,12 @@ def has_docker() -> bool:
 
         docker.from_env()
         return True
+    # pyrefly: ignore [unbound-name]
     except (ImportError, docker.errors.DockerException):
         return False
 
 
-def ensure_network(client: Optional["DockerClient"] = None) -> None:
+def ensure_network(client: "DockerClient | None" = None) -> None:
     """
     This creates the torchx docker network. Multi-process safe.
     """
@@ -119,11 +127,21 @@ def ensure_network(client: Optional["DockerClient"] = None) -> None:
                 raise
 
 
-class DockerOpts(TypedDict, total=False):
-    copy_env: Optional[List[str]]
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for DockerScheduler."""
+
+    copy_env: list[str] | None = None
+    """List of glob patterns of environment variables to copy if not set in AppDef. Ex: FOO_*"""
+
+    env: dict[str, str] | None = None
+    """Environment variables to be passed to the run. The separator sign can be either comma or semicolon (e.g. ENV1:v1,ENV2:v2,ENV3:v3 or ENV1:V1;ENV2:V2). Environment variables from env will be applied on top of the ones from copy_env."""
+
+    privileged: bool = False
+    """If true runs the container with elevated permissions. Equivalent to running with `docker run --privileged`."""
 
 
-class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
+class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     DockerScheduler is a TorchX scheduling interface to Docker.
 
@@ -200,7 +218,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
 
         return req.app_id
 
-    def _submit_dryrun(self, app: AppDef, cfg: DockerOpts) -> AppDryRunInfo[DockerJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[DockerJob]:
         from docker.types import DeviceRequest, Mount
 
         default_env = {}
@@ -215,9 +233,15 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             for k in keys:
                 default_env[k] = os.environ[k]
 
+        env = cfg.get("env")
+        if env:
+            assert isinstance(env, dict), f"env must be a dict, got {env}"
+            default_env.update(env)
+
         app_id = make_unique(app.name)
         req = DockerJob(app_id=app_id, containers=[])
-        rank0_name = f"{app_id}-{app.roles[0].name}-0"
+        # trim app_id and role name in case name is longer than 64 letters
+        rank0_name = f"{app_id[-30:]}-{app.roles[0].name[:30]}-0"
         for role in app.roles:
             mounts = []
             devices = []
@@ -256,14 +280,19 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
                     rank0_env="TORCHX_RANK0_HOST",
                 )
                 replica_role = values.apply(role)
-                name = f"{app_id}-{role.name}-{replica_id}"
-
+                # trim app_id and role name in case name is longer than 64 letters. Assume replica_id is less than 10_000. Remove invalid prefixes (https://github.com/moby/moby/blob/master/daemon/names/names.go#L6).
+                name = re.sub(
+                    r"^[^a-zA-Z0-9]+",
+                    "",
+                    f"{app_id[-30:]}-{role.name[:30]}-{replica_id}",
+                )
                 env = default_env.copy()
                 if replica_role.env:
                     env.update(replica_role.env)
 
                 # configure distributed host envs
                 env["TORCHX_RANK0_HOST"] = rank0_name
+                env[ENV_TORCHX_IMAGE] = replica_role.image
 
                 c = DockerContainer(
                     image=replica_role.image,
@@ -278,6 +307,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
                             LABEL_REPLICA_ID: str(replica_id),
                         },
                         "hostname": name,
+                        "privileged": cfg.get("privileged") or False,
                         "network": NETWORK,
                         "mounts": mounts,
                         "devices": devices,
@@ -292,9 +322,9 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
                 if resource.memMB >= 0:
                     # To support PyTorch dataloaders we need to set /dev/shm to
                     # larger than the 64M default.
-                    c.kwargs["mem_limit"] = c.kwargs[
-                        "shm_size"
-                    ] = f"{int(resource.memMB)}m"
+                    c.kwargs["mem_limit"] = c.kwargs["shm_size"] = (
+                        f"{int(resource.memMB)}m"
+                    )
                 if resource.cpu >= 0:
                     c.kwargs["nano_cpus"] = int(resource.cpu * 1e9)
                 if resource.gpu > 0:
@@ -305,14 +335,14 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
                     c.kwargs["device_requests"] = [
                         DeviceRequest(
                             count=resource.gpu,
-                            capabilities=[["compute"]],
+                            capabilities=[["compute", "utility"]],
                         )
                     ]
                 req.containers.append(c)
 
         return AppDryRunInfo(req, repr)
 
-    def _validate(self, app: AppDef, scheduler: str) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step
         pass
 
@@ -338,7 +368,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             )
         return containers[0]
 
-    def _get_containers(self, app_id: str) -> List["Container"]:
+    def _get_containers(self, app_id: str) -> list["Container"]:
         client = self._docker_client
         return client.containers.list(
             all=True, filters={"label": f"{LABEL_APP_ID}={app_id}"}
@@ -350,14 +380,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             container.stop()
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "copy_env",
-            type_=List[str],
-            default=None,
-            help="list of glob patterns of environment variables to copy if not set in AppDef. Ex: FOO_*",
-        )
-        return opts
+        return Opts.as_runopts()
 
     def _get_app_state(self, container: "Container") -> AppState:
         if container.status == "exited":
@@ -372,7 +395,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
             state = CONTAINER_STATE[container.status]
         return state
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         roles = {}
         roles_statuses = {}
 
@@ -425,11 +448,11 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         c = self._get_container(app_id, role_name, k)
 
@@ -456,7 +479,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         else:
             return logs
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         unique_apps = {
             ListAppResponse(
                 app_id=cntr.labels[LABEL_APP_ID], state=self._get_app_state(cntr)
@@ -468,7 +491,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[DockerOpts]):
         return list(unique_apps)
 
 
-def _to_str(a: Union[str, bytes]) -> str:
+def _to_str(a: str | bytes) -> str:
     if isinstance(a, bytes):
         a = a.decode("utf-8")
     return a

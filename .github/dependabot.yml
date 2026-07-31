@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 10
+    ignore:
+      # Formatter toolchain is company-controlled: torchx mirrors the shared
+      # tools/lint/pyfmt/reqs/requirements-fmt.txt. Do not let dependabot bump
+      # these — divergence breaks pyfmt company-wide (see fmt-requirements.txt).
+      - dependency-name: "black"
+      - dependency-name: "ruff-api"
+      - dependency-name: "ufmt"
+      - dependency-name: "usort"
+      - dependency-name: "stdlibs"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 5

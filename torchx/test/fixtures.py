@@ -4,20 +4,22 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Useful test fixtures (classes that you can subclass your python ``unittest.TestCase``)
 """
+
 import os
 import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, TypeVar, Union
+from typing import Callable, Iterable, TypeVar
 
 from torch.distributed.elastic.multiprocessing import Std
 from torch.distributed.launcher import elastic_launch, LaunchConfig
-
 from torchx.schedulers.test import test_util
 
 IS_CI: bool = os.getenv("CI", "false").lower() == "true"
@@ -74,6 +76,14 @@ class TestWithTmpDir(unittest.TestCase):
         f.touch()
         return f
 
+    def mkdir(self, dirpath: str) -> Path:
+        """
+        Creates a directory in the test's tmpdir and returns the ``Path`` to the created directory
+        """
+        d = self.tmpdir / dirpath
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
     def write(self, filepath: str, content: Iterable[str]) -> Path:
         """
         Creates a file given the filepath (can be a file name or a relative path) in the test's tmpdir
@@ -93,7 +103,7 @@ class TestWithTmpDir(unittest.TestCase):
             fout.writelines(content)
         return f
 
-    def write_shell_script(self, script_path: str, content: List[str]) -> Path:
+    def write_shell_script(self, script_path: str, content: list[str]) -> Path:
         """
         Writes a bash script with the body as provided by ``content`` in the test's tmp directory.
         The content should not include the shebang (``#!/bin/bash``) header as one is added automatically.
@@ -116,7 +126,7 @@ class TestWithTmpDir(unittest.TestCase):
             test_util.write_shell_script(str(self.tmpdir), script_path, content)
         )
 
-    def read(self, filepath: Union[str, Path]) -> List[str]:
+    def read(self, filepath: str | Path) -> list[str]:
         """
         Reads the entire contents of the file into a list.
         The ``filepath`` is assumed to be relative to the test tmpdir
@@ -133,6 +143,109 @@ class TestWithTmpDir(unittest.TestCase):
 
         with open(self.tmpdir / filepath, "r") as fin:
             return fin.readlines()
+
+    def assertDirIsEmpty(self, directory: str | Path) -> None:
+        """
+        Asserts that the given directory exists but is empty.
+        If ``dir`` is a relative path, it is assumed to be relative to this test's ``tmpdir``.
+        """
+        directory = Path(directory)
+        d = directory if directory.is_absolute() else self.tmpdir / directory
+        self.assertTrue(d.is_dir(), f"{d} is not a directory")
+        self.assertEqual(0, len(list(d.iterdir())), f"{d} is not empty")
+
+    def assertDirTree(self, root: str | Path, tree: dict[str, object]) -> None:
+        """
+        Asserts that the given ``root`` has the directory structure as specified by ``tree``.
+        If ``root`` is a relative path, it is assumed to be relative to this test's ``tmpdir``
+
+        Usage:
+
+        .. code-block:: python
+            self.assertDirTree(
+                "out",
+                {
+                    "setup.py": "",
+                    "torchx": {
+                        "__init__.py": "",
+                        "version.py": "0.8.0dev0",
+                        "specs": {
+                            "__init__.py": "",
+                            "api.py": "",
+                        },
+                    },
+                },
+            )
+        """
+        root = Path(root)
+        d = root if root.is_absolute() else self.tmpdir / root
+        self.assertTrue(d.is_dir(), f"{d} is not a directory")
+
+        def _assert_tree(current_dir: Path, subtree: dict[str, object]) -> None:
+            # Check that the directory contains exactly the keys in subtree
+            actual_entries = {p.name for p in current_dir.iterdir()}
+            expected_entries = set(subtree.keys())
+            self.assertSetEqual(
+                expected_entries,
+                actual_entries,
+                f"contents of the dir `{current_dir}` do not match the expected",
+            )
+            for name, value in subtree.items():
+                path = current_dir / name
+                if isinstance(value, dict):
+                    self.assertTrue(path.is_dir(), f"{path} is not a directory")
+                    _assert_tree(path, value)
+                else:
+                    self.assertTrue(path.is_file(), f"{path} is not a file")
+                    if value != "":
+                        with open(path, "r") as f:
+                            content = f.read().strip()
+                        self.assertEqual(
+                            content,
+                            value,
+                            f"file {path} content {content!r} does not match expected {value!r}",
+                        )
+
+        _assert_tree(d, tree)
+
+    def create_dir_tree(self, root: str, tree: dict[str, object]) -> Path:
+        """
+        Creates the directory structure as specified by ``tree`` under ``self.tmpdir / root``
+
+        Usage:
+
+        .. code-block:: python
+            self.createDirTree(
+                "out",
+                {
+                    "README.md": "foobar",
+                    "torchx": {
+                        "__init__.py": "",
+                        "version.py": "0.8.0dev0",
+                        "specs": {
+                            "__init__.py": "",
+                            "api.py": "",
+                        },
+                    },
+                },
+            )
+        """
+        d = self.tmpdir / root
+        d.mkdir(parents=True, exist_ok=True)
+
+        def _create_tree(current_dir: Path, subtree: dict[str, object]) -> None:
+            for name, value in subtree.items():
+                path = current_dir / name
+                if isinstance(value, dict):
+                    path.mkdir(parents=True, exist_ok=True)
+                    _create_tree(path, value)
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(path, "w") as f:
+                        f.write(str(value))
+
+        _create_tree(d, tree)
+        return d
 
 
 Ret = TypeVar("Ret")
@@ -170,7 +283,7 @@ class DistributedTestCase(TestWithTmpDir):
 
     def run_ddp(
         self, world_size: int, fn: Callable[..., Ret]
-    ) -> Callable[..., Dict[int, Ret]]:
+    ) -> Callable[..., dict[int, Ret]]:
         """
         Runs ``world_size`` copies of ``fn`` (one on each sub-process) as a DDP job on the local host.
 
@@ -188,8 +301,6 @@ class DistributedTestCase(TestWithTmpDir):
             rdzv_endpoint="localhost:0",
             max_restarts=0,
             monitor_interval=0.01,
-            log_dir=str(self.tmpdir),
-            tee=Std.ALL,
         )
 
         return elastic_launch(config, entrypoint=fn)

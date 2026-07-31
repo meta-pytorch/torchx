@@ -4,21 +4,21 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import inspect
 import logging
 import sys
 from dataclasses import asdict
 from json import dumps
 from types import ModuleType
-from typing import Callable, cast, Dict, List, Optional, Type
+from typing import Callable, cast
 
 from torchx.cli.cmd_log import get_logs
 from torchx.components.integration_tests.component_provider import ComponentProvider
 from torchx.runner import get_runner
 from torchx.specs import AppHandle, AppState, AppStatus, CfgVal
-
 from torchx.util.types import none_throws
-
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -44,9 +44,9 @@ class IntegComponentTest:
         module: ModuleType,
         image: str,
         scheduler: str,
-        cfg: Dict[str, CfgVal],
+        cfg: dict[str, CfgVal],
         dryrun: bool = False,
-        workspace: Optional[str] = None,
+        workspace: str | None = None,
     ) -> None:
         component_providers = [
             cast(Callable[..., ComponentProvider], cls)(scheduler, image)
@@ -63,7 +63,7 @@ class IntegComponentTest:
                 provider.tearDown()
 
         # submit all the jobs asynchronously
-        jobs: Dict[AppHandle, AppStatus] = {}
+        jobs: dict[AppHandle, AppStatus] = {}
         runner = get_runner("test-runner")
 
         for app_def in app_defs:
@@ -103,7 +103,7 @@ class IntegComponentTest:
             print(f"=== END LOG {app_handle} ({status.state}) ===")
 
         # log summary of states
-        group_by_state: Dict[AppState, List[AppHandle]] = {}
+        group_by_state: dict[AppState, list[AppHandle]] = {}
         for app_handle, status in jobs.items():
             handles = group_by_state.setdefault(status.state, [])
             handles.append(app_handle)
@@ -118,7 +118,7 @@ class IntegComponentTest:
 
     def _get_component_providers(
         self, module: ModuleType
-    ) -> List[Type[ComponentProvider]]:
+    ) -> list[type[ComponentProvider]]:
         providers = []
         for attr_name in dir(module):
             attr = getattr(module, attr_name)

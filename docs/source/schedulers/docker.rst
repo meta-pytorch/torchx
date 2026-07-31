@@ -13,7 +13,7 @@ Docker
    :members:
 
 Reference
-~~~~~~~~~~~~
+------------
 
 .. autofunction:: create_scheduler
 

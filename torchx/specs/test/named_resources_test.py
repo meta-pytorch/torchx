@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 
 import unittest
 from unittest.mock import MagicMock, patch
@@ -45,3 +47,19 @@ class NamedResourcesTest(unittest.TestCase):
     def test_null_and_missing_named_resources(self) -> None:
         self.assertEqual(named_resources["NULL"], NULL_RESOURCE)
         self.assertEqual(named_resources["MISSING"], NULL_RESOURCE)
+
+    def test_custom_named_resources_env_var(self) -> None:
+        import sys
+
+        mock_module = type(sys)("test_module")
+        mock_module.NAMED_RESOURCES = {"test_resource": mock_resource}
+
+        with patch.dict(sys.modules, {"test_module": mock_module}):
+            with patch(
+                "torchx.specs.CUSTOM_NAMED_RESOURCES", mock_module.NAMED_RESOURCES
+            ):
+                import torchx.specs
+
+                factories = torchx.specs._load_named_resources()
+
+                self.assertIn("test_resource", factories)

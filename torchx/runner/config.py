@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Status: Beta
 
@@ -71,7 +73,7 @@ CLI Usage
 
 #. In addition, it is possible to specify a different config other than .torchxconfig to
    load at runtime. Requirements are that the config path is specified by enviornment
-   variable TORCHX_CONFIG. It also disables hierarchy loading configs from multiple
+   variable TORCHXCONFIG. It also disables hierarchy loading configs from multiple
    directories as the cases otherwise.
 
 #. User level .torchxconfig
@@ -155,20 +157,23 @@ You may also specify multiple directories (in preceding order) which is useful w
 you want to keep personal config overrides on top of a project defined default.
 
 """
+
 import configparser as configparser
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, TextIO
+from typing import Iterable, TextIO
 
+from torchx import settings
 from torchx.schedulers import get_scheduler_factories, Scheduler
 from torchx.specs import CfgVal, get_type_name
 from torchx.specs.api import runopt
-
+from torchx.util import entrypoints
 
 CONFIG_FILE = ".torchxconfig"
 CONFIG_PREFIX_DELIM = ":"
-ENV_TORCHXCONFIG = "TORCHXCONFIG"
+# BC re-export — new code should import from torchx.settings
+ENV_TORCHXCONFIG: str = settings.ENV_TORCHXCONFIG
 DEFAULT_CONFIG_DIRS = [str(Path.home()), str(Path.cwd())]
 
 _NONE = "None"
@@ -195,11 +200,15 @@ def _configparser() -> configparser.ConfigParser:
 
 
 def _get_scheduler(name: str) -> Scheduler:
-    schedulers = get_scheduler_factories()
+    schedulers = {
+        **get_scheduler_factories(),
+        **(entrypoints.load_group("torchx.schedulers.orchestrator") or {}),
+    }
     if name not in schedulers:
         raise ValueError(
             f"`{name}` is not a registered scheduler. Valid scheduler names: {schedulers.keys()}"
         )
+    # pyrefly: ignore [not-callable]
     sched = schedulers[name](session_name="_")
     return sched
 
@@ -210,10 +219,10 @@ def _fixme_placeholder(runopt: runopt, max_len: int = 60) -> str:
 
 
 def dump(
-    f: TextIO, schedulers: Optional[List[str]] = None, required_only: bool = False
+    f: TextIO, schedulers: list[str] | None = None, required_only: bool = False
 ) -> None:
     """
-    Dumps a default INI-style config template containing the :py:class:torchx.specs.runopts for the
+    Dumps a default INI-style config template containing the :py:class:`torchx.specs.runopts` for the
     given scheduler names into the file-like object specified by ``f``.
     If no ``schedulers`` are specified dumps all known registered schedulers.
 
@@ -239,7 +248,11 @@ def dump(
     if schedulers:
         scheds = schedulers
     else:
-        scheds = get_scheduler_factories().keys()
+        scheduler_factories = {
+            **get_scheduler_factories(),
+            **(entrypoints.load_group("torchx.schedulers.orchestrator") or {}),
+        }
+        scheds = scheduler_factories.keys()
 
     config = _configparser()
     for sched_name in scheds:
@@ -259,11 +272,18 @@ def dump(
                     continue
 
                 # serialize list elements with `;` delimiter (consistent with torchx cli)
-                if opt.opt_type == List[str]:
+                if opt.is_type_list_of_str:
                     # deal with empty or None default lists
                     if opt.default:
                         # pyre-ignore[6] opt.default type checked already as List[str]
                         val = ";".join(opt.default)
+                    else:
+                        val = _NONE
+                elif opt.is_type_dict_of_str:
+                    # deal with empty or None default lists
+                    if opt.default:
+                        # pyre-ignore[16] opt.default type checked already as Dict[str, str]
+                        val = ";".join([f"{k}:{v}" for k, v in opt.default.items()])
                     else:
                         val = _NONE
                 else:
@@ -275,8 +295,8 @@ def dump(
 
 def apply(
     scheduler: str,
-    cfg: Dict[str, CfgVal],
-    dirs: Optional[List[str]] = None,
+    cfg: dict[str, CfgVal],
+    dirs: list[str] | None = None,
 ) -> None:
     """
     Loads a ``.torchxconfig`` INI file from the specified directories in
@@ -316,8 +336,8 @@ def apply(
 
 def load_sections(
     prefix: str,
-    dirs: Optional[List[str]] = None,
-) -> Dict[str, Dict[str, str]]:
+    dirs: list[str] | None = None,
+) -> dict[str, dict[str, str]]:
     """
     Loads the content of the sections in the given ``.torchxconfig`` file
     that start with the specified prefix. Returns a map of maps of the
@@ -369,7 +389,7 @@ def load_sections(
 
     """
 
-    def strip_prefix(section_name: str) -> Optional[str]:
+    def strip_prefix(section_name: str) -> str | None:
         # returns the section_name with the prefix removed
         # or None if the section name does not match the prefix
         idx = section_name.find(CONFIG_PREFIX_DELIM)
@@ -380,7 +400,7 @@ def load_sections(
                 return section_name[idx + 1 :]
         return None
 
-    sections: Dict[str, Dict[str, str]] = {}
+    sections: dict[str, dict[str, str]] = {}
     for configfile in find_configs(dirs):
         with open(configfile, "r") as f:
             config = _configparser()
@@ -402,8 +422,8 @@ def load_sections(
 def get_configs(
     prefix: str,
     name: str,
-    dirs: Optional[List[str]] = None,
-) -> Dict[str, str]:
+    dirs: list[str] | None = None,
+) -> dict[str, str]:
     """
     Gets all the config values in the section ``["{prefix}:{name}"]``.
     Or an empty map if the section does not exist.
@@ -428,8 +448,8 @@ def get_config(
     prefix: str,
     name: str,
     key: str,
-    dirs: Optional[List[str]] = None,
-) -> Optional[str]:
+    dirs: list[str] | None = None,
+) -> str | None:
     """
     Gets the config value for the ``key`` in the section ``["{prefix}:{name}"]``.
     Or ``None`` if no section or key exists
@@ -451,7 +471,7 @@ def get_config(
     return get_configs(prefix, name, dirs).get(key, None)
 
 
-def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
+def find_configs(dirs: Iterable[str] | None = None) -> list[str]:
     """
     Finds and returns the filepath to ``.torchxconfig`` files based
     on the following logic:
@@ -468,6 +488,8 @@ def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
 
     config = os.getenv(ENV_TORCHXCONFIG)
     if config is not None:
+        if not config:
+            return []
         configfile = Path(config)
         if not configfile.is_file():
             raise FileNotFoundError(
@@ -480,12 +502,12 @@ def find_configs(dirs: Optional[Iterable[str]] = None) -> List[str]:
             dirs = DEFAULT_CONFIG_DIRS
         for d in dirs:
             configfile = Path(d) / CONFIG_FILE
-            if configfile.exists():
+            if os.access(configfile, os.R_OK):
                 config_files.append(str(configfile))
     return config_files
 
 
-def load(scheduler: str, f: TextIO, cfg: Dict[str, CfgVal]) -> None:
+def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
     """
     loads the section ``[{scheduler}]`` from the given
     configfile ``f`` (in .INI format) into the provided ``runcfg``, only adding
@@ -510,21 +532,26 @@ def load(scheduler: str, f: TextIO, cfg: Dict[str, CfgVal]) -> None:
                 # this also handles empty or None lists
                 cfg[name] = None
             else:
-                runopt = runopts.get(name)
+                opt = runopts.get(name)
 
-                if runopt is None:
+                if opt is None:
                     log.warning(
                         f"`{name} = {value}` was declared in the [{section}] section "
                         f" of the config file but is not a runopt of `{scheduler}` scheduler."
                         f" Remove the entry from the config file to no longer see this warning"
                     )
                 else:
-                    if runopt.opt_type is bool:
+                    if opt.opt_type is bool:
                         # need to handle bool specially since str -> bool is based on
                         # str emptiness not value (e.g. bool("False") == True)
                         cfg[name] = config.getboolean(section, name)
-                    elif runopt.opt_type is List[str]:
+                    elif opt.is_type_list_of_str:
                         cfg[name] = value.split(";")
+                    elif opt.is_type_dict_of_str:
+                        cfg[name] = {
+                            s.split(":", 1)[0]: s.split(":", 1)[1]
+                            for s in value.replace(",", ";").split(";")
+                        }
                     else:
                         # pyre-ignore[29]
-                        cfg[name] = runopt.opt_type(value)
+                        cfg[name] = opt.opt_type(value)

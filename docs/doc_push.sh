@@ -7,7 +7,7 @@
 
 #
 # Builds docs from the checkedout HEAD
-# and pushes the artifacts to gh-pages branch in github.com/pytorch/torchx
+# and pushes the artifacts to gh-pages branch in github.com/meta-pytorch/torchx
 #
 # 1. sphinx generated docs are copied to <repo-root>/<version>
 # 2. if a release tag is found on HEAD then redirects are copied to <repo-root>/latest
@@ -21,8 +21,8 @@
 #           |- main (redirects to the most recent ver in trunk, including release)
 #           |- latest (redirects to the most recent release)
 # If the most recent  release is 0.1.0 and main is at 0.1.1rc1 then,
-# https://pytorch.org/torchx/main -> https://pytorch.org/torchx/0.1.1rc1
-# https://pytorch.org/torchx/latest -> https://pytorch.org/torchx/0.1.0
+# https://meta-pytorch.org/torchx/main -> https://meta-pytorch.org/torchx/0.1.1rc1
+# https://meta-pytorch.org/torchx/latest -> https://meta-pytorch.org/torchx/0.1.0
 #
 # Redirects are done via Jekyll redirect-from  plugin. See:
 #   sources/scripts/create_redirect_md.py
@@ -54,11 +54,12 @@ else
     redirects=(latest main)
 fi
 
-echo "Installing torchx from $repo_root..."
+echo "Installing TorchX and Doc dependencies from $repo_root..."
 cd "$repo_root" || exit
+
+# Install torchx with dev and docs dependencies
 pip uninstall -y torchx
-pip install -r dev-requirements.txt
-python setup.py install
+pip install -e ".[dev,docs]"
 
 torchx_ver=$(python -c "import torchx; print(torchx.__version__)")
 
@@ -66,7 +67,7 @@ echo "Building torchx-$torchx_ver docs..."
 docs_dir=$repo_root/docs
 build_dir=$docs_dir/build
 cd "$docs_dir" || exit
-pip install -r requirements.txt
+
 make clean html
 echo "Doc build complete"
 
@@ -91,7 +92,23 @@ done
 
 "$docs_dir"/versions_html.py
 
+# Root redirect: /torchx/ -> /torchx/main/
+cat > index.md <<'REDIRECT'
+---
+layout: docs_redirect
+title: PyTorch | Redirect
+redirect_url: "/torchx/main"
+---
+REDIRECT
+
 git add .
+# A docs-neutral commit (e.g. a CI/dependency bump) produces no change to the
+# generated HTML, so there is nothing to commit. Exit cleanly instead of letting
+# `git commit` fail under `set -e` and turn the Docs Build workflow red.
+if git diff --cached --quiet; then
+    echo "No documentation changes to publish; nothing to commit."
+    exit 0
+fi
 git commit --quiet -m "[doc_push][$release_tag] built from $commit_id ($branch). Redirects: ${redirects[*]} -> $torchx_ver."
 
 if [ $dry_run -eq 1 ]; then

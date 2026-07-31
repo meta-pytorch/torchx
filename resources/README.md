@@ -11,7 +11,7 @@ See https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html for 
 
 #### Creating KFP
 
-    Source doc: https://www.kubeflow.org/docs/components/pipelines/installation/standalone-deployment/#deploying-kubeflow-pipelines
+    Source doc: https://www.kubeflow.org/docs/components/pipelines/legacy-v1/installation/standalone-deployment/#deploying-kubeflow-pipelines
 
     export PIPELINE_VERSION=1.8.1
     kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=$PIPELINE_VERSION"
@@ -60,7 +60,7 @@ point you the ENI and NAT that needs to be deleted manually.
 * The node groups in the EKS cluster HAVE to be spread to more than a single AZ, otherwise there
  will be problems with `istio-ingress`
 
-* KFP troubleshooting: https://www.kubeflow.org/docs/components/pipelines/troubleshooting/
+* KFP troubleshooting: https://www.kubeflow.org/docs/components/pipelines/legacy-v1/troubleshooting/
 
 * Enable Kubernetes nodes to access AWS account resources: https://stackoverflow.com/a/64617080/1446208
 

@@ -4,12 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 These components aim to make it easier to interact with inference and serving
 tools such as `torchserve <https://pytorch.org/serve/>`_.
 """
-
-from typing import Dict, Optional
 
 import torchx
 import torchx.specs as specs
@@ -19,7 +19,7 @@ def torchserve(
     model_path: str,
     management_api: str,
     image: str = torchx.IMAGE,
-    params: Optional[Dict[str, object]] = None,
+    params: dict[str, object] | None = None,
     dryrun: bool = False,
 ) -> specs.AppDef:
     """Deploys the provided model to the given torchserve management API

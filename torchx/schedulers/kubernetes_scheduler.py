@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 
 This contains the TorchX Kubernetes scheduler which can be used to run TorchX
@@ -23,41 +25,103 @@ Install Volcano:
     kubectl apply -f https://raw.githubusercontent.com/volcano-sh/volcano/v1.6.0/installer/volcano-development.yaml
 
 See the
-`Volcano Quickstart <https://github.com/volcano-sh/volcano#user-content-quick-start-guide>`_
+`Volcano Quickstart <https://github.com/volcano-sh/volcano>`_
 for more information.
+
+Pod Overlay
+===========
+
+You can overlay arbitrary Kubernetes Pod fields on generated pods by setting
+the ``kubernetes`` metadata on your role. The value can be:
+
+- A dict with the overlay structure
+- A resource URI pointing to a YAML file (e.g. ``file://``, ``s3://``, ``gs://``)
+
+Merge semantics:
+- **dict**: recursive merge (upsert)
+- **list**: append by default, replace if tuple (Python) or ``!!python/tuple`` tag (YAML)
+- **primitives**: replace
+
+.. code:: python
+
+    from torchx.specs import Role
+
+    # Dict overlay - lists append, tuples replace
+    role = Role(
+        name="trainer",
+        image="my-image:latest",
+        entrypoint="train.py",
+        metadata={
+            "kubernetes": {
+                "spec": {
+                    "nodeSelector": {"gpu": "true"},
+                    "tolerations": [{"key": "nvidia.com/gpu", "operator": "Exists"}],  # appends
+                    "volumes": ({"name": "my-volume", "emptyDir": {}},)  # replaces
+                }
+            }
+        }
+    )
+
+    # File URI overlay
+    role = Role(
+        name="trainer",
+        image="my-image:latest",
+        entrypoint="train.py",
+        metadata={
+            "kubernetes": "file:///path/to/pod_overlay.yaml"
+        }
+    )
+
+CLI usage with builtin components:
+
+.. code:: bash
+
+    $ torchx run --scheduler kubernetes dist.ddp \\
+        --metadata kubernetes=file:///path/to/pod_overlay.yaml \\
+        --script train.py
+
+Example ``pod_overlay.yaml``:
+
+.. code:: yaml
+
+    spec:
+      nodeSelector:
+        node.kubernetes.io/instance-type: p4d.24xlarge
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      volumes: !!python/tuple
+        - name: my-volume
+          emptyDir: {}
+
+The overlay is deep-merged with the generated pod, preserving existing fields
+and adding or overriding specified ones.
 """
 
 import json
 import logging
+import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import (
-    Any,
-    cast,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    TYPE_CHECKING,
-)
+from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
 
 import torchx
 import yaml
 from torchx.schedulers.api import (
-    AppDryRunInfo,
     DescribeAppResponse,
     filter_regex,
     ListAppResponse,
     Scheduler,
     split_lines,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
     AppDef,
+    AppDryRunInfo,
     AppState,
     BindMount,
     CfgVal,
@@ -71,10 +135,10 @@ from torchx.specs.api import (
     runopts,
     VolumeMount,
 )
+from torchx.specs.overlays import apply_overlay, get_overlay
+from torchx.util.colors import BLUE, ENDC
 from torchx.util.strings import normalize_str
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
-from typing_extensions import TypedDict
-
 
 if TYPE_CHECKING:
     from docker import DockerClient
@@ -84,6 +148,7 @@ if TYPE_CHECKING:
         V1Pod,
     )
     from kubernetes.client.rest import ApiException
+
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -95,6 +160,39 @@ logger: logging.Logger = logging.getLogger(__name__)
 RESERVED_MILLICPU = 100
 RESERVED_MEMMB = 1024
 
+
+def _apply_pod_overlay(
+    pod: "V1Pod",
+    overlay: dict[str, Any],
+) -> None:
+    """Apply overlay dict to V1Pod object, merging nested fields.
+
+    Uses :py:func:`~torchx.specs.overlays.apply_overlay` with operator support:
+
+    - Default: dicts merge recursively, lists append, primitives overwrite.
+    - Use :py:func:`~torchx.specs.overlays.PUT` to replace a value entirely.
+    - Use :py:func:`~torchx.specs.overlays.JOIN` for strategic merge of list
+      items by key field.
+    - Use :py:func:`~torchx.specs.overlays.DEL` to remove a key.
+
+    .. note:: Only ``pod.spec`` and ``pod.metadata`` are updated from the
+        merged result. Other top-level V1Pod fields (e.g., ``apiVersion``,
+        ``kind``, ``status``) in the overlay are applied during merging but
+        not copied back to the pod object.
+    """
+    from kubernetes import client
+
+    api = client.ApiClient()
+    pod_dict = api.sanitize_for_serialization(pod)
+
+    apply_overlay(pod_dict, overlay)
+
+    # pyrefly: ignore [missing-attribute]
+    merged_pod = api._ApiClient__deserialize(pod_dict, "V1Pod")
+    pod.spec = merged_pod.spec
+    pod.metadata = merged_pod.metadata
+
+
 RETRY_POLICIES: Mapping[str, Iterable[Mapping[str, str]]] = {
     RetryPolicy.REPLICA: [],
     RetryPolicy.APPLICATION: [
@@ -103,7 +201,7 @@ RETRY_POLICIES: Mapping[str, Iterable[Mapping[str, str]]] = {
     ],
 }
 
-JOB_STATE: Dict[str, AppState] = {
+JOB_STATE: dict[str, AppState] = {
     # Pending is the phase that job is pending in the queue, waiting for
     # scheduling decision
     "Pending": AppState.PENDING,
@@ -118,6 +216,8 @@ JOB_STATE: Dict[str, AppState] = {
     "Restarting": AppState.RUNNING,
     # Completed is the phase that all tasks of Job are completed successfully
     "Completed": AppState.SUCCEEDED,
+    # Completing is the phase that the Job is in the process of completing
+    "Completing": AppState.RUNNING,
     # Terminating is the phase that the Job is terminated, waiting for releasing
     # pods
     "Terminating": AppState.RUNNING,
@@ -126,7 +226,7 @@ JOB_STATE: Dict[str, AppState] = {
     "Failed": ReplicaState.FAILED,
 }
 
-TASK_STATE: Dict[str, ReplicaState] = {
+TASK_STATE: dict[str, ReplicaState] = {
     # Pending means the task is pending in the apiserver.
     "Pending": ReplicaState.PENDING,
     # Allocated means the scheduler assigns a host to it.
@@ -168,6 +268,29 @@ ANNOTATION_ISTIO_SIDECAR = "sidecar.istio.io/inject"
 LABEL_INSTANCE_TYPE = "node.kubernetes.io/instance-type"
 
 
+def prefix_container_name(container_name: str, role_name: str, replica_id: int) -> str:
+    """
+    Generate a prefix for a container name.
+    Returns empty string for default container (role_name-replica_id), name for others.
+    """
+    default_container = f"{role_name}-{replica_id}"
+    if container_name == default_container:
+        return ""
+    return f"{BLUE}{container_name}{ENDC} "
+
+
+# role.env translates to static env variables in the yaml
+# {"FOO" : "bar"}               =====>      - name: FOO
+#                                             value: bar
+# unless this placeholder is present at the start of the role.env value then the env variable
+# in the yaml will be dynamically populated at runtime (placeholder is stripped out of the value)
+# {"FOO" : "[FIELD_PATH]bar"}   =====>      - name: FOO
+#                                             valueFrom:
+#                                               fieldRef:
+#                                                 fieldPath: bar
+PLACEHOLDER_FIELD_PATH = "[FIELD_PATH]"
+
+
 def sanitize_for_serialization(obj: object) -> object:
     from kubernetes import client
 
@@ -175,13 +298,22 @@ def sanitize_for_serialization(obj: object) -> object:
     return api.sanitize_for_serialization(obj)
 
 
-def role_to_pod(name: str, role: Role, service_account: Optional[str]) -> "V1Pod":
+def role_to_pod(
+    name: str,
+    role: Role,
+    service_account: str | None,
+    reserved_millicpu: int = RESERVED_MILLICPU,
+    reserved_memmb: int = RESERVED_MEMMB,
+    efa_device_count: int | None = None,
+) -> "V1Pod":
     from kubernetes.client.models import (  # noqa: F811 redefinition of unused
         V1Container,
         V1ContainerPort,
         V1EmptyDirVolumeSource,
         V1EnvVar,
+        V1EnvVarSource,
         V1HostPathVolumeSource,
+        V1ObjectFieldSelector,
         V1ObjectMeta,
         V1PersistentVolumeClaimVolumeSource,
         V1Pod,
@@ -203,24 +335,35 @@ def role_to_pod(name: str, role: Role, service_account: Optional[str]) -> "V1Pod
     if resource.cpu > 0:
         mcpu = int(resource.cpu * 1000)
         limits["cpu"] = f"{mcpu}m"
-        request_mcpu = max(mcpu - RESERVED_MILLICPU, 0)
+        request_mcpu = max(mcpu - reserved_millicpu, 0)
         requests["cpu"] = f"{request_mcpu}m"
     if resource.memMB > 0:
         limits["memory"] = f"{int(resource.memMB)}M"
-        request_memMB = max(int(resource.memMB) - RESERVED_MEMMB, 0)
+        request_memMB = max(int(resource.memMB) - reserved_memmb, 0)
         requests["memory"] = f"{request_memMB}M"
     if resource.gpu > 0:
         requests["nvidia.com/gpu"] = limits["nvidia.com/gpu"] = str(resource.gpu)
 
+    EFA_DEVICE = "vpc.amazonaws.com/efa"
     for device_name, device_limit in resource.devices.items():
         limits[device_name] = str(device_limit)
+
+    # Handle EFA device count override:
+    # - None (default): use whatever count is in the resource spec (already added above)
+    # - 0: remove EFA devices entirely
+    # - N > 0: set EFA device count to N (override or add)
+    if efa_device_count is not None:
+        if efa_device_count == 0:
+            limits.pop(EFA_DEVICE, None)
+        else:
+            limits[EFA_DEVICE] = str(efa_device_count)
 
     resources = V1ResourceRequirements(
         limits=limits,
         requests=requests,
     )
 
-    node_selector: Dict[str, str] = {}
+    node_selector: dict[str, str] = {}
     if LABEL_INSTANCE_TYPE in resource.capabilities:
         node_selector[LABEL_INSTANCE_TYPE] = resource.capabilities[LABEL_INSTANCE_TYPE]
 
@@ -301,9 +444,20 @@ def role_to_pod(name: str, role: Role, service_account: Optional[str]) -> "V1Pod
         image=role.image,
         name=name,
         env=[
-            V1EnvVar(
-                name=name,
-                value=value,
+            (
+                V1EnvVar(
+                    name=name,
+                    value_from=V1EnvVarSource(
+                        field_ref=V1ObjectFieldSelector(
+                            field_path=value.strip(PLACEHOLDER_FIELD_PATH)
+                        )
+                    ),
+                )
+                if value.startswith(PLACEHOLDER_FIELD_PATH)
+                else V1EnvVar(
+                    name=name,
+                    value=value,
+                )
             )
             for name, value in role.env.items()
         ],
@@ -341,9 +495,12 @@ def role_to_pod(name: str, role: Role, service_account: Optional[str]) -> "V1Pod
 def app_to_resource(
     app: AppDef,
     queue: str,
-    service_account: Optional[str],
-    priority_class: Optional[str] = None,
-) -> Dict[str, object]:
+    service_account: str | None,
+    priority_class: str | None = None,
+    reserved_millicpu: int = RESERVED_MILLICPU,
+    reserved_memmb: int = RESERVED_MEMMB,
+    efa_device_count: int | None = None,
+) -> dict[str, Any]:
     """
     app_to_resource creates a volcano job kubernetes resource definition from
     the provided AppDef. The resource definition can be used to launch the
@@ -373,8 +530,18 @@ def app_to_resource(
             replica_role = values.apply(role)
             if role_idx == 0 and replica_id == 0:
                 replica_role.env["TORCHX_RANK0_HOST"] = "localhost"
+            replica_role.env["TORCHX_IMAGE"] = replica_role.image
 
-            pod = role_to_pod(name, replica_role, service_account)
+            pod = role_to_pod(
+                name,
+                replica_role,
+                service_account,
+                reserved_millicpu,
+                reserved_memmb,
+                efa_device_count,
+            )
+            if pod_overlay := get_overlay(role, "kubernetes", "V1Pod"):
+                _apply_pod_overlay(pod, pod_overlay)
             pod.metadata.labels.update(
                 pod_labels(
                     app=app,
@@ -384,7 +551,7 @@ def app_to_resource(
                     app_id=unique_app_id,
                 )
             )
-            task: Dict[str, Any] = {
+            task: dict[str, Any] = {
                 "replicas": 1,
                 "name": name,
                 "template": pod,
@@ -417,7 +584,7 @@ does NOT support retries correctly. More info: https://github.com/volcano-sh/vol
     if priority_class is not None:
         job_spec["priorityClassName"] = priority_class
 
-    resource: Dict[str, object] = {
+    resource: dict[str, Any] = {
         "apiVersion": "batch.volcano.sh/v1alpha1",
         "kind": "Job",
         "metadata": {"name": f"{unique_app_id}"},
@@ -428,8 +595,8 @@ does NOT support retries correctly. More info: https://github.com/volcano-sh/vol
 
 @dataclass
 class KubernetesJob:
-    images_to_push: Dict[str, Tuple[str, str]]
-    resource: Dict[str, object]
+    images_to_push: dict[str, tuple[str, str]]
+    resource: dict[str, Any]
 
     def __str__(self) -> str:
         return yaml.dump(sanitize_for_serialization(self.resource))
@@ -438,15 +605,42 @@ class KubernetesJob:
         return str(self)
 
 
-class KubernetesOpts(TypedDict, total=False):
-    namespace: Optional[str]
+@dataclass
+class Opts(StructuredOpts):
+    """Typed configuration options for KubernetesScheduler."""
+
     queue: str
-    image_repo: Optional[str]
-    service_account: Optional[str]
-    priority_class: Optional[str]
+    """Volcano queue to schedule job in."""
+
+    namespace: str = "default"
+    """Kubernetes namespace to schedule job in."""
+
+    service_account: str | None = None
+    """The service account name to set on the pod specs."""
+
+    priority_class: str | None = None
+    """The name of the PriorityClass to set on the job specs."""
+
+    validate_spec: bool = True
+    """Validate job spec using Kubernetes API dry-run before submission."""
+
+    reserved_millicpu: int = RESERVED_MILLICPU
+    """Amount of CPU in millicores to reserve for Kubernetes system overhead (default: 100)."""
+
+    reserved_memmb: int = RESERVED_MEMMB
+    """Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)."""
+
+    image_repo: str | None = None
+    """The image repository to use when pushing patched images, must have push access."""
+
+    efa_device_count: int | None = None
+    """EFA device count override: None/unset=use resource spec, 0=remove EFA, N>0=set EFA count to N."""
 
 
-class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
+KubernetesOpts = Opts
+
+
+class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     """
     KubernetesScheduler is a TorchX scheduling interface to Kubernetes.
 
@@ -456,7 +650,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
     For installation instructions see: https://github.com/volcano-sh/volcano
 
     This has been confirmed to work with Volcano v1.3.0 and Kubernetes versions
-    v1.18-1.21. See https://github.com/pytorch/torchx/issues/120 which is
+    v1.18-1.21. See https://github.com/meta-pytorch/torchx/issues/120 which is
     tracking Volcano support for Kubernetes v1.22.
 
     .. note::
@@ -473,6 +667,16 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         kubernetes://torchx_user/1234
         $ torchx status kubernetes://torchx_user/1234
         ...
+
+    **Cancellation**
+
+    Canceling a job aborts it while preserving the job spec for inspection
+    and cloning via kubectl apply. Use the delete command to remove the job entirely:
+
+    .. code-block:: bash
+
+        $ torchx cancel kubernetes://namespace/jobname  # abort, preserves spec
+        $ torchx delete kubernetes://namespace/jobname  # delete completely
 
     **Config Options**
 
@@ -537,8 +741,8 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
     def __init__(
         self,
         session_name: str,
-        client: Optional["ApiClient"] = None,
-        docker_client: Optional["DockerClient"] = None,
+        client: "ApiClient | None" = None,
+        docker_client: "DockerClient | None" = None,
     ) -> None:
         # NOTE: make sure any new init options are supported in create_scheduler(...)
         super().__init__("kubernetes", session_name, docker_client=docker_client)
@@ -552,9 +756,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         if c is None:
             configuration = client.Configuration()
             try:
-                config.load_kube_config(client_configuration=configuration)
-            except config.ConfigException as e:
-                warnings.warn(f"failed to load kube config: {e}")
+                # Try in-cluster config first (for pods with ServiceAccount)
+                config.load_incluster_config(client_configuration=configuration)
+            except config.ConfigException:
+                # Fall back to kubeconfig (for local development)
+                try:
+                    config.load_kube_config(client_configuration=configuration)
+                except config.ConfigException as e:
+                    warnings.warn(f"failed to load kube config: {e}", stacklevel=2)
 
             c = self._client = client.ApiClient(configuration)
 
@@ -565,14 +774,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
         return client.CustomObjectsApi(self._api_client())
 
-    def _get_job_name_from_exception(self, e: "ApiException") -> Optional[str]:
+    def _get_job_name_from_exception(self, e: "ApiException") -> str | None:
         try:
             return json.loads(e.body)["details"]["name"]
         except Exception as e:
             logger.exception("Unable to retrieve job name, got exception", e)
             return None
 
-    def _get_active_context(self) -> Dict[str, Any]:
+    def _get_active_context(self) -> dict[str, Any]:
         from kubernetes import config
 
         contexts, active_context = config.list_kube_config_contexts()
@@ -606,11 +815,9 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             else:
                 raise
 
-        return f'{namespace}:{resp["metadata"]["name"]}'
+        return f"{namespace}:{resp['metadata']['name']}"
 
-    def _submit_dryrun(
-        self, app: AppDef, cfg: KubernetesOpts
-    ) -> AppDryRunInfo[KubernetesJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[KubernetesJob]:
         queue = cfg.get("queue")
         if not isinstance(queue, str):
             raise TypeError(f"config value 'queue' must be a string, got {queue}")
@@ -628,18 +835,96 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             priority_class, str
         ), "priority_class must be a str"
 
-        resource = app_to_resource(app, queue, service_account, priority_class)
+        reserved_millicpu = cfg.get("reserved_millicpu")
+        if reserved_millicpu is None:
+            reserved_millicpu = RESERVED_MILLICPU
+        assert isinstance(reserved_millicpu, int), "reserved_millicpu must be an int"
+
+        reserved_memmb = cfg.get("reserved_memmb")
+        if reserved_memmb is None:
+            reserved_memmb = RESERVED_MEMMB
+        assert isinstance(reserved_memmb, int), "reserved_memmb must be an int"
+
+        efa_device_count = cfg.get("efa_device_count")
+        assert efa_device_count is None or isinstance(
+            efa_device_count, int
+        ), "efa_device_count must be an int or None"
+
+        resource = app_to_resource(
+            app,
+            queue,
+            service_account,
+            priority_class,
+            reserved_millicpu,
+            reserved_memmb,
+            efa_device_count,
+        )
+
+        if cfg.get("validate_spec"):
+            try:
+                self._custom_objects_api().create_namespaced_custom_object(
+                    group="batch.volcano.sh",
+                    version="v1alpha1",
+                    namespace=cfg.get("namespace") or "default",
+                    plural="jobs",
+                    body=resource,
+                    dry_run="All",
+                )
+            except Exception as e:
+                from kubernetes.client.rest import ApiException
+
+                if isinstance(e, ApiException):
+                    raise ValueError(f"Invalid job spec: {e.reason}") from e
+                raise
+
+            job_name = resource["metadata"]["name"]
+            for task in resource["spec"]["tasks"]:
+                task_name = task["name"]
+                replicas = task.get("replicas", 1)
+                max_index = replicas - 1
+                pod_name = f"{job_name}-{task_name}-{max_index}"
+                if len(pod_name) > 63:
+                    raise ValueError(
+                        f"Pod name '{pod_name}' ({len(pod_name)} chars) exceeds 63 character limit. "
+                        f"Shorten app.name or role names"
+                    )
+
         req = KubernetesJob(
             resource=resource,
             images_to_push=images_to_push,
         )
         return AppDryRunInfo(req, repr)
 
-    def _validate(self, app: AppDef, scheduler: str) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Opts) -> None:
         # Skip validation step
         pass
 
     def _cancel_existing(self, app_id: str) -> None:
+        """
+        Abort a Volcano job while preserving the spec for inspection.
+        """
+        namespace, name = app_id.split(":")
+        vcjob = self._custom_objects_api().get_namespaced_custom_object(
+            group="batch.volcano.sh",
+            version="v1alpha1",
+            namespace=namespace,
+            plural="jobs",
+            name=name,
+        )
+        vcjob["status"]["state"]["phase"] = "Aborted"
+        self._custom_objects_api().replace_namespaced_custom_object_status(
+            group="batch.volcano.sh",
+            version="v1alpha1",
+            namespace=namespace,
+            plural="jobs",
+            name=name,
+            body=vcjob,
+        )
+
+    def _delete_existing(self, app_id: str) -> None:
+        """
+        Delete a Volcano job completely from the cluster.
+        """
         namespace, name = app_id.split(":")
         self._custom_objects_api().delete_namespaced_custom_object(
             group="batch.volcano.sh",
@@ -650,42 +935,27 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         )
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "namespace",
-            type_=str,
-            help="Kubernetes namespace to schedule job in",
-            default="default",
-        )
-        opts.add(
-            "queue",
-            type_=str,
-            help="Volcano queue to schedule job in",
-            required=True,
-        )
-        opts.add(
-            "service_account",
-            type_=str,
-            help="The service account name to set on the pod specs",
-        )
-        opts.add(
-            "priority_class",
-            type_=str,
-            help="The name of the PriorityClass to set on the job specs",
-        )
-        return opts
+        return Opts.as_runopts()
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
+        from kubernetes import client
+        from kubernetes.client.rest import ApiException
+
         namespace, name = app_id.split(":")
         roles = {}
         roles_statuses = {}
-        resp = self._custom_objects_api().get_namespaced_custom_object_status(
-            group="batch.volcano.sh",
-            version="v1alpha1",
-            namespace=namespace,
-            plural="jobs",
-            name=name,
-        )
+        try:
+            resp = self._custom_objects_api().get_namespaced_custom_object_status(
+                group="batch.volcano.sh",
+                version="v1alpha1",
+                namespace=namespace,
+                plural="jobs",
+                name=name,
+            )
+        except ApiException as e:
+            if e.status == 404:
+                return None
+            raise
         status = resp.get("status")
         if status:
             state_str = status["state"]["phase"]
@@ -694,18 +964,44 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
             TASK_STATUS_COUNT = "taskStatusCount"
 
             if TASK_STATUS_COUNT in status:
-                for name, status in status[TASK_STATUS_COUNT].items():
-                    role, _, idx = name.rpartition("-")
+                for task_name, task_status in status[TASK_STATUS_COUNT].items():
+                    role, _, idx = task_name.rpartition("-")
 
-                    state_str = next(iter(status["phase"].keys()))
+                    state_str = next(iter(task_status["phase"].keys()))
                     state = TASK_STATE[state_str]
 
                     if role not in roles:
                         roles[role] = Role(name=role, num_replicas=0, image="")
                         roles_statuses[role] = RoleStatus(role, [])
                     roles[role].num_replicas += 1
+
+                    # Pod name follows the pattern: {job_name}-{task_name}-0
+                    # Get the pod to retrieve its IP address
+                    pod_name_k8s = f"{name}-{task_name}-0"
+                    hostname = ""
+                    try:
+                        core_api = client.CoreV1Api(self._api_client())
+                        pod = core_api.read_namespaced_pod(
+                            name=pod_name_k8s, namespace=namespace
+                        )
+                        pod_ip = pod.status.pod_ip
+
+                        if pod_ip is not None:
+                            # Convert IP to dashed format (e.g., 10.244.1.5 -> 10-244-1-5)
+                            pod_ip_dashed = pod_ip.replace(".", "-")
+
+                            # Kubernetes DNS = <pod-ip-dashed>.<namespace>.pod.cluster.local
+                            # Note: This will only be useful if the client using the IPs is in the cluster.
+                            hostname = f"{pod_ip_dashed}.{namespace}.pod.cluster.local"
+
+                    except ApiException:
+                        # Pod not found - hostname remains empty
+                        pass
+
                     roles_statuses[role].replicas.append(
-                        ReplicaStatus(id=int(idx), role=role, state=state, hostname="")
+                        ReplicaStatus(
+                            id=int(idx), role=role, state=state, hostname=hostname
+                        )
                     )
         else:
             app_state = AppState.UNKNOWN
@@ -721,11 +1017,11 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         assert until is None, "kubernetes API doesn't support until"
 
@@ -737,8 +1033,11 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         namespace, name = app_id.split(":")
 
         pod_name = normalize_str(f"{name}-{role_name}-{k}-0")
+        core_api = client.CoreV1Api(self._api_client())
 
-        args: Dict[str, object] = {
+        pod = core_api.read_namespaced_pod(name=pod_name, namespace=namespace)
+
+        args: dict[str, object] = {
             "name": pod_name,
             "namespace": namespace,
             "timestamps": True,
@@ -746,20 +1045,26 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
         if since is not None:
             args["since_seconds"] = (datetime.now() - since).total_seconds()
 
-        core_api = client.CoreV1Api(self._api_client())
-        if should_tail:
-            w = watch.Watch()
-            iterator = w.stream(core_api.read_namespaced_pod_log, **args)
-        else:
-            resp = core_api.read_namespaced_pod_log(**args)
-            iterator = split_lines(resp)
+        for container in pod.spec.containers:
+            args["container"] = container.name
 
-        if regex:
-            return filter_regex(regex, iterator)
-        else:
-            return iterator
+            if should_tail:
+                w = watch.Watch()
+                iterator = (
+                    f"{line}\n"
+                    for line in w.stream(core_api.read_namespaced_pod_log, **args)
+                )
+            else:
+                resp = core_api.read_namespaced_pod_log(**args)
+                iterator = split_lines(resp)
 
-    def list(self) -> List[ListAppResponse]:
+            if regex:
+                iterator = filter_regex(regex, iterator)
+
+            for line in iterator:
+                yield f"{prefix_container_name(container.name, role_name, k)}{line}"
+
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         active_context = self._get_active_context()
         namespace = active_context["context"]["namespace"]
         resp = self._custom_objects_api().list_namespaced_custom_object(
@@ -780,8 +1085,8 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[KubernetesOpts]):
 
 def create_scheduler(
     session_name: str,
-    client: Optional["ApiClient"] = None,
-    docker_client: Optional["DockerClient"] = None,
+    client: "ApiClient | None" = None,
+    docker_client: "DockerClient | None" = None,
     **kwargs: Any,
 ) -> KubernetesScheduler:
     return KubernetesScheduler(
@@ -793,14 +1098,35 @@ def create_scheduler(
 
 def pod_labels(
     app: AppDef, role_idx: int, role: Role, replica_id: int, app_id: str
-) -> Dict[str, str]:
+) -> dict[str, str]:
+
+    def clean(label_value: str) -> str:
+        # cleans the provided `label_value` to make it compliant
+        # to pod label specs as described in
+        # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+        #
+        # Valid label value:
+        # must be 63 characters or less (can be empty),
+        # unless empty, must begin and end with an alphanumeric character ([a-z0-9A-Z]),
+        # could contain dashes (-), underscores (_), dots (.), and alphanumerics between.
+
+        # Replace invalid characters (allow: alphanum, -, _, .) with "."
+        label_value = re.sub(r"[^A-Za-z0-9\-_.]", ".", label_value)
+        # Replace leading non-alphanumeric with "."
+        label_value = re.sub(r"^[^A-Za-z0-9]+", ".", label_value)
+        # Replace trailing non-alphanumeric with "."
+        label_value = re.sub(r"[^A-Za-z0-9]+$", ".", label_value)
+
+        # Trim to 63 characters
+        return label_value[:63]
+
     return {
-        LABEL_VERSION: torchx.__version__,
-        LABEL_APP_NAME: app.name,
+        LABEL_VERSION: clean(torchx.__version__),
+        LABEL_APP_NAME: clean(app.name),
         LABEL_ROLE_INDEX: str(role_idx),
-        LABEL_ROLE_NAME: role.name,
+        LABEL_ROLE_NAME: clean(role.name),
         LABEL_REPLICA_ID: str(replica_id),
-        LABEL_KUBE_APP_NAME: app.name,
+        LABEL_KUBE_APP_NAME: clean(app.name),
         LABEL_ORGANIZATION: "torchx.pytorch.org",
-        LABEL_UNIQUE_NAME: app_id,
+        LABEL_UNIQUE_NAME: clean(app_id),
     }

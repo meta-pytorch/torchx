@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import os
 
 import torch
@@ -15,10 +17,12 @@ from omegaconf import DictConfig
 
 def compute_world_size(cfg: DictConfig) -> int:
     # required env vars for initializing pg with the default init_method (env://)
-    os.environ["RANK"] = str(cfg.main.rank)
-    os.environ["WORLD_SIZE"] = str(cfg.main.world_size)
-    os.environ["MASTER_ADDR"] = cfg.main.master_addr
-    os.environ["MASTER_PORT"] = str(cfg.main.master_port)
+    # read from hydra config in config/defaults.yaml if not set already
+    # this can happen is compute_world_size is run directly (not with torchrun)
+    os.environ.setdefault("RANK", str(cfg.main.rank))
+    os.environ.setdefault("WORLD_SIZE", str(cfg.main.world_size))
+    os.environ.setdefault("MASTER_ADDR", cfg.main.master_addr)
+    os.environ.setdefault("MASTER_PORT", str(cfg.main.master_port))
 
     backend = cfg.main.backend
 

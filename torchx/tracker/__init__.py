@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 .. note:: PROTOTYPE, USE AT YOUR OWN RISK, APIs SUBJECT TO CHANGE
 
@@ -30,14 +32,14 @@ implementation.
 
 Example usage
 -------------
-Sample `code <https://github.com/pytorch/torchx/blob/main/torchx/examples/apps/tracker/main.py>`__ using tracker API.
+Sample `code <https://github.com/meta-pytorch/torchx/blob/main/torchx/examples/apps/tracker/main.py>`__ using tracker API.
 
 
 Tracker Setup
 -------------
 To enable tracking it requires:
 
-1. Defining tracker backends (entrypoints and configuration) on launcher side using :doc:`runner.config`
+1. Defining tracker backends (entrypoints/modules and configuration) on launcher side using :doc:`runner.config`
 2. Adding entrypoints within a user job using entry_points (`specification`_)
 
 .. _specification: https://packaging.python.org/en/latest/specifications/entry-points/
@@ -49,13 +51,13 @@ To enable tracking it requires:
 User can define any number of tracker backends under **torchx:tracker** section in :doc:`runner.config`, where:
    * Key: is an arbitrary name for the tracker, where the name will be used to configure its properties
         under [tracker:<TRACKER_NAME>]
-   * Value: is *entrypoint/factory method* that must be available within user job. The value will be injected into a
+   * Value: is *entrypoint* or *module* factory method that must be available within user job. The value will be injected into a
         user job and used to construct tracker implementation.
 
 .. code-block:: ini
 
     [torchx:tracker]
-    tracker_name=<entry_point>
+    tracker_name=<entry_point_or_module_factory_method>
 
 
 Each tracker can be additionally configured (currently limited to `config` parameter) under `[tracker:<TRACKER NAME>]` section:
@@ -71,10 +73,14 @@ For example, ~/.torchxconfig may be setup as:
 
     [torchx:tracker]
     tracker1=tracker1
-    tracker12=backend_2_entry_point
+    tracker2=backend_2_entry_point
+    tracker3=torchx.tracker.mlflow:create_tracker
 
     [tracker:tracker1]
     config=s3://my_bucket/config.json
+
+    [tracker:tracker3]
+    config=my_config.json
 
 
 2. User job configuration (Advanced)
@@ -105,7 +111,7 @@ Use :py:meth:`~torchx.tracker.app_run_from_env`:
 Reference :py:class:`~torchx.tracker.api.TrackerBase` implementation
 --------------------------------------------------------------------
 :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker` provides reference implementation of a tracker backend.
-GitHub example `directory <https://github.com/pytorch/torchx/blob/main/torchx/examples/apps/tracker/>`__ provides example on how to
+GitHub example `directory <https://github.com/meta-pytorch/torchx/blob/main/torchx/examples/apps/tracker/>`__ provides example on how to
 configure and use it in user application.
 
 

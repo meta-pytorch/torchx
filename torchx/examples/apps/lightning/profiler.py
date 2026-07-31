@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Simple Logging Profiler
 ===========================
@@ -15,23 +17,22 @@ output is used for HPO optimization with Ax.
 """
 
 import time
-from typing import Dict
 
-from pytorch_lightning.loggers.base import LightningLoggerBase
-from pytorch_lightning.profiler.base import BaseProfiler
+from pytorch_lightning.loggers.logger import Logger
+from pytorch_lightning.profilers.profiler import Profiler
 
 
-class SimpleLoggingProfiler(BaseProfiler):
+class SimpleLoggingProfiler(Profiler):
     """
     This profiler records the duration of actions (in seconds) and reports the
     mean duration of each action to the specified logger. Reported metrics are
     in the format `duration_<event>`.
     """
 
-    def __init__(self, logger: LightningLoggerBase) -> None:
+    def __init__(self, logger: Logger) -> None:
         super().__init__()
 
-        self.current_actions: Dict[str, float] = {}
+        self.current_actions: dict[str, float] = {}
         self.logger = logger
 
     def start(self, action_name: str) -> None:

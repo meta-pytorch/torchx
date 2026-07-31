@@ -10,7 +10,7 @@ set -ex
 DIST=dist
 
 rm -r $DIST || true
-python setup.py bdist_wheel
+uv build --wheel
 
 WHEEL="$DIST/$(ls $DIST)"
 
@@ -40,11 +40,11 @@ REMOTE_SCRIPT="$DIR/$(basename "$SCRIPT")"
 
 for host in c1 c2
 do
-  docker exec "$host" dnf install python39 -y
+  docker exec "$host" dnf install python3.11 -y
 done
 
 run_cmd mkdir -p "$DIR"
-run_cmd python3.9 -m venv "$VENV"
+run_cmd python3.11 -m venv "$VENV"
 run_scp "$WHEEL" "$REMOTE_WHEEL"
 run_scp "$SCRIPT" "$REMOTE_SCRIPT"
 run_cmd "$REMOTE_SCRIPT" "$REMOTE_WHEEL" "$VENV"

@@ -5,9 +5,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Kubernetes integration tests.
 """
+
 import argparse
 import logging
 import os
@@ -16,10 +19,9 @@ from uuid import uuid4
 import example_app_defs as examples_app_defs_providers
 import torchx.components.integration_tests.component_provider as component_provider
 from integ_test_utils import build_images, BuildInfo, push_images
-from torchx.cli.colors import BLUE, ENDC, GRAY
 from torchx.components.integration_tests.integ_tests import IntegComponentTest
 from torchx.schedulers import get_scheduler_factories
-
+from torchx.util.colors import BLUE, ENDC, GRAY
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,11 +61,8 @@ def main() -> None:
 
     if scheduler in (
         "kubernetes",
-        "kubernetes_mcad",
         "local_docker",
         "aws_batch",
-        "lsf",
-        "gcp_batch",
     ):
         build = build_and_push_image(args.container_repo)
         torchx_image = build.torchx_image
@@ -82,16 +81,6 @@ def main() -> None:
             "cfg": {
                 "namespace": "torchx-dev",
                 "queue": "default",
-            },
-        },
-        "kubernetes_mcad": {
-            "providers": [
-                component_provider,
-                examples_app_defs_providers,
-            ],
-            "image": torchx_image,
-            "cfg": {
-                "namespace": "torchx-dev",
             },
         },
         "local_cwd": {
@@ -118,34 +107,6 @@ def main() -> None:
                 "queue": "torchx",
             },
         },
-        "gcp_batch": {
-            "providers": [
-                component_provider,
-            ],
-            "image": torchx_image,
-            "cfg": {},
-        },
-        "ray": {
-            "providers": [
-                component_provider,
-            ],
-            "image": torchx_image,
-            "cfg": {
-                "requirements": "",
-            },
-            "workspace": f"file://{os.getcwd()}",
-        },
-        "lsf": {
-            "providers": [
-                component_provider,
-            ],
-            "image": torchx_image,
-            "cfg": {
-                "runtime": "docker",
-                "jobdir": "/mnt/data/torchx",
-                "host_network": True,
-            },
-        },
     }
 
     params = run_parameters[scheduler]
@@ -155,8 +116,10 @@ def main() -> None:
             module=provider,
             scheduler=scheduler,
             image=params["image"],
+            # pyrefly: ignore [bad-argument-type]
             cfg=params["cfg"],
             dryrun=dryrun,
+            # pyrefly: ignore [bad-argument-type]
             workspace=params.get("workspace"),
         )
 
@@ -172,13 +135,9 @@ def _mock_aws_batch() -> None:
     ensure_network()
     os.environ.setdefault("MOTO_DOCKER_NETWORK_NAME", NETWORK)
 
-    from moto import mock_batch, mock_ec2, mock_ecs, mock_iam, mock_logs
+    from moto import mock_aws
 
-    mock_batch().__enter__()
-    mock_iam().__enter__()
-    mock_ec2().__enter__()
-    mock_ecs().__enter__()
-    mock_logs().__enter__()
+    mock_aws().__enter__()
 
     import boto3.session
 

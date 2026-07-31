@@ -17,7 +17,6 @@ from typing import Any, Iterator
 import torch
 import torch.distributed as dist
 from torch.distributed.distributed_c10d import _get_default_group
-
 from torchx.util.cuda import has_cuda_devices
 from typing_extensions import Literal
 
@@ -48,7 +47,7 @@ def local_rank() -> int:
                 " but the `LOCAL_RANK` environment variable is not set. Will trivially return 0 for local_rank.\n"
                 " It is recommended to use torchrun/torchx to run your script or set the `LOCAL_RANK` manually.\n"
                 " For additional details see:\n"
-                "  1) https://pytorch.org/torchx/latest/components/distributed.html\n"
+                "  1) https://meta-pytorch.org/torchx/latest/components/distributed.html\n"
                 "  2) https://pytorch.org/docs/stable/elastic/run.html\n"
                 "=============================================================================================="
             )
@@ -83,9 +82,7 @@ def local_device() -> torch.device:
     if dist.is_initialized():
         default_pg = _get_default_group()
         return (
-            local_cuda_device()
-            if default_pg.options.backend == "nccl"
-            else torch.device("cpu")
+            local_cuda_device() if default_pg.name() == "nccl" else torch.device("cpu")
         )
     else:
         return torch.device("cuda") if has_cuda_devices() else torch.device("cpu")

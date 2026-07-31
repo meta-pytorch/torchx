@@ -6,54 +6,42 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   docbuild:
-    runs-on: linux.20_04.4x
+    runs-on: linux.24_04.4x
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-          architecture: x64
       - name: Checkout TorchX
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Install Dependencies
         run: |
           set -eux
-          sudo apt-get update
-          sudo apt-get install -y pandoc
-          pip install -e .[dev]
-          pip install -r docs/requirements.txt
-      - name: Install TorchX
-        run: |
-          python setup.py develop
-      - name: Start Airflow
-        run: |
-          # start airflow in background
-          airflow standalone &
-          # wait 5 seconds for airflow to start
-          sleep 5
+          uv sync --frozen --extra dev
+          uv pip install -r docs/requirements.txt
       - name: Doc Test
         run: |
           cd docs
-          make doctest
+          uv run make doctest
       - name: Linkcheck
         run: |
           cd docs
-          make linkcheck
+          uv run make linkcheck
       - name: Doc Build
         run: |
           cd docs
-          make html
-      - name: Papermill
-        run: |
-          cd docs
-          make papermill
+          uv run make html
       - name: Coverage
         run: |
           set -ex
           cd docs
-          make coverage
+          uv run make coverage
           if [ "$(wc -l build/*/coverage/python.txt)" -ne 2 ]
           then
               cat build/*/coverage/python.txt
@@ -62,17 +50,17 @@ jobs:
           fi
 
   docpush:
-    runs-on: linux.20_04.4x
+    runs-on: linux.24_04.4x
     needs: docbuild
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-          architecture: x64
       - name: Checkout TorchX
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Set Identity
         run: |
           set -ex
@@ -81,18 +69,12 @@ jobs:
       - name: Install Dependencies
         run: |
           set -eux
-          sudo apt-get install -y pandoc
-          pip install -r docs/requirements.txt
-      - name: Start Airflow
-        run: |
-          # start airflow in background
-          airflow standalone &
-          # wait 5 seconds for airflow to start
-          sleep 5
+          uv sync --frozen --extra dev
+          uv pip install -r docs/requirements.txt
       - name: Build
         run: |
           set -ex
-          docs/doc_push.sh --dry-run
+          uv run docs/doc_push.sh --dry-run
       - name: Push
         run: |
           set -ex

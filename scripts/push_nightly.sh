@@ -9,15 +9,26 @@ set -ex
 
 rm -r dist || true
 
+# Temporarily change package name to torchx-nightly in pyproject.toml
+sed -i 's/^name = "torchx"$/name = "torchx-nightly"/' pyproject.toml
 
-python setup.py --override-name torchx-nightly bdist_wheel
+# Use date-based version (YYYY.M.D) so each nightly is unique on PyPI
+ORIGINAL_VERSION="$(cat torchx/version.txt)"
+date "+%Y.%-m.%-d" > torchx/version.txt
+
+# Build the wheel using uv
+uv build --wheel
+
+# Restore original package name and version
+sed -i 's/^name = "torchx-nightly"$/name = "torchx"/' pyproject.toml
+echo "$ORIGINAL_VERSION" > torchx/version.txt
 
 if [ -z "$PYPI_TOKEN" ]; then
     echo "must specify PYPI_TOKEN"
     exit 1
 fi
 
-python3 -m twine upload \
+uv run twine upload \
     --username __token__ \
     --password "$PYPI_TOKEN" \
     dist/torchx_nightly-*

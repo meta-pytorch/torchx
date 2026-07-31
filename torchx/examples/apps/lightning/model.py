@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Tiny ImageNet Model
 ====================
@@ -14,14 +16,13 @@ by the apps in the same folder.
 
 import os.path
 import subprocess
-from typing import List, Optional, Tuple
 
 import fsspec
 import pytorch_lightning as pl
 import torch
 import torch.jit
 from torch.nn import functional as F
-from torchmetrics import Accuracy
+from torchmetrics.classification import MulticlassAccuracy
 from torchvision.models.resnet import BasicBlock, ResNet
 
 
@@ -31,7 +32,7 @@ class TinyImageNetModel(pl.LightningModule):
     """
 
     def __init__(
-        self, layer_sizes: Optional[List[int]] = None, lr: Optional[float] = None
+        self, layer_sizes: list[int] | None = None, lr: float | None = None
     ) -> None:
         super().__init__()
 
@@ -42,13 +43,12 @@ class TinyImageNetModel(pl.LightningModule):
 
         # We use the torchvision resnet model with some small tweaks to match
         # TinyImageNet.
-        m = ResNet(BasicBlock, layer_sizes)
+        m = ResNet(BasicBlock, layer_sizes, num_classes=200)
         m.avgpool = torch.nn.AdaptiveAvgPool2d(1)
-        m.fc.out_features = 200
         self.model: ResNet = m
 
-        self.train_acc = Accuracy()
-        self.val_acc = Accuracy()
+        self.train_acc = MulticlassAccuracy(num_classes=m.fc.out_features)
+        self.val_acc = MulticlassAccuracy(num_classes=m.fc.out_features)
 
     # pyre-fixme[14]
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -56,21 +56,21 @@ class TinyImageNetModel(pl.LightningModule):
 
     # pyre-fixme[14]
     def training_step(
-        self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         return self._step("train", self.train_acc, batch, batch_idx)
 
     # pyre-fixme[14]
     def validation_step(
-        self, val_batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
+        self, val_batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         return self._step("val", self.val_acc, val_batch, batch_idx)
 
     def _step(
         self,
         step_name: str,
-        acc_metric: Accuracy,
-        batch: Tuple[torch.Tensor, torch.Tensor],
+        acc_metric: MulticlassAccuracy,
+        batch: tuple[torch.Tensor, torch.Tensor],
         batch_idx: int,
     ) -> torch.Tensor:
         x, y = batch

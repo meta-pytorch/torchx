@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import io
 import logging
 import posixpath
@@ -11,11 +13,11 @@ import stat
 import sys
 import tarfile
 import tempfile
-from typing import Dict, IO, Iterable, Mapping, Optional, TextIO, Tuple, TYPE_CHECKING
+from typing import IO, Iterable, Mapping, TextIO, TYPE_CHECKING
 
 import fsspec
-
 import torchx
+from docker.errors import BuildError
 from torchx.specs import AppDef, CfgVal, Role, runopts
 from torchx.workspace.api import walk_workspace, WorkspaceMixin
 
@@ -35,32 +37,20 @@ COPY . .
 """
 
 
-class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
-    """
-    DockerWorkspaceMixin will build patched docker images from the workspace. These
-    patched images are docker images and can be either used locally via the
-    docker daemon or pushed using the helper methods to a remote repository for
-    remote jobs.
+class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
+    """Builds patched Docker images from the workspace.
 
-    This requires a running docker daemon locally and for remote pushing
-    requires being authenticated to those repositories via ``docker login``.
+    Requires a local Docker daemon. For remote jobs, authenticate via
+    ``docker login`` and set the ``image_repo`` runopt.
 
-    If there is a ``Dockerfile.torchx`` file present in the workspace that will
-    be used instead to build the container.
+    If ``Dockerfile.torchx`` exists in the workspace it is used as the
+    Dockerfile; otherwise a default ``COPY . .`` Dockerfile is generated.
+    Extra ``--build-arg`` values available in ``Dockerfile.torchx``:
 
-    The docker build is provided with some extra build arguments that can be
-    used in the Dockerfile.torchx:
+    * ``IMAGE`` -- the role's base image
+    * ``WORKSPACE`` -- the workspace path
 
-    * IMAGE: the image string from the first Role in the AppDef
-    * WORKSPACE: the full workspace path
-
-    To exclude files from the build context you can use the standard
-    `.dockerignore` file.
-
-    See more:
-
-    * https://docs.docker.com/engine/reference/commandline/login/
-    * https://docs.docker.com/get-docker/
+    Use ``.dockerignore`` to exclude files from the build context.
     """
 
     LABEL_VERSION: str = "torchx.pytorch.org/version"
@@ -68,7 +58,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
     def __init__(
         self,
         *args: object,
-        docker_client: Optional["DockerClient"] = None,
+        docker_client: "DockerClient | None" = None,
         **kwargs: object,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -91,20 +81,25 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
             type_=str,
             help="(remote jobs) the image repository to use when pushing patched images, must have push access. Ex: example.com/your/container",
         )
+        opts.add(
+            "quiet",
+            type_=bool,
+            default=False,
+            help="whether to suppress verbose output for image building. Defaults to ``False``.",
+        )
         return opts
 
     def build_workspace_and_update_role(
         self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
     ) -> None:
-        """
-        Builds a new docker image using the ``role``'s image as the base image
-        and updates the ``role``'s image with this newly built docker image id
-
-        Args:
-            role: the role whose image (a Docker image) is to be used as the base image
-            workspace: a fsspec path to a directory with contents to be overlaid
+        """Builds a Docker image from *workspace* on top of ``role.image`` and
+        updates ``role.image`` with the resulting image id.
         """
 
+        old_imgs = [
+            image.id
+            for image in self._docker_client.images.list(name=cfg["image_repo"])
+        ]
         context = _build_context(role.image, workspace)
 
         try:
@@ -115,7 +110,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
                     f"failed to pull image {role.image}, falling back to local: {e}"
                 )
             log.info("Building workspace docker image (this may take a while)...")
-            image, _ = self._docker_client.images.build(
+            build_events = self._docker_client.api.build(
                 fileobj=context,
                 custom_context=True,
                 dockerfile=TORCHX_DOCKERFILE,
@@ -125,27 +120,34 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
                 },
                 pull=False,
                 rm=True,
+                decode=True,
                 labels={
                     self.LABEL_VERSION: torchx.__version__,
                 },
             )
-            role.image = image.id
+            image_id = None
+            for event in build_events:
+                if message := event.get("stream"):
+                    if not cfg.get("quiet", False):
+                        message = message.strip("\r\n").strip("\n")
+                        if message:
+                            log.info(message)
+                if aux := event.get("aux"):
+                    image_id = aux["ID"]
+                if error := event.get("error"):
+                    raise BuildError(reason=error, build_log=None)
+            if len(old_imgs) == 0 or role.image not in old_imgs:
+                assert image_id, "image id was not found"
+                role.image = image_id
+
         finally:
             context.close()
 
     def dryrun_push_images(
         self, app: AppDef, cfg: Mapping[str, CfgVal]
-    ) -> Dict[str, Tuple[str, str]]:
-        """
-        _update_app_images replaces the local Docker images (identified via
-        ``sha256:...``) in the provided ``AppDef`` with the remote path that they will be uploaded to and
-        returns a mapping of local to remote names.
-
-        ``push`` must be called with the returned mapping before
-        launching the job.
-
-        Returns:
-            A dict of [local image name, (remote repo, tag)].
+    ) -> dict[str, tuple[str, str]]:
+        """Replaces local ``sha256:...`` images in *app* with remote paths and
+        returns a ``{local_image: (repo, tag)}`` mapping for :py:meth:`push_images`.
         """
         HASH_PREFIX = "sha256:"
         image_repo = cfg.get("image_repo")
@@ -168,14 +170,10 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
                 role.image = remote_image
         return images_to_push
 
-    def push_images(self, images_to_push: Dict[str, Tuple[str, str]]) -> None:
-        """
-        _push_images pushes the specified images to the remote container
-        repository with the specified tag. The docker daemon must be
-        authenticated to the remote repository using ``docker login``.
+    def push_images(self, images_to_push: dict[str, tuple[str, str]]) -> None:
+        """Pushes local images to a remote repository.
 
-        Args:
-            images_to_push: A dict of [local image name, (remote repo, tag)].
+        Requires ``docker login`` authentication to the target repo.
         """
 
         if len(images_to_push) == 0:
@@ -192,7 +190,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[Dict[str, Tuple[str, str]]]):
 
 
 def print_push_events(
-    events: Iterable[Dict[str, str]],
+    events: Iterable[dict[str, str]],
     stream: TextIO = sys.stderr,
 ) -> None:
     ID_KEY = "id"

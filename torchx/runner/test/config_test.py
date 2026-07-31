@@ -5,10 +5,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import os
+from dataclasses import dataclass, field
 from datetime import datetime
 from io import StringIO
-from typing import Dict, Iterable, List, Mapping, Optional
+from typing import Dict, Iterable, List, Mapping
 from unittest.mock import patch
 
 from torchx.runner.config import (
@@ -22,8 +25,13 @@ from torchx.runner.config import (
     load_sections,
 )
 from torchx.schedulers import get_scheduler_factories, Scheduler
-from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Stream
-from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts
+from torchx.schedulers.api import (
+    DescribeAppResponse,
+    ListAppResponse,
+    Stream,
+    StructuredOpts,
+)
+from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts, Workspace
 from torchx.test.fixtures import TestWithTmpDir
 
 
@@ -37,7 +45,7 @@ class TestScheduler(Scheduler):
     def _submit_dryrun(self, app: AppDef, cfg: Mapping[str, CfgVal]) -> AppDryRunInfo:
         raise NotImplementedError()
 
-    def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
         raise NotImplementedError()
 
     def _cancel_existing(self, app_id: str) -> None:
@@ -48,15 +56,15 @@ class TestScheduler(Scheduler):
         app_id: str,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterable[str]:
         raise NotImplementedError()
 
-    def list(self) -> List[ListAppResponse]:
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
         raise NotImplementedError()
 
     def _run_opts(self) -> runopts:
@@ -93,15 +101,39 @@ class TestScheduler(Scheduler):
         )
         opts.add(
             "l",
-            type_=List[str],
+            type_=list[str],
             default=["a", "b", "c"],
             help="a list option",
         )
         opts.add(
-            "l_none",
+            "l_typing",
             type_=List[str],
+            default=["a", "b", "c"],
+            help="a typing.List option",
+        )
+        opts.add(
+            "l_none",
+            type_=list[str],
             default=None,
             help="a None list option",
+        )
+        opts.add(
+            "d",
+            type_=dict[str, str],
+            default={"foo": "bar"},
+            help="a dict option",
+        )
+        opts.add(
+            "d_typing",
+            type_=Dict[str, str],
+            default={"foo": "bar"},
+            help="a typing.Dict option",
+        )
+        opts.add(
+            "d_none",
+            type_=Dict[str, str],
+            default=None,
+            help="a None dict option",
         )
         opts.add(
             "empty",
@@ -129,12 +161,18 @@ _TEAM_CONFIG = """#
 s = team_default
 i = 50
 f = 1.2
+d = a:b,c:d
+d_none= x:y
 """
 
 _MY_CONFIG = """#
 [test]
 s = my_default
 i = 100
+l = abc;def
+l_typing = ghi;jkl
+d = a:b,c:d
+d_typing = e:f,g:h
 """
 
 _MY_CONFIG2 = """#
@@ -242,6 +280,12 @@ class ConfigTest(TestWithTmpDir):
             ),
         )
 
+    def test_no_config(self) -> None:
+        config_dir = self.tmpdir
+        with patch.dict(os.environ, {ENV_TORCHXCONFIG: str("")}):
+            configs = find_configs(dirs=[str(config_dir)])
+            self.assertEqual([], configs)
+
     def test_find_configs(self) -> None:
         config_dir = self.tmpdir
         cwd_dir = config_dir / "cwd"
@@ -332,7 +376,7 @@ image = foobar_custom
         self.assertEqual(True, cfg.get("prepend_cwd"))
 
     def test_no_override_load(self) -> None:
-        cfg: Dict[str, CfgVal] = {"log_dir": "/foo/bar", "debug": 1}
+        cfg: dict[str, CfgVal] = {"log_dir": "/foo/bar", "debug": 1}
 
         load(scheduler="local_cwd", f=StringIO(_CONFIG), cfg=cfg)
         self.assertEqual("/foo/bar", cfg.get("log_dir"))
@@ -348,12 +392,14 @@ image = foobar_custom
             TORCHX_DEFAULT_CONFIG_DIRS,
             [str(self.tmpdir / "home"), str(self.tmpdir)],
         ):
-            cfg: Dict[str, CfgVal] = {"s": "runtime_value"}
+            cfg: dict[str, CfgVal] = {"s": "runtime_value"}
             apply(scheduler="test", cfg=cfg)
 
             self.assertEqual("runtime_value", cfg.get("s"))
             self.assertEqual(50, cfg.get("i"))
             self.assertEqual(1.2, cfg.get("f"))
+            self.assertEqual({"a": "b", "c": "d"}, cfg.get("d"))
+            self.assertEqual({"x": "y"}, cfg.get("d_none"))
 
     @patch(
         TORCHX_GET_SCHEDULER_FACTORIES,
@@ -369,6 +415,10 @@ image = foobar_custom
         self.assertEqual("runtime_value", cfg.get("s"))
         self.assertEqual(100, cfg.get("i"))
         self.assertEqual(1.2, cfg.get("f"))
+        self.assertEqual({"a": "b", "c": "d"}, cfg.get("d"))
+        self.assertEqual({"e": "f", "g": "h"}, cfg.get("d_typing"))
+        self.assertEqual(["abc", "def"], cfg.get("l"))
+        self.assertEqual(["ghi", "jkl"], cfg.get("l_typing"))
 
     def test_dump_invalid_scheduler(self) -> None:
         with self.assertRaises(ValueError):
@@ -407,7 +457,7 @@ image = foobar_custom
         # this makes things super hard to guarantee BC - stale config file will fail
         # to run, we don't want that)
 
-        self.assertEquals("option_that_exists", cfg.get("s"))
+        self.assertEqual("option_that_exists", cfg.get("s"))
 
     def test_load_no_section(self) -> None:
         cfg = {}
@@ -442,7 +492,7 @@ image = foobar_custom
 
         # all runopts in the TestScheduler have defaults, just check against those
         for opt_name, opt in TestScheduler("test").run_opts():
-            self.assertEqual(cfg.get(opt_name), opt.default)
+            self.assertEqual(opt.default, cfg.get(opt_name))
 
     def test_dump_and_load_all_registered_schedulers(self) -> None:
         # dump all the runopts for all registered schedulers
@@ -452,10 +502,110 @@ image = foobar_custom
         sfile = StringIO()
         dump(sfile)
 
-        for sched_name, sched in get_scheduler_factories().items():
+        scheduler_factories = get_scheduler_factories()
+
+        for sched_name, sched in scheduler_factories.items():
             sfile.seek(0)  # reset the file pos
             cfg = {}
-            load(scheduler=sched_name, f=sfile, cfg=cfg)
+            try:
+                load(scheduler=sched_name, f=sfile, cfg=cfg)
+            except ModuleNotFoundError:
+                # just test the ones that have been installed
+                continue
 
             for opt_name, _ in sched("test").run_opts():
-                self.assertTrue(opt_name in cfg)
+                self.assertTrue(
+                    opt_name in cfg,
+                    f"missing {opt_name} in {sched} run opts with cfg {cfg}",
+                )
+
+    def test_get_workspace_config(self) -> None:
+        configdir = self.tmpdir
+        self.write(
+            str(configdir / ".torchxconfig"),
+            """#
+[cli:run]
+workspace =
+    /home/foo/third-party/verl: verl
+    /home/foo/bar/scripts/.torchxconfig: verl/.torchxconfig
+    /home/foo/baz:
+""",
+        )
+
+        workspace_config = get_config(
+            prefix="cli", name="run", key="workspace", dirs=[str(configdir)]
+        )
+        self.assertIsNotNone(workspace_config)
+
+        workspace = Workspace.from_str(workspace_config)
+        self.assertDictEqual(
+            {
+                "/home/foo/third-party/verl": "verl",
+                "/home/foo/bar/scripts/.torchxconfig": "verl/.torchxconfig",
+                "/home/foo/baz": "",
+            },
+            workspace.projects,
+        )
+
+
+@dataclass
+class OptB(StructuredOpts):
+    x: str | None = None
+    """An optional string."""
+
+    y: str = "default_y"
+    """A string with default."""
+
+
+@dataclass
+class OptA(StructuredOpts):
+    name: str = "default_name"
+    """A top-level string."""
+
+    b: OptB = field(default_factory=OptB)
+    """Nested opts group."""
+
+
+class NestedTestScheduler(TestScheduler):
+    def __init__(self, session_name: str) -> None:
+        Scheduler.__init__(self, "nested_test", session_name)
+
+    def _run_opts(self) -> runopts:
+        return OptA.as_runopts()
+
+
+_NESTED_CONFIG = """#
+[nested_test]
+name = foo
+b.x = bar
+b.y = baz
+"""
+
+
+class NestedConfigTest(TestWithTmpDir):
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"nested_test": NestedTestScheduler},
+    )
+    def test_load_and_from_cfg(self, _) -> None:
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="nested_test", f=StringIO(_NESTED_CONFIG), cfg=cfg)
+        self.assertEqual("foo", cfg.get("name"))
+        self.assertEqual("bar", cfg.get("b.x"))
+        self.assertEqual("baz", cfg.get("b.y"))
+
+        opts = OptA.from_cfg(cfg)
+        self.assertEqual(opts.name, "foo")
+        self.assertEqual(opts.b.x, "bar")
+        self.assertEqual(opts.b.y, "baz")
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"nested_test": NestedTestScheduler},
+    )
+    def test_load_no_override_and_partial(self, _) -> None:
+        cfg: dict[str, CfgVal] = {"b.x": "cli-value"}
+        load(scheduler="nested_test", f=StringIO(_NESTED_CONFIG), cfg=cfg)
+        self.assertEqual("cli-value", cfg.get("b.x"))
+        self.assertEqual("baz", cfg.get("b.y"))

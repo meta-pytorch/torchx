@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import logging
 import sys
@@ -12,7 +14,6 @@ import sys
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner.config import dump
 from torchx.schedulers import get_scheduler_factories
-
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -46,7 +47,9 @@ class CmdConfigure(SubCommand):
         required_only = not args.all
 
         if args.print:
+            # pyrefly: ignore [bad-argument-type]
             dump(f=sys.stdout, schedulers=schedulers, required_only=required_only)
         else:
             with open(".torchxconfig", "w") as f:
+                # pyrefly: ignore [bad-argument-type]
                 dump(f=f, schedulers=schedulers, required_only=required_only)

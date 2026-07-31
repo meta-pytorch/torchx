@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import logging
 import re
@@ -12,16 +14,19 @@ import sys
 import threading
 import time
 from queue import Queue
-from typing import List, Optional, TextIO, Tuple
+from typing import TextIO
 
 from torchx import specs
 from torchx.cli.cmd_base import SubCommand
-from torchx.cli.colors import ENDC, GREEN
 from torchx.runner import get_runner, Runner
 from torchx.schedulers.api import Stream
 from torchx.specs.api import is_started
 from torchx.specs.builders import make_app_handle
-
+from torchx.util.colors import ENDC, GREEN
+from torchx.util.log_tee_helpers import (
+    _find_role_replicas as find_role_replicas,
+    _prefix_line,
+)
 from torchx.util.types import none_throws
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -37,19 +42,6 @@ def validate(job_identifier: str) -> None:
         sys.exit(1)
 
 
-def _prefix_line(prefix: str, line: str) -> str:
-    """
-    _prefix_line ensure the prefix is still present even when dealing with return characters
-    """
-    if "\r" in line:
-        line = line.replace("\r", f"\r{prefix}")
-    if "\n" in line[:-1]:
-        line = line[:-1].replace("\n", f"\n{prefix}") + line[-1:]
-    if not line.startswith("\r"):
-        line = f"{prefix}{line}"
-    return line
-
-
 def print_log_lines(
     file: TextIO,
     runner: Runner,
@@ -59,7 +51,7 @@ def print_log_lines(
     regex: str,
     should_tail: bool,
     exceptions: "Queue[Exception]",
-    streams: Optional[Stream],
+    streams: Stream | None,
 ) -> None:
     try:
         for line in runner.log_lines(
@@ -71,19 +63,48 @@ def print_log_lines(
             streams=streams,
         ):
             prefix = f"{GREEN}{role_name}/{replica_id}{ENDC} "
-            print(_prefix_line(prefix, line), file=file, end="", flush=True)
+            try:
+                print(_prefix_line(prefix, line), file=file, end="", flush=True)
+            except BrokenPipeError:
+                return
     except Exception as e:
         exceptions.put(e)
         raise
 
 
+def _wait_for_app_started(runner: Runner, app_handle: str) -> bool:
+    """Block until ``app_handle`` has started.
+
+    Returns ``True`` once the app has started. Returns ``False`` (after logging
+    a warning) if the app does not exist: ``status()`` returns ``None`` only for
+    a missing / mistyped app id; a submitted-but-pending app returns a
+    non-``None`` status. Without this, ``torchx log`` polled ``status()`` forever
+    and RPC-spammed the scheduler until the process was killed.
+    """
+    display_waiting = True
+    while True:
+        status = runner.status(app_handle)
+        if status is None:
+            logger.warning(
+                "app `%s` not found; it does not exist or the app id is incorrect",
+                app_handle,
+            )
+            return False
+        elif is_started(status.state):
+            return True
+        elif display_waiting:
+            logger.info("Waiting for app state response before fetching logs...")
+            display_waiting = False
+        time.sleep(1)
+
+
 def get_logs(
     file: TextIO,
     identifier: str,
-    regex: Optional[str],
+    regex: str | None,
     should_tail: bool = False,
-    runner: Optional[Runner] = None,
-    streams: Optional[Stream] = None,
+    runner: Runner | None = None,
+    streams: Stream | None = None,
 ) -> None:
     validate(identifier)
     scheduler_backend, _, path_str = identifier.partition("://")
@@ -101,16 +122,8 @@ def get_logs(
     if len(path) == 4:
         replica_ids = [(role_name, int(id)) for id in path[3].split(",") if id]
     else:
-        display_waiting = True
-        while True:
-            status = runner.status(app_handle)
-            if status and is_started(status.state):
-                break
-            elif display_waiting:
-                logger.info("Waiting for app state response before fetching logs...")
-                display_waiting = False
-            time.sleep(1)
-
+        if not _wait_for_app_started(runner, app_handle):
+            return
         app = none_throws(runner.describe(app_handle))
         # print all replicas for the role
         replica_ids = find_role_replicas(app, role_name)
@@ -163,17 +176,6 @@ def get_logs(
             logger.error(threads_exceptions[i])
 
         raise threads_exceptions[0]
-
-
-def find_role_replicas(
-    app: specs.AppDef, role_name: Optional[str]
-) -> List[Tuple[str, int]]:
-    role_replicas = []
-    for role in app.roles:
-        if role_name is None or role_name == role.name:
-            for i in range(role.num_replicas):
-                role_replicas.append((role.name, i))
-    return role_replicas
 
 
 class CmdLog(SubCommand):

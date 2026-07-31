@@ -5,15 +5,17 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import os
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from torchx.cli.argparse_util import ArgOnceAction, torchxconfig
 from torchx.cli.cmd_base import SubCommand
 from torchx.cli.main import get_sub_cmds, main
-
 
 _root: Path = Path(__file__).parent
 
@@ -35,6 +37,8 @@ class CLITest(unittest.TestCase):
 
     def tearDown(self) -> None:
         os.chdir(self.old_cwd)
+        ArgOnceAction.called_args = set()
+        torchxconfig.called_args = set()
 
     def test_run_abs_config_path(self) -> None:
         main(

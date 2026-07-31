@@ -4,18 +4,18 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import unittest
 from configparser import ConfigParser
+from importlib.metadata import EntryPoint
 from types import ModuleType
-from typing import List
 from unittest.mock import MagicMock, patch
-
-from importlib_metadata import EntryPoint, EntryPoints
 
 from torchx.util.entrypoints import load, load_group
 
 
-def EntryPoint_from_config(config: ConfigParser) -> List[EntryPoint]:
+def EntryPoint_from_config(config: ConfigParser) -> list[EntryPoint]:
     # from stdlib, Copyright (c) Python Authors
     return [
         EntryPoint(name, value, group)
@@ -24,7 +24,7 @@ def EntryPoint_from_config(config: ConfigParser) -> List[EntryPoint]:
     ]
 
 
-def EntryPoint_from_text(text: str) -> List[EntryPoint]:
+def EntryPoint_from_text(text: str) -> list[EntryPoint]:
     # from stdlib, Copyright (c) Python Authors
     config = ConfigParser(delimiters="=")
     config.read_string(text)
@@ -64,13 +64,26 @@ _EP_GRP_IGN_MOD_TXT: str = """
 [ep.grp.missing.mod.test]
 baz = torchx.util.test.entrypoints_test.missing_module
 """
-_ENTRY_POINTS: EntryPoints = EntryPoints(
+
+_EPS: list[EntryPoint] = (
     EntryPoint_from_text(_EP_TXT)
     + EntryPoint_from_text(_EP_GRP_TXT)
     + EntryPoint_from_text(_EP_GRP_IGN_ATTR_TXT)
     + EntryPoint_from_text(_EP_GRP_MOD_TXT)
     + EntryPoint_from_text(_EP_GRP_IGN_MOD_TXT)
 )
+
+try:
+    from importlib.metadata import EntryPoints
+except ImportError:
+    # python<=3.9
+    _ENTRY_POINTS: dict[str, list[EntryPoint]] = {}
+    for ep in _EPS:
+        _ENTRY_POINTS.setdefault(ep.group, []).append(ep)
+else:
+    # python>=3.10
+    # pyrefly: ignore [redefinition]
+    _ENTRY_POINTS: EntryPoints = EntryPoints(_EPS)
 
 _METADATA_EPS: str = "torchx.util.entrypoints.metadata.entry_points"
 
@@ -93,37 +106,50 @@ class EntryPointsTest(unittest.TestCase):
     @patch(_METADATA_EPS, return_value=_ENTRY_POINTS)
     def test_load_group(self, _: MagicMock) -> None:
         eps = load_group("ep.grp.test")
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual(2, len(eps), eps)
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual("foobar", eps["foo"]())
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual("barbaz", eps["bar"]())
 
         eps = load_group("ep.grp.test.missing")
         self.assertIsNone(eps)
 
         eps = load_group("ep.grp.mod.test")
+        # pyrefly: ignore [not-callable, unsupported-operation]
         module = eps["baz"]()
         self.assertEqual(ModuleType, type(module))
         self.assertEqual("torchx.util.test.entrypoints_test", module.__name__)
 
         # module's deferred load function should ignore *args and **kwargs
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual(module, eps["baz"]("ignored", should="ignore"))
 
     @patch(_METADATA_EPS, return_value=_ENTRY_POINTS)
     def test_load_group_with_default(self, _: MagicMock) -> None:
         eps = load_group("ep.grp.test", {"foo": barbaz, "bar": foobar})
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual(2, len(eps))
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual("foobar", eps["foo"]())
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual("barbaz", eps["bar"]())
 
         eps = load_group("ep.grp.test.missing", {"foo": barbaz, "bar": foobar})
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual(2, len(eps))
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual("barbaz", eps["foo"]())
+        # pyrefly: ignore [not-callable, unsupported-operation]
         self.assertEqual("foobar", eps["bar"]())
 
     @patch(_METADATA_EPS, return_value=_ENTRY_POINTS)
     def test_load_group_missing(self, _: MagicMock) -> None:
         with self.assertRaises(AttributeError):
+            # pyrefly: ignore [not-callable, unsupported-operation]
             load_group("ep.grp.missing.attr.test")["baz"]()
 
         with self.assertRaises(ModuleNotFoundError):
+            # pyrefly: ignore [not-callable, unsupported-operation]
             load_group("ep.grp.missing.mod.test")["baz"]()

@@ -8,18 +8,23 @@ on:
 
 jobs:
   pyre:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-          architecture: x64
       - name: Checkout TorchX
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Install Dependencies
         run: |
           set -eux
-          pip install -e .[dev]
+          uv sync --frozen --extra dev
+      - name: Init Lint Runner
+        run: uv run lintrunner init
       - name: Run Pyre
-        run: scripts/pyre.sh
+        # Run pyre directly instead of via lintrunner to check the entire codebase.
+        # lintrunner's PYRE linter only checks files passed via PATHSFILE, but CI
+        # needs a full type check. See also: lint.yaml which skips PYRE.
+        run: uv run scripts/pyre.sh

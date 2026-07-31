@@ -11,12 +11,12 @@ from getpass import getuser
 from logging import getLogger, Logger
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
+from typing import Any, Iterable, Mapping, Sequence
+from urllib.parse import urlparse
 
 import mlflow
 from mlflow import MlflowClient
 from mlflow.entities import Experiment, Run
-
 from torchx.distributed import on_rank0_first
 from torchx.runner.config import get_configs
 from torchx.tracker.api import (
@@ -48,21 +48,32 @@ class MLflowTracker(TrackerBase):
         of the job submission API).
 
     .. warning::
-        APIs on this class may only be called with the same ``run_name`.
+        APIs on this class may only be called with the same ``run_name``.
         Typically the user does not have to worry about manually setting
         the run_name as it is picked up by default from the environment variable
-        ``TORCHX_APP_NAME``.
+        ``TORCHX_JOB_ID``.
+
+    .. warning::
+        **Lineage not supported.** The following ``TrackerBase`` methods raise
+        :py:class:`NotImplementedError`: :py:meth:`add_source`,
+        :py:meth:`sources`, and :py:meth:`lineage`. If you need lineage
+        tracking, use :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker`
+        or implement a custom backend.
 
     """
 
     def __init__(
         self,
-        experiment_name: Optional[str] = None,
-        tracking_uri: str = f"file://{Path(gettempdir()) / 'torchx' / 'mlruns'}",
-        artifact_location: Optional[str] = None,
+        experiment_name: str | None = None,
+        tracking_uri: str = f"sqlite:///{Path(gettempdir()) / 'torchx' / 'mlruns.db'}",
+        artifact_location: str | None = None,
     ) -> None:
         if experiment_name is None:
             experiment_name = self.default_experiment_name()
+
+        parsed = urlparse(tracking_uri)
+        if parsed.scheme.startswith("sqlite"):
+            Path(parsed.path).parent.mkdir(parents=True, exist_ok=True)
 
         self.tracking_uri = tracking_uri
         mlflow.set_tracking_uri(tracking_uri)
@@ -186,7 +197,7 @@ class MLflowTracker(TrackerBase):
         run_id: str,
         name: str,
         path: str,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Mapping[str, object] | None = None,
     ) -> None:
         self.get_run(run_id)
         # stores the artifact in {artifact_location}/{name} (e.g. s3://bucket/prefix/{name})
@@ -203,10 +214,10 @@ class MLflowTracker(TrackerBase):
             )
 
     def artifacts(self, run_id: str) -> Mapping[str, TrackerArtifact]:
-        artifacts: Dict[str, TrackerArtifact] = {}
+        artifacts: dict[str, TrackerArtifact] = {}
         mlflow_client: MlflowClient = MlflowClient(self.tracking_uri)
 
-        def get_artifacts(path: Optional[str] = None) -> None:
+        def get_artifacts(path: str | None = None) -> None:
             for artifact_info in mlflow_client.list_artifacts(
                 self.get_run(run_id).info.run_id, path=path
             ):
@@ -328,14 +339,14 @@ class MLflowTracker(TrackerBase):
                         self.log_params_flat(run_name, v, f"{key_prefix}{k}")
 
     def add_source(
-        self, run_id: str, source_id: str, artifact_name: Optional[str] = None
+        self, run_id: str, source_id: str, artifact_name: str | None = None
     ) -> None:
         raise NotImplementedError(
             f"Job's tracker sources is currently unsupported for {self.__class__.__qualname__}"
         )
 
     def sources(
-        self, run_id: str, artifact_name: Optional[str] = None
+        self, run_id: str, artifact_name: str | None = None
     ) -> Iterable[TrackerSource]:
         raise NotImplementedError(
             f"Job's tracker sources is currently unsupported for {self.__class__.__qualname__}"

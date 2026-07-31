@@ -5,6 +5,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import abc
 import json
 import multiprocessing as mp
@@ -19,7 +21,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from os.path import join
-from typing import Callable, Dict, Generator, List, Optional
+from typing import Callable, Generator
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -30,9 +32,9 @@ from torchx.schedulers.local_scheduler import (
     CWDImageProvider,
     ENV_CUDA_VISIBLE_DEVICES,
     LocalDirectoryImageProvider,
-    LocalOpts,
     LocalScheduler,
     make_unique,
+    Opts,
     PopenRequest,
 )
 from torchx.specs.api import (
@@ -76,7 +78,7 @@ def start_sleep_processes(
     )
 
     app = AppDef(name="test_app", roles=[role])
-    cfg = LocalOpts({"log_dir": test_dir})
+    cfg = Opts(log_dir=test_dir)
 
     scheduler = LocalScheduler(
         session_name="test_session", image_provider_class=LocalDirectoryImageProvider
@@ -190,10 +192,10 @@ class LocalSchedulerTestUtil(abc.ABC):
     def wait(
         self,
         app_id: str,
-        scheduler: Optional[LocalScheduler] = None,
+        scheduler: LocalScheduler | None = None,
         timeout: float = 30,
         wait_for: Callable[[AppState], bool] = is_terminal,
-    ) -> Optional[DescribeAppResponse]:
+    ) -> DescribeAppResponse | None:
         """
         Waits for the app to finish or raise TimeoutError upon timeout (in seconds).
         If no timeout is specified waits indefinitely.
@@ -258,7 +260,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
         app = AppDef(name="test_app", roles=[role])
         expected_app_id = make_unique(app.name)
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         with patch(LOCAL_SCHEDULER_MAKE_UNIQUE, return_value=expected_app_id):
             app_id = self.scheduler.submit(app, cfg)
 
@@ -318,7 +320,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         app = AppDef(name="test_app", roles=[role])
         expected_app_id = make_unique(app.name)
         with patch(LOCAL_SCHEDULER_MAKE_UNIQUE, return_value=expected_app_id):
-            cfg = {"log_dir": self.test_dir}
+            cfg = Opts(log_dir=self.test_dir)
             app_id = self.scheduler.submit(app, cfg)
 
         self.assertEqual(f"{expected_app_id}", app_id)
@@ -464,7 +466,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         for std_stream in ["stdout", "stderr"]:
             with self.subTest(std_stream=std_stream):
                 log_dir = join(self.test_dir, f"test_{std_stream}_log")
-                cfg = LocalOpts({"log_dir": log_dir})
+                cfg = Opts(log_dir=log_dir)
 
                 role = Role(
                     "role1",
@@ -497,7 +499,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
                         )
 
     @patch(LOCAL_DIR_IMAGE_PROVIDER_FETCH, return_value="")
-    def test_submit_dryrun_without_log_dir_cfg(self, _) -> None:
+    def test_submit_dryrun_without_log_dir_cfg(self, _: MagicMock) -> None:
         master = Role(
             "master",
             image=self.test_dir,
@@ -562,7 +564,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
 
         app = AppDef(name="test_app", roles=[trainer])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         info = self.scheduler.submit_dryrun(app, cfg)
         # intentional print (to make sure it actually prints with no errors)
         print(info)
@@ -616,7 +618,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
         reader = Role("reader", image=self.test_dir, entrypoint="reader_main.py")
         app = AppDef(name="test_app", roles=[trainer, reader])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         info = self.scheduler.submit_dryrun(app, cfg)
         request = info.request
 
@@ -653,7 +655,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
 
         log_dir = join(self.test_dir, "log")
-        cfg = LocalOpts({"log_dir": log_dir})
+        cfg = Opts(log_dir=log_dir)
         app = AppDef(name="test_app", roles=[role])
         app_id = self.scheduler.submit(app, cfg)
 
@@ -720,7 +722,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             num_replicas=1,
         )
         app = AppDef(name="test_app", roles=[role1, role2])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         app_id = self.scheduler.submit(app, cfg)
 
         desc = self.wait(app_id)
@@ -738,7 +740,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             num_replicas=1,
         )
         app = AppDef(name="test_app", roles=[role])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         self.assertIsNone(self.scheduler.describe("test_app_0"))
         app_id = self.scheduler.submit(app, cfg)
         desc = self.scheduler.describe(app_id)
@@ -757,7 +759,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             num_replicas=1,
         )
         app = AppDef(name="test_app", roles=[role])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         app_id = self.scheduler.submit(app, cfg)
         desc = self.scheduler.describe(app_id)
         assert desc is not None
@@ -780,7 +782,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             num_replicas=1,
         )
         app = AppDef(name="test_app", roles=[role])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         app_id = self.scheduler.submit(app, cfg)
 
         self.assertTrue(self.scheduler.exists(app_id))
@@ -816,7 +818,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             num_replicas=1,
         )
         app = AppDef(name="test_app", roles=[role])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
         app_id = scheduler.submit(app, cfg)
         with self.assertRaises(IndexError):
             scheduler.submit(app, cfg)
@@ -839,7 +841,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
         app1 = AppDef(name="touch_test_file1", roles=[role1])
         app2 = AppDef(name="touch_test_file2", roles=[role2])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
 
         app_id1 = scheduler.submit(app1, cfg)
         resp1 = self.wait(app_id1, scheduler)
@@ -958,7 +960,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
 
     def assert_CUDA_VISIBLE_DEVICES(
-        self, dryrun_info: AppDryRunInfo[PopenRequest], expected: Dict[str, List[str]]
+        self, dryrun_info: AppDryRunInfo[PopenRequest], expected: dict[str, list[str]]
     ) -> None:
         for role_name, replica_params in dryrun_info.request.role_params.items():
             if role_name in expected:

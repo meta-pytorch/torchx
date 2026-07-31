@@ -4,27 +4,46 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-unsafe
+
 import argparse
 import inspect
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+import os
+from argparse import Namespace
+from typing import Any, Callable, Mapping, NamedTuple
 
 from torchx.specs.api import BindMount, MountType, VolumeMount
 from torchx.specs.file_linter import get_fn_docstring, TorchXArgumentHelpFormatter
-from torchx.util.types import (
-    decode_from_string,
-    decode_optional,
-    get_argparse_param_type,
-    is_bool,
-    is_primitive,
-)
+from torchx.util.types import decode, decode_optional, get_argparse_param_type, is_bool
 
 from .api import AppDef, DeviceMount
 
 
+class ComponentArgs(NamedTuple):
+    """Parsed component function arguments"""
+
+    positional_args: dict[str, Any]
+    var_args: list[str]
+    kwargs: dict[str, Any]
+
+
 def _create_args_parser(
-    cmpnt_fn: Callable[..., AppDef], cmpnt_defaults: Optional[Dict[str, str]] = None
+    cmpnt_fn: Callable[..., AppDef],
+    cmpnt_defaults: dict[str, str] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> argparse.ArgumentParser:
     parameters = inspect.signature(cmpnt_fn).parameters
+    return _create_args_parser_from_parameters(
+        cmpnt_fn, parameters, cmpnt_defaults, config
+    )
+
+
+def _create_args_parser_from_parameters(
+    cmpnt_fn: Callable[..., AppDef],
+    parameters: Mapping[str, inspect.Parameter],
+    cmpnt_defaults: dict[str, str] | None = None,
+    config: dict[str, Any] | None = None,
+) -> argparse.ArgumentParser:
     function_desc, args_desc = get_fn_docstring(cmpnt_fn)
     script_parser = argparse.ArgumentParser(
         prog=f"torchx run <run args...> {cmpnt_fn.__name__} ",
@@ -49,7 +68,7 @@ def _create_args_parser(
             parser: argparse.ArgumentParser,
             namespace: argparse.Namespace,
             values: Any,
-            option_string: Optional[str] = None,
+            option_string: str | None = None,
         ) -> None:
             setattr(
                 namespace,
@@ -59,7 +78,7 @@ def _create_args_parser(
 
     for param_name, parameter in parameters.items():
         param_desc = args_desc[parameter.name]
-        args: Dict[str, Any] = {
+        args: dict[str, Any] = {
             "help": param_desc,
             "type": get_argparse_param_type(parameter),
         }
@@ -82,18 +101,151 @@ def _create_args_parser(
             script_parser.add_argument(param_name, **args)
         else:
             arg_names = [f"--{param_name}"]
-            if len(param_name) == 1:
+            if hasattr(parameter.annotation, "__metadata__"):
+                for meta in parameter.annotation.__metadata__:
+                    if isinstance(meta, str) and meta.startswith("-"):
+                        arg_names.insert(0, meta)
+            elif len(param_name) == 1:
                 arg_names = [f"-{param_name}"] + arg_names
             if "default" not in args:
-                args["required"] = True
+                if (config and param_name not in config) or not config:
+                    args["required"] = True
+
             script_parser.add_argument(*arg_names, **args)
     return script_parser
 
 
+def _merge_config_values_with_args(
+    parsed_args: argparse.Namespace, config: dict[str, Any]
+) -> None:
+    for key, val in config.items():
+        if key in parsed_args:
+            setattr(parsed_args, key, val)
+
+
+def parse_args(
+    cmpnt_fn: Callable[..., AppDef],
+    cmpnt_args: list[str],
+    cmpnt_defaults: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
+) -> Namespace:
+    """
+    Parse passed arguments, defaults, and config values into a namespace for
+    a component function.
+
+    Args:
+    cmpnt_fn: Component function
+    cmpnt_args: Function args
+    cmpnt_defaults: Additional default values for parameters of ``app_fn``
+                        (overrides the defaults set on the fn declaration)
+    config: Optional dict containing additional configuration for the component from a passed config file
+
+    Returns:
+    A Namespace object with the args, defaults, and config values incorporated.
+    """
+
+    script_parser = _create_args_parser(cmpnt_fn, cmpnt_defaults, config)
+    parsed_args = script_parser.parse_args(cmpnt_args)
+    if config:
+        _merge_config_values_with_args(parsed_args, config)
+
+    return parsed_args
+
+
+def component_args_from_str(
+    cmpnt_fn: Callable[..., AppDef],
+    cmpnt_args: list[str],
+    cmpnt_args_defaults: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
+) -> ComponentArgs:
+    """
+    Parses and decodes command-line arguments for a component function.
+
+    This function takes a component function and its arguments, parses them using argparse,
+    and decodes the arguments into their expected types based on the function's signature.
+    It separates positional arguments, variable positional arguments (*args), and keyword-only arguments.
+
+    Args:
+        cmpnt_fn: The component function whose arguments are to be parsed and decoded.
+        cmpnt_args: List of command-line arguments to be parsed. Supports both space separated and '=' separated arguments.
+        cmpnt_args_defaults: Optional dictionary of default values for the component function's parameters.
+        config: Optional dictionary containing additional configuration values.
+
+    Returns:
+        ComponentArgs representing the input args to a component function containing:
+            - positional_args: Dictionary of positional and positional-or-keyword arguments.
+            - var_args: List of variable positional arguments (*args).
+            - kwargs: Dictionary of keyword-only arguments.
+
+        Usage:
+
+        .. doctest::
+            from torchx.specs.api import AppDef
+            from torchx.specs.builders import component_args_from_str
+
+            def example_component_fn(foo: str, *args: str, bar: str = "asdf") -> AppDef:
+                return AppDef(name="example")
+
+            # Supports space separated arguments
+            args = ["--foo", "fooval", "--bar", "barval", "arg1", "arg2"]
+            parsed_args = component_args_from_str(example_component_fn, args)
+
+            assert parsed_args.positional_args == {"foo": "fooval"}
+            assert parsed_args.var_args == ["arg1", "arg2"]
+            assert parsed_args.kwargs == {"bar": "barval"}
+
+            # Supports '=' separated arguments
+            args = ["--foo=fooval", "--bar=barval", "arg1", "arg2"]
+            parsed_args = component_args_from_str(example_component_fn, args)
+
+            assert parsed_args.positional_args == {"foo": "fooval"}
+            assert parsed_args.var_args == ["arg1", "arg2"]
+            assert parsed_args.kwargs == {"bar": "barval"}
+
+
+    """
+    parsed_args: Namespace = parse_args(
+        cmpnt_fn, cmpnt_args, cmpnt_args_defaults, config
+    )
+
+    positional_args = {}
+    var_args = []
+    kwargs = {}
+
+    parameters = inspect.signature(cmpnt_fn).parameters
+    for param_name, parameter in parameters.items():
+        arg_value = getattr(parsed_args, param_name)
+        parameter_type = parameter.annotation
+        parameter_type = decode_optional(parameter_type)
+        if (
+            parameter_type != arg_value.__class__
+            and parameter.kind != inspect.Parameter.VAR_POSITIONAL
+        ):
+            arg_value = decode(arg_value, parameter_type)
+        if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
+            var_args = arg_value
+        elif parameter.kind == inspect.Parameter.KEYWORD_ONLY:
+            kwargs[param_name] = arg_value
+        elif parameter.kind == inspect.Parameter.VAR_KEYWORD:
+            raise TypeError(
+                f"component fn param `{param_name}` is a '**kwargs' which is not supported; consider changing the "
+                f"type to a dict or explicitly declare the params"
+            )
+        else:
+            # POSITIONAL or POSITIONAL_OR_KEYWORD
+            positional_args[param_name] = arg_value
+
+    if len(var_args) > 0 and var_args[0] == "--":
+        var_args = var_args[1:]
+
+    return ComponentArgs(positional_args, var_args, kwargs)
+
+
 def materialize_appdef(
     cmpnt_fn: Callable[..., AppDef],
-    cmpnt_args: List[str],
-    cmpnt_defaults: Optional[Dict[str, str]] = None,
+    cmpnt_args: list[str],
+    cmpnt_defaults: dict[str, Any] | None = None,
+    config: dict[str, Any] | None = None,
 ) -> AppDef:
     """
     Creates an application by running user defined ``app_fn``.
@@ -118,38 +270,25 @@ def materialize_appdef(
         cmpnt_args: Function args
         cmpnt_defaults: Additional default values for parameters of ``app_fn``
                           (overrides the defaults set on the fn declaration)
+        config: Optional dict containing additional configuration for the component from a passed config file
     Returns:
         An application spec
     """
 
-    script_parser = _create_args_parser(cmpnt_fn, cmpnt_defaults)
-    parsed_args = script_parser.parse_args(cmpnt_args)
+    component_args: ComponentArgs = component_args_from_str(
+        cmpnt_fn, cmpnt_args, cmpnt_defaults, config
+    )
+    positional_arg_values = list(component_args.positional_args.values())
+    appdef = cmpnt_fn(
+        *positional_arg_values, *component_args.var_args, **component_args.kwargs
+    )
 
-    function_args = []
-    var_arg = []
-    kwargs = {}
+    if not isinstance(appdef, AppDef):
+        raise TypeError(
+            f"Expected a component that returns `AppDef`, but got `{type(appdef)}`"
+        )
 
-    parameters = inspect.signature(cmpnt_fn).parameters
-    for param_name, parameter in parameters.items():
-        arg_value = getattr(parsed_args, param_name)
-        parameter_type = parameter.annotation
-        parameter_type = decode_optional(parameter_type)
-        if is_bool(parameter_type):
-            arg_value = arg_value and arg_value.lower() == "true"
-        elif not is_primitive(parameter_type):
-            arg_value = decode_from_string(arg_value, parameter_type)
-        if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-            var_arg = arg_value
-        elif parameter.kind == inspect.Parameter.KEYWORD_ONLY:
-            kwargs[param_name] = arg_value
-        elif parameter.kind == inspect.Parameter.VAR_KEYWORD:
-            raise TypeError("**kwargs are not supported for component definitions")
-        else:
-            function_args.append(arg_value)
-    if len(var_arg) > 0 and var_arg[0] == "--":
-        var_arg = var_arg[1:]
-
-    return cmpnt_fn(*function_args, *var_arg, **kwargs)
+    return appdef
 
 
 def make_app_handle(scheduler_backend: str, session_name: str, app_id: str) -> str:
@@ -169,7 +308,7 @@ _MOUNT_OPT_MAP: Mapping[str, str] = {
 }
 
 
-def parse_mounts(opts: List[str]) -> List[Union[BindMount, VolumeMount, DeviceMount]]:
+def parse_mounts(opts: list[str]) -> list[BindMount | VolumeMount | DeviceMount]:
     """
     parse_mounts parses a list of options into typed mounts following a similar
     format to Dockers bind mount.
@@ -202,33 +341,50 @@ def parse_mounts(opts: List[str]) -> List[Union[BindMount, VolumeMount, DeviceMo
         cur[key] = val
 
     mounts = []
+    # pyrefly: ignore [bad-assignment]
     for opts in mount_opts:
+        # pyrefly: ignore [missing-attribute]
         typ = opts.get("type")
         if typ == MountType.BIND:
+            # pyrefly: ignore [bad-index]
+            src_path = opts["src"]
+            if src_path.startswith("~"):
+                src_path = os.path.expanduser(src_path)
             mounts.append(
                 BindMount(
-                    src_path=opts["src"],
+                    src_path=src_path,
+                    # pyrefly: ignore [bad-index]
                     dst_path=opts["dst"],
                     read_only="readonly" in opts,
                 )
             )
         elif typ == MountType.VOLUME:
             mounts.append(
+                # pyrefly: ignore [bad-argument-type]
                 VolumeMount(
-                    src=opts["src"], dst_path=opts["dst"], read_only="readonly" in opts
+                    # pyrefly: ignore [bad-index]
+                    src=opts["src"],
+                    # pyrefly: ignore [bad-index]
+                    dst_path=opts["dst"],
+                    read_only="readonly" in opts,
                 )
             )
         elif typ == MountType.DEVICE:
+            # pyrefly: ignore [bad-index]
             src = opts["src"]
+            # pyrefly: ignore [missing-attribute]
             dst = opts.get("dst", src)
+            # pyrefly: ignore [missing-attribute]
             perm = opts.get("perm", "rwm")
             for c in perm:
                 if c not in "rwm":
                     raise ValueError(
                         f"{c} is not a valid permission flags must one of r,w,m"
                     )
+            # pyrefly: ignore [bad-argument-type]
             mounts.append(DeviceMount(src_path=src, dst_path=dst, permissions=perm))
         else:
             valid = list(str(item.value) for item in MountType)
             raise ValueError(f"invalid mount type {repr(typ)}, must be one of {valid}")
+    # pyrefly: ignore [bad-return]
     return mounts

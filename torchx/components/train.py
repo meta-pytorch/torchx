@@ -11,8 +11,7 @@ however have examples for how you can construct your training app as well as
 generic components you can use to run your custom training app.
 
 
-1. :ref:`examples_apps/lightning/train:Trainer Example`
-2. :ref:`component_best_practices:Component Best Practices`
+1. :ref:`component_best_practices:Component Best Practices`
 3. See :py:mod:`torchx.components` to learn more about authoring components
 4. For more information on distributed training see :py:mod:`torchx.components.dist`.
 

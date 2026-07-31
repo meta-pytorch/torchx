@@ -5,18 +5,19 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import subprocess
 import sys
 import time
-from typing import List
 
 import fsspec
 
 TIMEOUT_EXIT_CODE = 34
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="monitors a process and terminates it when a condition is met"
     )
@@ -61,7 +62,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     args = parse_args(argv)
     start_time = time.time()
 

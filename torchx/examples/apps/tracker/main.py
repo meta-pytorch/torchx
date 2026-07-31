@@ -4,11 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import os
 import pathlib
 from argparse import Namespace
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -17,10 +18,8 @@ import torch.optim as optim
 import torchx.tracker as tracker
 from torch import Tensor
 from torch.optim.lr_scheduler import StepLR
-
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
-
 from torchvision.datasets import VisionDataset
 
 
@@ -57,7 +56,7 @@ def train(
     train_loader: torch.utils.data.DataLoader[VisionDataset],
     optimizer: optim.Optimizer,
     epoch: int,
-    writer: Optional[SummaryWriter],
+    writer: SummaryWriter | None,
 ) -> None:
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -88,7 +87,7 @@ def test(
     model: nn.Module,
     device: torch.device,
     test_loader: torch.utils.data.DataLoader[VisionDataset],
-    writer: Optional[SummaryWriter],
+    writer: SummaryWriter | None,
 ) -> None:
     model.eval()
     test_loss = 0
@@ -97,6 +96,8 @@ def test(
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
+            # pyre-fixme[58]: `+` is not supported for operand types `int` and
+            #  `Union[bool, float, int]`.
             test_loss += F.nll_loss(
                 output, target, reduction="sum"
             ).item()  # sum up batch loss

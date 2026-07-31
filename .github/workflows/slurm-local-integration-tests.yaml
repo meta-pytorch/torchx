@@ -6,23 +6,21 @@ on:
       - main
   pull_request:
 
+
 env:
-  SLURM_VERSION: 21.08.6
+  # slurm tag should be one of https://github.com/SchedMD/slurm/tags
+  SLURM_TAG: slurm-23-11-11-1
+  SLURM_VERSION: 23.11.11
 
 jobs:
   slurm:
-    runs-on: ubuntu-20.04
+    runs-on: linux.24_04.4x
     permissions:
       id-token: write
       contents: read
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-          architecture: x64
       - name: Checkout TorchX
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: Checkout slurm-docker-cluster
         run: |
           set -ex
@@ -34,7 +32,7 @@ jobs:
           set -ex
 
           cd slurm-docker-cluster
-          docker-compose pull --ignore-pull-failures
+          docker compose pull --ignore-pull-failures
         continue-on-error: true
       # cache layers to avoid rebuilding slurm
       - uses: satackey/action-docker-layer-caching@v0.0.11
@@ -48,12 +46,12 @@ jobs:
         run: |
           set -ex
           cd slurm-docker-cluster
-          IMAGE_TAG=$SLURM_VERSION docker-compose up --detach
-      - name: Install Dependencies
-        run:
-          set -ex
-
-          pip install wheel
+          IMAGE_TAG=$SLURM_VERSION docker compose up --detach
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - name: Run Slurm Integration Tests
         run: |
           set -e

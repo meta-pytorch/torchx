@@ -37,7 +37,7 @@ article.pytorch-article .py dt span.pre {
 .output_area.stderr.docutils.container {
   background-color: #fed !important;
 }
-.note .admonition-title > p {
+.note .admonition-title > p, .warning .admonition-title > p {
   margin: 0 !important;
   font: inherit;
   color: inherit;

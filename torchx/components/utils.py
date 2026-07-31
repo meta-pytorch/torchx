@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This contains TorchX utility components that are `ready-to-use` out of the box. These are
 components that simply execute well known binaries (e.g. ``cp``)
@@ -13,7 +15,7 @@ meaningful stages in a workflow.
 
 import os
 import shlex
-from typing import Dict, List, Optional
+from typing import Annotated
 
 import torchx
 import torchx.specs as specs
@@ -77,10 +79,11 @@ def sh(
     cpu: int = 1,
     gpu: int = 0,
     memMB: int = 1024,
-    h: Optional[str] = None,
-    env: Optional[Dict[str, str]] = None,
+    h: str | None = None,
+    env: dict[str, str] | None = None,
     max_retries: int = 0,
-    mounts: Optional[List[str]] = None,
+    mounts: list[str] | None = None,
+    entrypoint: str | None = None,
 ) -> specs.AppDef:
     """
     Runs the provided command via sh. Currently sh does not support
@@ -98,12 +101,20 @@ def sh(
         max_retries: the number of scheduler retries allowed
         mounts: mounts to mount into the worker environment/container (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
                 See scheduler documentation for more info.
+        entrypoint: the entrypoint to use for the command (defaults to sh)
     """
 
-    escaped_args = " ".join(shlex.quote(arg) for arg in args)
+    escaped_args = [shlex.quote(arg) for arg in args]
     if env is None:
         env = {}
     env.setdefault("LOGLEVEL", os.getenv("LOGLEVEL", "WARNING"))
+
+    if entrypoint is not None:
+        resolved_entrypoint = entrypoint
+        resolved_args = escaped_args
+    else:
+        resolved_entrypoint = "sh"
+        resolved_args = ["-c", " ".join(escaped_args)]
 
     return specs.AppDef(
         name="sh",
@@ -111,8 +122,8 @@ def sh(
             specs.Role(
                 name="sh",
                 image=image,
-                entrypoint="sh",
-                args=["-c", escaped_args],
+                entrypoint=resolved_entrypoint,
+                args=resolved_args,
                 num_replicas=num_replicas,
                 resource=specs.resource(cpu=cpu, gpu=gpu, memMB=memMB, h=h),
                 env=env,
@@ -125,15 +136,15 @@ def sh(
 
 def python(
     *args: str,
-    m: Optional[str] = None,
-    c: Optional[str] = None,
-    script: Optional[str] = None,
+    m: str | None = None,
+    c: str | None = None,
+    script: str | None = None,
     image: str = torchx.IMAGE,
     name: str = "torchx_utils_python",
     cpu: int = 1,
     gpu: int = 0,
     memMB: int = 1024,
-    h: Optional[str] = None,
+    h: str | None = None,
     num_replicas: int = 1,
     mounts: Optional[List[str]] = None,
 ) -> specs.AppDef:
@@ -144,7 +155,7 @@ def python(
 
     Note: (cpu, gpu, memMB) parameters are mutually exclusive with ``h`` (named resource) where
           ``h`` takes precedence if specified for setting resource requirements.
-          See `registering named resources <https://pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+          See `registering named resources <https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
 
     Args:
         args: arguments passed to the program in sys.argv[1:] (ignored with `--c`)
@@ -201,7 +212,7 @@ def binary(
     cpu: int = 1,
     gpu: int = 0,
     memMB: int = 1024,
-    h: Optional[str] = None,
+    h: str | None = None,
 ) -> specs.AppDef:
     """
     Test component
@@ -309,3 +320,66 @@ def booth(
             )
         ],
     )
+
+
+def hydra(
+    *overrides: str,
+    config_name: Annotated[str, "-cn"],
+    config_dir: Annotated[str, "-cd"] = ".torchx",
+) -> specs.AppDef:
+    """Build AppDef from Hydra configuration.
+
+    Config should have an 'app' key with _target_: torchx.specs.AppDef.
+    Other top-level keys (like 'role') can be used for config groups and interpolation.
+
+    Example::
+
+        defaults:
+          - role: python
+
+        app:
+          _target_: torchx.specs.AppDef
+          name: my_job
+          roles:
+            - ${role}
+
+    Args:
+        overrides: Hydra config overrides (e.g., role.num_replicas=2)
+        config_name: Config file name in config_dir
+        config_dir: Directory containing configs (default: .torchx)
+
+    Returns:
+        AppDef instantiated from configuration
+    """
+    from hydra import compose, initialize_config_dir
+    from hydra.utils import instantiate
+    from omegaconf import OmegaConf
+
+    # Register TorchX resolvers - return escaped strings so they're not re-resolved
+    # The backslash escape tells OmegaConf to store the literal ${...} string
+    OmegaConf.register_new_resolver(
+        "torchx.app_id", lambda: f"\\{specs.macros.app_id}", replace=True
+    )
+    OmegaConf.register_new_resolver(
+        "torchx.replica_id", lambda: f"\\{specs.macros.replica_id}", replace=True
+    )
+    OmegaConf.register_new_resolver(
+        "torchx.rank0_env", lambda: f"\\{specs.macros.rank0_env}", replace=True
+    )
+    OmegaConf.register_new_resolver(
+        "torchx.img_root", lambda: f"\\{specs.macros.img_root}", replace=True
+    )
+    config_dir = (
+        config_dir if os.path.isabs(config_dir) else os.path.abspath(config_dir)
+    )
+    initialize_config_dir(config_dir=config_dir, version_base="1.3")
+    cfg = compose(config_name=config_name, overrides=list(overrides))
+
+    if os.environ.get("TORCHX_DEBUG"):
+        print("=" * 80)
+        print("TORCHX DEBUG: Configuration")
+        print("=" * 80)
+        print(OmegaConf.to_yaml(cfg))
+        print("=" * 80)
+
+    return instantiate(cfg.app, _convert_="all")

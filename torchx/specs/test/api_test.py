@@ -5,15 +5,21 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+import asyncio
+import concurrent
 import os
+import tempfile
 import time
 import unittest
 from dataclasses import asdict
+from pathlib import Path
 from typing import Dict, List, Mapping, Union
+from unittest import mock
 from unittest.mock import MagicMock
 
-import torchx.specs.named_resources_aws as named_resources_aws
-from torchx.specs import named_resources, resource
+from torchx.specs import named_resources, named_resources_aws, resource
 from torchx.specs.api import (
     _TERMINAL_STATES,
     AppDef,
@@ -21,6 +27,7 @@ from torchx.specs.api import (
     AppState,
     AppStatus,
     AppStatusError,
+    cases,
     CfgVal,
     get_type_name,
     InvalidRunConfigException,
@@ -34,8 +41,136 @@ from torchx.specs.api import (
     RetryPolicy,
     Role,
     RoleStatus,
+    runopt,
     runopts,
+    TORCHX_HOME,
+    Workspace,
 )
+from torchx.test.fixtures import TestWithTmpDir
+
+
+class TorchXHomeTest(unittest.TestCase):
+    # guard against TORCHX_HOME set outside the test
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_TORCHX_HOME_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            user_home = Path(tmpdir) / "sally"
+            with mock.patch("pathlib.Path.home", return_value=user_home):
+                torchx_home = TORCHX_HOME()
+                self.assertEqual(torchx_home, user_home / ".torchx")
+                self.assertTrue(torchx_home.exists())
+
+    def test_TORCHX_HOME_override(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            override_torchx_home = Path(tmpdir) / "test" / ".torchx"
+            with mock.patch.dict(
+                os.environ, {"TORCHX_HOME": str(override_torchx_home)}
+            ):
+                torchx_home = TORCHX_HOME()
+                conda_pack_out = TORCHX_HOME("conda-pack", "out")
+
+                self.assertEqual(override_torchx_home, torchx_home)
+                self.assertEqual(torchx_home / "conda-pack" / "out", conda_pack_out)
+
+                self.assertTrue(torchx_home.is_dir())
+                self.assertTrue(conda_pack_out.is_dir())
+
+
+class WorkspaceTest(TestWithTmpDir):
+
+    def test_bool(self) -> None:
+        self.assertFalse(Workspace(projects={}))
+        self.assertFalse(Workspace.from_str(""))
+
+        self.assertTrue(Workspace(projects={"/home/foo/bar": ""}))
+        self.assertTrue(Workspace.from_str("/home/foo/bar"))
+
+    def test_to_string_single_project_workspace(self) -> None:
+        self.assertEqual(
+            "/home/foo/bar",
+            str(Workspace(projects={"/home/foo/bar": ""})),
+        )
+
+    def test_to_string_multi_project_workspace(self) -> None:
+        workspace = Workspace(
+            projects={
+                "/home/foo/workspace/myproj": "",
+                "/home/foo/github/torch": "torch",
+            }
+        )
+
+        self.assertEqual(
+            "/home/foo/workspace/myproj;/home/foo/github/torch:torch",
+            str(workspace),
+        )
+
+    def test_is_unmapped_single_project_workspace(self) -> None:
+        self.assertTrue(
+            Workspace(projects={"/home/foo/bar": ""}).is_unmapped_single_project()
+        )
+
+        self.assertFalse(
+            Workspace(projects={"/home/foo/bar": "baz"}).is_unmapped_single_project()
+        )
+
+        self.assertFalse(
+            Workspace(
+                projects={"/home/foo/bar": "", "/home/foo/torch": ""}
+            ).is_unmapped_single_project()
+        )
+
+        self.assertFalse(
+            Workspace(
+                projects={"/home/foo/bar": "", "/home/foo/torch": "pytorch"}
+            ).is_unmapped_single_project()
+        )
+
+    def test_from_str_single_project(self) -> None:
+        self.assertDictEqual(
+            {"/home/foo/bar": ""},
+            Workspace.from_str("/home/foo/bar").projects,
+        )
+
+        self.assertDictEqual(
+            {"/home/foo/bar": "baz"},
+            Workspace.from_str("/home/foo/bar: baz").projects,
+        )
+
+    def test_from_str_multi_project(self) -> None:
+        self.assertDictEqual(
+            {
+                "/home/foo/bar": "",
+                "/home/foo/third-party/verl": "verl",
+            },
+            Workspace.from_str(
+                """#
+/home/foo/bar:
+/home/foo/third-party/verl: verl
+"""
+            ).projects,
+        )
+
+    def test_merge(self) -> None:
+        self.touch("workspace/myproj/README.md")
+        self.touch("workspace/myproj/bin/cli")
+
+        self.touch("workspace/torch/setup.py")
+        self.touch("workspace/torch/torch/__init__.py")
+
+        w = Workspace(
+            projects={
+                str(self.tmpdir / "workspace/myproj"): "",
+                str(self.tmpdir / "workspace/torch"): "torch",
+            }
+        )
+
+        outdir = self.tmpdir / "out"
+        w.merge_into(outdir)
+
+        self.assertTrue((outdir / "README.md").is_file())
+        self.assertTrue((outdir / "bin/cli").is_file())
+        self.assertTrue((outdir / "torch/setup.py").is_file())
+        self.assertTrue((outdir / "torch/torch/__init__.py").is_file())
 
 
 class AppDryRunInfoTest(unittest.TestCase):
@@ -172,6 +307,127 @@ Traceback (most recent call last):
         # Split and compare to aviod AssertionError.
         self.assertEqual(expected_message.split(), actual_message.split())
 
+    def _get_test_app_status_with_error_msg(self, error_msg: str) -> AppStatus:
+        replica = ReplicaStatus(
+            id=0,
+            state=AppState.FAILED,
+            role="worker",
+            hostname="localhost",
+            structured_error_msg=error_msg,
+        )
+        role_status = RoleStatus(role="worker", replicas=[replica])
+        return AppStatus(state=AppState.RUNNING, roles=[role_status])
+
+    def test_format_app_status_flat_error_schema(self) -> None:
+        # Flat reply-file schema (e.g. MAST's MastReplyFileMessage): "message"
+        # is a string and timestamp/errorCode live at the top level.
+        os.environ["TZ"] = "Europe/London"
+        time.tzset()
+
+        app_status = self._get_test_app_status_with_error_msg(
+            '{"message": "InjectedFailure: Injected failure exception",'
+            ' "timestamp": 1293182, "timestamp_us": 1293182000000,'
+            ' "errorService": "Mast", "errorCode": 1,'
+            ' "pyCallStack": "Traceback (most recent call last): ..."}'
+        )
+        actual_message = app_status.format()
+        expected_message = """AppStatus:
+    State: RUNNING
+    Num Restarts: 0
+    Roles:
+ *worker[0]:FAILED (exitcode: 1)
+        timestamp: 1970-01-16 00:13:02
+        hostname: localhost
+        error_msg: InjectedFailure: Injected failure exception
+    Msg:
+    Structured Error Msg: <NONE>
+    UI URL: None
+    """
+        self.assertEqual(expected_message.split(), actual_message.split())
+
+    def test_format_app_status_flat_error_schema_missing_fields(self) -> None:
+        app_status = self._get_test_app_status_with_error_msg(
+            '{"message": "InjectedFailure: Injected failure exception"}'
+        )
+        actual_message = app_status.format()
+        self.assertIn("FAILED (exitcode: <N/A>)", actual_message)
+        self.assertIn("timestamp: <N/A>", actual_message)
+        self.assertIn(
+            "error_msg: InjectedFailure: Injected failure exception", actual_message
+        )
+
+    def test_format_app_status_nested_error_schema_missing_fields(self) -> None:
+        app_status = self._get_test_app_status_with_error_msg(
+            '{"message":{"message":"test error"}}'
+        )
+        actual_message = app_status.format()
+        self.assertIn("FAILED (exitcode: <N/A>)", actual_message)
+        self.assertIn("timestamp: <N/A>", actual_message)
+        self.assertIn("error_msg: test error", actual_message)
+
+    def test_format_app_status_unrecognized_error_schema(self) -> None:
+        # Valid JSON that matches neither known reply-file schema renders
+        # verbatim instead of raising.
+        for error_msg in (
+            '["not", "a", "dict"]',
+            '{"error": "no message key"}',
+            '{"message": {"message": 5}}',
+            '{"message": null}',
+            '"just a quoted string"',
+        ):
+            with self.subTest(error_msg=error_msg):
+                app_status = self._get_test_app_status_with_error_msg(error_msg)
+                self.assertIn(error_msg, app_status.format())
+
+    def test_serialize_non_json_error(self) -> None:
+        status = AppStatus(
+            AppState.FAILED, structured_error_msg="worker terminated by SIGKILL"
+        )
+        self.assertIn("worker terminated by SIGKILL", repr(status))
+
+        with self.assertRaisesRegex(
+            AppStatusError, r"(?s)job did not succeed:.*FAILED.*"
+        ):
+            status.raise_for_status()
+
+    def test_app_status_in_json(self) -> None:
+        app_status = self._get_test_app_status()
+        result = app_status.to_json()
+        error_msg = '{"message":{"message":"error","errorCode":-1,"extraInfo":{"timestamp":1293182}}}'
+        self.assertDictEqual(
+            result,
+            {
+                "state": "RUNNING",
+                "num_restarts": 0,
+                "roles": [
+                    {
+                        "role": "worker",
+                        "replicas": [
+                            {
+                                "id": 0,
+                                "state": 5,
+                                "role": "worker",
+                                "hostname": "localhost",
+                                "structured_error_msg": error_msg,
+                                "hostaddr": "localhost",
+                            },
+                            {
+                                "id": 1,
+                                "state": 3,
+                                "role": "worker",
+                                "hostname": "localhost",
+                                "structured_error_msg": "<NONE>",
+                                "hostaddr": "localhost",
+                            },
+                        ],
+                    }
+                ],
+                "msg": "",
+                "structured_error_msg": "<NONE>",
+                "url": None,
+            },
+        )
+
 
 class ResourceTest(unittest.TestCase):
     def test_copy_resource(self) -> None:
@@ -189,6 +445,78 @@ class ResourceTest(unittest.TestCase):
         self.assertEqual(new_resource.capabilities["test_key"], "test_value_new")
         self.assertEqual(new_resource.capabilities["new_key"], "new_value")
         self.assertEqual(resource.capabilities["test_key"], "test_value")
+
+    def test_is_fractional_default(self) -> None:
+        """Resource with no tags is not fractional."""
+        res = Resource(cpu=4, gpu=1, memMB=1024)
+        self.assertFalse(
+            res.is_fractional(),
+            "resource with no tags should not be fractional",
+        )
+
+    def test_is_fractional_true(self) -> None:
+        """Resource tagged as fractional returns True."""
+        from torchx.plugins._registration import resource_tags
+
+        res = Resource(
+            cpu=4,
+            gpu=1,
+            memMB=1024,
+            tags={resource_tags.IS_FRACTIONAL: True},
+        )
+        self.assertTrue(
+            res.is_fractional(),
+            "resource tagged IS_FRACTIONAL=True should be fractional",
+        )
+
+    def test_is_fractional_false(self) -> None:
+        """Resource explicitly tagged IS_FRACTIONAL=False is not fractional."""
+        from torchx.plugins._registration import resource_tags
+
+        res = Resource(
+            cpu=4,
+            gpu=1,
+            memMB=1024,
+            tags={resource_tags.IS_FRACTIONAL: False},
+        )
+        self.assertFalse(
+            res.is_fractional(),
+            "resource tagged IS_FRACTIONAL=False should not be fractional",
+        )
+
+    def test_get_resource_name_none(self) -> None:
+        """Resource with no RESOURCE_NAME tag returns None."""
+        res = Resource(cpu=4, gpu=1, memMB=1024)
+        self.assertIsNone(
+            res.get_resource_name(),
+            "resource with no tags should return None for get_resource_name()",
+        )
+
+    def test_get_resource_name(self) -> None:
+        """Resource tagged with RESOURCE_NAME returns the name as a string."""
+        from torchx.plugins._registration import resource_tags
+
+        res = Resource(
+            cpu=4,
+            gpu=1,
+            memMB=1024,
+            tags={resource_tags.RESOURCE_NAME: "gpu_4"},
+        )
+        self.assertEqual(
+            res.get_resource_name(),
+            "gpu_4",
+            "should return the registered resource name",
+        )
+
+    def test_named_resources_iterator(self) -> None:
+        registered_named_resources = set()
+        for resource_name in named_resources:
+            # just make sure we can create the resource using the name
+            self.assertIsInstance(resource(h=resource_name), Resource)
+            registered_named_resources.add(resource_name)
+
+        # validate that the for-loop was not vacuous
+        self.assertTrue(registered_named_resources)
 
     def test_named_resources(self) -> None:
         self.assertEqual(
@@ -264,6 +592,65 @@ class RoleBuilderTest(unittest.TestCase):
         self.assertEqual(5, trainer.max_retries)
         self.assertEqual(RetryPolicy.REPLICA, trainer.retry_policy)
 
+    def test_retry_policies(self) -> None:
+        self.assertCountEqual(
+            set(RetryPolicy),  # pyre-ignore[6]: Enum isn't iterable
+            {
+                RetryPolicy.APPLICATION,
+                RetryPolicy.REPLICA,
+                RetryPolicy.ROLE,
+            },
+        )
+
+    def test_override_role(self) -> None:
+        default = Role(
+            "foobar",
+            "torch",
+            overrides={"image": lambda: "base", "entrypoint": lambda: "nentry"},
+        )
+        self.assertEqual("base", default.image)
+        self.assertEqual("nentry", default.entrypoint)
+
+    def test_async_override_role(self) -> None:
+        async def update(value: str, time_seconds: int) -> str:
+            await asyncio.sleep(time_seconds)
+            return value
+
+        default = Role(
+            "foobar",
+            "torch",
+            overrides={"image": update("base", 1), "entrypoint": update("nentry", 2)},
+        )
+        self.assertEqual("base", default.image)
+        self.assertEqual("nentry", default.entrypoint)
+
+    def test_concurrent_override_role(self) -> None:
+
+        def delay(value: tuple[str, str], time_seconds: int) -> tuple[str, str]:
+            time.sleep(time_seconds)
+            return value
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            launcher_fbpkg_future: concurrent.futures.Future = executor.submit(
+                delay, ("value1", "value2"), 2
+            )
+
+        def get_image() -> str:
+            concurrent.futures.wait([launcher_fbpkg_future], 3)
+            return launcher_fbpkg_future.result()[0]
+
+        def get_entrypoint() -> str:
+            concurrent.futures.wait([launcher_fbpkg_future], 3)
+            return launcher_fbpkg_future.result()[1]
+
+        default = Role(
+            "foobar",
+            "torch",
+            overrides={"image": get_image, "entrypoint": get_entrypoint},
+        )
+        self.assertEqual("value1", default.image)
+        self.assertEqual("value2", default.entrypoint)
+
 
 class AppHandleTest(unittest.TestCase):
     def test_parse_malformed_app_handles(self) -> None:
@@ -278,8 +665,17 @@ class AppHandleTest(unittest.TestCase):
                 with self.assertRaises(MalformedAppHandleException):
                     parse_app_handle(handle)
 
+    def test_parse_app_handle_empty_session_name(self) -> None:
+        # missing session name is not OK but an empty one is
+        app_handle = "local:///my_application_id"
+        handle = parse_app_handle(app_handle)
+
+        self.assertEqual(handle.app_id, "my_application_id")
+        self.assertEqual("local", handle.scheduler_backend)
+        self.assertEqual("", handle.session_name)
+
     def test_parse(self) -> None:
-        (scheduler_backend, session_name, app_id) = parse_app_handle(
+        scheduler_backend, session_name, app_id = parse_app_handle(
             "local://my_session/my_app_id_1234"
         )
         self.assertEqual("local", scheduler_backend)
@@ -328,6 +724,16 @@ class RunConfigTest(unittest.TestCase):
         self.assertEqual(0.5, cfg.get("priority"))
         self.assertTrue(cfg.get("preemptible"))
         self.assertIsNone(cfg.get("unknown"))
+
+    def test_runopt_cast_to_type_typing_list(self) -> None:
+        opt = runopt(default="", opt_type=List[str], is_required=False, help="help")
+        self.assertEqual(["a", "b", "c"], opt.cast_to_type("a,b,c"))
+        self.assertEqual(["abc", "def", "ghi"], opt.cast_to_type("abc;def;ghi"))
+
+    def test_runopt_cast_to_type_builtin_list(self) -> None:
+        opt = runopt(default="", opt_type=list[str], is_required=False, help="help")
+        self.assertEqual(["a", "b", "c"], opt.cast_to_type("a,b,c"))
+        self.assertEqual(["abc", "def", "ghi"], opt.cast_to_type("abc;def;ghi"))
 
     def test_runopts_add(self) -> None:
         """
@@ -425,10 +831,27 @@ class RunConfigTest(unittest.TestCase):
         self.assertIsNone(resolved.get("cluster_id"))
         self.assertEqual("baz", resolved.get("some_other_opt"))
 
+    def test_runopts_get_camelcase_fallback(self) -> None:
+        """get() with a camelCase name falls back to the snake_case key."""
+        opts = self.get_runopts()
+        self.assertIsNotNone(opts.get("cluster_id"))
+        self.assertIsNotNone(
+            opts.get("clusterId"),
+            "camelCase lookup should find snake_case key",
+        )
+
+    def test_runopts_resolve_camelcase_cfg(self) -> None:
+        """resolve() accepts camelCase cfg keys for snake_case registered opts."""
+        opts = self.get_runopts()
+        resolved = opts.resolve({"runAs": "foobar"})
+        self.assertEqual("foobar", resolved.get("run_as"))
+        self.assertEqual(10, resolved.get("priority"), "default should be filled")
+
     def test_cfg_from_str(self) -> None:
         opts = runopts()
         opts.add("K", type_=List[str], help="a list opt", default=[])
         opts.add("J", type_=str, help="a str opt", required=True)
+        opts.add("E", type_=Dict[str, str], help="a dict opt", default=[])
 
         self.assertDictEqual({}, opts.cfg_from_str(""))
         self.assertDictEqual({}, opts.cfg_from_str("UNKWN=b"))
@@ -452,6 +875,44 @@ class RunConfigTest(unittest.TestCase):
         )
         self.assertDictEqual(
             {"K": ["a"], "J": "d"}, opts.cfg_from_str("J=d,K=a,UNKWN=e")
+        )
+        self.assertDictEqual(
+            {"E": {"f": "b", "F": "B"}}, opts.cfg_from_str("E=f:b,F:B")
+        )
+
+    def test_cfg_from_str_builtin_generic_types(self) -> None:
+        # basically a repeat of "test_cfg_from_str()" but with
+        # list[str] and dict[str, str] instead of List[str] and Dict[str, str]
+        opts = runopts()
+        opts.add("K", type_=list[str], help="a list opt", default=[])
+        opts.add("J", type_=str, help="a str opt", required=True)
+        opts.add("E", type_=dict[str, str], help="a dict opt", default=[])
+
+        self.assertDictEqual({}, opts.cfg_from_str(""))
+        self.assertDictEqual({}, opts.cfg_from_str("UNKWN=b"))
+        self.assertDictEqual({"K": ["a"], "J": "b"}, opts.cfg_from_str("K=a,J=b"))
+        self.assertDictEqual({"K": ["a"]}, opts.cfg_from_str("K=a,UNKWN=b"))
+        self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b"))
+        self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a;b"))
+        self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b"))
+        self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b;"))
+        self.assertDictEqual(
+            {"K": ["a", "b"], "J": "d"}, opts.cfg_from_str("K=a,b,J=d")
+        )
+        self.assertDictEqual(
+            {"K": ["a", "b"], "J": "d"}, opts.cfg_from_str("K=a,b;J=d")
+        )
+        self.assertDictEqual(
+            {"K": ["a", "b"], "J": "d"}, opts.cfg_from_str("K=a;b,J=d")
+        )
+        self.assertDictEqual(
+            {"K": ["a", "b"], "J": "d"}, opts.cfg_from_str("K=a;b;J=d")
+        )
+        self.assertDictEqual(
+            {"K": ["a"], "J": "d"}, opts.cfg_from_str("J=d,K=a,UNKWN=e")
+        )
+        self.assertDictEqual(
+            {"E": {"f": "b", "F": "B"}}, opts.cfg_from_str("E=f:b,F:B")
         )
 
     def test_resolve_from_str(self) -> None:
@@ -477,7 +938,45 @@ class RunConfigTest(unittest.TestCase):
                     "foo=bar,test_key=test_value,default_time=42,enable=True,disable=False,complex_list=v1;v2;v3"
                 )
             ),
-        ),
+        )
+
+    def test_config_from_json_repr(self) -> None:
+        opts = runopts()
+        opts.add("foo", type_=str, default="", help="")
+        opts.add("test_key", type_=str, default="", help="")
+        opts.add("default_time", type_=int, default=0, help="")
+        opts.add("enable", type_=bool, default=True, help="")
+        opts.add("disable", type_=bool, default=True, help="")
+        opts.add("complex_list", type_=List[str], default=[], help="")
+        opts.add("complex_dict", type_=Dict[str, str], default={}, help="")
+        opts.add("default_none", type_=List[str], help="")
+
+        self.assertDictEqual(
+            {
+                "foo": "bar",
+                "test_key": "test_value",
+                "default_time": 42,
+                "enable": True,
+                "disable": False,
+                "complex_list": ["v1", "v2", "v3"],
+                "complex_dict": {"k1": "v1", "k2": "v2"},
+                "default_none": None,
+            },
+            opts.resolve(
+                opts.cfg_from_json_repr(
+                    """{
+                        "foo": "bar",
+                        "test_key": "test_value",
+                        "default_time": 42,
+                        "enable": true,
+                        "disable": false,
+                        "complex_list": ["v1", "v2", "v3"],
+                        "complex_dict": {"k1": "v1", "k2": "v2"},
+                        "default_none": null
+                    }"""
+                )
+            ),
+        )
 
     def test_runopts_is_type(self) -> None:
         # primitive types
@@ -487,11 +986,59 @@ class RunConfigTest(unittest.TestCase):
         self.assertFalse(runopts.is_type(None, List[str]))
         self.assertTrue(runopts.is_type([], List[str]))
         self.assertTrue(runopts.is_type(["a", "b"], List[str]))
+        # List[str]
+        self.assertFalse(runopts.is_type(None, Dict[str, str]))
+        self.assertTrue(runopts.is_type({}, Dict[str, str]))
+        self.assertTrue(runopts.is_type({"foo": "bar", "fee": "bez"}, Dict[str, str]))
 
     def test_runopts_iter(self) -> None:
         runopts = self.get_runopts()
         for name, opt in runopts:
             self.assertEqual(opt, runopts.get(name))
+
+    def test_runopts_or_merges_options(self) -> None:
+        """Test that __or__ merges two runopts into a new runopts."""
+        opts1 = runopts()
+        opts1.add("foo", type_=str, default="a", help="foo option")
+        opts1.add("bar", type_=int, default=1, help="bar option")
+
+        opts2 = runopts()
+        opts2.add("baz", type_=bool, default=True, help="baz option")
+
+        merged = opts1 | opts2
+
+        # Original runopts should be unchanged
+        self.assertIsNone(opts1.get("baz"))
+        self.assertIsNone(opts2.get("foo"))
+
+        # Merged should have all options
+        self.assertIsNotNone(merged.get("foo"))
+        self.assertIsNotNone(merged.get("bar"))
+        self.assertIsNotNone(merged.get("baz"))
+        self.assertEqual(sorted([key for key, _ in merged]), ["bar", "baz", "foo"])
+
+
+class CasesTest(unittest.TestCase):
+    def test_snake_to_camel(self) -> None:
+        self.assertEqual(cases.snake_to_camel("cluster_name"), "clusterName")
+        self.assertEqual(cases.snake_to_camel("num_retries"), "numRetries")
+        self.assertEqual(cases.snake_to_camel("hpc_cluster_uuid"), "hpcClusterUuid")
+        self.assertEqual(cases.snake_to_camel("name"), "name")
+
+    def test_camel_to_snake(self) -> None:
+        self.assertEqual(cases.camel_to_snake("clusterName"), "cluster_name")
+        self.assertEqual(cases.camel_to_snake("numRetries"), "num_retries")
+        self.assertEqual(cases.camel_to_snake("hpcClusterUuid"), "hpc_cluster_uuid")
+        self.assertEqual(cases.camel_to_snake("name"), "name")
+
+    def test_roundtrip(self) -> None:
+        """snake → camel → snake preserves the original."""
+        for name in ["cluster_name", "num_retries", "hpc_cluster_uuid", "name"]:
+            self.assertEqual(
+                cases.camel_to_snake(cases.snake_to_camel(name)),
+                name,
+                f"roundtrip failed for `{name}`",
+            )
 
 
 class GetTypeNameTest(unittest.TestCase):
@@ -499,10 +1046,15 @@ class GetTypeNameTest(unittest.TestCase):
         self.assertEqual("int", get_type_name(int))
         self.assertEqual("list", get_type_name(list))
         self.assertEqual("typing.Union[str, int]", get_type_name(Union[str, int]))
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual("typing.List[int]", get_type_name(List[int]))
+        # pyrefly: ignore [bad-argument-type]
         self.assertEqual("typing.Dict[str, int]", get_type_name(Dict[str, int]))
         self.assertEqual(
-            "typing.List[typing.List[int]]", get_type_name(List[List[int]])
+            # pyrefly: ignore [bad-argument-type]
+            "typing.List[typing.List[int]]",
+            # pyrefly: ignore [bad-argument-type]
+            get_type_name(List[List[int]]),
         )
 
 
@@ -538,3 +1090,123 @@ class MacrosTest(unittest.TestCase):
         self.assertNotEqual(newrole, role)
         self.assertEqual(newrole.args, ["img_root"])
         self.assertEqual(newrole.env, {"FOO": "app_id"})
+
+    def test_apply_nested_with_list_of_dicts(self) -> None:
+        """Test that _apply_nested correctly handles dictionaries nested inside lists."""
+        role = Role(
+            name="test",
+            image="test_image",
+            entrypoint="foo.py",
+            metadata={
+                "nested_list": [
+                    {"key1": macros.app_id, "key2": "static"},
+                    {"key3": macros.img_root},
+                ]
+            },
+        )
+        v = macros.Values(
+            img_root="img_root_value",
+            app_id="app_id_value",
+            replica_id="replica_id_value",
+            base_img_root="base_img_root_value",
+            rank0_env="rank0_env_value",
+        )
+        newrole = v.apply(role)
+        self.assertEqual(newrole.metadata["nested_list"][0]["key1"], "app_id_value")
+        self.assertEqual(newrole.metadata["nested_list"][0]["key2"], "static")
+        self.assertEqual(newrole.metadata["nested_list"][1]["key3"], "img_root_value")
+
+    def test_apply_nested_with_deeply_nested_structures(self) -> None:
+        """Test that _apply_nested handles deeply nested structures with mixed types."""
+        role = Role(
+            name="test",
+            image="test_image",
+            entrypoint="foo.py",
+            metadata={
+                "level1": {
+                    "level2": {
+                        "list_with_dicts": [
+                            {
+                                "nested_key": macros.replica_id,
+                                "nested_list": [macros.app_id, "static_value"],
+                            },
+                            {"another_key": macros.img_root},
+                        ],
+                        "simple_string": macros.rank0_env,
+                    }
+                }
+            },
+        )
+        v = macros.Values(
+            img_root="img_root_value",
+            app_id="app_id_value",
+            replica_id="replica_id_value",
+            base_img_root="base_img_root_value",
+            rank0_env="rank0_env_value",
+        )
+        newrole = v.apply(role)
+
+        # Check deeply nested dict in list
+        nested_dict = newrole.metadata["level1"]["level2"]["list_with_dicts"][0]
+        self.assertEqual(nested_dict["nested_key"], "replica_id_value")
+        self.assertEqual(nested_dict["nested_list"][0], "app_id_value")
+        self.assertEqual(nested_dict["nested_list"][1], "static_value")
+
+        # Check second dict in list
+        second_dict = newrole.metadata["level1"]["level2"]["list_with_dicts"][1]
+        self.assertEqual(second_dict["another_key"], "img_root_value")
+
+        # Check simple string at nested level
+        self.assertEqual(
+            newrole.metadata["level1"]["level2"]["simple_string"], "rank0_env_value"
+        )
+
+    def test_apply_nested_with_list_of_strings(self) -> None:
+        """Test that _apply_nested still works correctly with lists of strings."""
+        role = Role(
+            name="test",
+            image="test_image",
+            entrypoint="foo.py",
+            metadata={
+                "string_list": [macros.app_id, macros.img_root, "static"],
+            },
+        )
+        v = macros.Values(
+            img_root="img_root_value",
+            app_id="app_id_value",
+            replica_id="replica_id_value",
+            base_img_root="base_img_root_value",
+            rank0_env="rank0_env_value",
+        )
+        newrole = v.apply(role)
+        self.assertEqual(newrole.metadata["string_list"][0], "app_id_value")
+        self.assertEqual(newrole.metadata["string_list"][1], "img_root_value")
+        self.assertEqual(newrole.metadata["string_list"][2], "static")
+
+    def test_apply_nested_with_mixed_list_types(self) -> None:
+        """Test that _apply_nested handles lists with mixed types (strings, dicts, other)."""
+        role = Role(
+            name="test",
+            image="test_image",
+            entrypoint="foo.py",
+            metadata={
+                "mixed_list": [
+                    macros.app_id,
+                    {"nested": macros.img_root},
+                    42,  # non-string, non-dict value
+                    "static_string",
+                ],
+            },
+        )
+        v = macros.Values(
+            img_root="img_root_value",
+            app_id="app_id_value",
+            replica_id="replica_id_value",
+            base_img_root="base_img_root_value",
+            rank0_env="rank0_env_value",
+        )
+        newrole = v.apply(role)
+        self.assertEqual(newrole.metadata["mixed_list"][0], "app_id_value")
+        self.assertEqual(newrole.metadata["mixed_list"][1]["nested"], "img_root_value")
+        self.assertEqual(newrole.metadata["mixed_list"][2], 42)
+        self.assertEqual(newrole.metadata["mixed_list"][3], "static_string")

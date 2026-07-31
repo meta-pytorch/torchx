@@ -10,20 +10,19 @@ Generates ``versions.html`` listing out the available doc versions
 similar to: https://raw.githubusercontent.com/pytorch/pytorch.github.io/site/docs/versions.html
 
 This list of versions is displayed on the top LHS dropdown of
-https://pytorch.org/torchx.
+https://meta-pytorch.org/torchx.
 
 Usage (also see ``doc_push.sh``):
 
 ::
  # NOTE: YOU HAVE TO RUN THE SCRIPT FROM THE ROOT of gh-pages branch checkout
- git clone -b gh-pages --single-branch https://github.com/pytorch/torchx.git /tmp/torchx-gh-pages
+ git clone -b gh-pages --single-branch https://github.com/meta-pytorch/torchx.git /tmp/torchx-gh-pages
  cd /tmp/torchx-gh-pages
  $torchx_repo_root/docs/versions_html.py`
 """
 
 import os
 from string import Template
-from typing import List, Optional
 
 from packaging.version import InvalidVersion, Version
 
@@ -79,7 +78,7 @@ TAGS_VER_PROXY = {
 VERSIONS_HTML = "versions.html"
 
 
-def parse_ver(version: str) -> Optional[Version]:
+def parse_ver(version: str) -> Version | None:
     if version in TAGS_VER_PROXY:
         return TAGS_VER_PROXY[version]
     try:
@@ -88,9 +87,9 @@ def parse_ver(version: str) -> Optional[Version]:
         return None
 
 
-def versions_list(versions: List[str]) -> List[str]:
-    tag_list: List[(Version, str)] = []
-    ver_list: List[(Version, str)] = []
+def versions_list(versions: list[str]) -> list[str]:
+    tag_list: list[(Version, str)] = []
+    ver_list: list[(Version, str)] = []
 
     for ver in versions:
         v = parse_ver(ver)
@@ -114,7 +113,7 @@ def versions_list(versions: List[str]) -> List[str]:
 
 
 def gen_versions_html() -> None:
-    # cwd is expected to be https://github.com/pytorch/torchx/tree/gh-pages
+    # cwd is expected to be https://github.com/meta-pytorch/torchx/tree/gh-pages
     # most top level subdirs are versioned docs
     print(f"Generating {VERSIONS_HTML}")
 

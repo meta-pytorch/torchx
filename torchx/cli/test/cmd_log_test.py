@@ -5,11 +5,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import io
 import sys
 import unittest
 from datetime import datetime
-from typing import Iterator, Optional
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 from torchx.cli.cmd_log import _prefix_line, ENDC, get_logs, GREEN, validate
@@ -33,7 +35,7 @@ class MockRunner(Runner):
     def __init__(self) -> None:
         pass
 
-    def __call__(self, name: Optional[str] = None) -> "MockRunner":
+    def __call__(self, name: str | None = None) -> "MockRunner":
         return self
 
     def describe(self, app_handle: str) -> AppDef:
@@ -54,11 +56,11 @@ class MockRunner(Runner):
         app_handle: AppHandle,
         role_name: str,
         k: int = 0,
-        regex: Optional[str] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         should_tail: bool = False,
-        streams: Optional[Stream] = None,
+        streams: Stream | None = None,
     ) -> Iterator[str]:
         import re
 
@@ -186,6 +188,20 @@ class CmdLogTest(unittest.TestCase):
         self.assertIn("Waiting", "\n".join(cm.output))
 
     @patch(RUNNER, new_callable=MockRunner)
+    def test_cmd_log_app_not_found(self, mock_runner: MagicMock) -> None:
+        # A non-existent app id makes status() return None; cmd_log must log a
+        # warning and return gracefully instead of polling the scheduler forever.
+        out = io.StringIO()
+        with patch.object(mock_runner, "status", return_value=None):
+            with self.assertLogs(level="WARNING") as cm:
+                get_logs(
+                    out,
+                    "local_docker://test-session/NonExistentApp/trainer",
+                    regex=None,
+                )
+        self.assertIn("not found", "\n".join(cm.output))
+
+    @patch(RUNNER, new_callable=MockRunner)
     def test_print_log_lines_throws(self, mock_runner: MagicMock) -> None:
         # makes sure that when the function executed in the threadpool
         # errors out; we raise the exception all the way through
@@ -213,6 +229,17 @@ class CmdLogTest(unittest.TestCase):
 
         with self.assertRaisesRegex(SystemExit, "1"):
             validate("kubernetes://session/queue:name-1234/role/")
+
+    @patch(RUNNER, new_callable=MockRunner)
+    def test_cmd_log_broken_pipe(self, mock_runner: MagicMock) -> None:
+        out = MagicMock(spec=io.StringIO)
+        out.write = MagicMock(side_effect=BrokenPipeError)
+        # should not raise; BrokenPipeError from the output stream is silenced
+        get_logs(
+            out,
+            "local_docker://test-session/SparseNNAppDef/trainer/0",
+            regex=None,
+        )
 
     def test_prefix_line(self) -> None:
         self.assertEqual(_prefix_line("<prefix>", "test\n"), "<prefix>test\n")

@@ -4,10 +4,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import sys
 import unittest
 from dataclasses import asdict
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
@@ -15,13 +18,14 @@ from torchx.specs.api import AppDef, Resource, Role
 from torchx.specs.builders import (
     _create_args_parser,
     BindMount,
+    component_args_from_str,
+    ComponentArgs,
     DeviceMount,
     make_app_handle,
     materialize_appdef,
     parse_mounts,
     VolumeMount,
 )
-
 from torchx.util.types import none_throws
 
 
@@ -46,12 +50,12 @@ def get_dummy_application(role: str) -> AppDef:
     return AppDef(name="test_app", roles=[trainer])
 
 
-def test_empty_fn() -> AppDef:
+def example_empty_fn() -> AppDef:
     """Empty function that returns dummy app"""
     return get_dummy_application("trainer")
 
 
-def test_fn_with_bool(flag: bool = False) -> AppDef:
+def example_fn_with_bool(flag: bool = False) -> AppDef:
     """Dummy app with or without flag
 
     Args:
@@ -63,7 +67,7 @@ def test_fn_with_bool(flag: bool = False) -> AppDef:
         return get_dummy_application("trainer-without-flag")
 
 
-def test_fn_with_bool_optional(flag: Optional[bool] = None) -> AppDef:
+def example_fn_with_bool_optional(flag: Optional[bool] = None) -> AppDef:
     """Dummy app with or without flag
 
     Args:
@@ -75,11 +79,11 @@ def test_fn_with_bool_optional(flag: Optional[bool] = None) -> AppDef:
         return get_dummy_application("trainer-without-flag")
 
 
-def test_empty_fn_no_docstring() -> AppDef:
+def example_empty_fn_no_docstring() -> AppDef:
     return get_dummy_application("trainer")
 
 
-def _test_complex_fn(
+def example_test_complex_fn(
     app_name: str,
     containers: List[str],
     roles_scripts: Dict[str, str],
@@ -87,6 +91,8 @@ def _test_complex_fn(
     num_gpus: Optional[Dict[str, int]] = None,
     nnodes: int = 4,
     first_arg: Optional[str] = None,
+    nested_arg: Optional[Dict[str, List[str]]] = None,
+    env: dict[str, str] | None = None,
     *roles_args: str,
 ) -> AppDef:
     """Creates complex application, testing all possible complex types
@@ -110,6 +116,8 @@ def _test_complex_fn(
         gpus = num_gpus[role_name]
         if first_arg:
             args = [first_arg, *roles_args]
+        elif nested_arg:
+            args = nested_arg[role_name]
         else:
             args = [*roles_args]
         role = Role(
@@ -119,6 +127,7 @@ def _test_complex_fn(
             args=args,
             resource=Resource(cpu=cpus, gpu=gpus, memMB=1),
             num_replicas=nnodes,
+            env=env or {},
         )
         roles.append(role)
     return AppDef(app_name, roles)
@@ -127,7 +136,7 @@ def _test_complex_fn(
 _TEST_VAR_ARGS: Optional[Tuple[object, ...]] = None
 
 
-def _test_var_args(foo: str, *args: str, bar: str = "asdf") -> AppDef:
+def example_var_args(foo: str, *args: str, bar: str = "asdf") -> AppDef:
     """
     test component for mixing var args with kwargs.
     Args:
@@ -143,7 +152,7 @@ def _test_var_args(foo: str, *args: str, bar: str = "asdf") -> AppDef:
 _TEST_VAR_ARGS_FIRST: Optional[Tuple[object, ...]] = None
 
 
-def _test_var_args_first(*args: str, bar: str = "asdf") -> AppDef:
+def example_var_args_first(*args: str, bar: str = "asdf") -> AppDef:
     """
     test component for mixing var args with kwargs.
     Args:
@@ -158,7 +167,7 @@ def _test_var_args_first(*args: str, bar: str = "asdf") -> AppDef:
 _TEST_SINGLE_LETTER: Optional[str] = None
 
 
-def _test_single_letter(c: str) -> AppDef:
+def example_single_letter(c: str) -> AppDef:
     global _TEST_SINGLE_LETTER
     _TEST_SINGLE_LETTER = c
     return AppDef(name="varargs")
@@ -171,15 +180,20 @@ class AppDefLoadTest(unittest.TestCase):
     def _get_role_args(self) -> List[str]:
         return ["--train", "data_source", "random", "--epochs", "128"]
 
+    def _get_nested_arg(self) -> Dict[str, List[str]]:
+        return {"worker": ["1", "2"], "master": ["3", "4"]}
+
     def _get_expected_app_with_default(self) -> AppDef:
         role_args = self._get_role_args()
-        return _test_complex_fn(
+        return example_test_complex_fn(
             "test_app",
             ["img1", "img2"],
             {"worker": "worker.py", "master": "master.py"},
             None,
             None,
             4,
+            None,
+            None,
             None,
             *role_args,
         )
@@ -199,7 +213,7 @@ class AppDefLoadTest(unittest.TestCase):
 
     def _get_expected_app_with_all_args(self) -> AppDef:
         role_args = self._get_role_args()
-        return _test_complex_fn(
+        return example_test_complex_fn(
             "test_app",
             ["img1", "img2"],
             {"worker": "worker.py", "master": "master.py"},
@@ -207,6 +221,8 @@ class AppDefLoadTest(unittest.TestCase):
             {"worker": 1, "master": 4},
             8,
             "first_arg",
+            None,
+            {"FOO": "BAR", "HELLO": "WORLD"},
             *role_args,
         )
 
@@ -227,25 +243,97 @@ class AppDefLoadTest(unittest.TestCase):
             "8",
             "--first_arg",
             "first_arg",
+            "--env",
+            "FOO=BAR,HELLO=WORLD",
             "--",
             *role_args,
         ]
 
+    def _get_expected_app_with_nested_objects(self) -> AppDef:
+        role_args = self._get_role_args()
+        defaults = self._get_nested_arg()
+        return example_test_complex_fn(
+            "test_app",
+            ["img1", "img2"],
+            {"worker": "worker.py", "master": "master.py"},
+            [1, 2],
+            {"worker": 1, "master": 4},
+            8,
+            "first_arg",
+            defaults,
+            None,
+            *role_args,
+        )
+
+    def _get_app_args_and_defaults_with_nested_objects(
+        self,
+    ) -> Tuple[List[str], Dict[str, List[str]]]:
+        role_args = self._get_role_args()
+        defaults = self._get_nested_arg()
+        return [
+            "--app_name",
+            "test_app",
+            "--containers",
+            "img1,img2",
+            "--roles_scripts",
+            "worker=worker.py,master=master.py",
+            "--num_cpus",
+            "1,2",
+            "--num_gpus",
+            "worker=1,master=4",
+            "--nnodes",
+            "8",
+            "--first_arg",
+            "first_arg",
+            "--",
+            *role_args,
+        ], defaults
+
+    def test_component_args_from_str(self) -> None:
+        component_fn_args = [
+            "--foo",
+            "fooval",
+            "--bar",
+            "barval",
+            "arg1",
+            "arg2",
+        ]
+        parsed_args: ComponentArgs = component_args_from_str(
+            example_var_args, component_fn_args
+        )
+        self.assertEqual(parsed_args.positional_args, {"foo": "fooval"})
+        self.assertEqual(parsed_args.var_args, ["arg1", "arg2"])
+        self.assertEqual(parsed_args.kwargs, {"bar": "barval"})
+
+    def test_component_args_from_str_equals_separated(self) -> None:
+        component_fn_args = [
+            "--foo=fooval",
+            "--bar=barval",
+            "arg1",
+            "arg2",
+        ]
+        parsed_args: ComponentArgs = component_args_from_str(
+            example_var_args, component_fn_args
+        )
+        self.assertEqual(parsed_args.positional_args, {"foo": "fooval"})
+        self.assertEqual(parsed_args.var_args, ["arg1", "arg2"])
+        self.assertEqual(parsed_args.kwargs, {"bar": "barval"})
+
     def test_load_from_fn_empty(self) -> None:
-        actual_app = materialize_appdef(test_empty_fn, [])
+        actual_app = materialize_appdef(example_empty_fn, [])
         expected_app = get_dummy_application("trainer")
         self.assert_apps(expected_app, actual_app)
 
     def test_load_from_fn_complex_all_args(self) -> None:
         expected_app = self._get_expected_app_with_all_args()
         app_args = self._get_app_args()
-        actual_app = materialize_appdef(_test_complex_fn, app_args)
+        actual_app = materialize_appdef(example_test_complex_fn, app_args)
         self.assert_apps(expected_app, actual_app)
 
     def test_required_args(self) -> None:
         with patch.object(sys, "exit") as exit_mock:
             try:
-                materialize_appdef(_test_complex_fn, [])
+                materialize_appdef(example_test_complex_fn, [])
             except Exception:
                 # ignore any errors, since function should fail
                 pass
@@ -254,12 +342,18 @@ class AppDefLoadTest(unittest.TestCase):
     def test_load_from_fn_with_default(self) -> None:
         expected_app = self._get_expected_app_with_default()
         app_args = self._get_args_with_default()
-        actual_app = materialize_appdef(_test_complex_fn, app_args)
+        actual_app = materialize_appdef(example_test_complex_fn, app_args)
+        self.assert_apps(expected_app, actual_app)
+
+    def test_with_nested_object(self) -> None:
+        expected_app = self._get_expected_app_with_nested_objects()
+        app_args, defaults = self._get_app_args_and_defaults_with_nested_objects()
+        actual_app = materialize_appdef(example_test_complex_fn, app_args, defaults)
         self.assert_apps(expected_app, actual_app)
 
     def test_varargs(self) -> None:
         materialize_appdef(
-            _test_var_args,
+            example_var_args,
             [
                 "--foo",
                 "fooval",
@@ -273,7 +367,7 @@ class AppDefLoadTest(unittest.TestCase):
 
     def test_bool_true(self) -> None:
         app_def = materialize_appdef(
-            test_fn_with_bool,
+            example_fn_with_bool,
             [
                 "--flag",
                 "True",
@@ -281,7 +375,7 @@ class AppDefLoadTest(unittest.TestCase):
         )
         self.assertEqual("trainer-with-flag", app_def.roles[0].name)
         app_def = materialize_appdef(
-            test_fn_with_bool,
+            example_fn_with_bool,
             [
                 "--flag",
                 "true",
@@ -291,7 +385,7 @@ class AppDefLoadTest(unittest.TestCase):
 
     def test_bool_false(self) -> None:
         app_def = materialize_appdef(
-            test_fn_with_bool,
+            example_fn_with_bool,
             [
                 "--flag",
                 "False",
@@ -299,7 +393,7 @@ class AppDefLoadTest(unittest.TestCase):
         )
         self.assertEqual("trainer-without-flag", app_def.roles[0].name)
         app_def = materialize_appdef(
-            test_fn_with_bool,
+            example_fn_with_bool,
             [
                 "--flag",
                 "false",
@@ -309,14 +403,14 @@ class AppDefLoadTest(unittest.TestCase):
 
     def test_bool_none(self) -> None:
         app_def = materialize_appdef(
-            test_fn_with_bool_optional,
+            example_fn_with_bool_optional,
             [],
         )
         self.assertEqual("trainer-without-flag", app_def.roles[0].name)
 
     def test_varargs_only_flag_first(self) -> None:
         materialize_appdef(
-            _test_var_args_first,
+            example_var_args_first,
             [
                 "--",
                 "--foo",
@@ -333,7 +427,7 @@ class AppDefLoadTest(unittest.TestCase):
 
     def test_varargs_only_arg_first(self) -> None:
         materialize_appdef(
-            _test_var_args_first,
+            example_var_args_first,
             [
                 "fooval",
                 "--foo",
@@ -349,7 +443,7 @@ class AppDefLoadTest(unittest.TestCase):
 
     def test_single_letter(self) -> None:
         materialize_appdef(
-            _test_single_letter,
+            example_single_letter,
             [
                 "-c",
                 "arg1",
@@ -361,7 +455,7 @@ class AppDefLoadTest(unittest.TestCase):
         )
 
         materialize_appdef(
-            _test_single_letter,
+            example_single_letter,
             [
                 "--c",
                 "arg2",
@@ -383,7 +477,7 @@ class AppDefLoadTest(unittest.TestCase):
         return None
 
     def test_argparster_complex_fn_partial(self) -> None:
-        parser = _create_args_parser(_test_complex_fn)
+        parser = _create_args_parser(example_test_complex_fn)
         self.assertTupleEqual(
             ("AppDef name", None),
             none_throws(self._get_argument_help(parser, "app_name")),
@@ -413,10 +507,10 @@ class AppDefLoadTest(unittest.TestCase):
         )
 
     def test_argparser_remainder_main_args(self) -> None:
-        parser = _create_args_parser(_test_complex_fn)
+        parser = _create_args_parser(example_test_complex_fn)
 
         materialize_appdef(
-            _test_var_args,
+            example_var_args,
             [
                 "--foo",
                 "fooval",
@@ -430,7 +524,7 @@ class AppDefLoadTest(unittest.TestCase):
         self.assertEqual(_TEST_VAR_ARGS, ("fooval", ("arg1", "arg2"), "barval"))
 
         materialize_appdef(
-            _test_var_args,
+            example_var_args,
             [
                 "--foo",
                 "fooval",
@@ -467,6 +561,9 @@ class MountsTest(unittest.TestCase):
                     "src=foo",
                     "dst=bar",
                     "perm=rw",
+                    "type=bind",
+                    "src=~/foo",
+                    "dst=dst",
                 ]
             ),
             [
@@ -475,6 +572,7 @@ class MountsTest(unittest.TestCase):
                 VolumeMount(src="foo2", dst_path="dst2", read_only=True),
                 DeviceMount(src_path="duck", dst_path="duck", permissions="rwm"),
                 DeviceMount(src_path="foo", dst_path="bar", permissions="rw"),
+                BindMount(src_path=f"{str(Path.home())}/foo", dst_path="dst"),
             ],
         )
 

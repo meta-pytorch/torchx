@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import json
 import os
 import stat
@@ -12,10 +14,10 @@ import tempfile
 import unittest
 from io import StringIO
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import fsspec
-
+from docker.errors import BuildError
 from torchx.specs import AppDef, Role
 from torchx.workspace.docker_workspace import (
     _build_context,
@@ -30,6 +32,7 @@ def has_docker() -> bool:
 
         docker.from_env()
         return True
+    # pyrefly: ignore [unbound-name]
     except (ImportError, docker.errors.DockerException):
         return False
 
@@ -52,7 +55,7 @@ if has_docker():
 
             workspace = DockerWorkspaceMixin()
             workspace.build_workspace_and_update_role(
-                role, "memory://test_workspace", {}
+                role, "memory://test_workspace", {"image_repo": "example/repo_name"}
             )
 
             self.assertNotEqual("busybox", role.image)
@@ -62,7 +65,7 @@ class DockerWorkspaceMockTest(unittest.TestCase):
     def test_runopts(self) -> None:
         self.assertCountEqual(
             DockerWorkspaceMixin().workspace_opts()._opts.keys(),
-            {"image_repo"},
+            {"image_repo", "quiet"},
         )
 
     def test_update_app_images(self) -> None:
@@ -127,6 +130,49 @@ class DockerWorkspaceMockTest(unittest.TestCase):
         self.assertEqual(client.images.get.call_count, 2)
         self.assertEqual(img.tag.call_count, 2)
         self.assertEqual(client.images.push.call_count, 2)
+
+    @patch("torchx.workspace.docker_workspace.log")
+    def test_build_workspace_and_update_role(self, mock_log: MagicMock) -> None:
+        client = MagicMock()
+        img = MagicMock()
+        client.images.get.return_value = img
+        image_id = "some_id"
+        client.api.build.return_value = [
+            {"stream": "some message"},
+            {"aux": {"ID": image_id}},
+        ]
+        workspace = DockerWorkspaceMixin(docker_client=client)
+        role = Role(name="b", image="example.com/repo:hasha")
+        workspace.build_workspace_and_update_role(
+            role=role,
+            workspace="bogus",
+            cfg={"image_repo": "example.com/repo", "quiet": "true"},
+        )
+        self.assertEqual(client.api.build.call_count, 1)
+        self.assertEqual(role.image, image_id)
+        self.assertEqual(mock_log.info.call_count, 2)
+
+    @patch("torchx.workspace.docker_workspace.log")
+    def test_build_workspace_and_update_raises_error(self, mock_log: MagicMock) -> None:
+        client = MagicMock()
+        img = MagicMock()
+        client.images.get.return_value = img
+        error = "some error"
+        message = "some message"
+        client.api.build.return_value = [
+            {"stream": message},
+            {"error": error},
+        ]
+        workspace = DockerWorkspaceMixin(docker_client=client)
+        role = Role(name="b", image="example.com/repo:hasha")
+        with self.assertRaisesRegex(BuildError, error):
+            workspace.build_workspace_and_update_role(
+                role=role,
+                workspace="bogus",
+                cfg={"image_repo": "example.com/repo"},
+            )
+        self.assertEqual(mock_log.info.call_count, 3)
+        self.assertEqual(mock_log.info.call_args_list[-1][0][0], message)
 
     def test_push_images_empty(self) -> None:
         workspace = DockerWorkspaceMixin()

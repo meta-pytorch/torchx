@@ -1,16 +1,24 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+import asyncio
 import copy
+import inspect
 import json
+import logging as logger
+import os
+import pathlib
 import re
+import shutil
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
+from json import JSONDecodeError
 from string import Template
 from typing import (
     Any,
@@ -20,12 +28,10 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    Optional,
+    NamedTuple,
     Pattern,
-    Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
 from torchx.util.types import to_dict
@@ -55,6 +61,35 @@ _RPC_ERROR_MESSAGE_RE: Pattern[str] = re.compile(
 #     (most recent call first):
 _EMBEDDED_ERROR_MESSAGE_RE: Pattern[str] = re.compile(r"(?P<msg>.+)\nException.*")
 
+YELLOW_BOLD = "\033[1;33m"
+RESET = "\033[0m"
+
+
+def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
+    """
+    Path to the "dot-directory" for torchx.
+    Defaults to ``~/.torchx`` and is overridable via the ``TORCHX_HOME`` environment variable.
+
+    .. doctest::
+
+        >>> from torchx.specs import TORCHX_HOME
+        >>> import os, pathlib
+        >>> _ = os.environ.pop("TORCHX_HOME", None)  # ensure default
+        >>> TORCHX_HOME() == pathlib.Path.home() / ".torchx"
+        True
+        >>> TORCHX_HOME("conda-pack-out") == pathlib.Path.home() / ".torchx" / "conda-pack-out"
+        True
+
+    """
+
+    default_dir = str(pathlib.Path.home() / ".torchx")
+    torchx_home = pathlib.Path(os.getenv("TORCHX_HOME", default_dir))
+
+    torchx_home = torchx_home / os.path.sep.join(subdir_paths)
+    torchx_home.mkdir(parents=True, exist_ok=True)
+
+    return torchx_home
+
 
 # ========================================
 # ==== Distributed AppDef API =======
@@ -62,34 +97,58 @@ _EMBEDDED_ERROR_MESSAGE_RE: Pattern[str] = re.compile(r"(?P<msg>.+)\nException.*
 @dataclass
 class Resource:
     """
-    Represents resource requirements for a ``Role``.
+    Represents resource requirements for a :py:class:`Role`.
+
+    .. important:: Prefer :py:func:`~torchx.specs.resource` with named resources
+                   (t-shirt sizes) over specifying raw values directly.
+
+    .. doctest::
+
+        >>> from torchx.specs import Resource
+        >>> Resource(cpu=4, gpu=1, memMB=8192)
+        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})
 
     Args:
-        cpu: number of logical cpu cores. The definition of a CPU core depends
-            on the scheduler. See your scheduler documentation for how a logical
-            CPU core maps to physical cores and threads.
+        cpu: number of logical cpu cores
         gpu: number of gpus
         memMB: MB of ram
         capabilities: additional hardware specs (interpreted by scheduler)
-        devices: a list of named devices with their quantities
-
-    Note: you should prefer to use named_resources instead of specifying the raw
-    resource requirement directly.
+        devices: named devices with their quantities (e.g. ``{"vpc.amazonaws.com/efa": 1}``)
+        tags: metadata tags (not interpreted by schedulers)
     """
 
     cpu: int
     gpu: int
     memMB: int
-    capabilities: Dict[str, Any] = field(default_factory=dict)
-    devices: Dict[str, int] = field(default_factory=dict)
+    capabilities: dict[str, Any] = field(default_factory=dict)
+    devices: dict[str, int] = field(default_factory=dict)
+    tags: dict[str, object] = field(default_factory=dict)
+
+    def is_fractional(self) -> bool:
+        """Return ``True`` if this resource is a fractional slice of a base resource.
+
+        Set automatically by :py:meth:`register.named_resource` when a
+        ``fractionals`` argument is provided.
+        """
+        from torchx.plugins._registration import resource_tags
+
+        return bool(self.tags.get(resource_tags.IS_FRACTIONAL, False))
+
+    def get_resource_name(self) -> str | None:
+        """Return the registered named-resource name, or ``None``.
+
+        Set automatically by :py:meth:`register.named_resource` on every
+        resource it creates.
+        """
+        from torchx.plugins._registration import resource_tags
+
+        name = self.tags.get(resource_tags.RESOURCE_NAME)
+        return str(name) if name is not None else None
 
     @staticmethod
     def copy(original: "Resource", **capabilities: Any) -> "Resource":
-        """
-        Copies a resource and applies new capabilities. If the same capabilities
-        are present in the original resource and as parameter, the one from parameter
-        will be used.
-        """
+        """Copies a resource, merging in the given ``capabilities``."""
+
         res_capabilities = dict(original.capabilities)
         res_capabilities.update(capabilities)
         return Resource(
@@ -123,37 +182,30 @@ NONE: str = "<NONE>"
 
 class macros:
     """
-    Defines macros that can be used in the elements of ``Role.args``
-    values of ``Role.env``. The macros will be substituted at runtime
-    to their actual values.
+    Template variables substituted at runtime in :py:attr:`Role.args`,
+    :py:attr:`Role.env`, and :py:attr:`Role.metadata`.
 
-    .. warning:: Macros used fields of :py:class:`Role` other than the ones
-                 mentioned above, are NOT substituted.
+    .. warning:: Macros in other :py:class:`Role` fields are NOT substituted.
 
     Available macros:
 
-    1. ``img_root`` - root directory of the pulled container.image
-    2. ``app_id`` - application id as assigned by the scheduler
-    3. ``replica_id`` - unique id for each instance of a replica of a Role,
-                        for instance a role with 3 replicas could have the 0, 1, 2
-                        as replica ids. Note that when the container fails and is
-                        replaced, the new container will have the same ``replica_id``
-                        as the one it is replacing. For instance if node 1 failed and
-                        was replaced by the scheduler the replacing node will also
-                        have ``replica_id=1``.
+    1. ``img_root`` — root directory of the pulled image
+    2. ``app_id`` — application id as assigned by the scheduler
+    3. ``replica_id`` — per-role replica index (``0, 1, ...``).
+       When a replica is replaced after failure, the replacement retains
+       the same ``replica_id``.
 
-    Example:
+    .. doctest::
 
-    ::
-
-     # runs: hello_world.py --app_id ${app_id}
-     trainer = Role(
-                name="trainer",
-                entrypoint="hello_world.py",
-                args=["--app_id", macros.app_id],
-                env={"IMAGE_ROOT_DIR": macros.img_root})
-     app = AppDef("train_app", roles=[trainer])
-     app_handle = session.run(app, scheduler="local_docker", cfg={})
+        >>> from torchx.specs import AppDef, Role, macros
+        >>> trainer = Role(
+        ...     name="trainer",
+        ...     image="my_image:latest",
+        ...     entrypoint="train.py",
+        ...     args=["--app_id", macros.app_id],
+        ...     env={"IMG_ROOT": macros.img_root},
+        ... )
+        >>> app = AppDef("train_app", roles=[trainer])
 
     """
 
@@ -178,20 +230,48 @@ class macros:
         base_img_root: str = "DEPRECATED"
 
         def apply(self, role: "Role") -> "Role":
-            """
-            apply applies the values to a copy the specified role and returns it.
-            """
+            """Returns a deep copy of ``role`` with macros substituted."""
 
+            # Overrides might contain future values which can't be serialized so taken out for the copy
+            overrides = role.overrides
+            if len(overrides) > 0:
+                logger.warning(
+                    "Role overrides are not supported for macros. Overrides will not be copied"
+                )
+                role.overrides = {}
             role = copy.deepcopy(role)
+            role.overrides = overrides
+
             role.args = [self.substitute(arg) for arg in role.args]
             role.env = {key: self.substitute(arg) for key, arg in role.env.items()}
+            role.metadata = self._apply_nested(role.metadata)
+
             return role
 
+        def _apply_nested(self, d: dict[str, Any]) -> dict[str, Any]:  # noqa: D102
+            stack = [d]
+            while stack:
+                current_dict = stack.pop()
+                for k, v in current_dict.items():
+                    if isinstance(v, dict):
+                        stack.append(v)
+                    elif isinstance(v, str):
+                        current_dict[k] = self.substitute(v)
+                    elif isinstance(v, list):
+                        for i in range(len(v)):
+                            if isinstance(v[i], dict):
+                                stack.append(v[i])
+                            elif isinstance(v[i], str):
+                                v[i] = self.substitute(v[i])
+            return d
+
+        def to_dict(self) -> dict[str, Any]:
+            """Returns the macro values as a plain dict."""
+            return asdict(self)
+
         def substitute(self, arg: str) -> str:
-            """
-            substitute applies the values to the template arg.
-            """
-            return Template(arg).safe_substitute(**asdict(self))
+            """Substitutes macro placeholders in ``arg``."""
+            return Template(arg).safe_substitute(**self.to_dict())
 
 
 class RetryPolicy(str, Enum):
@@ -215,11 +295,13 @@ class RetryPolicy(str, Enum):
                 application to deal with failed replica departures and
                 replacement replica admittance.
     2. APPLICATION: Restarts the entire application.
-
+    3. ROLE: Restarts the role when any error occurs in that role. This does not
+             restart the whole job.
     """
 
     REPLICA = "REPLICA"
     APPLICATION = "APPLICATION"
+    ROLE = "ROLE"
 
 
 class MountType(str, Enum):
@@ -230,16 +312,7 @@ class MountType(str, Enum):
 
 @dataclass
 class BindMount:
-    """
-    Defines a bind mount to `mount --bind` a host path into the worker
-    environment. See scheduler documentation on how bind mounts operate for each
-    scheduler.
-
-    Args:
-        src_path: the path on the host
-        dst_path: the path in the worker environment/container
-        read_only: whether the mount should be read only
-    """
+    """Bind-mounts a host path into the worker container."""
 
     src_path: str
     dst_path: str
@@ -248,13 +321,7 @@ class BindMount:
 
 @dataclass
 class VolumeMount:
-    """
-    Defines a persistent volume mount to mount into the worker environment.
-    Args:
-       src: the name or ID of the volume to mount
-       dst_path: the path in the worker environment/container
-       read_only: whether the mount should be read only
-    """
+    """Mounts a persistent volume into the worker container."""
 
     src: str
     dst_path: str
@@ -263,13 +330,7 @@ class VolumeMount:
 
 @dataclass
 class DeviceMount:
-    """
-    Defines a host device to mount into the container.
-    Args:
-       src_path: the path on the host
-       dst_path: the path in the worker environment/container
-       permissions: the permissions to set on the device. Default: read, write, mknode
-    """
+    """Mounts a host device into the container."""
 
     src_path: str
     dst_path: str
@@ -277,75 +338,157 @@ class DeviceMount:
 
 
 @dataclass
-class Role:
+class Workspace:
     """
-    A set of nodes that perform a specific duty within the ``AppDef``.
-    Examples:
+    Maps local project directories to remote workspace locations. At submit-time,
+    files are copied/synced so that the remote job mirrors local code changes.
 
-    1. Distributed data parallel app - made up of a single role (trainer).
+    .. doctest::
 
-    2. App with parameter server - made up of multiple roles (trainer, ps).
+        >>> from torchx.specs import Workspace
+        >>> # copies ~/github/torch/** into $REMOTE_ROOT/torch/**
+        >>> ws = Workspace(projects={"~/github/torch": "torch"})
+        >>> # copies ~/github/torch/** into $REMOTE_ROOT/** (no sub-dir)
+        >>> ws = Workspace(projects={"~/github/torch": ""})
 
-    .. note:: An ``image`` is a software bundle that is installed on the container
-              scheduled by the scheduler. The container on the scheduler dictates
-              what an image actually is. An image could be as simple as a tar-ball
-              or map to a docker image. The scheduler typically knows how to "pull"
-              the image given an image name (str), which could be a simple name
-              (e.g. docker image) or a url e.g. ``s3://path/my_image.tar``).
-
-    Usage:
-
-    ::
-
-     trainer = Role(name="trainer",
-                    image = "pytorch/torch:1",
-                    entrypoint = "my_trainer.py"
-                    args = ["--arg", "foo", ENV_VAR="FOOBAR"],
-                    num_replicas = 4,
-                    resource = Resource(cpu=1, gpu=1, memMB=500),
-                    port_map={"tcp_store":8080, "tensorboard": 8081},
-                    metadata={"local_cwd.property", value})
+    The exact ``$REMOTE_ROOT`` is implementation-dependent. See
+    :py:class:`~torchx.workspace.api.WorkspaceMixin` and scheduler docs.
 
     Args:
-            name: name of the role
-            image: a software bundle that is installed on a container.
-            entrypoint: command (within the container) to invoke the role
-            args: commandline arguments to the entrypoint cmd
-            env: environment variable mappings
-            num_replicas: number of container replicas to run
-            min_replicas: minimum number of replicas for the job to start. When
-                set the job size can automatically adjust between min_replicas
-                and num_replicas depending on the cluster resources and
-                policies. If the scheduler doesn't support auto scaling this
-                field is ignored and the job size will be num_replicas.
-            max_retries: max number of retries before giving up
-            retry_policy: retry behavior upon replica failures
-            resource: Resource requirement for the role. The role should be scheduled
-                by the scheduler on ``num_replicas`` container, each of them should have at
-                least ``resource`` guarantees.
-            port_map: Port mapping for the role. The key is the unique identifier of the port
-                e.g. "tensorboard": 9090
-            metadata: Free form information that is associated with the role, for example
-                scheduler specific data. The key should follow the pattern: ``$scheduler.$key``
-            mounts: a list of mounts on the machine
+        projects: ``{local_path: remote_subdir}`` mapping.
+    """
+
+    projects: dict[str, str]
+
+    def __bool__(self) -> bool:
+        return bool(self.projects)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Workspace):
+            return False
+        return self.projects == other.projects
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self.projects.items()))
+
+    def is_unmapped_single_project(self) -> bool:
+        """``True`` if this is a single-project workspace with no target sub-directory."""
+        return len(self.projects) == 1 and not next(iter(self.projects.values()))
+
+    def merge_into(self, outdir: str | pathlib.Path) -> None:
+        """Copies each project into ``{outdir}/{target}``."""
+
+        for src, dst in self.projects.items():
+            dst_path = pathlib.Path(outdir) / dst
+            if pathlib.Path(src).is_file():
+                shutil.copy2(src, dst_path)
+            else:  # src is dir
+                shutil.copytree(src, dst_path, dirs_exist_ok=True)
+
+    @staticmethod
+    def from_str(workspace: str | None) -> "Workspace":
+        import yaml
+
+        if not workspace:
+            return Workspace({})
+
+        projects = yaml.safe_load(workspace)
+        if isinstance(projects, str):  # single project workspace
+            projects = {projects: ""}
+        else:  # multi-project workspace
+            # Replace None mappings with "" (empty string)
+            projects = {k: ("" if v is None else v) for k, v in projects.items()}
+
+        return Workspace(projects)
+
+    def __str__(self) -> str:
+        # Logging-only representation; not symmetric with from_str().
+        if self.is_unmapped_single_project():
+            return next(iter(self.projects))
+        else:
+            return ";".join(
+                k if not v else f"{k}:{v}" for k, v in self.projects.items()
+            )
+
+
+@dataclass
+class Role:
+    """
+    A set of nodes that perform a specific duty within an :py:class:`AppDef`.
+
+    * DDP app — single role (``trainer``)
+    * Parameter-server app — multiple roles (``trainer``, ``ps``)
+
+    .. doctest::
+
+        >>> from torchx.specs import Role, Resource
+        >>> trainer = Role(
+        ...     name="trainer",
+        ...     image="pytorch/torch:latest",
+        ...     entrypoint="train.py",
+        ...     args=["--lr", "0.01"],
+        ...     num_replicas=4,
+        ...     resource=Resource(cpu=4, gpu=1, memMB=8192),
+        ... )
+
+    Args:
+        name: name of the role
+        image: software bundle installed on the container (docker image, fbpkg, tar-ball, etc.)
+        entrypoint: command to invoke inside the container
+        args: arguments to the entrypoint
+        env: environment variable mappings
+        num_replicas: number of container replicas
+        min_replicas: minimum replicas for elastic scaling. If unset or unsupported
+            by the scheduler, the job runs at ``num_replicas``.
+        max_retries: max number of retries before giving up
+        retry_policy: retry behavior upon failures
+        resource: resource requirements per replica
+        port_map: named port mappings (e.g. ``{"tensorboard": 8081}``)
+        metadata: scheduler-specific data. Keys should follow ``$scheduler.$key``.
+        mounts: bind, volume, or device mounts
+        workspace: local project directories to mirror on the remote job.
+            The ``workspace`` argument on :py:class:`~torchx.runner.api.Runner`
+            APIs overrides this on ``roles[0]``.
     """
 
     name: str
     image: str
-    min_replicas: Optional[int] = None
-    base_image: Optional[str] = None  # DEPRECATED DO NOT SET, WILL BE REMOVED SOON
+    min_replicas: int | None = None
     entrypoint: str = MISSING
-    args: List[str] = field(default_factory=list)
-    env: Dict[str, str] = field(default_factory=dict)
+    args: list[str] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
     num_replicas: int = 1
     max_retries: int = 0
     retry_policy: RetryPolicy = RetryPolicy.APPLICATION
     resource: Resource = field(default_factory=_null_resource)
-    port_map: Dict[str, int] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    mounts: List[Union[BindMount, VolumeMount, DeviceMount]] = field(
-        default_factory=list
-    )
+    port_map: dict[str, int] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    mounts: list[BindMount | VolumeMount | DeviceMount] = field(default_factory=list)
+    workspace: Workspace | None = None
+
+    # DEPRECATED DO NOT SET, WILL BE REMOVED SOON
+    overrides: dict[str, Any] = field(default_factory=dict)
+
+    # pyre-ignore
+    def __getattribute__(self, attrname: str) -> Any:
+        if attrname == "overrides":
+            return super().__getattribute__(attrname)
+        try:
+            ov = super().__getattribute__("overrides")
+        except AttributeError:
+            ov = {}
+        if attrname in ov:
+            if inspect.isawaitable(ov[attrname]):
+                try:
+                    loop = asyncio.get_event_loop()
+                    result = loop.run_until_complete(ov[attrname])
+                except RuntimeError:
+                    result = asyncio.run(ov[attrname])
+            else:
+                result = ov[attrname]()
+            setattr(self, attrname, result)
+            ov[attrname] = lambda: result
+        return super().__getattribute__(attrname)
 
     def pre_proc(
         self,
@@ -354,31 +497,33 @@ class Role:
         dryrun_info: "AppDryRunInfo",
         # pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object
     ) -> "AppDryRunInfo":
-        """
-        Modifies the scheduler request based on the role specific configuration.
-        The method is invoked for each role during scheduler ``submit_dryrun``.
-        If there are multiple roles, the method is invoked for each role in
-        order that is defined by the ``AppDef.roles`` list.
+        """Hook for role-specific scheduler request modifications.
+
+        Called per-role during :py:meth:`Scheduler.submit_dryrun <torchx.schedulers.api.Scheduler.submit_dryrun>`,
+        in the order they appear in :py:attr:`AppDef.roles`.
         """
         return dryrun_info
 
 
 @dataclass
 class AppDef:
-    """
-    Represents a distributed application made up of multiple ``Roles``
-    and metadata. Contains the necessary information for the driver
-    to submit this app to the scheduler.
+    """A distributed application composed of one or more :py:class:`Role` s.
+
+    .. doctest::
+
+        >>> from torchx.specs import AppDef, Role
+        >>> app = AppDef(
+        ...     name="my_train",
+        ...     roles=[Role(name="trainer", image="my_image:latest")],
+        ... )
 
     Args:
-        name: Name of application
-        roles: List of roles
-        metadata: metadata to the app (treatment of metadata is scheduler dependent)
+        metadata: scheduler-specific metadata (treatment varies by scheduler)
     """
 
     name: str
-    roles: List[Role] = field(default_factory=list)
-    metadata: Dict[str, str] = field(default_factory=dict)
+    roles: list[Role] = field(default_factory=list)
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 class AppState(int, Enum):
@@ -421,13 +566,13 @@ class AppState(int, Enum):
         return f"{self.name} ({self.value})"
 
 
-_TERMINAL_STATES: List[AppState] = [
+_TERMINAL_STATES: list[AppState] = [
     AppState.SUCCEEDED,
     AppState.FAILED,
     AppState.CANCELLED,
 ]
 
-_STARTED_STATES: List[AppState] = _TERMINAL_STATES + [
+_STARTED_STATES: list[AppState] = _TERMINAL_STATES + [
     AppState.RUNNING,
 ]
 
@@ -450,15 +595,11 @@ ReplicaState = AppState
 
 @dataclass
 class ReplicaStatus:
-    """
-    The status of the replica during the job execution.
+    """Status of a single replica during job execution.
 
     Args:
-        id: The node rank, note: this is not a worker rank.
-        state: The current state of the node.
-        role: The role name
-        hostname: The hostname where the replica is running
-        structured_error_msg: Error message if any, None if job succeeded.
+        id: node rank (not worker rank)
+        hostaddr: DNS name or IP of the container. Defaults to ``hostname``.
     """
 
     id: int
@@ -466,42 +607,40 @@ class ReplicaStatus:
     role: str
     hostname: str
     structured_error_msg: str = NONE
+    hostaddr: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.hostaddr is None:
+            self.hostaddr = self.hostname
 
 
 @dataclass
 class RoleStatus:
-    """
-    The status of the role during the job execution.
-
-    Args:
-        role: Role name
-        replicas: List of replica statuses
-    """
+    """Status of all replicas within a role."""
 
     role: str
-    replicas: List[ReplicaStatus]
+    replicas: list[ReplicaStatus]
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "role": self.role,
+            "replicas": [asdict(replica) for replica in self.replicas],
+        }
 
 
 @dataclass
 class AppStatus:
-    """
-    The runtime status of the ``AppDef``. The scheduler can
-    return an arbitrary text message (msg field).
-    If any error occurs, scheduler can populate ``structured_error_msg``
-    with json response.
+    """Runtime status of an :py:class:`AppDef`.
 
-    ``replicas`` represent the statuses of the replicas in the job. If the job
-    runs with multiple retries, the parameter will contain the statuses of the
-    most recent retry. Note: if the previous retries failed, but the most recent
-    retry succeeded or in progress, ``replicas`` will not contain occurred errors.
+    ``roles`` contains replica statuses for the most recent retry only.
     """
 
     state: AppState
     num_restarts: int = 0
     msg: str = ""
     structured_error_msg: str = NONE
-    ui_url: Optional[str] = None
-    roles: List[RoleStatus] = field(default_factory=list)
+    ui_url: str | None = None
+    roles: list[RoleStatus] = field(default_factory=list)
 
     def is_terminal(self) -> bool:
         return is_terminal(self.state)
@@ -510,7 +649,12 @@ class AppStatus:
         app_status_dict = asdict(self)
         structured_error_msg = app_status_dict.pop("structured_error_msg")
         if structured_error_msg != NONE:
-            structured_error_msg_parsed = json.loads(structured_error_msg)
+            try:
+                structured_error_msg_parsed = json.loads(structured_error_msg)
+            except JSONDecodeError:
+                # reply-file content is job-authored and not always JSON;
+                # embed it verbatim rather than failing repr()
+                structured_error_msg_parsed = structured_error_msg
         else:
             structured_error_msg_parsed = NONE
         app_status_dict["structured_error_msg"] = structured_error_msg_parsed
@@ -521,9 +665,7 @@ class AppStatus:
         return yaml.dump({"AppStatus": app_status_dict})
 
     def raise_for_status(self) -> None:
-        """
-        raise_for_status will raise an AppStatusError if the state is not SUCCEEDED.
-        """
+        """Raises :py:class:`AppStatusError` if state is not ``SUCCEEDED``."""
         if self.state != AppState.SUCCEEDED:
             raise AppStatusError(self, f"job did not succeed: {self}")
 
@@ -551,16 +693,48 @@ class AppStatus:
 
     def _format_replica_status(self, replica_status: ReplicaStatus) -> str:
         if replica_status.structured_error_msg != NONE:
-            error_data = json.loads(replica_status.structured_error_msg)
+            try:
+                error_data = json.loads(replica_status.structured_error_msg)
+            except JSONDecodeError:
+                return replica_status.structured_error_msg
+            # Reply files carry one of two known schemas: the torchelastic
+            # error file nests the error under "message"
+            # ({"message": {"message": ..., "errorCode": ...,
+            #   "extraInfo": {"timestamp": ...}}}) while scheduler-written
+            # reply files are flat
+            # ({"message": "...", "errorCode": ..., "timestamp": ...}).
+            # The content is authored by the job or the scheduler, not by
+            # torchx, so render anything unrecognized verbatim instead of
+            # raising while formatting the status.
+            error = error_data.get("message") if isinstance(error_data, dict) else None
+            if isinstance(error, dict) and isinstance(error.get("message"), str):
+                msg = error["message"]
+                extra_info = error.get("extraInfo")
+                timestamp = (
+                    extra_info.get("timestamp")
+                    if isinstance(extra_info, dict)
+                    else None
+                )
+                exitcode = error.get("errorCode")
+            elif isinstance(error, str):
+                msg = error
+                timestamp = error_data.get("timestamp")
+                exitcode = error_data.get("errorCode")
+            else:
+                return replica_status.structured_error_msg
             error_message = self._format_error_message(
-                msg=error_data["message"]["message"], header="    error_msg: "
+                msg=msg, header="    error_msg: "
             )
-            timestamp = int(error_data["message"]["extraInfo"]["timestamp"])
-            exitcode = error_data["message"]["errorCode"]
+            timestamp_str = "<N/A>"
+            if timestamp is not None:
+                try:
+                    timestamp_str = str(datetime.fromtimestamp(int(timestamp)))
+                except (TypeError, ValueError, OverflowError, OSError):
+                    pass
             if not exitcode:
                 exitcode = "<N/A>"
             data = f"""{str(replica_status.state)} (exitcode: {exitcode})
-        timestamp: {datetime.fromtimestamp(timestamp)}
+        timestamp: {timestamp_str}
         hostname: {replica_status.hostname}
     {error_message}"""
         else:
@@ -579,8 +753,8 @@ class AppStatus:
         return f"\n {header}{replica_status.role}[{replica_status.id}]:{data}"
 
     def _get_role_statuses(
-        self, roles: List[RoleStatus], filter_roles: Optional[List[str]] = None
-    ) -> List[RoleStatus]:
+        self, roles: list[RoleStatus], filter_roles: list[str] | None = None
+    ) -> list[RoleStatus]:
         if not filter_roles:
             return roles
         return [
@@ -597,21 +771,26 @@ class AppStatus:
             replica_data += self._format_replica_status(replica)
         return f"{replica_data}"
 
+    def to_json(self, filter_roles: list[str] | None = None) -> dict[str, Any]:
+        roles = self._get_role_statuses(self.roles, filter_roles)
+
+        return {
+            "state": str(self.state),
+            "num_restarts": self.num_restarts,
+            "roles": [role_status.to_json() for role_status in roles],
+            "msg": self.msg,
+            "structured_error_msg": self.structured_error_msg,
+            "url": self.ui_url,
+        }
+
     def format(
         self,
-        filter_roles: Optional[List[str]] = None,
+        filter_roles: list[str] | None = None,
     ) -> str:
-        """
-        Format logs for app status. The app status include:
-            1. State: State of the application.
-            2. Num Restarts: The number of application restarts.
-            3. Roles: List of roles.
-            4. Msg: Arbitrary text message the scheduler returned.
-            5. Structured Error Msg: Json response error msg.
-            6. UI URL: Application URL
-        """
+        """Human-readable status string."""
         roles_data = ""
         roles = self._get_role_statuses(self.roles, filter_roles)
+
         for role_status in roles:
             roles_data += self._format_role_status(role_status)
         return Template(_APP_STATUS_FORMAT_TEMPLATE).substitute(
@@ -625,10 +804,7 @@ class AppStatus:
 
 
 class AppStatusError(Exception):
-    """
-    AppStatusError is raised when the job status is in an exceptional state i.e.
-    not SUCCEEDED.
-    """
+    """Raised by :py:meth:`AppStatus.raise_for_status` when state is not ``SUCCEEDED``."""
 
     def __init__(self, status: AppStatus, *args: object) -> None:
         super().__init__(*args)
@@ -636,24 +812,18 @@ class AppStatusError(Exception):
         self.status = status
 
 
-# valid run cfg values; only support primitives (str, int, float, bool, List[str])
-# TODO(wilsonhong): python 3.9+ supports list[T] in typing, which can be used directly
-# in isinstance(). Should replace with that.
-# see: https://docs.python.org/3/library/stdtypes.html#generic-alias-type
-CfgVal = Union[str, int, float, bool, List[str], None]
+# valid run cfg values; only support primitives (str, int, float, bool, list[str], dict[str, str])
+CfgVal = str | int | float | bool | list[str] | dict[str, str] | None
 
 
 T = TypeVar("T")
 
 
 class AppDryRunInfo(Generic[T]):
-    """
-    Returned by ``Scheduler.submit_dryrun``. Represents the
-    request that would have been made to the scheduler.
-    The ``fmt_str()`` method of this object should return a
-    pretty formatted string representation of the underlying
-    request object such that ``print(info)`` yields a human
-    readable representation of the underlying request.
+    """Returned by :py:meth:`Scheduler.submit_dryrun <torchx.schedulers.api.Scheduler.submit_dryrun>`.
+
+    Wraps the scheduler ``request`` that *would* have been submitted.
+    ``print(info)`` yields a human-readable representation.
     """
 
     def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
@@ -668,76 +838,112 @@ class AppDryRunInfo(Generic[T]):
         # manually rather than through constructor arguments
         # DO NOT create getters or make these public
         # unless there is a good reason to
-        self._app: Optional[AppDef] = None
+        self._app: AppDef | None = None
         self._cfg: Mapping[str, CfgVal] = {}
-        self._scheduler: Optional[str] = None
+        self._scheduler: str | None = None
 
     def __repr__(self) -> str:
         return self._fmt(self.request)
 
 
 def get_type_name(tp: Type[CfgVal]) -> str:
-    """
-    Gets the type's name as a string. If ``tp` is a primitive class like int, str, etc, then
-    uses its attribute ``__name__``. Otherwise, use ``str(tp)``.
-
-    Note: we use this method to print out generic typing like List[str].
-    """
+    """Returns a human-readable name for ``tp`` (handles generic types like ``list[str]``)."""
     if tp.__module__ != "typing" and hasattr(tp, "__name__"):
         return tp.__name__
     else:
         return str(tp)
 
 
+class cases:
+    """Case conversion utilities."""
+
+    @staticmethod
+    def snake_to_camel(name: str) -> str:
+        """Convert snake_case to camelCase."""
+        components = name.split("_")
+        return components[0] + "".join(x.title() for x in components[1:])
+
+    @staticmethod
+    def camel_to_snake(name: str) -> str:
+        """Convert camelCase to snake_case."""
+        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
+
+
 @dataclass
 class runopt:
-    """
-    Represents the metadata about the specific run option
-    """
+    """Metadata for a single scheduler run option."""
 
     default: CfgVal
     opt_type: Type[CfgVal]
     is_required: bool
     help: str
 
+    @property
+    def is_type_list_of_str(self) -> bool:
+        return self.opt_type in (List[str], list[str])
+
+    @property
+    def is_type_dict_of_str(self) -> bool:
+        return self.opt_type in (Dict[str, str], dict[str, str])
+
+    def cast_to_type(self, value: str) -> CfgVal:
+        """Casts the given `value` (in its string representation) to the type of this run option.
+        Below are the cast rules for each option type and value literal:
+
+        1. opt_type=str, value="foo" -> "foo"
+        1. opt_type=bool, value="True"/"False" -> True/False
+        1. opt_type=int, value="1" -> 1
+        1. opt_type=float, value="1.1" -> 1.1
+        1. opt_type=list[str]/List[str], value="a,b,c" or value="a;b;c" -> ["a", "b", "c"]
+        1. opt_type=dict[str,str]/Dict[str,str], value="a:1,b:2" or value="a:1;b:2" -> {"a": "1", "b": "2"}
+
+        NOTE: dict parsing uses ":" as the kv separator (rather than the standard "=") because "=" is used
+        at the top-level cfg to parse runopts (notice the plural) from the CLI. Originally torchx only supported
+        primitives and list[str] as CfgVal but dict[str,str] was added in https://github.com/meta-pytorch/torchx/pull/855
+        """
+
+        if self.opt_type is None:
+            raise ValueError("runopt's opt_type cannot be `None`")
+        elif self.opt_type == bool:
+            return value.lower() == "true"
+        elif self.opt_type in (List[str], list[str]):
+            # lists may be ; or , delimited
+            # also deal with trailing "," by removing empty strings
+            return [v for v in value.replace(";", ",").split(",") if v]
+        elif self.opt_type in (Dict[str, str], dict[str, str]):
+            return {
+                s.split(":", 1)[0]: s.split(":", 1)[1]
+                for s in value.replace(";", ",").split(",")
+            }
+        else:
+            assert self.opt_type in (str, int, float)
+            return self.opt_type(value)
+
 
 class runopts:
     """
-    Holds the accepted scheduler run configuration
-    keys, default value (if any), and help message string.
-    These options are provided by the ``Scheduler`` and validated
-    in ``Session.run`` against user provided run cfg.
-    Allows ``None`` default values. Required opts must NOT have a
-    non-None default.
+    Schema for scheduler run configuration.
 
-    .. important:: This class has no accessors because it is intended to
-                   be constructed and returned by ``Scheduler.run_config_options``
-                   and printed out as a "help" tool or as part of an exception msg.
+    Holds accepted config keys, defaults, and help strings. Constructed by
+    :py:meth:`Scheduler.run_opts() <torchx.schedulers.api.Scheduler.run_opts>`
+    and validated at submit time.
 
-    Usage:
+    .. doctest::
 
-    .. code-block:: python
+        >>> from torchx.specs import runopts
+        >>> opts = runopts()
+        >>> opts.add("cluster_id", type_=int, help="cluster to submit the job", required=True)
+        >>> opts.add("priority", type_=float, default=0.5, help="job priority")
+        >>> opts.add("preemptible", type_=bool, default=False, help="is the job preemptible")
 
-     opts = runopts()
-
-     opts.add("run_as_user", type_=str, help="user to run the job as")
-     opts.add("cluster_id", type_=int, help="cluster to submit the job", required=True)
-     opts.add("priority", type_=float, default=0.5, help="job priority")
-     opts.add("preemptible", type_=bool, default=False, help="is the job preemptible")
-
-     # invalid
-     opts.add("illegal", default=10, required=True)
-     opts.add("bad_type", type=str, default=10)
-
-     opts.check(cfg)
-     print(opts)
-
+    .. note:: For new schedulers, prefer :py:class:`~torchx.schedulers.api.StructuredOpts`
+              which auto-generates ``runopts`` from typed dataclass fields.
     """
 
     def __init__(self) -> None:
-        self._opts: Dict[str, runopt] = {}
+        self._opts: dict[str, runopt] = {}
 
-    def __iter__(self) -> Iterator[Tuple[str, runopt]]:
+    def __iter__(self) -> Iterator[tuple[str, runopt]]:
         return self._opts.items().__iter__()
 
     def __len__(self) -> int:
@@ -745,37 +951,51 @@ class runopts:
 
     @staticmethod
     def is_type(obj: CfgVal, tp: Type[CfgVal]) -> bool:
-        """
-        Returns True if ``obj`` is type of ``tp``. Similar to isinstance() but supports
-        tp = List[str], thus can be used to validate ConfigValue.
-        """
+        """Like ``isinstance()`` but supports generic types (e.g. ``list[str]``)."""
         try:
             return isinstance(obj, tp)
         except TypeError:
             if isinstance(obj, list):
                 return all(isinstance(e, str) for e in obj)
+            elif isinstance(obj, dict):
+                return all(
+                    isinstance(k, str) and isinstance(v, str) for k, v in obj.items()
+                )
             else:
                 return False
 
-    def get(self, name: str) -> Optional[runopt]:
-        """
-        Returns option if any was registered, or None otherwise
-        """
-        return self._opts.get(name, None)
+    def get(self, name: str) -> runopt | None:
+        """Returns the registered option, or ``None``.
 
-    def resolve(self, cfg: Mapping[str, CfgVal]) -> Dict[str, CfgVal]:
+        Accepts camelCase names (e.g. ``"clusterName"`` resolves ``"cluster_name"``).
         """
-        Checks the given config against this ``runopts`` and sets default configs
-        if not set.
+        # _opts maps names to runopt instances (never None), so a None
+        # result unambiguously means the key does not exist.
+        result = self._opts.get(name)
+        if result is None:
+            snake = cases.camel_to_snake(name)
+            if snake != name:
+                result = self._opts.get(snake)
+        return result
 
-        .. note:: Extra configs unknown to this run option are ignored.
+    def resolve(self, cfg: Mapping[str, CfgVal]) -> dict[str, CfgVal]:
+        """Validates ``cfg`` against registered options, filling defaults.
 
+        Raises :py:class:`InvalidRunConfigException` for missing required options
+        or type mismatches. Accepts camelCase keys.
         """
 
-        resolved_cfg: Dict[str, CfgVal] = {**cfg}
+        resolved_cfg: dict[str, CfgVal] = {**cfg}
 
         for cfg_key, runopt in self._opts.items():
             val = resolved_cfg.get(cfg_key)
+
+            # Fallback: try camelCase version of the registered key in cfg
+            if val is None and cfg_key not in resolved_cfg:
+                camel_key = cases.snake_to_camel(cfg_key)
+                if camel_key != cfg_key and camel_key in resolved_cfg:
+                    val = resolved_cfg.pop(camel_key)
+                    resolved_cfg[cfg_key] = val
 
             # check required opt
             if runopt.is_required and val is None:
@@ -795,11 +1015,11 @@ class runopts:
                 )
 
             # not required and not set, set to default
-            if val is None:
+            if val is None and cfg_key not in resolved_cfg:
                 resolved_cfg[cfg_key] = runopt.default
         return resolved_cfg
 
-    def cfg_from_str(self, cfg_str: str) -> Dict[str, CfgVal]:
+    def cfg_from_str(self, cfg_str: str) -> dict[str, CfgVal]:
         """
         Parses scheduler ``cfg`` from a string literal and returns
         a cfg map where the cfg values have been cast into the appropriate
@@ -855,22 +1075,37 @@ class runopts:
 
         """
 
-        def _cast_to_type(value: str, opt_type: Type[CfgVal]) -> CfgVal:
-            if opt_type == bool:
-                return value.lower() == "true"
-            elif opt_type == List[str]:
-                # lists may be ; or , delimited
-                # also deal with trailing "," by removing empty strings
-                return [v for v in value.replace(";", ",").split(",") if v]
-            else:
-                # pyre-ignore[19]
-                return opt_type(value)
-
-        cfg: Dict[str, CfgVal] = {}
+        cfg: dict[str, CfgVal] = {}
         for key, val in to_dict(cfg_str).items():
-            runopt_ = self.get(key)
-            if runopt_:
-                cfg[key] = _cast_to_type(val, runopt_.opt_type)
+            opt = self.get(key)
+            if opt:
+                cfg[key] = opt.cast_to_type(val)
+            else:
+                logger.warning(
+                    f"{YELLOW_BOLD}Unknown run option passed to scheduler: {key}={val}{RESET}"
+                )
+        return cfg
+
+    def cfg_from_json_repr(self, json_repr: str) -> dict[str, CfgVal]:
+        """
+        Converts the given dict to a valid cfg for this ``runopts`` object.
+        """
+        cfg: dict[str, CfgVal] = {}
+        cfg_dict = json.loads(json_repr)
+        for key, val in cfg_dict.items():
+            opt = self.get(key)
+            if opt:
+                # Optional runopt cfg values default their value to None,
+                # but use `_type` to specify their type when provided.
+                # Make sure not to treat None's as lists/dictionaries
+                if val is None:
+                    cfg[key] = val
+                elif opt.is_type_list_of_str:
+                    cfg[key] = [str(v) for v in val]
+                elif opt.is_type_dict_of_str:
+                    cfg[key] = {str(k): str(v) for k, v in val.items()}
+                else:
+                    cfg[key] = val
         return cfg
 
     def add(
@@ -881,11 +1116,7 @@ class runopts:
         default: CfgVal = None,
         required: bool = False,
     ) -> None:
-        """
-        Adds the ``config`` option with the given help string and ``default``
-        value (if any). If the ``default`` is not specified then this option
-        is a required option.
-        """
+        """Registers a config option. Required options must not have a default."""
         if required and default is not None:
             raise ValueError(
                 f"Required option: {cfg_key} must not specify default value. Given: {default}"
@@ -897,10 +1128,36 @@ class runopts:
                     f" Given: {default} ({type(default).__name__})"
                 )
 
-        self._opts[cfg_key] = runopt(default, type_, required, help)
+        opt = runopt(
+            default,
+            type_,
+            required,
+            help,
+        )
+        self._opts[cfg_key] = opt
 
     def update(self, other: "runopts") -> None:
         self._opts.update(other._opts)
+
+    # pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType
+    def __or__(self, other: "runopts") -> "runopts":
+        """Merge two runopts, returning a new runopts.
+
+        Example:
+            .. doctest::
+
+                >>> opts1 = runopts()
+                >>> opts1.add("foo", type_=str, default="a", help="foo option")
+                >>> opts2 = runopts()
+                >>> opts2.add("bar", type_=int, default=1, help="bar option")
+                >>> merged = opts1 | opts2
+                >>> sorted(k for k, _ in merged)
+                ['bar', 'foo']
+        """
+        merged = runopts()
+        merged.update(self)
+        merged.update(other)
+        return merged
 
     def __repr__(self) -> str:
         required = [(key, opt) for key, opt in self._opts.items() if opt.is_required]
@@ -932,11 +1189,7 @@ class runopts:
 
 
 class InvalidRunConfigException(Exception):
-    """
-    Raised when the supplied run cfg does not satisfy the
-    ``runopts``, either due to missing required configs or value
-    type mismatch.
-    """
+    """Raised when run cfg is missing required options or has type mismatches."""
 
     def __init__(
         self, invalid_reason: str, cfg_key: str, cfg: Mapping[str, CfgVal]
@@ -947,9 +1200,7 @@ class InvalidRunConfigException(Exception):
 
 
 class MalformedAppHandleException(Exception):
-    """
-    Raised when APIs are given a bad app handle.
-    """
+    """Raised when an :py:data:`AppHandle` is not a valid URI."""
 
     def __init__(self, app_handle: str) -> None:
         super().__init__(
@@ -970,11 +1221,16 @@ class UnknownSchedulerException(Exception):
 AppHandle = str
 
 
+class ParsedAppHandle(NamedTuple):
+    """Parsed components of an :py:data:`AppHandle`."""
+
+    scheduler_backend: str
+    session_name: str
+    app_id: str
+
+
 class UnknownAppException(Exception):
-    """
-    Raised by ``Session`` APIs when either the application does not
-    exist or the application is not owned by the session.
-    """
+    """Raised when the application does not exist or has been purged."""
 
     def __init__(self, app_handle: "AppHandle") -> None:
         super().__init__(
@@ -983,18 +1239,26 @@ class UnknownAppException(Exception):
         )
 
 
-def parse_app_handle(app_handle: AppHandle) -> Tuple[str, str, str]:
-    """
-    parses the app handle into ```(scheduler_backend, session_name, and app_id)```
+def parse_app_handle(app_handle: AppHandle) -> ParsedAppHandle:
+    """Parses ``{scheduler}://{session_name}/{app_id}`` into its components.
+
+    .. doctest::
+
+        >>> from torchx.specs import parse_app_handle
+        >>> parse_app_handle("k8s://default/foo_bar")
+        ParsedAppHandle(scheduler_backend='k8s', session_name='default', app_id='foo_bar')
+        >>> parse_app_handle("k8s:///foo_bar")
+        ParsedAppHandle(scheduler_backend='k8s', session_name='', app_id='foo_bar')
+
     """
 
     # parse it manually b/c currently torchx does not
     # define allowed characters nor length for session name and app_id
     import re
 
-    pattern = r"(?P<scheduler_backend>.+)://(?P<session_name>.+)/(?P<app_id>.+)"
+    pattern = r"(?P<scheduler_backend>.+)://(?P<session_name>.*)/(?P<app_id>.+)"
     match = re.match(pattern, app_handle)
     if not match:
         raise MalformedAppHandleException(app_handle)
     gd = match.groupdict()
-    return gd["scheduler_backend"], gd["session_name"], gd["app_id"]
+    return ParsedAppHandle(gd["scheduler_backend"], gd["session_name"], gd["app_id"])

@@ -4,13 +4,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Dict, Optional
+# pyre-strict
+# pyre-ignore-all-errors[3, 2, 16]
 
-import importlib_metadata as metadata
-from importlib_metadata import EntryPoint
+from importlib import metadata
+from importlib.metadata import EntryPoint
+from typing import Any
 
 
-# pyre-ignore-all-errors[3, 2]
 def load(group: str, name: str, default=None):
     """
     Loads the entry point specified by
@@ -28,13 +29,34 @@ def load(group: str, name: str, default=None):
     raises an error.
     """
 
-    entrypoints = metadata.entry_points().select(group=group)
+    # [note_on_entrypoints]
+    # return type of importlib.metadata.entry_points() is different between python-3.9 and python-3.10
+    # https://docs.python.org/3.9/library/importlib.metadata.html#importlib.metadata.entry_points
+    # https://docs.python.org/3.10/library/importlib.metadata.html#importlib.metadata.entry_points
+    if hasattr(metadata.entry_points(), "select"):
+        # python>=3.10
+        entrypoints = metadata.entry_points().select(group=group)
 
-    if name not in entrypoints.names and default is not None:
-        return default
+        if name not in entrypoints.names and default is not None:
+            return default
 
-    ep = entrypoints[name]
-    return ep.load()
+        ep = entrypoints[name]
+        return ep.load()
+
+    else:
+        # python<3.10 (e.g. 3.9)
+        # metadata.entry_points() returns dict[str, tuple[EntryPoint]] (not EntryPoints) in python-3.9
+        entrypoints = metadata.entry_points().get(group, ())
+
+        for ep in entrypoints:
+            if ep.name == name:
+                return ep.load()
+
+        # [group].name not found
+        if default is not None:
+            return default
+        else:
+            raise KeyError(f"entrypoint {group}.{name} not found")
 
 
 def _defer_load_ep(ep: EntryPoint) -> object:
@@ -47,11 +69,7 @@ def _defer_load_ep(ep: EntryPoint) -> object:
     return run
 
 
-# pyre-ignore-all-errors[3, 2]
-def load_group(
-    group: str,
-    default: Optional[Dict[str, Any]] = None,
-):
+def load_group(group: str, default: dict[str, Any] | None = None):
     """
     Loads all the entry points specified by ``group`` and returns
     the entry points as a map of ``name (str) -> deferred_load_fn``.
@@ -85,7 +103,13 @@ def load_group(
 
     """
 
-    entrypoints = metadata.entry_points().select(group=group)
+    # see [note_on_entrypoints] above
+    if hasattr(metadata.entry_points(), "select"):
+        # python>=3.10
+        entrypoints = metadata.entry_points().select(group=group)
+    else:
+        # python<3.10 (e.g. 3.9)
+        entrypoints = metadata.entry_points().get(group, ())
 
     if len(entrypoints) == 0:
         return default

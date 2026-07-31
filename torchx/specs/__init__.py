@@ -1,25 +1,36 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
-This contains the TorchX AppDef and related component definitions. These are
-used by components to define the apps which can then be launched via a TorchX
-scheduler or pipeline adapter.
+Core TorchX types for defining distributed applications.
+
+The main types are :py:class:`AppDef`, :py:class:`Role`, and :py:class:`Resource`.
+Components are functions that return an ``AppDef`` which can then be launched
+via a :py:class:`~torchx.schedulers.api.Scheduler`.
+
+.. doctest::
+
+    >>> import torchx.specs as specs
+    >>> app = specs.AppDef(
+    ...     name="echo",
+    ...     roles=[specs.Role(name="worker", image="/tmp", entrypoint="/bin/echo", args=["hello"])],
+    ... )
+    >>> app.name
+    'echo'
+
 """
+
 import difflib
-from typing import Callable, Dict, Optional
+import os
+from typing import Callable, Iterator, Mapping
 
-from torchx.specs.named_resources_aws import NAMED_RESOURCES as AWS_NAMED_RESOURCES
-from torchx.specs.named_resources_generic import (
-    NAMED_RESOURCES as GENERIC_NAMED_RESOURCES,
-)
-from torchx.util.entrypoints import load_group
-
-from .api import (  # noqa: F401 F403
+from torchx import plugins
+from torchx.specs.api import (  # noqa: F401
     ALL,
     AppDef,
     AppDryRunInfo,
@@ -27,6 +38,7 @@ from .api import (  # noqa: F401 F403
     AppState,
     AppStatus,
     BindMount,
+    cases,
     CfgVal,
     DeviceMount,
     get_type_name,
@@ -38,6 +50,7 @@ from .api import (  # noqa: F401 F403
     NONE,
     NULL_RESOURCE,
     parse_app_handle,
+    ParsedAppHandle,
     ReplicaState,
     ReplicaStatus,
     Resource,
@@ -46,23 +59,41 @@ from .api import (  # noqa: F401 F403
     RoleStatus,
     runopt,
     runopts,
+    TORCHX_HOME,
     UnknownAppException,
     UnknownSchedulerException,
     VolumeMount,
+    Workspace,
 )
-from .builders import make_app_handle, materialize_appdef, parse_mounts  # noqa
+from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
+from torchx.util.modules import import_attr
 
 GiB: int = 1024
 
 
-def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
-    resource_methods = load_group("torchx.named_resources", default={})
-    materialized_resources: Dict[str, Callable[[], Resource]] = {}
+ResourceFactory = Callable[[], Resource]
+
+AWS_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
+    "torchx.specs.named_resources_aws", "NAMED_RESOURCES", default={}
+)
+GENERIC_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
+    "torchx.specs.named_resources_generic", "NAMED_RESOURCES", default={}
+)
+CUSTOM_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
+    os.environ.get("TORCHX_CUSTOM_NAMED_RESOURCES", "torchx.specs.fb.named_resources"),
+    "NAMED_RESOURCES",
+    default={},
+)
+
+
+def _load_named_resources() -> dict[str, Callable[[], Resource]]:
+    materialized_resources: dict[str, Callable[[], Resource]] = {}
 
     for name, resource in {
         **GENERIC_NAMED_RESOURCES,
         **AWS_NAMED_RESOURCES,
-        **resource_methods,
+        **CUSTOM_NAMED_RESOURCES,
+        **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
     }.items():
         materialized_resources[name] = resource
 
@@ -71,7 +102,7 @@ def _load_named_resources() -> Dict[str, Callable[[], Resource]]:
     return materialized_resources
 
 
-_named_resource_factories: Dict[str, Callable[[], Resource]] = _load_named_resources()
+_named_resource_factories: dict[str, Callable[[], Resource]] = _load_named_resources()
 
 
 class _NamedResourcesLibrary:
@@ -94,44 +125,48 @@ class _NamedResourcesLibrary:
     def __contains__(self, key: str) -> bool:
         return key in _named_resource_factories
 
-    def __iter__(self) -> None:
-        raise NotImplementedError("named resources doesn't support iterating")
+    def __iter__(self) -> Iterator[str]:
+        """Iterates through the names of the registered named_resources.
+
+        Usage:
+
+        .. doctest::
+
+            from torchx import specs
+
+            for resource_name in specs.named_resources:
+                resource = specs.resource(h=resource_name)
+                assert isinstance(resource, specs.Resource)
+
+        """
+        for key in _named_resource_factories:
+            yield (key)
 
 
 named_resources: _NamedResourcesLibrary = _NamedResourcesLibrary()
 
 
 def resource(
-    cpu: Optional[int] = None,
-    gpu: Optional[int] = None,
-    memMB: Optional[int] = None,
-    h: Optional[str] = None,
+    cpu: int | None = None,
+    gpu: int | None = None,
+    memMB: int | None = None,
+    h: str | None = None,
 ) -> Resource:
-    """
-    Convenience method to create a ``Resource`` object from either the
-    raw resource specs (cpu, gpu, memMB) or the registered named resource (``h``).
-    Note that the (cpu, gpu, memMB) is mutually exclusive with ``h``
-    taking predecence if specified.
+    """Creates a :py:class:`Resource` from raw specs or a named resource.
 
-    If ``h`` is specified then it is used to look up the
-    resource specs from the list of registered named resources.
-    See `registering named resource <https://pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+    When ``h`` is set, it takes precedence (raw specs are ignored). See
+    :ref:`advanced:Registering Named Resources` for custom named resources.
 
-    Otherwise a ``Resource`` object is created from the raw resource specs.
+    .. doctest::
 
-    Example:
+        >>> from torchx.specs import resource
+        >>> resource(cpu=4, gpu=1, memMB=8192)
+        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})
 
-    .. code-block:: python
-
-         resource(cpu=1) # returns Resource(cpu=1)
-         resource(named_resource="foobar") # returns registered named resource "foo"
-         resource(cpu=1, named_resource="foobar") # returns registered named resource "foo" (cpu=1 ignored)
-         resource() # returns default resource values
-         resource(cpu=None, gpu=None, memMB=None) # throws
     """
 
     if h:
-        return get_named_resources(h)
+        return named_resources[h]
     else:
         # could make these defaults customizable via entrypoint
         # not doing that now since its not a requested feature and may just over complicate things
@@ -149,35 +184,57 @@ def resource(
 
 def get_named_resources(res: str) -> Resource:
     """
-    Get resource object based on the string definition registered via entrypoints.txt.
-
-    TorchX implements ``named_resource`` registration mechanism, which consists of
-    the following steps:
-
-    1. Create a module and define your resource retrieval function:
-
-    .. code-block:: python
-
-     # my_module.resources
-     from typing import Dict
-     from torchx.specs import Resource
-
-     def gpu_x_1() -> Dict[str, Resource]:
-         return Resource(cpu=2, memMB=64 * 1024, gpu = 2)
-
-    2. Register resource retrieval in the entrypoints section:
-
-    ::
-
-     [torchx.named_resources]
-     gpu_x_1 = my_module.resources:gpu_x_1
-
-    The ``gpu_x_1`` can be used as string argument to this function:
-
-    ::
-
-     from torchx.specs import named_resources
-     resource = named_resources["gpu_x_1"]
-
+    .. deprecated::
+        Use :py:func:`resource(h=name) <resource>` instead.
     """
+    import warnings
+
+    warnings.warn(
+        "`get_named_resources()` is deprecated, use `resource(h=name)` instead",
+        FutureWarning,
+        stacklevel=2,
+    )
     return named_resources[res]
+
+
+__all__ = [
+    "AppDef",
+    "AppDryRunInfo",
+    "AppHandle",
+    "AppState",
+    "AppStatus",
+    "BindMount",
+    "CfgVal",
+    "DeviceMount",
+    "get_type_name",
+    "is_terminal",
+    "macros",
+    "MISSING",
+    "NONE",
+    "NULL_RESOURCE",
+    "parse_app_handle",
+    "ParsedAppHandle",
+    "ReplicaState",
+    "ReplicaStatus",
+    "Resource",
+    "RetryPolicy",
+    "Role",
+    "RoleStatus",
+    "runopt",
+    "runopts",
+    "cases",
+    "UnknownAppException",
+    "UnknownSchedulerException",
+    "InvalidRunConfigException",
+    "MalformedAppHandleException",
+    "VolumeMount",
+    "resource",
+    "get_named_resources",
+    "named_resources",
+    "make_app_handle",
+    "materialize_appdef",
+    "parse_mounts",
+    "ALL",
+    "TORCHX_HOME",
+    "Workspace",
+]

@@ -5,13 +5,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
-from typing import List
 
 from torchx.cli.cmd_configure import CmdConfigure
 
@@ -30,7 +31,7 @@ class CmdConfigureTest(unittest.TestCase):
         os.chdir(self._old_cwd)
         shutil.rmtree(self.test_dir)
 
-    def _args(self, sys_args: List[str]) -> argparse.Namespace:
+    def _args(self, sys_args: list[str]) -> argparse.Namespace:
         return self.parser.parse_args(sys_args)
 
     def test_configure_print(self) -> None:

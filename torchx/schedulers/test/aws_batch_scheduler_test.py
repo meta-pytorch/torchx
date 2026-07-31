@@ -3,6 +3,8 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 import threading
 import unittest
 from contextlib import contextmanager
@@ -17,10 +19,12 @@ from torchx.schedulers.aws_batch_scheduler import (
     _local_session,
     _parse_num_replicas,
     _role_to_node_properties,
-    AWSBatchOpts,
     AWSBatchScheduler,
     create_scheduler,
+    ENV_TORCHX_IMAGE,
     ENV_TORCHX_ROLE_NAME,
+    Opts,
+    parse_ulimits,
     resource_from_resource_requirements,
     resource_requirements_from_resource,
     to_millis_since_epoch,
@@ -28,7 +32,7 @@ from torchx.schedulers.aws_batch_scheduler import (
 from torchx.specs import AppState, Resource
 
 
-def _test_app() -> specs.AppDef:
+def _test_app(num_replicas: int = 2, resource: Resource | None = None) -> specs.AppDef:
     trainer_role = specs.Role(
         name="trainer",
         image="pytorch/torchx:latest",
@@ -41,13 +45,14 @@ def _test_app() -> specs.AppDef:
             f" --rank0_host $${{{specs.macros.rank0_env}:=localhost}}",
         ],
         env={"FOO": "bar"},
-        resource=specs.Resource(
+        resource=resource
+        or specs.Resource(
             cpu=2,
             memMB=3000,
             gpu=4,
         ),
         port_map={"foo": 1234},
-        num_replicas=2,
+        num_replicas=num_replicas,
         max_retries=3,
         mounts=[
             specs.BindMount(src_path="/src", dst_path="/dst", read_only=True),
@@ -108,7 +113,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
 
     def test_submit_dryrun_with_share_id(self) -> None:
         app = _test_app()
-        cfg = AWSBatchOpts({"queue": "testqueue", "share_id": "fooshare"})
+        cfg = Opts(queue="testqueue", share_id="fooshare")
         info = create_scheduler("test").submit_dryrun(app, cfg)
 
         req = info.request
@@ -118,13 +123,13 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         self.assertEqual(job_def["schedulingPriority"], 0)
 
     def test_submit_dryrun_with_priority_but_not_share_id(self) -> None:
-        cfg = AWSBatchOpts({"queue": "testqueue", "priority": 42})
+        cfg = Opts(queue="testqueue", priority=42)
         dryrun_info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         self.assertFalse("schedulingPriority" in dryrun_info.request.job_def)
         self.assertIsNone(dryrun_info.request.share_id)
 
     def test_submit_dryrun_with_priority(self) -> None:
-        cfg = AWSBatchOpts({"queue": "testqueue", "share_id": "foo", "priority": 42})
+        cfg = Opts(queue="testqueue", share_id="foo", priority=42)
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
 
         req = info.request
@@ -132,12 +137,8 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         self.assertEqual(req.share_id, "foo")
         self.assertEqual(job_def["schedulingPriority"], 42)
 
-    @patch(
-        "torchx.schedulers.aws_batch_scheduler.getpass.getuser", return_value="testuser"
-    )
-    def test_submit_dryrun_tags(self, _) -> None:
-        # intentionally not specifying user in cfg to test default
-        cfg = AWSBatchOpts({"queue": "ignored_in_test"})
+    def test_submit_dryrun_tags(self) -> None:
+        cfg = Opts(queue="ignored_in_test", user="testuser")
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         self.assertEqual(
             {
@@ -149,16 +150,62 @@ class AWSBatchSchedulerTest(unittest.TestCase):
             info.request.job_def["tags"],
         )
 
+    def test_submit_dryrun_job_role_arn(self) -> None:
+        cfg = Opts(queue="ignored_in_test", job_role_arn="fizzbuzz")
+        info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
+        node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
+        self.assertEqual(1, len(node_groups))
+        self.assertEqual(cfg["job_role_arn"], node_groups[0]["container"]["jobRoleArn"])
+
+    def test_submit_dryrun_execution_role_arn(self) -> None:
+        cfg = Opts(queue="ignored_in_test", execution_role_arn="veryexecutive")
+        info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
+        node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
+        self.assertEqual(1, len(node_groups))
+        self.assertEqual(
+            cfg["execution_role_arn"], node_groups[0]["container"]["executionRoleArn"]
+        )
+
     def test_submit_dryrun_privileged(self) -> None:
-        cfg = AWSBatchOpts({"queue": "ignored_in_test", "privileged": True})
+        cfg = Opts(queue="ignored_in_test", privileged=True)
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
         node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
         self.assertEqual(1, len(node_groups))
         self.assertTrue(node_groups[0]["container"]["privileged"])
 
+    def test_submit_dryrun_instance_type_multinode(self) -> None:
+        cfg = Opts(queue="ignored_in_test", privileged=True)
+        resource = specs.named_resources_aws.aws_p3dn_24xlarge()
+        app = _test_app(num_replicas=2, resource=resource)
+        info = create_scheduler("test").submit_dryrun(app, cfg)
+        node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
+        self.assertEqual(1, len(node_groups))
+        self.assertEqual(
+            resource.capabilities[specs.named_resources_aws.K8S_ITYPE],
+            node_groups[0]["container"]["instanceType"],
+        )
+
+    def test_submit_dryrun_instance_type_singlenode(self) -> None:
+        cfg = Opts(queue="ignored_in_test", privileged=True)
+        resource = specs.named_resources_aws.aws_p3dn_24xlarge()
+        app = _test_app(num_replicas=1, resource=resource)
+        info = create_scheduler("test").submit_dryrun(app, cfg)
+        node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
+        self.assertEqual(1, len(node_groups))
+        self.assertTrue("instanceType" in node_groups[0]["container"])
+
+    def test_submit_dryrun_no_instance_type_non_aws(self) -> None:
+        cfg = Opts(queue="ignored_in_test", privileged=True)
+        resource = specs.named_resources_aws.aws_p3dn_24xlarge()
+        app = _test_app(num_replicas=2)
+        info = create_scheduler("test").submit_dryrun(app, cfg)
+        node_groups = info.request.job_def["nodeProperties"]["nodeRangeProperties"]
+        self.assertEqual(1, len(node_groups))
+        self.assertTrue("instanceType" not in node_groups[0]["container"])
+
     @mock_rand()
     def test_submit_dryrun(self) -> None:
-        cfg = AWSBatchOpts({"queue": "testqueue", "user": "testuser"})
+        cfg = Opts(queue="testqueue", user="testuser")
         info = create_scheduler("test").submit_dryrun(_test_app(), cfg)
 
         req = info.request
@@ -193,6 +240,10 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                                     {"name": "FOO", "value": "bar"},
                                     {"name": "TORCHX_ROLE_IDX", "value": "0"},
                                     {"name": "TORCHX_ROLE_NAME", "value": "trainer"},
+                                    {
+                                        "name": "TORCHX_IMAGE",
+                                        "value": "pytorch/torchx:latest",
+                                    },
                                 ],
                                 "privileged": False,
                                 "resourceRequirements": [
@@ -252,7 +303,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
         props = _role_to_node_properties(role, 0)
         self.assertEqual(
-            # pyre-fixme[16]: `object` has no attribute `__getitem__`.
             props["container"]["volumes"],
             [
                 {
@@ -291,7 +341,6 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
         props = _role_to_node_properties(role, 0)
         self.assertEqual(
-            # pyre-fixme[16]: `object` has no attribute `__getitem__`.
             props["container"]["linuxParameters"]["devices"],
             [
                 {
@@ -308,12 +357,14 @@ class AWSBatchSchedulerTest(unittest.TestCase):
             image="",
             mounts=[],
             resource=specs.Resource(
-                cpu=1, memMB=1000, gpu=0, devices={"vpc.amazonaws.com/efa": 2}
+                cpu=1,
+                memMB=1000,
+                gpu=0,
+                devices={"vpc.amazonaws.com/efa": 2, "aws.amazon.com/neurondevice": 1},
             ),
         )
         props = _role_to_node_properties(role, 0)
         self.assertEqual(
-            # pyre-fixme[16]: `object` has no attribute `__getitem__`.
             props["container"]["linuxParameters"]["devices"],
             [
                 {
@@ -326,8 +377,53 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                     "containerPath": "/dev/infiniband/uverbs1",
                     "permissions": ["READ", "WRITE", "MKNOD"],
                 },
+                {
+                    "hostPath": "/dev/neuron0",
+                    "containerPath": "/dev/neuron0",
+                    "permissions": ["READ", "WRITE", "MKNOD"],
+                },
             ],
         )
+
+    def test_role_to_node_properties_ulimits(self) -> None:
+        role = specs.Role(
+            name="test",
+            image="test:latest",
+            entrypoint="test",
+            args=["test"],
+            resource=specs.Resource(cpu=1, memMB=1000, gpu=0),
+        )
+        ulimits = [
+            {"name": "nofile", "softLimit": 65536, "hardLimit": 65536},
+            {"name": "memlock", "softLimit": -1, "hardLimit": -1},
+        ]
+        props = _role_to_node_properties(role, 0, ulimits=ulimits)
+        self.assertEqual(
+            props["container"]["ulimits"],
+            ulimits,
+        )
+
+    def test_parse_ulimits(self) -> None:
+        # Test single ulimit
+        result = parse_ulimits(["nofile:65536:65536"])
+        expected = [{"name": "nofile", "softLimit": 65536, "hardLimit": 65536}]
+        self.assertEqual(result, expected)
+
+        # Test multiple ulimits
+        result = parse_ulimits(["nofile:65536:65536", "memlock:-1:-1"])
+        expected = [
+            {"name": "nofile", "softLimit": 65536, "hardLimit": 65536},
+            {"name": "memlock", "softLimit": -1, "hardLimit": -1},
+        ]
+        self.assertEqual(result, expected)
+
+        # Test empty list
+        result = parse_ulimits([])
+        self.assertEqual(result, [])
+
+        # Test invalid format
+        with self.assertRaises(ValueError):
+            parse_ulimits(["invalid"])
 
     def _mock_scheduler_running_job(self) -> AWSBatchScheduler:
         scheduler = AWSBatchScheduler(
@@ -389,7 +485,11 @@ class AWSBatchSchedulerTest(unittest.TestCase):
                                             {
                                                 "name": ENV_TORCHX_ROLE_NAME,
                                                 "value": "echo",
-                                            }
+                                            },
+                                            {
+                                                "name": ENV_TORCHX_IMAGE,
+                                                "value": "pytorch/torchx:latest",
+                                            },
                                         ],
                                     },
                                 }
@@ -608,7 +708,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
     def test_submit(self) -> None:
         scheduler = self._mock_scheduler()
         app = _test_app()
-        cfg = AWSBatchOpts({"queue": "testqueue"})
+        cfg = Opts(queue="testqueue")
 
         info = scheduler.submit_dryrun(app, cfg)
         id = scheduler.schedule(info)
@@ -695,7 +795,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
 
     def test_resource_requirement_from_resource(self) -> None:
         cpu_resource = Resource(cpu=2, memMB=1024, gpu=0)
-        self.assertEquals(
+        self.assertEqual(
             [
                 {"type": "VCPU", "value": "2"},
                 {"type": "MEMORY", "value": "1024"},
@@ -704,7 +804,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
 
         zero_cpu_resource = Resource(cpu=0, memMB=1024, gpu=0)
-        self.assertEquals(
+        self.assertEqual(
             [
                 {"type": "VCPU", "value": "1"},
                 {"type": "MEMORY", "value": "1024"},
@@ -713,7 +813,7 @@ class AWSBatchSchedulerTest(unittest.TestCase):
         )
 
         gpu_resource = Resource(cpu=1, memMB=1024, gpu=2)
-        self.assertEquals(
+        self.assertEqual(
             [
                 {"type": "VCPU", "value": "1"},
                 {"type": "MEMORY", "value": "1024"},

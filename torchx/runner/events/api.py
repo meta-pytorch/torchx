@@ -5,10 +5,13 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+from __future__ import annotations
+
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Optional, Union
 
 
 class SourceType(str, Enum):
@@ -23,33 +26,42 @@ class TorchxEvent:
     The class represents the event produced by ``torchx.runner`` api calls.
 
     Arguments:
-        session: Session id that was used to execute request.
+        session: Session id of the current run
         scheduler: Scheduler that is used to execute request
         api: Api name
         app_id: Unique id that is set by the underlying scheduler
-        image: Image/container bundle that is used to execute request.
+        app_image: Image/container bundle that is used to execute request.
+        app_metadata: metadata to the app (treatment of metadata is scheduler dependent)
         runcfg: Run config that was used to schedule app.
         source: Type of source the event is generated.
         cpu_time_usec: CPU time spent in usec
         wall_time_usec: Wall time spent in usec
+        start_epoch_time_usec: Epoch time in usec when runner event starts
+        Workspace: Track how different workspaces/no workspace affects build and scheduler
     """
 
     session: str
     scheduler: str
     api: str
-    app_id: Optional[str] = None
-    app_image: Optional[str] = None
-    runcfg: Optional[str] = None
-    raw_exception: Optional[str] = None
+    app_id: str | None = None
+    app_image: str | None = None
+    app_metadata: dict[str, str] | None = None
+    runcfg: str | None = None
+    raw_exception: str | None = None
     source: SourceType = SourceType.UNKNOWN
-    cpu_time_usec: Optional[int] = None
-    wall_time_usec: Optional[int] = None
+    cpu_time_usec: int | None = None
+    wall_time_usec: int | None = None
+    start_epoch_time_usec: int | None = None
+    workspace: str | None = None
+    exception_type: str | None = None
+    exception_message: str | None = None
+    exception_source_location: str | None = None
 
     def __str__(self) -> str:
         return self.serialize()
 
     @staticmethod
-    def deserialize(data: Union[str, "TorchxEvent"]) -> "TorchxEvent":
+    def deserialize(data: str | "TorchxEvent") -> "TorchxEvent":
         if isinstance(data, TorchxEvent):
             return data
         if isinstance(data, str):

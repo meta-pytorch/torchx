@@ -4,7 +4,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import abc
+import copy
 import importlib
 import inspect
 import logging
@@ -14,10 +17,14 @@ from dataclasses import dataclass
 from inspect import getmembers, isfunction
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Dict, Generator, List, Optional, Union
+from typing import Callable, Generator
 
 from torchx.specs import AppDef
-from torchx.specs.file_linter import get_fn_docstring, validate
+from torchx.specs.file_linter import (
+    ComponentFunctionValidator,
+    get_fn_docstring,
+    validate,
+)
 from torchx.util import entrypoints
 from torchx.util.io import read_conf_file
 from torchx.util.types import none_throws
@@ -51,13 +58,17 @@ class _Component:
     name: str
     description: str
     fn_name: str
+
     fn: Callable[..., AppDef]
-    validation_errors: List[str]
+
+    validation_errors: list[str]
 
 
 class ComponentsFinder(abc.ABC):
     @abc.abstractmethod
-    def find(self) -> List[_Component]:
+    def find(
+        self, validators: list[ComponentFunctionValidator] | None
+    ) -> list[_Component]:
         """
         Retrieves a set of components. A component is defined as a python
         function that conforms to ``torchx.specs.file_linter`` linter.
@@ -171,12 +182,12 @@ class ModuleComponentsFinder(ComponentsFinder):
 
     """
 
-    def __init__(self, module: Union[str, ModuleType], group: str) -> None:
+    def __init__(self, module: str | ModuleType, group: str) -> None:
         self.base_module: ModuleType = self._try_import(module)
         self.group = group
 
     def _iter_modules_recursive(
-        self, module: Union[str, ModuleType]
+        self, module: str | ModuleType
     ) -> Generator[ModuleType, None, None]:
         """
         Given a module name (e.g. "a.b") recursively finds and loads the sub-modules and itself
@@ -201,13 +212,15 @@ class ModuleComponentsFinder(ComponentsFinder):
                 else:
                     yield self._try_import(module_info.name)
 
-    def find(self) -> List[_Component]:
+    def find(
+        self, validators: list[ComponentFunctionValidator] | None
+    ) -> list[_Component]:
         components = []
         for m in self._iter_modules_recursive(self.base_module):
-            components += self._get_components_from_module(m)
+            components += self._get_components_from_module(m, validators)
         return components
 
-    def _try_import(self, module: Union[str, ModuleType]) -> ModuleType:
+    def _try_import(self, module: str | ModuleType) -> ModuleType:
         """
         If the module is a module name (e.g. ``"foo.bar"``) as a string, then this function
         imports the module and returns the loaded module. If it is already a module type then
@@ -219,7 +232,9 @@ class ModuleComponentsFinder(ComponentsFinder):
         else:
             return module
 
-    def _get_components_from_module(self, module: ModuleType) -> List[_Component]:
+    def _get_components_from_module(
+        self, module: ModuleType, validators: list[ComponentFunctionValidator] | None
+    ) -> list[_Component]:
         functions = getmembers(module, isfunction)
         component_defs = []
 
@@ -228,7 +243,7 @@ class ModuleComponentsFinder(ComponentsFinder):
         module_path = os.path.abspath(module_path)
         rel_module_name = module_relname(module, relative_to=self.base_module)
         for function_name, function in functions:
-            linter_errors = validate(module_path, function_name)
+            linter_errors = validate(module_path, function_name, validators)
             component_desc, _ = get_fn_docstring(function)
 
             # remove empty string to deal with group=""
@@ -253,17 +268,26 @@ class CustomComponentsFinder(ComponentsFinder):
         self._filepath = filepath
         self._function_name = function_name
 
-    def _get_validation_errors(self, path: str, function_name: str) -> List[str]:
-        linter_errors = validate(path, function_name)
+    def _get_validation_errors(
+        self,
+        path: str,
+        function_name: str,
+        validators: list[ComponentFunctionValidator] | None,
+    ) -> list[str]:
+        linter_errors = validate(path, function_name, validators)
         return [linter_error.description for linter_error in linter_errors]
 
-    def find(self) -> List[_Component]:
+    def find(
+        self, validators: list[ComponentFunctionValidator] | None
+    ) -> list[_Component]:
         validation_errors = self._get_validation_errors(
-            self._filepath, self._function_name
+            self._filepath, self._function_name, validators
         )
 
         file_source = read_conf_file(self._filepath)
-        namespace = globals()
+        namespace = copy.copy(globals())
+        # so that __file__ used inside the component points to the correct file
+        namespace["__file__"] = os.path.abspath(self._filepath)
         exec(file_source, namespace)  # noqa: P204
         if self._function_name not in namespace:
             raise ComponentNotFoundException(
@@ -282,16 +306,19 @@ class CustomComponentsFinder(ComponentsFinder):
         ]
 
 
-def _load_custom_components() -> List[_Component]:
+def _load_custom_components(
+    validators: list[ComponentFunctionValidator] | None,
+) -> list[_Component]:
     component_modules = {
         name: load_fn()
         for name, load_fn in
         # load_group() defers the module load so you have to call
         # the deferred load_fn to actually load the module
+        # pyrefly: ignore [missing-attribute]
         entrypoints.load_group("torchx.components", default={}).items()
     }
 
-    components: List[_Component] = []
+    components: list[_Component] = []
     for group, module in component_modules.items():
         # using "_" prefix for entrypoint name allows users to
         # specify component names without a prefix
@@ -301,11 +328,13 @@ def _load_custom_components() -> List[_Component]:
         # _0 = torchx.components.dist
         # _1 = torchx.components.utils
         group = "" if group.startswith("_") else group
-        components += ModuleComponentsFinder(module, group).find()
+        components += ModuleComponentsFinder(module, group).find(validators)
     return components
 
 
-def _load_components() -> Dict[str, _Component]:
+def _load_components(
+    validators: list[ComponentFunctionValidator] | None,
+) -> dict[str, _Component]:
     """
     Loads either the custom component defs from the entrypoint ``[torchx.components]``
     or the default builtins from ``torchx.components`` module.
@@ -316,19 +345,21 @@ def _load_components() -> Dict[str, _Component]:
 
     """
 
-    components = _load_custom_components()
+    components = _load_custom_components(validators)
     if not components:
-        components = ModuleComponentsFinder("torchx.components", "").find()
+        components = ModuleComponentsFinder("torchx.components", "").find(validators)
     return {c.name: c for c in components}
 
 
-_components: Optional[Dict[str, _Component]] = None
+_components: dict[str, _Component] | None = None
 
 
-def _find_components() -> Dict[str, _Component]:
+def _find_components(
+    validators: list[ComponentFunctionValidator] | None,
+) -> dict[str, _Component]:
     global _components
     if not _components:
-        _components = _load_components()
+        _components = _load_components(validators)
     return none_throws(_components)
 
 
@@ -336,17 +367,21 @@ def _is_custom_component(component_name: str) -> bool:
     return ":" in component_name
 
 
-def _find_custom_components(name: str) -> Dict[str, _Component]:
+def _find_custom_components(
+    name: str, validators: list[ComponentFunctionValidator] | None
+) -> dict[str, _Component]:
     if ":" not in name:
         raise ValueError(
             f"Invalid custom component: {name}, valid template : `FILEPATH`:`FUNCTION_NAME`"
         )
     filepath, component_name = name.split(":")
-    components = CustomComponentsFinder(filepath, component_name).find()
+    components = CustomComponentsFinder(filepath, component_name).find(validators)
     return {component.name: component for component in components}
 
 
-def get_components() -> Dict[str, _Component]:
+def get_components(
+    validators: list[ComponentFunctionValidator] | None = None,
+) -> dict[str, _Component]:
     """
     Returns all custom components registered via ``[torchx.components]`` entrypoints
     OR builtin components that ship with TorchX (but not both).
@@ -392,14 +427,16 @@ def get_components() -> Dict[str, _Component]:
 
     """
 
-    valid_components: Dict[str, _Component] = {}
-    for component_name, component in _find_components().items():
+    valid_components: dict[str, _Component] = {}
+    for component_name, component in _find_components(validators).items():
         if len(component.validation_errors) == 0:
             valid_components[component_name] = component
     return valid_components
 
 
-def get_component(name: str) -> _Component:
+def get_component(
+    name: str, validators: list[ComponentFunctionValidator] | None = None
+) -> _Component:
     """
     Retrieves components by the provided name.
 
@@ -407,14 +444,14 @@ def get_component(name: str) -> _Component:
         Component or None if no component with ``name`` exists
     """
     if _is_custom_component(name):
-        components = _find_custom_components(name)
+        components = _find_custom_components(name, validators)
     else:
-        components = _find_components()
+        components = _find_components(validators)
     if name not in components:
         raise ComponentNotFoundException(
             f"Component `{name}` not found. Please make sure it is one of the "
             "builtins: `torchx builtins`. Or registered via `[torchx.components]` "
-            "entry point (see: https://pytorch.org/torchx/latest/configure.html)"
+            "entry point (see: https://meta-pytorch.org/torchx/latest/configure.html)"
         )
 
     component = components[name]
@@ -426,7 +463,9 @@ def get_component(name: str) -> _Component:
     return component
 
 
-def get_builtin_source(name: str) -> str:
+def get_builtin_source(
+    name: str, validators: list[ComponentFunctionValidator] | None = None
+) -> str:
     """
     Returns a string of the the builtin component's function source code
     with all the import statements. Intended to be used to make a copy
@@ -444,7 +483,7 @@ def get_builtin_source(name: str) -> str:
     are optimized and formatting adheres to your organization's standards.
     """
 
-    component = get_component(name)
+    component = get_component(name, validators)
     fn = component.fn
     fn_name = component.name.split(".")[-1]
 

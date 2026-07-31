@@ -4,11 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import logging
 
 from tabulate import tabulate
-
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner.api import get_configured_trackers
 from torchx.tracker.api import build_trackers, TrackerBase
@@ -43,7 +44,7 @@ class CmdTracker(SubCommand):
         else:
             raise RuntimeError(
                 "No trackers configured."
-                " See: https://pytorch.org/torchx/latest/runtime/tracking.html"
+                " See: https://meta-pytorch.org/torchx/latest/runtime/tracking.html"
             )
 
     def add_list_job_arguments(self, subparser: argparse.ArgumentParser) -> None:

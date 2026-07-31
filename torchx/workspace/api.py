@@ -4,12 +4,20 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import abc
 import fnmatch
+import logging
 import posixpath
-from typing import Generic, Iterable, Mapping, Tuple, TYPE_CHECKING, TypeVar
+import tempfile
+import warnings
+from dataclasses import dataclass
+from typing import Any, Generic, Iterable, Mapping, TYPE_CHECKING, TypeVar
 
-from torchx.specs import AppDef, CfgVal, Role, runopts
+from torchx.specs import AppDef, CfgVal, Role, runopts, Workspace
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -18,64 +26,160 @@ TORCHX_IGNORE = ".torchxignore"
 
 T = TypeVar("T")
 
+PackageType = TypeVar("PackageType")
+WorkspaceConfigType = TypeVar("WorkspaceConfigType")
+
+
+@dataclass
+class PkgInfo(Generic[PackageType]):
+    """
+    .. deprecated::
+        Will be removed in a future release. Fork if your project depends on it.
+
+    Metadata for a built workspace package.
+    """
+
+    img: str
+    lazy_overrides: dict[str, Any]
+    metadata: PackageType
+
+    def __post_init__(self) -> None:
+        msg = (
+            f"{self.__class__.__name__} is deprecated and will be removed in the future."
+            " Consider forking this class if your project depends on it."
+        )
+        warnings.warn(
+            msg,
+            FutureWarning,
+            stacklevel=2,
+        )
+
+
+@dataclass
+class WorkspaceBuilder(Generic[PackageType, WorkspaceConfigType]):
+    cfg: WorkspaceConfigType
+
+    def __post_init__(self) -> None:
+        msg = (
+            f"{self.__class__.__name__} is deprecated and will be removed in the future."
+            " Consider forking this class if your project depends on it."
+        )
+        warnings.warn(
+            msg,
+            FutureWarning,
+            stacklevel=2,
+        )
+
+    @abc.abstractmethod
+    def build_workspace(self, sync: bool = True) -> PkgInfo[PackageType]:
+        """Builds the workspace, producing either a new image or an incremental patch."""
+        pass
+
 
 class WorkspaceMixin(abc.ABC, Generic[T]):
-    """
-    Note: (Prototype) this interface may change without notice!
+    """Scheduler mix-in that auto-builds a local workspace into a deployable image or patch.
 
-    A mix-in that can be attached to a Scheduler that adds the ability to
-    builds a workspace. A workspace is the local checkout of the codebase/project
-    that builds into an image. The workspace scheduler adds capability to
-    automatically rebuild images or generate diff patches that are
-    applied to the ``Role``, allowing the user to make local code
-    changes to the application and having those changes be reflected
-    (either through a new image or an overlaid patch) at runtime
-    without a manual image rebuild. The exact semantics of what the
-    workspace build artifact is, is implementation dependent.
+    .. warning::
+        Prototype -- this interface may change without notice.
+
+    Attach to a :py:class:`~torchx.schedulers.api.Scheduler` so that local code
+    changes in the workspace are automatically reflected at runtime (via a rebuilt
+    image or an overlaid diff patch) without a manual image rebuild.
     """
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
 
     def workspace_opts(self) -> runopts:
-        """
-        Returns the run configuration options expected by the workspace.
-        Basically a ``--help`` for the ``run`` API.
-        """
+        """Returns the :py:class:`~torchx.specs.api.runopts` accepted by this workspace."""
         return runopts()
 
-    @abc.abstractmethod
-    def build_workspace_and_update_role(
-        self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
-    ) -> None:
-        """
-        Builds the specified ``workspace`` with respect to ``img``
-        and updates the ``role`` to reflect the built workspace artifacts.
-        In the simplest case, this method builds a new image and updates
-        the role's image. Certain (more efficient) implementations build
-        incremental diff patches that overlay on top of the role's image.
+    def build_workspaces(self, roles: list[Role], cfg: Mapping[str, CfgVal]) -> None:
+        """Builds workspaces for each role and updates ``role.image`` in-place.
 
-        Note: this method mutates the passed ``role``.
+        .. important::
+            Mutates the passed *roles*. May also add env vars (e.g. ``WORKSPACE_DIR``)
+            to ``role.env``.
         """
-        ...
+
+        build_cache: dict[object, object] = {}
+
+        for i, role in enumerate(roles):
+            if role.workspace:
+                old_img = role.image
+                self.caching_build_workspace_and_update_role(role, cfg, build_cache)
+
+                if old_img != role.image:
+                    logger.info(
+                        "role[%d]=%s updated with new image to include workspace changes",
+                        i,
+                        role.name,
+                    )
+
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        """Like :py:meth:`build_workspace_and_update_role` but with a per-call *build_cache*.
+
+        Subclasses should implement this method instead of
+        :py:meth:`build_workspace_and_update_role`. The cache avoids redundant
+        builds when multiple roles share the same image and workspace.
+
+        .. important::
+            *build_cache* lifetime is scoped to a single
+            :py:meth:`build_workspaces` call. What gets cached is up to the
+            implementation.
+
+        The default implementation delegates to the (deprecated)
+        :py:meth:`build_workspace_and_update_role`, merging multi-dir
+        workspaces into a single tmpdir first.
+        """
+
+        workspace = role.workspace
+
+        if not workspace:
+            return
+
+        if workspace.is_unmapped_single_project():
+            # single-dir workspace with no target map; no need to copy to a tmp dir
+            self.build_workspace_and_update_role(role, str(workspace), cfg)
+        else:
+            # multi-dirs or single-dir with a target map;
+            # copy all dirs to a tmp dir and treat the tmp dir as a single-dir workspace
+            with tempfile.TemporaryDirectory(suffix="torchx_workspace_") as outdir:
+                workspace.merge_into(outdir)
+                self.build_workspace_and_update_role(role, outdir, cfg)
+
+    def build_workspace_and_update_role(
+        self,
+        role: Role,
+        workspace: str,
+        cfg: Mapping[str, CfgVal],
+    ) -> None:
+        """Build *workspace* and mutate *role* to reference the resulting artifact.
+
+        .. deprecated::
+            Implement :py:meth:`caching_build_workspace_and_update_role` instead.
+        """
+        raise NotImplementedError("implement `caching_build_workspace_and_update_role`")
 
     def dryrun_push_images(self, app: AppDef, cfg: Mapping[str, CfgVal]) -> T:
-        """
-        dryrun_push does a dryrun of the image push and updates the app to have
-        the final values. Only called for remote jobs.
+        """Dry-run the image push: updates *app* with final image names.
 
-        ``push`` must be called before scheduling the job.
+        Only called for remote jobs. :py:meth:`push_images` must be called
+        with the return value before scheduling.
         """
         raise NotImplementedError("dryrun_push is not implemented")
 
     def push_images(self, images_to_push: T) -> None:
-        """
-        push pushes any images to the remote repo if required.
-        """
+        """Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo."""
         raise NotImplementedError("push is not implemented")
 
 
-def _ignore(s: str, patterns: Iterable[str]) -> Tuple[int, bool]:
+def _ignore(s: str, patterns: Iterable[str]) -> tuple[int, bool]:
     last_matching_pattern = -1
     match = False
     if s in (".", "Dockerfile.torchx"):
@@ -95,12 +199,9 @@ def walk_workspace(
     fs: "AbstractFileSystem",
     path: str,
     ignore_name: str = TORCHX_IGNORE,
-) -> Iterable[Tuple[str, Iterable[str], Mapping[str, Mapping[str, object]]]]:
-    """
-    walk_workspace walks the filesystem path and applies the ignore rules
-    specified via ``ignore_name``.
-    This follows the rules for ``.dockerignore``.
-    https://docs.docker.com/engine/reference/builder/#dockerignore-file
+) -> Iterable[tuple[str, Iterable[str], Mapping[str, Mapping[str, object]]]]:
+    """Walks *path* on *fs*, filtering entries via ``.dockerignore``-style rules
+    read from *ignore_name*.
     """
     ignore_patterns = []
     ignore_path = posixpath.join(path, ignore_name)

@@ -4,6 +4,8 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
+
+# pyre-strict
 import shutil
 import tempfile
 import unittest
@@ -11,7 +13,6 @@ from pathlib import Path
 from typing import List
 
 import fsspec
-
 from torchx.tracker.backend.fsspec import (
     _decode_torchx_run_id,
     _encode_torchx_run_id,

@@ -4,16 +4,18 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import logging
 import os
 import sys
 from argparse import ArgumentParser
-from typing import Dict, List
 
 import torchx
 from torchx.cli.cmd_base import SubCommand
 from torchx.cli.cmd_cancel import CmdCancel
 from torchx.cli.cmd_configure import CmdConfigure
+from torchx.cli.cmd_delete import CmdDelete
 from torchx.cli.cmd_describe import CmdDescribe
 from torchx.cli.cmd_list import CmdList
 from torchx.cli.cmd_log import CmdLog
@@ -21,20 +23,20 @@ from torchx.cli.cmd_run import CmdBuiltins, CmdRun
 from torchx.cli.cmd_runopts import CmdRunopts
 from torchx.cli.cmd_status import CmdStatus
 from torchx.cli.cmd_tracker import CmdTracker
-from torchx.cli.colors import BLUE, ENDC, GRAY
+from torchx.util.colors import BLUE, ENDC, GRAY
 from torchx.util.entrypoints import load_group
-
 
 sub_parser_description = """Use the following commands to run operations, e.g.:
 torchx run ${JOB_NAME}
 """
 
 
-def get_default_sub_cmds() -> Dict[str, SubCommand]:
+def get_default_sub_cmds() -> dict[str, SubCommand]:
     return {
         "builtins": CmdBuiltins(),
         "cancel": CmdCancel(),
         "configure": CmdConfigure(),
+        "delete": CmdDelete(),
         "describe": CmdDescribe(),
         "list": CmdList(),
         "log": CmdLog(),
@@ -45,7 +47,7 @@ def get_default_sub_cmds() -> Dict[str, SubCommand]:
     }
 
 
-def get_sub_cmds() -> Dict[str, SubCommand]:
+def get_sub_cmds() -> dict[str, SubCommand]:
     """
     Find available subcommands for `torchx cli`.
     The method consits of two parts:
@@ -63,12 +65,13 @@ def get_sub_cmds() -> Dict[str, SubCommand]:
         "torchx.cli.cmds",
         default={},
     )
+    # pyrefly: ignore [missing-attribute]
     for cmd_name, cmd_cls in override_sub_cmds.items():
         sub_cmds[cmd_name] = cmd_cls()
     return sub_cmds
 
 
-def create_parser(subcmds: Dict[str, SubCommand]) -> ArgumentParser:
+def create_parser(subcmds: dict[str, SubCommand]) -> ArgumentParser:
     """
     Helper function parsing the command line options.
     """
@@ -98,7 +101,7 @@ def create_parser(subcmds: Dict[str, SubCommand]) -> ArgumentParser:
     return parser
 
 
-def run_main(subcmds: Dict[str, SubCommand], argv: List[str] = sys.argv[1:]) -> None:
+def run_main(subcmds: dict[str, SubCommand], argv: list[str] = sys.argv[1:]) -> None:
     parser = create_parser(subcmds)
     args = parser.parse_args(argv)
     logging.basicConfig(
@@ -112,7 +115,7 @@ def run_main(subcmds: Dict[str, SubCommand], argv: List[str] = sys.argv[1:]) -> 
     args.func(args)
 
 
-def main(argv: List[str] = sys.argv[1:]) -> None:
+def main(argv: list[str] = sys.argv[1:]) -> None:
     run_main(get_sub_cmds(), argv)
 
 

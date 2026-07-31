@@ -5,14 +5,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import sys
-from typing import List
 
 from torchx.runtime.tracking import FsspecResultTracker
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="evaluates the booth function at (x1, x2)"
     )
@@ -43,7 +44,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: List[str]) -> None:
+def main(argv: list[str]) -> None:
     args = parse_args(argv)
 
     x1 = args.x1

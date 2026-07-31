@@ -5,12 +5,14 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import argparse
 import logging
 
 from torchx.cli.cmd_base import SubCommand
-from torchx.cli.colors import ENDC, GREEN
 from torchx.runner.api import get_runner
+from torchx.util.colors import ENDC, GREEN
 
 logger: logging.Logger = logging.getLogger(__name__)
 

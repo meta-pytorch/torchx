@@ -5,20 +5,34 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 import datetime
 import os
 from contextlib import contextmanager
-from typing import Generator, List, Mapping, Optional
+from typing import cast, Generator, Mapping
 from unittest.mock import MagicMock, patch
 
 from torchx.runner import get_runner, Runner
+from torchx.schedulers import SchedulerFactory
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Scheduler
 from torchx.schedulers.local_scheduler import (
+    create_scheduler,
     LocalDirectoryImageProvider,
-    LocalScheduler,
 )
-from torchx.specs import AppDryRunInfo, CfgVal
-from torchx.specs.api import AppDef, AppState, Resource, Role, UnknownAppException
+from torchx.specs import (
+    AppDef,
+    AppDryRunInfo,
+    AppHandle,
+    AppState,
+    CfgVal,
+    parse_app_handle,
+    Resource,
+    Role,
+    runopts,
+    UnknownAppException,
+    Workspace,
+)
 from torchx.specs.finder import ComponentNotFoundException
 from torchx.test.fixtures import TestWithTmpDir
 from torchx.tracker.api import ENV_TORCHX_JOB_ID, ENV_TORCHX_PARENT_RUN_ID
@@ -41,7 +55,7 @@ def get_full_path(name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "resource", name)
 
 
-@patch("torchx.runner.api.log_event")
+@patch("torchx.runner.events.record")
 class RunnerTest(TestWithTmpDir):
     def setUp(self) -> None:
         super().setUp()
@@ -55,7 +69,7 @@ class RunnerTest(TestWithTmpDir):
     def get_runner(self) -> Generator[Runner, None, None]:
         with Runner(
             SESSION_NAME,
-            scheduler_factories={"local_dir": LocalScheduler},
+            scheduler_factories={"local_dir": cast(SchedulerFactory, create_scheduler)},
             scheduler_params={
                 "image_provider_class": LocalDirectoryImageProvider,
             },
@@ -64,37 +78,92 @@ class RunnerTest(TestWithTmpDir):
 
     def test_validate_no_roles(self, _) -> None:
         with self.get_runner() as runner:
+            app = AppDef("no roles")
             with self.assertRaises(ValueError):
-                app = AppDef("no roles")
                 runner.run(app, scheduler="local_dir")
 
     def test_validate_no_resource(self, _) -> None:
         with self.get_runner() as runner:
+            role = Role(
+                "no resource",
+                image="no_image",
+                entrypoint="echo",
+                args=["hello_world"],
+            )
+            app = AppDef("no resource", roles=[role])
             with self.assertRaises(ValueError):
-                role = Role(
-                    "no resource",
-                    image="no_image",
-                    entrypoint="echo",
-                    args=["hello_world"],
-                )
-                app = AppDef("no resource", roles=[role])
                 runner.run(app, scheduler="local_dir")
 
     def test_validate_invalid_replicas(self, _) -> None:
         with self.get_runner() as runner:
+            role = Role(
+                "invalid replicas",
+                image="torch",
+                entrypoint="echo",
+                args=["hello_world"],
+                num_replicas=0,
+                resource=Resource(cpu=1, gpu=0, memMB=500),
+            )
+            app = AppDef("invalid replicas", roles=[role])
             with self.assertRaises(ValueError):
-                role = Role(
-                    "invalid replicas",
-                    image="torch",
-                    entrypoint="echo",
-                    args=["hello_world"],
-                    num_replicas=0,
-                    resource=Resource(cpu=1, gpu=0, memMB=500),
-                )
-                app = AppDef("invalid replicas", roles=[role])
                 runner.run(app, scheduler="local_dir")
 
-    def test_run(self, _) -> None:
+    def test_session_id(self, record_mock: MagicMock) -> None:
+        test_file = self.tmpdir / "test_file"
+
+        with self.get_runner() as runner:
+            self.assertEqual(1, len(runner.scheduler_backends()))
+            role = Role(
+                name="touch",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="touch.sh",
+                args=[str(test_file)],
+            )
+            app = AppDef("name", roles=[role])
+
+            app_handle_1 = runner.run(app, scheduler="local_dir", cfg=self.cfg)
+            none_throws(runner.wait(app_handle_1, wait_interval=0.1))
+
+            app_handle_2 = runner.run(app, scheduler="local_dir", cfg=self.cfg)
+            none_throws(runner.wait(app_handle_2, wait_interval=0.1))
+
+            from torchx.util.session import CURRENT_SESSION_ID
+
+            self.assertIsNotNone(CURRENT_SESSION_ID)
+            record_mock.assert_called()
+            for i in range(record_mock.call_count):
+                event = record_mock.call_args_list[i].args[0]
+                self.assertEqual(event.session, CURRENT_SESSION_ID)
+
+    def test_empty_session_id(self, _: MagicMock) -> None:
+        empty_session_name = ""
+        with Runner(
+            empty_session_name,
+            {"local": cast(SchedulerFactory, create_scheduler)},
+        ) as runner:
+            app = AppDef(
+                "__unused_for_test__",
+                roles=[
+                    Role(
+                        name="echo",
+                        image=str(self.tmpdir),
+                        resource=resource.SMALL,
+                        entrypoint="echo",
+                        args=["__unused_for_test__"],
+                    )
+                ],
+            )
+
+            app_handle = runner.run(app, "local", self.cfg)
+            runner.wait(app_handle, wait_interval=0.1)
+
+            scheduler, session_name, app_id = parse_app_handle(app_handle)
+            self.assertEqual(scheduler, "local")
+            self.assertEqual(empty_session_name, session_name)
+            self.assertEqual(app_handle, f"local:///{app_id}")
+
+    def test_run(self, record_mock: MagicMock) -> None:
         test_file = self.tmpdir / "test_file"
 
         with self.get_runner() as runner:
@@ -111,8 +180,49 @@ class RunnerTest(TestWithTmpDir):
             app_handle = runner.run(app, scheduler="local_dir", cfg=self.cfg)
             app_status = none_throws(runner.wait(app_handle, wait_interval=0.1))
             self.assertEqual(AppState.SUCCEEDED, app_status.state)
+            from torchx.util.session import CURRENT_SESSION_ID
 
-    def test_dryrun(self, _) -> None:
+            self.assertIsNotNone(CURRENT_SESSION_ID)
+            record_mock.assert_called()
+            for i in range(record_mock.call_count):
+                event = record_mock.call_args_list[i].args[0]
+                self.assertEqual(event.session, CURRENT_SESSION_ID)
+
+    def test_run_dryrun_true(self, record_mock: MagicMock) -> None:
+        with self.get_runner() as runner:
+            role = Role(
+                name="echo",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="echo",
+                args=["hello"],
+            )
+            app = AppDef("name", roles=[role])
+
+            result = runner.run(app, scheduler="local_dir", cfg=self.cfg, dryrun=True)
+            self.assertIsInstance(
+                result, AppDryRunInfo, "run(dryrun=True) returns AppDryRunInfo"
+            )
+
+    def test_run_dryrun_false(self, record_mock: MagicMock) -> None:
+        test_file = self.tmpdir / "test_run_dryrun_false"
+
+        with self.get_runner() as runner:
+            role = Role(
+                name="touch",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="touch.sh",
+                args=[str(test_file)],
+            )
+            app = AppDef("name", roles=[role])
+
+            result = runner.run(app, scheduler="local_dir", cfg=self.cfg, dryrun=False)
+            self.assertIsInstance(
+                result, str, "run(dryrun=False) returns AppHandle (str)"
+            )
+
+    def test_dryrun(self, record_mock: MagicMock) -> None:
         scheduler_mock = MagicMock()
         scheduler_mock.run_opts.return_value.resolve.return_value = {
             **self.cfg,
@@ -120,7 +230,9 @@ class RunnerTest(TestWithTmpDir):
         }
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"local_dir": lambda name: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role = Role(
                 name="touch",
@@ -135,12 +247,21 @@ class RunnerTest(TestWithTmpDir):
                 app, {**self.cfg, "foo": "bar"}
             )
             scheduler_mock._validate.assert_called_once()
+            from torchx.util.session import CURRENT_SESSION_ID
+
+            self.assertIsNotNone(CURRENT_SESSION_ID)
+            record_mock.assert_called()
+            for i in range(record_mock.call_count):
+                event = record_mock.call_args_list[i].args[0]
+                self.assertEqual(event.session, CURRENT_SESSION_ID)
 
     def test_dryrun_env_variables(self, _) -> None:
         scheduler_mock = MagicMock()
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"local_dir": lambda name: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -169,7 +290,9 @@ class RunnerTest(TestWithTmpDir):
         expected_parent_run_id = "123"
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"local_dir": lambda name: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -208,7 +331,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"local_dir": lambda name: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -256,7 +381,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"local_dir": lambda name: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role1 = Role(
                 name="echo1",
@@ -294,18 +421,25 @@ class RunnerTest(TestWithTmpDir):
                 super().__init__(backend="ignored", session_name="ignored")
                 self.build_new_img = build_new_img
 
+            # pyrefly: ignore [bad-return]
             def schedule(self, dryrun_info: AppDryRunInfo) -> str:
                 pass
 
             def _submit_dryrun(
                 self, app: AppDef, cfg: Mapping[str, CfgVal]
             ) -> AppDryRunInfo[AppDef]:
+                # pyrefly: ignore [bad-argument-type]
                 return AppDryRunInfo(app, lambda s: s)
 
-            def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
+            def describe(self, app_id: str) -> DescribeAppResponse | None:
                 pass
 
-            def list(self) -> List[DescribeAppResponse]:
+            # pyrefly: ignore [bad-override]
+            def list(
+                self,
+                cfg: Mapping[str, CfgVal] | None = None,
+                # pyrefly: ignore [bad-return]
+            ) -> list[DescribeAppResponse]:
                 pass
 
             def _cancel_existing(self, app_id: str) -> None:
@@ -319,53 +453,105 @@ class RunnerTest(TestWithTmpDir):
             ) -> None:
                 if self.build_new_img:
                     role.image = f"{role.image}_new"
+                    role.env["SRC_WORKSPACE"] = workspace
+
+        def create_role(image: str, workspace: str | None = None) -> Role:
+            return Role(
+                name="noop",
+                image=image,
+                resource=resource.SMALL,
+                entrypoint="/bin/true",
+                workspace=Workspace.from_str(workspace),
+            )
 
         with Runner(
             name=SESSION_NAME,
-            # pyre-fixme[6]: scheduler factory type
             scheduler_factories={
-                "no-build-img": lambda name: TestScheduler(build_new_img=False),
-                "builds-img": lambda name: TestScheduler(build_new_img=True),
+                "no-build-img": lambda session_name, **kwargs: TestScheduler(
+                    build_new_img=False
+                ),
+                "builds-img": lambda session_name, **kwargs: TestScheduler(
+                    build_new_img=True
+                ),
             },
         ) as runner:
             app = AppDef(
                 "ignored",
+                roles=[create_role(image="foo"), create_role(image="bar")],
+            )
+            roles = runner.dryrun(
+                app, "no-build-img", workspace="//workspace"
+            ).request.roles
+            self.assertEqual("foo", roles[0].image)
+            self.assertEqual("bar", roles[1].image)
+
+            roles = runner.dryrun(
+                app, "builds-img", workspace="//workspace"
+            ).request.roles
+
+            # workspace is attached to role[0] when role[0].workspace is `None`
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("bar", roles[1].image)
+
+            # now run with role[0] having workspace attribute defined
+            app = AppDef(
+                "ignored",
                 roles=[
-                    Role(
-                        name="sleep",
-                        image="foo",
-                        resource=resource.SMALL,
-                        entrypoint="sleep",
-                        args=["1"],
-                    ),
-                    Role(
-                        name="sleep",
-                        image="bar",
-                        resource=resource.SMALL,
-                        entrypoint="sleep",
-                        args=["1"],
-                    ),
+                    create_role(image="foo", workspace="//should_be_overriden"),
+                    create_role(image="bar"),
                 ],
             )
-            dryruninfo = runner.dryrun(app, "no-build-img", workspace="//workspace")
-            self.assertEqual("foo", dryruninfo.request.roles[0].image)
-            self.assertEqual("bar", dryruninfo.request.roles[1].image)
+            roles = runner.dryrun(
+                app, "builds-img", workspace="//workspace"
+            ).request.roles
+            # workspace argument should override role[0].workspace attribute
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("//workspace", roles[0].env["SRC_WORKSPACE"])
+            self.assertEqual("bar", roles[1].image)
 
-            dryruninfo = runner.dryrun(app, "builds-img", workspace="//workspace")
-            # workspace is attached to role[0] by default
-            self.assertEqual("foo_new", dryruninfo.request.roles[0].image)
-            self.assertEqual("bar", dryruninfo.request.roles[1].image)
+            # now run with both role[0] and role[1] having workspace attr
+            app = AppDef(
+                "ignored",
+                roles=[
+                    create_role(image="foo", workspace="//foo"),
+                    create_role(image="bar", workspace="//bar"),
+                ],
+            )
+            roles = runner.dryrun(
+                app, "builds-img", workspace="//workspace"
+            ).request.roles
+
+            # workspace argument should override role[0].workspace attribute
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("//workspace", roles[0].env["SRC_WORKSPACE"])
+            self.assertEqual("bar_new", roles[1].image)
+            self.assertEqual("//bar", roles[1].env["SRC_WORKSPACE"])
+
+            # now run with both role[0] and role[1] having workspace attr but no workspace arg
+            app = AppDef(
+                "ignored",
+                roles=[
+                    create_role(image="foo", workspace="//foo"),
+                    create_role(image="bar", workspace="//bar"),
+                ],
+            )
+            roles = runner.dryrun(app, "builds-img", workspace=None).request.roles
+            self.assertEqual("foo_new", roles[0].image)
+            self.assertEqual("//foo", roles[0].env["SRC_WORKSPACE"])
+            self.assertEqual("bar_new", roles[1].image)
+            self.assertEqual("//bar", roles[1].env["SRC_WORKSPACE"])
 
     def test_describe(self, _) -> None:
         with self.get_runner() as runner:
+            metadata = {"a": "b", "c": "d"}
             role = Role(
                 name="sleep",
                 image=str(self.tmpdir),
                 resource=resource.SMALL,
-                entrypoint="sleep.sh",
+                entrypoint="sleep",
                 args=["60"],
             )
-            app = AppDef("sleeper", roles=[role])
+            app = AppDef("sleeper", roles=[role], metadata=metadata)
 
             app_handle = runner.run(app, scheduler="local_dir", cfg=self.cfg)
             self.assertEqual(app, runner.describe(app_handle))
@@ -378,7 +564,7 @@ class RunnerTest(TestWithTmpDir):
                 name="sleep",
                 image=str(self.tmpdir),
                 resource=resource.SMALL,
-                entrypoint="sleep.sh",
+                entrypoint="sleep",
                 args=["60"],
             )
             app = AppDef("sleeper", roles=[role])
@@ -405,7 +591,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name="test_ui_url_session",
-            scheduler_factories={"local_dir": lambda name: mock_scheduler},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: mock_scheduler
+            },
         ) as runner:
             role = Role(
                 "ignored",
@@ -415,7 +603,7 @@ class RunnerTest(TestWithTmpDir):
             )
             app_handle = runner.run(AppDef(app_id, roles=[role]), scheduler="local_dir")
             status = none_throws(runner.status(app_handle))
-            self.assertEquals(resp.ui_url, status.ui_url)
+            self.assertEqual(resp.ui_url, status.ui_url)
 
     @patch("json.dumps")
     def test_status_structured_msg(self, json_dumps_mock: MagicMock, _) -> None:
@@ -429,7 +617,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name="test_structured_msg",
-            scheduler_factories={"local_dir": lambda name: mock_scheduler},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: mock_scheduler
+            },
         ) as runner:
             role = Role(
                 "ignored",
@@ -439,7 +629,7 @@ class RunnerTest(TestWithTmpDir):
             )
             app_handle = runner.run(AppDef(app_id, roles=[role]), scheduler="local_dir")
             status = none_throws(runner.status(app_handle))
-            self.assertEquals(resp.structured_error_msg, status.structured_error_msg)
+            self.assertEqual(resp.structured_error_msg, status.structured_error_msg)
 
     def test_wait_unknown_app(self, _) -> None:
         with self.get_runner() as runner:
@@ -455,6 +645,10 @@ class RunnerTest(TestWithTmpDir):
     def test_cancel(self, _) -> None:
         with self.get_runner() as runner:
             self.assertIsNone(runner.cancel("local_dir://test_session/unknown_app_id"))
+
+    def test_delete(self, _) -> None:
+        with self.get_runner() as runner:
+            self.assertIsNone(runner.delete("local_dir://test_session/unknown_app_id"))
 
     def test_stop(self, _) -> None:
         with self.get_runner() as runner:
@@ -476,7 +670,9 @@ class RunnerTest(TestWithTmpDir):
 
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"local_dir": lambda name: scheduler_mock},
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             role_name = "trainer"
             replica_id = 2
@@ -520,7 +716,9 @@ class RunnerTest(TestWithTmpDir):
         ]
         with Runner(
             name=SESSION_NAME,
-            scheduler_factories={"kubernetes": lambda name: scheduler_mock},
+            scheduler_factories={
+                "kubernetes": lambda session_name, **kwargs: scheduler_mock
+            },
         ) as runner:
             apps = runner.list("kubernetes")
             self.assertEqual(apps, apps_expected)
@@ -532,11 +730,12 @@ class RunnerTest(TestWithTmpDir):
         json_dumps_mock.return_value = "{}"
         local_sched_mock = MagicMock()
         scheduler_factories = {
-            "local_dir": lambda name: local_dir_sched_mock,
-            "local": lambda name: local_sched_mock,
+            "local_dir": lambda session_name, **kwargs: local_dir_sched_mock,
+            "local": lambda session_name, **kwargs: local_sched_mock,
         }
         with Runner(
-            name="test_session", scheduler_factories=scheduler_factories
+            name="test_session",
+            scheduler_factories=scheduler_factories,
         ) as runner:
             role = Role(
                 name="sleep",
@@ -547,14 +746,17 @@ class RunnerTest(TestWithTmpDir):
             )
             app = AppDef("sleeper", roles=[role])
             runner.run(app, scheduler="local")
-            local_sched_mock.submit.called_once_with(app, {})
+            local_sched_mock.schedule.assert_called_once()
 
     def test_run_from_module(self, _: str) -> None:
         runner = get_runner(name="test_session")
         app_args = ["--image", "dummy_image", "--script", "test.py"]
-        with patch.object(runner, "schedule"), patch.object(
-            runner, "dryrun"
-        ) as dryrun_mock:
+        with (
+            patch.object(
+                runner, "schedule", return_value=AppHandle("sample://torchx/app_handle")
+            ),
+            patch.object(runner, "dryrun") as dryrun_mock,
+        ):
             _ = runner.run_component("dist.ddp", app_args, "local")
             args, kwargs = dryrun_mock.call_args
             actual_app = args[0]
@@ -567,8 +769,8 @@ class RunnerTest(TestWithTmpDir):
     def test_run_from_file_no_function_found(self, _) -> None:
         local_sched_mock = MagicMock()
         schedulers = {
-            "local_dir": lambda name: local_sched_mock,
-            "local": lambda name: local_sched_mock,
+            "local_dir": lambda session_name, **kwargs: local_sched_mock,
+            "local": lambda session_name, **kwargs: local_sched_mock,
         }
         with Runner(name="test_session", scheduler_factories=schedulers) as runner:
             component_path = get_full_path("distributed.py")
@@ -582,7 +784,7 @@ class RunnerTest(TestWithTmpDir):
         mock_scheduler = MagicMock()
         with patch(
             GET_SCHEDULER_FACTORIES,
-            return_value={"local_dir": lambda name: mock_scheduler},
+            return_value={"local_dir": lambda name, **kwargs: mock_scheduler},
         ):
             with get_runner() as runner:
                 # force schedulers to load
@@ -593,17 +795,17 @@ class RunnerTest(TestWithTmpDir):
         mock_scheduler = MagicMock()
         with patch(
             GET_SCHEDULER_FACTORIES,
-            return_value={"local_dir": lambda name: mock_scheduler},
+            return_value={"local_dir": lambda name, **kwargs: mock_scheduler},
         ):
             with self.assertRaisesRegex(RuntimeError, "foobar"):
-                with get_runner() as runner:
+                with get_runner():
                     raise RuntimeError("foobar")
 
     def test_runner_manual_close(self, _) -> None:
         mock_scheduler = MagicMock()
         with patch(
             GET_SCHEDULER_FACTORIES,
-            return_value={"local_dir": lambda name: mock_scheduler},
+            return_value={"local_dir": lambda name, **kwargs: mock_scheduler},
         ):
             runner = get_runner()
             # force schedulers to load
@@ -618,3 +820,68 @@ class RunnerTest(TestWithTmpDir):
     def test_get_default_runner(self, _) -> None:
         runner = get_runner()
         self.assertEqual("torchx", runner._name)
+
+    def test_runner_autodiscovers_schedulers(self, _) -> None:
+        """Runner() auto-discovers plugins; explicit factories skip discovery."""
+        mock_factory = MagicMock()
+        with patch(
+            GET_SCHEDULER_FACTORIES,
+            return_value={"kubernetes": mock_factory},
+        ) as mock_get:
+            # No scheduler_factories → auto-discover
+            with Runner(name="my_session") as runner:
+                self.assertIn(
+                    "kubernetes",
+                    runner.scheduler_backends(),
+                    "Runner should auto-discover schedulers when none are provided",
+                )
+            mock_get.assert_called()
+            mock_get.reset_mock()
+
+            # Explicit scheduler_factories → skip discovery
+            with Runner(
+                name="my_session",
+                scheduler_factories={"local_cwd": mock_factory},
+            ) as runner:
+                self.assertIn("local_cwd", runner.scheduler_backends())
+                self.assertNotIn(
+                    "kubernetes",
+                    runner.scheduler_backends(),
+                    "explicit factories should skip auto-discovery",
+                )
+            mock_get.assert_not_called()
+
+    def test_cfg_from_str(self, _) -> None:
+        scheduler_mock = MagicMock()
+        opts = runopts()
+        opts.add("foo", type_=str, default="", help="")
+        opts.add("test_key", type_=str, default="", help="")
+        opts.add("default_time", type_=int, default=0, help="")
+        opts.add("enable", type_=bool, default=True, help="")
+        opts.add("disable", type_=bool, default=True, help="")
+        opts.add("complex_list", type_=list[str], default=[], help="")
+        scheduler_mock.run_opts.return_value = opts
+
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={
+                "local_dir": lambda session_name, **kwargs: scheduler_mock
+            },
+        ) as runner:
+            self.assertDictEqual(
+                {
+                    "foo": "bar",
+                    "test_key": "test_value",
+                    "default_time": 42,
+                    "enable": True,
+                    "disable": False,
+                    "complex_list": ["v1", "v2", "v3"],
+                },
+                runner.cfg_from_str(
+                    "local_dir",
+                    "foo=bar",
+                    "test_key=test_value",
+                    "default_time=42",
+                    "enable=True,disable=False,complex_list=v1;v2;v3",
+                ),
+            )

@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 For distributed training, TorchX relies on the scheduler's gang scheduling
 capabilities to schedule ``n`` copies of nodes. Once launched, the application
@@ -54,18 +56,19 @@ under the hood. Read more about torchelastic `here <https://pytorch.org/docs/sta
 Components APIs
 -----------------
 """
+
 import os
 import re
 import shlex
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Iterable
 
 import torchx
 import torchx.specs as specs
 from torchx.components.structured_arg import StructuredJArgument, StructuredNameArgument
 from torchx.specs import macros
 
-_TORCH_DEBUG_FLAGS: Dict[str, str] = {
+_TORCH_DEBUG_FLAGS: dict[str, str] = {
     "CUDA_LAUNCH_BLOCKING": "1",
     "NCCL_DESYNC_DEBUG": "1",
     "TORCH_DISTRIBUTED_DEBUG": "DETAIL",
@@ -83,15 +86,16 @@ These are commonly set environment variables to debug PyTorch execution.
 
 def spmd(
     *args: str,
-    script: Optional[str] = None,
-    m: Optional[str] = None,
+    script: str | None = None,
+    m: str | None = None,
     image: str = torchx.IMAGE,
     name: str = "/",
     h: str = "gpu.small",
     j: str = "1x1",
-    env: Optional[Dict[str, str]] = None,
+    env: dict[str, str] | None = None,
+    metadata: dict[str, str] | None = None,
     max_retries: int = 0,
-    mounts: Optional[List[str]] = None,
+    mounts: list[str] | None = None,
     debug: bool = False,
 ) -> specs.AppDef:
     """
@@ -129,10 +133,8 @@ def spmd(
         h: the type of host to run on (e.g. aws_p4d.24xlarge). Must be one of the registered named resources
         j: {nnodes}x{nproc_per_node}. For GPU hosts omitting nproc_per_node will infer it from the GPU count on the host
         env: environment variables to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)
+        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)
         max_retries: the number of scheduler retries allowed
-        rdzv_port: the port on rank0's host to use for hosting the c10d store used for rendezvous.
-                   Only takes effect when running multi-node. When running single node, this parameter
-                   is ignored and a random free port is chosen.
         mounts: (for docker based runs only) mounts to mount into the worker environment/container
                 (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
         debug: whether to run with preset debug flags enabled
@@ -151,6 +153,7 @@ def spmd(
         h=h,
         j=str(StructuredJArgument.parse_from(h, j)),
         env=env,
+        metadata=metadata,
         max_retries=max_retries,
         mounts=mounts,
         debug=debug,
@@ -159,21 +162,24 @@ def spmd(
 
 def ddp(
     *script_args: str,
-    script: Optional[str] = None,
-    m: Optional[str] = None,
+    script: str | None = None,
+    m: str | None = None,
     image: str = torchx.IMAGE,
     name: str = "/",
-    h: Optional[str] = None,
+    h: str | None = None,
     cpu: int = 2,
     gpu: int = 0,
     memMB: int = 1024,
     j: str = "1x2",
-    env: Optional[Dict[str, str]] = None,
+    env: dict[str, str] | None = None,
+    metadata: dict[str, str] | None = None,
     max_retries: int = 0,
     rdzv_port: int = 29500,
     rdzv_backend: str = "c10d",
-    mounts: Optional[List[str]] = None,
+    rdzv_conf: str | None = None,
+    mounts: list[str] | None = None,
     debug: bool = False,
+    tee: int = 3,
 ) -> specs.AppDef:
     """
     Distributed data parallel style application (one role, multi-replica).
@@ -185,7 +191,7 @@ def ddp(
 
     Note: (cpu, gpu, memMB) parameters are mutually exclusive with ``h`` (named resource) where
           ``h`` takes precedence if specified for setting resource requirements.
-          See `registering named resources <https://pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
+          See `registering named resources <https://meta-pytorch.org/torchx/latest/advanced.html#registering-named-resources>`_.
 
     Args:
         script_args: arguments to the main module
@@ -200,14 +206,17 @@ def ddp(
         h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)
         j: [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts, nproc_per_node must not exceed num gpus
         env: environment varibles to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)
+        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)
         max_retries: the number of scheduler retries allowed
         rdzv_port: the port on rank0's host to use for hosting the c10d store used for rendezvous.
                    Only takes effect when running multi-node. When running single node, this parameter
                    is ignored and a random free port is chosen.
         rdzv_backend: the rendezvous backend to use. Only takes effect when running multi-node.
+        rdzv_conf: the additional rendezvous configuration to use (ex. join_timeout=600,close_timeout=600,timeout=600).
         mounts: mounts to mount into the worker environment/container (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
                 See scheduler documentation for more info.
         debug: whether to run with preset debug flags enabled
+        tee: tees the specified std stream(s) to console + file. 0: none, 1: stdout, 2: stderr, 3: both
     """
 
     if (script is None) == (m is None):
@@ -234,8 +243,8 @@ def ddp(
         # use $$ in the prefix to escape the '$' literal (rather than a string Template substitution argument)
         rdzv_endpoint = _noquote(f"$${{{macros.rank0_env}:=localhost}}:{rdzv_port}")
 
-    if env is None:
-        env = {}
+    env = env or {}
+    metadata = metadata or {}
 
     argname = StructuredNameArgument.parse_from(
         name=name,
@@ -244,6 +253,7 @@ def ddp(
     )
 
     env["TORCHX_TRACKING_EXPERIMENT_NAME"] = argname.experiment_name
+    env["TORCHX_TRACKING_RUN_NAME"] = argname.run_name
 
     env.setdefault("LOGLEVEL", os.getenv("LOGLEVEL", "WARNING"))
     if debug:
@@ -253,6 +263,7 @@ def ddp(
         "torchrun",
         "--rdzv_backend",
         rdzv_backend,
+        *(["--rdzv_conf", rdzv_conf] if rdzv_conf is not None else []),
         "--rdzv_endpoint",
         rdzv_endpoint,
         "--rdzv_id",
@@ -262,7 +273,7 @@ def ddp(
         "--nproc_per_node",
         str(nproc_per_node),
         "--tee",
-        "3",
+        str(tee),
         "--role",
         "",
     ]
@@ -294,10 +305,11 @@ def ddp(
                 mounts=specs.parse_mounts(mounts) if mounts else [],
             )
         ],
+        metadata=metadata,
     )
 
 
-def get_role_name(script: Optional[str], m: Optional[str]) -> str:
+def get_role_name(script: str | None, m: str | None) -> str:
     if script:
         # script name/module no extension
         role_name = Path(script).stem
@@ -326,7 +338,7 @@ class _noquote(str):
     pass
 
 
-def parse_nnodes(j: str) -> Tuple[int, int, int, str]:
+def parse_nnodes(j: str) -> tuple[int, int, int, str]:
     """
     parse_nnodes converts a node and process string into the individual
     components. Format is ``[[<min_replicas>:]<replicas>x]<num processes>``.

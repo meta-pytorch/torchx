@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 from __future__ import annotations
 
 import json
@@ -11,10 +13,9 @@ import os
 import time
 from base64 import b32decode, b32encode
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Iterable, Mapping
 
 import fsspec
-
 from torchx.tracker.api import Lineage, TrackerArtifact, TrackerBase, TrackerSource
 
 
@@ -111,7 +112,7 @@ class FsspecTracker(TrackerBase):
         run_id: str,
         name: str,
         path: str,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Mapping[str, object] | None = None,
     ) -> None:
         entry = {"name": name, "path": path, "metadata": metadata}
         self._persist(run_id, "artifacts", entry)
@@ -144,7 +145,7 @@ class FsspecTracker(TrackerBase):
         self,
         run_id: str,
         source_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> None:
         sources_path_builder = self._path_builder.with_run_id(run_id).with_subpath(
             "sources"
@@ -172,7 +173,7 @@ class FsspecTracker(TrackerBase):
                 f.write(f"{artifact_name}\n")
 
     def _read_source_file(
-        self, source_file: str, artifact_name: Optional[str] = None
+        self, source_file: str, artifact_name: str | None = None
     ) -> Iterable[TrackerSource]:
         entries = []
 
@@ -195,7 +196,7 @@ class FsspecTracker(TrackerBase):
     def sources(
         self,
         run_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> Iterable[TrackerSource]:
         entries = []
 
@@ -212,7 +213,7 @@ class FsspecTracker(TrackerBase):
         return entries
 
     # pyre-ignore[14]:
-    def run_ids(self, parent_run_id: Optional[str] = None) -> Iterable[str]:
+    def run_ids(self, parent_run_id: str | None = None) -> Iterable[str]:
         all_sources = []
         root_dir = self._path_builder.path()
         if self.fs.exists(root_dir):
@@ -236,7 +237,7 @@ class FsspecTracker(TrackerBase):
         return f"<FsspecTracker: root_path={self._path_builder.path()}>"
 
 
-def _put_config(key: str, value: str, config: Dict[str, Any]) -> None:
+def _put_config(key: str, value: str, config: dict[str, Any]) -> None:
     idx = key.find(".")
     if idx < 0:  # not a nested key -> set key = val
         config[key] = value
@@ -253,7 +254,7 @@ def _put_config(key: str, value: str, config: Dict[str, Any]) -> None:
 
 def _read_config(config_file: str) -> Mapping[str, Any]:
     # TODO add support for resource based config
-    data: Dict[str, Any] = {}
+    data: dict[str, Any] = {}
     with fsspec.open(config_file, "rt") as f:
         for line in f:
             if line.startswith("#"):  # skip comments
@@ -280,9 +281,11 @@ def create(config_file: str) -> TrackerBase:
     if "protocol" not in config or "root_path" not in config:
         raise Exception(f"Please specify 'protocol' and 'root_path' in {config_file}")
     protocol = config["protocol"]
+    # pyrefly: ignore [unsupported-operation]
     del config["protocol"]
 
     root = config["root_path"]
+    # pyrefly: ignore [unsupported-operation]
     del config["root_path"]
 
     fs = fsspec.filesystem(protocol, **config)

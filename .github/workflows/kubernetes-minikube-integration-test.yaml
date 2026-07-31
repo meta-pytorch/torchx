@@ -1,0 +1,36 @@
+name: Kubernetes Minikube Integration Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  kubernetes-launch:
+    if: false  # Temporarily disabled
+    runs-on: linux.24_04.4x
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout TorchX
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install dependencies
+        run: |
+          set -eux
+          uv sync --frozen --extra kubernetes
+      - name: Start Kubernetes
+        run: |
+          scripts/setup_minikube.sh
+      - name: Run Kubernetes Integration Tests
+        env:
+          CONTAINER_REPO: localhost:5000/torchx
+        run: |
+          chmod +x scripts/minikube_trainer.py
+          uv run scripts/minikube_trainer.py

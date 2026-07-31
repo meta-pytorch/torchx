@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Trainer Datasets Example
 ========================
@@ -14,7 +16,7 @@ libraries.
 
 import os.path
 import tarfile
-from typing import Callable, Optional
+from typing import Callable
 
 import fsspec
 import numpy
@@ -24,7 +26,6 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.datasets.folder import is_image_file
 from tqdm import tqdm
-
 
 # %%
 # This uses torchvision to define a dataset that we will then later use in our
@@ -40,8 +41,8 @@ class ImageFolderSamplesDataset(datasets.ImageFolder):
     def __init__(
         self,
         root: str,
-        transform: Optional[Callable[..., object]] = None,
-        num_samples: Optional[int] = None,
+        transform: Callable[..., object] | None = None,
+        num_samples: int | None = None,
         **kwargs: object,
     ) -> None:
         """
@@ -62,28 +63,28 @@ class ImageFolderSamplesDataset(datasets.ImageFolder):
 # our trainer and other components that need to load data.
 
 
-# pyre-fixme[13]: Attribute `test_ds` is never initialized.
-# pyre-fixme[13]: Attribute `train_ds` is never initialized.
-# pyre-fixme[13]: Attribute `val_ds` is never initialized.
 class TinyImageNetDataModule(pl.LightningDataModule):
     """
     TinyImageNetDataModule is a pytorch LightningDataModule for the tiny
     imagenet dataset.
     """
 
+    # pyre-fixme[13]: Attribute `test_ds` is never initialized.
     train_ds: ImageFolderSamplesDataset
+    # pyre-fixme[13]: Attribute `train_ds` is never initialized.
     val_ds: ImageFolderSamplesDataset
+    # pyre-fixme[13]: Attribute `val_ds` is never initialized.
     test_ds: ImageFolderSamplesDataset
 
     def __init__(
-        self, data_dir: str, batch_size: int = 16, num_samples: Optional[int] = None
+        self, data_dir: str, batch_size: int = 16, num_samples: int | None = None
     ) -> None:
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_samples = num_samples
 
-    def setup(self, stage: Optional[str] = None) -> None:
+    def setup(self, stage: str | None = None) -> None:
         # Setup data loader and transforms
         img_transform = transforms.Compose(
             [
@@ -115,7 +116,7 @@ class TinyImageNetDataModule(pl.LightningDataModule):
     def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_ds, batch_size=self.batch_size)
 
-    def teardown(self, stage: Optional[str] = None) -> None:
+    def teardown(self, stage: str | None = None) -> None:
         pass
 
 

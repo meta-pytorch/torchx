@@ -4,12 +4,12 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 from os import path
 from pathlib import Path
-from typing import Optional
 
 from torchx.util import entrypoints
-
 
 COMPONENTS_DIR: Path = Path("torchx/components")
 
@@ -21,7 +21,7 @@ def get_abspath(relpath: str) -> str:
     return path.join(root, relpath)
 
 
-def _get_file_contents(conf_file: str) -> Optional[str]:
+def _get_file_contents(conf_file: str) -> str | None:
     """
     Reads the ``conf_file`` relative to the root of the project.
     Returns ``None`` if ``$root/$conf_file`` does not exist.

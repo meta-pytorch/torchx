@@ -12,7 +12,7 @@ We actively welcome your pull requests.
 2. If you've added code that should be tested, add tests.
 3. If you've changed APIs, update the documentation.
 4. Ensure the test suite passes.
-5. Make sure your code lints (run `scripts/formatter_python.sh`).
+5. Make sure your code lints (see [Lint + Pyre](#lint--pyre) section below).
 6. If you haven't already, complete the Contributor License Agreement ("CLA").
 
 ## Contributor License Agreement ("CLA")
@@ -29,10 +29,38 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 disclosure of security bugs. In those cases, please go through the process
 outlined on that page and do not file a public issue.
 
-## Integration Tests
+## Development Setup
 
-See the [KFP integration test](scripts/kfpint.py) file for more details on setup
-and running them.
+TorchX uses [uv](https://docs.astral.sh/uv/) for dependency management:
+
+```sh
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies (creates .venv automatically)
+uv sync --extra dev
+
+# Run commands via uv
+uv run pytest
+uv run torchx --help
+```
+
+## Lint + Pyre
+
+Lint and type checking can be run via `lintrunner`:
+
+```sh
+uv run lintrunner init  # Sets up pyre
+uv run lintrunner -a
+```
+
+Or activate the venv first:
+
+```sh
+source .venv/bin/activate
+lintrunner init
+lintrunner -a
+```
 
 ## License
 By contributing to TorchX, you agree that your contributions will be licensed

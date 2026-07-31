@@ -1,31 +1,329 @@
-#!/usr/bin/env python3
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
+from __future__ import annotations
+
 import abc
+import inspect
 import re
-from dataclasses import dataclass, field
+import types
+from collections.abc import Iterator, Mapping
+from dataclasses import dataclass, field, fields, MISSING
 from datetime import datetime
 from enum import Enum
-from typing import Generic, Iterable, List, Optional, TypeVar
+from typing import (
+    Generic,
+    get_args,
+    get_type_hints,
+    Iterable,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from torchx.specs import (
     AppDef,
     AppDryRunInfo,
     AppState,
+    cases,
+    CfgVal,
     NONE,
     NULL_RESOURCE,
     Role,
     RoleStatus,
     runopts,
+    Workspace,
 )
-from torchx.workspace.api import WorkspaceMixin
-
+from torchx.workspace import WorkspaceMixin
+from typing_extensions import Self
 
 DAYS_IN_2_WEEKS = 14
+
+
+# =============================================================================
+# STRUCTURED OPTIONS BASE CLASS
+# =============================================================================
+
+
+# pyre-fixme[24]: Generic type `type` expects 1 type parameter.
+def _unwrap_optional(tp: type) -> type:
+    """Strip ``None`` from union types (e.g. ``str | None`` -> ``str``)."""
+    args = [a for a in get_args(tp) if a is not types.NoneType]
+    if args and len(args) < len(get_args(tp)):
+        # pyrefly: ignore [not-a-type]
+        return args[0] if len(args) == 1 else Union[tuple(args)]
+    return tp
+
+
+# pyre-fixme[24]: Generic type `type` expects 1 type parameter.
+def _is_structured_opts(tp: type) -> bool:
+    """Return True if *tp* is a concrete ``StructuredOpts`` subclass."""
+    try:
+        return (
+            isinstance(tp, type)
+            and issubclass(tp, StructuredOpts)
+            and tp is not StructuredOpts
+        )
+    except TypeError:
+        # Generic aliases like list[str] or dict[str, str] can pass
+        # isinstance(tp, type) on some Python versions but fail issubclass().
+        return False
+
+
+class StructuredOpts(Mapping[str, CfgVal]):
+    """Base class for typed scheduler configuration options.
+
+    Provides a type-safe way to define scheduler run options as dataclass fields
+    instead of manually building :py:class:`~torchx.specs.runopts`. Subclasses
+    should be ``@dataclass`` decorated with fields representing config options.
+
+    Features:
+        - Auto-generates ``runopts`` from dataclass fields via :py:meth:`as_runopts`
+        - Parses raw config dicts into typed instances via :py:meth:`from_cfg`
+        - Supports snake_case field names with camelCase aliases
+        - Extracts help text from field docstrings
+        - Supports nested ``StructuredOpts`` fields, flattened with dot-prefixed
+          keys (e.g., ``k8s.context``)
+
+    Example:
+        .. doctest::
+
+            >>> from dataclasses import dataclass
+            >>> from torchx.schedulers.api import StructuredOpts
+            >>>
+            >>> @dataclass
+            ... class MyOpts(StructuredOpts):
+            ...     cluster_name: str
+            ...     '''Name of the cluster to submit to.'''
+            ...
+            ...     num_retries: int = 3
+            ...     '''Number of retry attempts.'''
+            ...
+            >>> # Use in scheduler:
+            >>> # def _run_opts(self) -> runopts:
+            >>> #     return MyOpts.as_runopts()
+            >>> #
+            >>> # def _submit_dryrun(self, app, cfg):
+            >>> #     opts = MyOpts.from_cfg(cfg)
+            >>> #     # opts.cluster_name, opts.num_retries are typed
+
+    """
+
+    @classmethod
+    # pyrefly: ignore [not-a-type]
+    def from_cfg(cls, cfg: Mapping[str, CfgVal]) -> Self:
+        """Create an instance from a raw config dict.
+
+        Fields are snake_case but also accept camelCase aliases (e.g.,
+        ``hpc_identity`` can be set via ``hpcIdentity``).
+        Nested :py:class:`StructuredOpts` fields are reconstructed from
+        dot-prefixed keys (e.g., ``k8s.context``).
+        """
+        type_hints = get_type_hints(cls)
+        kwargs = {}
+        # pyrefly: ignore [bad-argument-type]
+        for f in fields(cls):
+            name = f.name
+            field_type = _unwrap_optional(type_hints.get(name, str))
+
+            if _is_structured_opts(field_type):
+                prefix = f"{name}."
+                nested_cfg = {
+                    k[len(prefix) :]: v for k, v in cfg.items() if k.startswith(prefix)
+                }
+                if nested_cfg:
+                    kwargs[name] = field_type.from_cfg(nested_cfg)
+                elif f.default is MISSING and f.default_factory is MISSING:
+                    # Required nested group — construct so its own validation runs.
+                    kwargs[name] = field_type.from_cfg({})
+                continue
+
+            if name in cfg:
+                kwargs[name] = cfg[name]
+            else:
+                camel_case = cases.snake_to_camel(name)
+                if camel_case in cfg:
+                    kwargs[name] = cfg[camel_case]
+        return cls(**kwargs)
+
+    # -------------------------------------------------------------------------
+    # Mapping Protocol Methods (for backwards compatibility)
+    #
+    # These methods allow StructuredOpts instances to be used in places that
+    # expect a dict-like interface (e.g., plugins that do cfg.get("key") or
+    # cfg["key"]). Once all plugins are migrated to use typed field access
+    # (e.g., cfg.field_name), these methods can be removed.
+    #
+    # TODO(T252193642): Remove these methods after migrating plugins to use
+    # StructuredOpts field access instead of dict-like access.
+    # -------------------------------------------------------------------------
+
+    # pyre-fixme[14]: Inconsistent override - Mapping.get accepts a default parameter
+    def get(self, key: str) -> CfgVal:
+        try:
+            return self[key]
+        except KeyError:
+            return None
+
+    def __getitem__(self, key: str) -> CfgVal:
+        if "." in key:
+            prefix, rest = key.split(".", 1)
+            prefix = cases.camel_to_snake(prefix)
+            nested = getattr(self, prefix, None)
+            if isinstance(nested, StructuredOpts):
+                return nested[rest]
+            raise KeyError(key) from None
+        snake_key = cases.camel_to_snake(key)
+        if hasattr(self, snake_key):
+            return getattr(self, snake_key)
+        raise KeyError(key) from None
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def __iter__(self) -> Iterator[str]:
+        type_hints = get_type_hints(type(self))
+        # pyrefly: ignore [bad-argument-type]
+        for f in fields(self):
+            field_type = _unwrap_optional(type_hints.get(f.name, str))
+            if _is_structured_opts(field_type):
+                nested = getattr(self, f.name)
+                if nested is not None:
+                    for nested_key in nested:
+                        yield f"{f.name}.{nested_key}"
+            else:
+                yield f.name
+
+    # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+        try:
+            self[key]
+        except KeyError:
+            return False
+        return True
+
+    @classmethod
+    def get_docstrings(cls) -> dict[str, str]:
+        # Parses source to extract attribute docstrings for help text.
+        docstrings: dict[str, str] = {}
+        try:
+            source = inspect.getsource(cls)
+        except (OSError, TypeError):
+            return docstrings
+
+        # Match: field_name: type...\n    """docstring"""
+        pattern = re.compile(
+            r'^\s+(\w+):\s*[^\n]+\n\s+"""([^"]+)"""',
+            re.MULTILINE,
+        )
+        for match in pattern.finditer(source):
+            field_name = match.group(1)
+            docstring = match.group(2).strip()
+            docstrings[field_name] = docstring
+
+        type_hints = get_type_hints(cls)
+        # pyrefly: ignore [bad-argument-type]
+        for f in fields(cls):
+            field_type = _unwrap_optional(type_hints.get(f.name, str))
+            if _is_structured_opts(field_type):
+                for key, doc in field_type.get_docstrings().items():
+                    docstrings[f"{f.name}.{key}"] = doc
+
+        return docstrings
+
+    @classmethod
+    def as_runopts(cls) -> runopts:
+        """Build :py:class:`~torchx.specs.runopts` from dataclass fields.
+
+        Nested :py:class:`StructuredOpts` fields are flattened with
+        dot-prefixed keys (e.g., field ``k8s: K8sOpts`` with sub-field
+        ``context`` becomes ``k8s.context``).
+        """
+        opts = runopts()
+
+        type_hints = get_type_hints(cls)
+        docstrings = cls.get_docstrings()
+
+        # pyrefly: ignore [bad-argument-type]
+        for f in fields(cls):
+            name = f.name
+            field_type = _unwrap_optional(type_hints.get(name, str))
+
+            if _is_structured_opts(field_type):
+                nested_opts = field_type.as_runopts()
+                for nested_key, nested_runopt in nested_opts:
+                    opts.add(
+                        f"{name}.{nested_key}",
+                        type_=nested_runopt.opt_type,
+                        default=nested_runopt.default,
+                        required=nested_runopt.is_required,
+                        help=nested_runopt.help,
+                    )
+                continue
+
+            help_text = docstrings.get(name, name)
+            type_ = field_type
+
+            has_default = f.default is not MISSING
+            has_default_factory = f.default_factory is not MISSING
+            if has_default:
+                default = f.default
+            elif has_default_factory:
+                default = None  # Don't call factory, just indicate no default
+            else:
+                default = None
+
+            required = not has_default and not has_default_factory
+
+            opts.add(
+                name,
+                type_=type_,
+                # pyrefly: ignore [bad-argument-type]
+                default=default,
+                required=required,
+                help=help_text,
+            )
+
+        return opts
+
+    # pyre-fixme[15]: Inconsistent override - __or__ returns dict, not UnionType
+    def __or__(self, other: StructuredOpts) -> dict[str, CfgVal]:
+        """Merge two StructuredOpts instances into a cfg dict.
+
+        Example:
+            .. doctest::
+
+                >>> from dataclasses import dataclass
+                >>> from torchx.schedulers.api import StructuredOpts
+                >>> @dataclass
+                ... class OptsA(StructuredOpts):
+                ...     foo: str = "a"
+                >>> @dataclass
+                ... class OptsB(StructuredOpts):
+                ...     bar: int = 1
+                >>> cfg = OptsA(foo="x") | OptsB(bar=2)
+                >>> cfg["foo"], cfg["bar"]
+                ('x', 2)
+        """
+        merged: dict[str, CfgVal] = {}
+        for key in self:
+            merged[key] = self[key]
+        for key in other:
+            merged[key] = other[key]
+        return merged
+
+
+# =============================================================================
+# STREAM AND RESPONSE TYPES
+# =============================================================================
 
 
 class Stream(str, Enum):
@@ -36,22 +334,7 @@ class Stream(str, Enum):
 
 @dataclass
 class DescribeAppResponse:
-    """
-    Response object returned by ``Scheduler.describe(app)`` API. Contains
-    the status and description of the application as known by the scheduler.
-    For some schedulers implementations this response object has necessary
-    and sufficient information to recreate an ``AppDef`` object. For these types
-    of schedulers, the user can re-``run()`` the recreted application. Otherwise
-    the user can only call non-creating methods (e.g. ``wait()``, ``status()``,
-    etc).
-
-    Since this class is a data class and contains many member variables we
-    keep the usage simple and provide a no-args constructor and chose to
-    access the member vars directly rather than provide accessors.
-
-    If scheduler returns arbitrary message, the ``msg`` field should be populated.
-    If scheduler returns a structured json, the ``structured_error_msg`` field should be populated.
-    """
+    """Response from :py:meth:`Scheduler.describe`. Contains status, roles, and metadata."""
 
     app_id: str = "<NOT_SET>"
     state: AppState = AppState.UNSUBMITTED
@@ -59,6 +342,7 @@ class DescribeAppResponse:
     msg: str = NONE
     structured_error_msg: str = NONE
     ui_url: Optional[str] = None
+    metadata: dict[str, str] = field(default_factory=dict)
 
     roles_statuses: List[RoleStatus] = field(default_factory=list)
     roles: List[Role] = field(default_factory=list)
@@ -66,23 +350,12 @@ class DescribeAppResponse:
 
 @dataclass
 class ListAppResponse:
-    """
-    Response object returned by ``scheduler.list()`` and ``runner.list()`` APIs.
-    Contains the app_id, app_handle and status of the application.
-    App ID : The unique identifier that identifies apps submitted on the scheduler
-    App handle: Identifier for apps run with torchx in a url format like
-    {scheduler_backend}://{session_name}/{app_id}, which is created by the runner
-    when it submits a job on a scheduler. Handle info in ListAppResponse is filled
-    in by ``runner.list()``. This handle can be used to further describe the app
-    with torchx CLI or a torchx runner instance.
-
-    Since this class is a data class with some member variables we keep the usage
-    simple and chose to access the member vars directly rather than provide accessors.
-    """
+    """Response from :py:meth:`Scheduler.list` / :py:meth:`~torchx.runner.api.Runner.list`."""
 
     app_id: str
     state: AppState
     app_handle: str = "<NOT_SET>"
+    name: str = ""
 
     # Implementing __hash__() makes ListAppResponse hashable which makes
     # it easier to check if a ListAppResponse object exists in a list of
@@ -95,10 +368,11 @@ T = TypeVar("T")
 
 
 class Scheduler(abc.ABC, Generic[T]):
-    """
-    An interface abstracting functionalities of a scheduler.
-    Implementers need only implement those methods annotated with
-    ``@abc.abstractmethod``.
+    """Abstract base class for job schedulers.
+
+    Implementors must override all ``@abc.abstractmethod`` methods.
+    See :py:class:`StructuredOpts` for typed config and
+    :py:mod:`torchx.schedulers` for built-in implementations.
     """
 
     def __init__(self, backend: str, session_name: str) -> None:
@@ -106,19 +380,9 @@ class Scheduler(abc.ABC, Generic[T]):
         self.session_name = session_name
 
     def close(self) -> None:
-        """
-        Only for schedulers that have local state! Closes the scheduler
-        freeing any allocated resources. Once closed, the scheduler object
-        is deemed to no longer be valid and any method called on the object
-        results in undefined behavior.
+        """Releases local resources. Safe to call multiple times.
 
-        This method should not raise exceptions and is allowed to be called
-        multiple times on the same object.
-
-        .. note:: Override only for scheduler implementations that have local state
-                  (``torchx/schedulers/local_scheduler.py``).
-                  Schedulers simply wrapping a remote scheduler's client need not
-                  implement this method.
+        Only override for schedulers with local state (e.g. ``local_scheduler``).
         """
         pass
 
@@ -126,59 +390,39 @@ class Scheduler(abc.ABC, Generic[T]):
         self,
         app: AppDef,
         cfg: T,
-        workspace: Optional[str] = None,
+        workspace: str | Workspace | None = None,
     ) -> str:
-        """
-        Submits the application to be run by the scheduler.
-
-        WARNING: Mostly used for tests. Users should prefer to use the TorchX runner instead.
-
-        Returns:
-            The application id that uniquely identifies the submitted app.
-        """
+        """Submits an app directly. Prefer :py:meth:`~torchx.runner.api.Runner.run` for production use."""
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
-            sched = self
-            assert isinstance(sched, WorkspaceMixin)
-            role = app.roles[0]
-            sched.build_workspace_and_update_role(role, workspace, resolved_cfg)
+            assert isinstance(self, WorkspaceMixin)
+
+            if isinstance(workspace, str):
+                workspace = Workspace.from_str(workspace)
+
+            app.roles[0].workspace = workspace
+            self.build_workspaces(app.roles, resolved_cfg)
+
         # pyre-fixme: submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self.submit_dryrun(app, resolved_cfg)
         return self.schedule(dryrun_info)
 
     @abc.abstractmethod
     def schedule(self, dryrun_info: AppDryRunInfo) -> str:
-        """
-        Same as ``submit`` except that it takes an ``AppDryRunInfo``.
-        Implementers are encouraged to implement this method rather than
-        directly implementing ``submit`` since ``submit`` can be trivially
-        implemented by:
-
-        ::
-
-         dryrun_info = self.submit_dryrun(app, cfg)
-         return schedule(dryrun_info)
-
-        """
-
+        """Submits a previously dry-run request. Returns the app_id."""
         raise NotImplementedError()
 
     def submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
-        """
-        Rather than submitting the request to run the app, returns the
-        request object that would have been submitted to the underlying
-        service. The type of the request object is scheduler dependent.
-        This method can be used to dry-run an application. Please refer
-        to the scheduler implementation's documentation regarding
-        the actual return type.
-        """
+        """Returns the scheduler request without submitting."""
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         # pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self._submit_dryrun(app, resolved_cfg)
+
         for role in app.roles:
             dryrun_info = role.pre_proc(self.backend, dryrun_info)
+
         dryrun_info._app = app
         dryrun_info._cfg = resolved_cfg
         return dryrun_info
@@ -188,10 +432,7 @@ class Scheduler(abc.ABC, Generic[T]):
         raise NotImplementedError()
 
     def run_opts(self) -> runopts:
-        """
-        Returns the run configuration options expected by the scheduler.
-        Basically a ``--help`` for the ``run`` API.
-        """
+        """Returns accepted run configuration options (``torchx runopts <scheduler>``)."""
         opts = self._run_opts()
         if isinstance(self, WorkspaceMixin):
             opts.update(self.workspace_opts())
@@ -202,56 +443,46 @@ class Scheduler(abc.ABC, Generic[T]):
 
     @abc.abstractmethod
     def describe(self, app_id: str) -> Optional[DescribeAppResponse]:
-        """
-        Describes the specified application.
-
-        Returns:
-            AppDef description or ``None`` if the app does not exist.
-        """
+        """Returns app description, or ``None`` if it no longer exists."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def list(self) -> List[ListAppResponse]:
-        """
-        For apps launched on the scheduler, this API returns a list of ListAppResponse
-        objects each of which have app id and its status.
-        Note: This API is in prototype phase and is subject to change.
-        """
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> List[ListAppResponse]:
+        """Lists jobs on this scheduler."""
         raise NotImplementedError()
 
     def exists(self, app_id: str) -> bool:
-        """
-        Returns:
-            ``True`` if the app exists (was submitted), ``False`` otherwise
-        """
         desc = self.describe(app_id)
         return desc is not None
 
     @abc.abstractmethod
     def _cancel_existing(self, app_id: str) -> None:
-        """
-        Kills the application. This method will only be called on an
-        application that exists.
-        """
         raise NotImplementedError()
 
     def cancel(self, app_id: str) -> None:
-        """
-        Cancels/kills the application. This method is idempotent within the same
-        thread and is safe to call on the same application multiple times.
-        However when called from multiple threads/processes on the same app
-        the exact semantics of this method depends on the idempotency guarantees
-        of the underlying scheduler API.
+        """Cancels the app. Idempotent — safe to call multiple times.
 
-        .. note:: This method does not block for the application to reach a
-                  cancelled state. To ensure that the application reaches a
-                  terminal state use the ``wait`` API.
+        Does not block. Use :py:meth:`~torchx.runner.api.Runner.wait` to
+        await the terminal state.
         """
         if self.exists(app_id):
             self._cancel_existing(app_id)
         else:
             # do nothing if the app does not exist
             return
+
+    def delete(self, app_id: str) -> None:
+        """Deletes the job definition from the scheduler's data-plane.
+
+        On schedulers with persistent job definitions (e.g. Kubernetes, AWS Batch),
+        this purges the definition. On others (e.g. Slurm), this is equivalent to
+        :py:meth:`cancel`. Calling on a live job cancels it first.
+        """
+        if self.exists(app_id):
+            self._delete_existing(app_id)
+
+    def _delete_existing(self, app_id: str) -> None:
+        self._cancel_existing(app_id)
 
     def log_iter(
         self,
@@ -264,69 +495,21 @@ class Scheduler(abc.ABC, Generic[T]):
         should_tail: bool = False,
         streams: Optional[Stream] = None,
     ) -> Iterable[str]:
-        """
-        Returns an iterator to the log lines of the ``k``th replica of the ``role``.
-        The iterator ends when all qualifying log lines have been read.
+        """Returns an iterator over log lines for the ``k``-th replica of ``role_name``.
 
-        If the scheduler supports time-based cursors fetching log lines
-        for custom time ranges, then the ``since``, ``until`` fields are
-        honored, otherwise they are ignored. Not specifying ``since`` and ``until``
-        is equivalent to getting all available log lines. If the ``until`` is
-        empty, then the iterator behaves like ``tail -f``, following the log output
-        until the job reaches a terminal state.
+        .. important:: Not all schedulers support log iteration, tailing, or
+                       time-based cursors. Check the specific scheduler docs.
 
-        The exact definition of what constitutes a log is scheduler specific. Some
-        schedulers may consider stderr or stdout as the log, others may read the logs
-        from a log file.
-
-        Behaviors and assumptions:
-
-        1. Produces an undefined-behavior if called on an app that does not exist
-           The caller should check that the app exists using ``exists(app_id)``
-           prior to calling this method.
-
-        2. Is not stateful, calling this method twice with same parameters
-           returns a new iterator. Prior iteration
-           progress is lost.
-
-        3. Does not always support log-tailing. Not all schedulers support live
-           log iteration (e.g. tailing logs while the app is running). Refer to
-           the specific scheduler's documentation for the iterator's behavior.
-
-        3.1 If the scheduler supports log-tailing, it should be controlled
-            by ``should_tail`` parameter.
-
-        4. Does not guarantee log retention. It is possible that by the time this
-           method is called, the underlying scheduler may have purged the log records
-           for this application. If so this method raises an arbitrary exception.
-
-        5. If ``should_tail`` is True, the method only raises a ``StopIteration`` exception
-           when the accessible log lines have been fully exhausted and the app has reached
-           a final state. For instance, if the app gets stuck and does not produce any log lines,
-           then the iterator blocks until the app eventually gets killed (either via
-           timeout or manually) at which point it raises a ``StopIteration``.
-
-           If ``should_tail`` is False, the method raises ``StopIteration``
-           when there are no more logs.
-
-        6. Need not be supported by all schedulers.
-
-        7. Some schedulers may support line cursors by supporting ``__getitem__``
-           (e.g. ``iter[50]`` seeks to the 50th log line).
-
-        8. Whitespace is preserved, each new line should include ``\\n``. To
-            support interactive progress bars the returned lines don't need to
-            include ``\\n`` but should then be printed without a newline to
-            correctly handle ``\\r`` carriage returns.
+        Lines include trailing whitespace (``\\n``). When ``should_tail=True``,
+        the iterator blocks until the app reaches a terminal state.
 
         Args:
-            streams: The IO output streams to select.
-                One of: combined, stdout, stderr.
-                If the selected stream isn't supported by the scheduler it will
-                throw an ValueError.
-
-        Returns:
-            An ``Iterator`` over log lines of the specified role replica
+            k: replica (node) index
+            regex: optional filter pattern
+            since: start cursor (scheduler-dependent)
+            until: end cursor (scheduler-dependent)
+            should_tail: if ``True``, follow output like ``tail -f``
+            streams: ``stdout``, ``stderr``, or ``combined``
 
         Raises:
             NotImplementedError: if the scheduler does not support log iteration
@@ -335,35 +518,28 @@ class Scheduler(abc.ABC, Generic[T]):
             f"{self.__class__.__qualname__} does not support application log iteration"
         )
 
-    def _validate(self, app: AppDef, scheduler: str) -> None:
-        """
-        Validates whether application is consistent with the scheduler.
+    def _pre_build_validate(self, app: AppDef, scheduler: str, cfg: T) -> None:
+        # Hook for pre-workspace-build validation. Override to add checks.
+        pass
 
-        Raises:
-            ValueError: if application is not compatible with scheduler
-        """
+    def _validate(self, app: AppDef, scheduler: str, cfg: T) -> None:
+        # Hook for post-workspace-build validation.
         for role in app.roles:
             if role.resource == NULL_RESOURCE:
                 raise ValueError(
-                    f"No resource for role: {role.image}."
-                    f" Did you forget to attach resource to the role"
+                    f"No resource for role: {role.image}. Did you forget to attach resource to the role"
                 )
 
 
 def filter_regex(regex: str, data: Iterable[str]) -> Iterable[str]:
-    """
-    filter_regex takes a string iterator and returns an iterator that only has
-    values that match the regex.
-    """
+    """Filters an iterable of strings, yielding only lines matching ``regex``."""
 
     r = re.compile(regex)
     return filter(lambda datum: r.search(datum), data)
 
 
 def split_lines(text: str) -> List[str]:
-    """
-    split_lines splits the string by new lines and keeps the new line characters.
-    """
+    """Splits ``text`` by newlines, preserving the ``\\n`` characters."""
     lines = []
     while len(text) > 0:
         idx = text.find("\n")
@@ -377,10 +553,7 @@ def split_lines(text: str) -> List[str]:
 
 
 def split_lines_iterator(chunks: Iterable[str]) -> Iterable[str]:
-    """
-    split_lines_iterator splits each chunk in the iterator by new lines and
-    returns them.
-    """
+    """Splits each chunk in the iterable by newlines, yielding individual lines."""
     for chunk in chunks:
         lines = split_lines(chunk)
         for line in lines:

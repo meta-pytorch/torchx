@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 from __future__ import annotations
 
 import logging
@@ -11,70 +13,57 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Iterable, Mapping, Optional
+from typing import Iterable, Mapping
 
-from torchx.util.entrypoints import load_group
+from torchx import plugins, settings
+from torchx.util.modules import load_module
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-ENV_TORCHX_TRACKERS = "TORCHX_TRACKERS"
-ENV_TORCHX_PARENT_RUN_ID = "TORCHX_PARENT_RUN_ID"
-ENV_TORCHX_JOB_ID = "TORCHX_JOB_ID"
+# BC re-exports — new code should import from torchx.settings
+ENV_TORCHX_TRACKERS: str = settings.ENV_TORCHX_TRACKERS
+ENV_TORCHX_PARENT_RUN_ID: str = settings.ENV_TORCHX_PARENT_RUN_ID
+ENV_TORCHX_JOB_ID: str = settings.ENV_TORCHX_JOB_ID
 
 
 @dataclass
 class TrackerSource:
-    """
-    Dataclass to represent sources at backend tracker level
+    """A source link at the backend tracker level.
 
-    Args:
-        source_run_id(str): source ID that can be either other TorchX handle or ID of external entity such as experiment
-        artifact_name(Optional[str]): type of of source. Can be interpreted as type of relationship that can be used for filtering.
+    ``source_run_id`` is a TorchX handle or external entity ID.
+    ``artifact_name`` classifies the relationship (used for filtering).
     """
 
     source_run_id: str
-    artifact_name: Optional[str]
+    artifact_name: str | None
 
 
 @dataclass
 class TrackerArtifact:
-    """
-    Dataclass to represent artifacts at backend tracker level
-
-    Args:
-        name(str): Name of the artifact
-        path(str): Path to actual artifact
-        metadata(Optional[Mapping[str, object]]): Additional metadata to store about artifact
-    """
+    """An artifact stored by a backend tracker (name, path, and optional metadata)."""
 
     name: str
     path: str
-    metadata: Optional[Mapping[str, object]]
+    metadata: Mapping[str, object] | None
 
 
 @dataclass
 class AppRunTrackableSource:
-    """
-    Dataclass to represent sources at user API level
-
-    Args:
-        parent(AppRun): source AppRun that current run is derived from.
-        artifact_name(Optional[str]): type of artifact represening parent AppRun.
-    """
+    """A source link at the user API level (wraps :py:class:`AppRun` parent)."""
 
     parent: AppRun
-    artifact_name: Optional[str]
+    artifact_name: str | None
 
 
-class Lineage:
-    ...
+class Lineage: ...
 
 
 class TrackerBase(ABC):
-    """
-    Abstraction of tracking solution implementations/services.
+    """Abstract base for tracker backend implementations.
 
-    This API is stil experimental and may change in the future to a large extend.
+    .. warning::
+
+        This API is experimental and may change significantly.
     """
 
     @abstractmethod
@@ -83,32 +72,24 @@ class TrackerBase(ABC):
         run_id: str,
         name: str,
         path: str,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Mapping[str, object] | None = None,
     ) -> None:
-        """
-        Adds an artifact to the tracker with the specified name, path and any arbitrary metadata.
-        """
+        """Add an artifact with the given name, path, and optional metadata."""
         ...
 
     @abstractmethod
     def artifacts(self, run_id: str) -> Mapping[str, TrackerArtifact]:
-        """
-        Fetches all of the artifacts for the specified run or the current one if not specified.
-        """
+        """Return all artifacts for the given run."""
         ...
 
     @abstractmethod
     def add_metadata(self, run_id: str, **kwargs: object) -> None:
-        """
-        Adds any arbitrary metadata values to the specified experiment.
-        """
+        """Store arbitrary key-value metadata for the given run."""
         ...
 
     @abstractmethod
     def metadata(self, run_id: str) -> Mapping[str, object]:
-        """
-        Fetches the metadata for the specified experiment.
-        """
+        """Return metadata for the given run."""
         ...
 
     @abstractmethod
@@ -116,48 +97,37 @@ class TrackerBase(ABC):
         self,
         run_id: str,
         source_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> None:
-        """
-        Adds a link to a different job identifying the lineage of the current experiment
-        and the specific artifact that's being used.
-        """
+        """Link a source run (lineage) to the given run."""
         ...
 
     @abstractmethod
     def sources(
         self,
         run_id: str,
-        artifact_name: Optional[str] = None,
+        artifact_name: str | None = None,
     ) -> Iterable[TrackerSource]:
-        """
-        Returns sources for the specified run. Artifact name can be used to filter the sources.
-        """
+        """Return sources for the given run, optionally filtered by ``artifact_name``."""
         ...
 
     @abstractmethod
     def lineage(self, run_id: str) -> Lineage:
-        """
-        Returns the lineage for the specified experiment. The lineage includes all
-        parent jobs and artifacts this job depends on as well as any jobs that are consuming
-        artifacts from this job.
-        """
+        """Return full lineage (parents and consumers) for the given run."""
         ...
 
     @abstractmethod
     def run_ids(self, **kwargs: str) -> Iterable[str]:
-        """
-        Returns list of experiment run ids. Optionally includes filter parameters.
-        """
+        """Return run IDs, optionally filtered by keyword arguments."""
         ...
 
 
 def tracker_config_env_var_name(entrypoint_key: str) -> str:
-    """Utility method to derive tracker config env variable name given tracker name"""
+    """Return the ``TORCHX_TRACKER_<NAME>_CONFIG`` env var name for a tracker."""
     return f"TORCHX_TRACKER_{entrypoint_key.upper()}_CONFIG"
 
 
-def _extract_tracker_name_and_config_from_environ() -> Mapping[str, Optional[str]]:
+def _extract_tracker_name_and_config_from_environ() -> Mapping[str, str | None]:
     if ENV_TORCHX_TRACKERS not in os.environ:
         logger.info("No trackers were configured, skipping setup.")
         return {}
@@ -177,43 +147,37 @@ def _extract_tracker_name_and_config_from_environ() -> Mapping[str, Optional[str
 
 
 def build_trackers(
-    entrypoint_and_config: Mapping[str, Optional[str]]
+    factory_and_config: Mapping[str, str | None],
 ) -> Iterable[TrackerBase]:
     trackers = []
 
-    entrypoint_factories = load_group("torchx.tracker")
-    if not entrypoint_factories:
-        logger.warning(
-            "No 'torchx.tracker' entry_points are defined. Tracking will not capture any data."
-        )
-        return trackers
+    tracker_plugins = plugins.registry().get(plugins.PluginType.TRACKER)
+    if not tracker_plugins:
+        logger.warning("no 'torchx.tracker' plugins registered")
 
-    for entrypoint_key, config in entrypoint_and_config.items():
-        if entrypoint_key not in entrypoint_factories:
+    for factory_name, config in factory_and_config.items():
+        plugin = tracker_plugins.get(factory_name)
+        factory = plugin if plugin else load_module(factory_name)
+        if not factory or not callable(factory):
             logger.warning(
-                f"Could not find `{entrypoint_key}` tracker entrypoint. Skipping..."
+                f"no tracker factory `{factory_name}` found in plugins or modules. See https://meta-pytorch.org/torchx/main/tracker.html#module-torchx.tracker"
             )
             continue
-        factory = entrypoint_factories[entrypoint_key]
         if config:
-            logger.info(f"Tracker config found for `{entrypoint_key}` as `{config}`")
-            tracker = factory(config)
+            logger.info(f"Tracker config found for `{factory_name}` as `{config}`")
         else:
-            logger.info(f"No tracker config specified for `{entrypoint_key}`")
-            tracker = factory(None)
+            logger.info(f"No tracker config specified for `{factory_name}`")
+        tracker = factory(config)
         trackers.append(tracker)
+    # pyrefly: ignore [bad-return]
     return trackers
 
 
 def trackers_from_environ() -> Iterable[TrackerBase]:
-    """
-    Builds list of Trackers that will be used to persist tracking information and will be used by AppRun
-        to delegate calls to the each instance.
-    Expects `TORCHX_TRACKERS` env variable to contain list of entry-point factory keys, separated by comma.
-    Optionally, for each tracker key user can pass config string value under `TORCHX_TRACKER_<ENTRYPOINT_NAME>_CONFIG` env variable.
-        It is up to each implementation to interpret the value, eg it can an encoded data or path to richer config properties file.
+    """Build trackers from ``TORCHX_TRACKERS`` env var (comma-separated entry-point keys).
 
-    Entry-points(factory methods) must exist in runtime when job is running since this runs within user-job space.
+    Per-tracker config is read from ``TORCHX_TRACKER_<NAME>_CONFIG`` env vars.
+    Entry-point factories must be importable at runtime (runs in user-job space).
     """
 
     entrypoint_and_config = _extract_tracker_name_and_config_from_environ()
@@ -224,14 +188,20 @@ def trackers_from_environ() -> Iterable[TrackerBase]:
 
 @dataclass
 class AppRun:
-    """
-    Exposes tracker API to at the job level and should the only API that encapsulates that module implementation.
+    """Job-level tracker API that delegates to one or more :py:class:`TrackerBase` backends.
 
-    This API is stil experimental and may change in the future.
+    .. warning::
 
-    Args:
-        id(str): identity of the job used by tracker API
-        backends(Iterable[TrackerBase]): list of TrackerBase implementations that will be used to persist the data.
+        This API is experimental and may change significantly.
+
+    .. doctest::
+
+        >>> from torchx.tracker.api import AppRun
+        >>> run = AppRun(id="my_job_123", backends=[])
+        >>> run.add_metadata(lr=0.01, epochs=10)  # no-op with empty backends
+        >>> run.job_id()
+        'my_job_123'
+
     """
 
     id: str
@@ -240,35 +210,21 @@ class AppRun:
     @staticmethod
     @lru_cache(maxsize=1)  # noqa: B019
     def run_from_env() -> AppRun:
-        """
-        Creates an :py:class:`AppRun` from environment variables. The environment variables are set by
-        the torchx runner. Hence if the application is launched via the torchx CLI as:
+        """Create a singleton :py:class:`AppRun` from environment variables.
 
-        .. code-block:: shell-session
-
-            $ torchx run utils_python --script main.py
-
-
-        And the tracker settings are configured in ``.torchxconfig``, then this function returns an
-        ``AppRun`` with the configured tracker backends. This function returns a singleton ``AppRun``
-        hence the same instances of the tracker backend objects.
+        Reads ``TORCHX_JOB_ID`` and ``TORCHX_TRACKERS`` (set by the torchx runner).
+        Returns a cached singleton so all callers share the same tracker backends.
 
         .. note::
-                When the application is NOT launched via torchx, this function
-                will return an "empty" ``AppRun`` with the ``job_id`` set to a constant
-                ``<UNDEFINED>`` since the app was not "launched" (e.g. submitted as a job)
-                and hence no canonical ``job_id`` exists.
-                No trackers are hooked up to the ``AppRun`` hence
-                calling ``add_*()`` (write) methods on the returned apprun will be a no-op.
 
-        Usage:
+            When not launched via torchx, returns an empty ``AppRun`` with
+            ``job_id="<UNDEFINED>"`` and no backends (write methods become no-ops).
 
         .. doctest::
 
-            >>> from torchx.mock_tracker.api import AppRun
+            >>> from torchx.tracker.api import AppRun
             >>> apprun = AppRun.run_from_env()
-            >>> apprun.add_metadata(md_1 = "foo", md_2 = "bar")
-
+            >>> apprun.add_metadata(md_1="foo", md_2="bar")
 
         """
 
@@ -284,46 +240,28 @@ class AppRun:
         return AppRun(id=torchx_job_id, backends=trackers)
 
     def add_metadata(self, **kwargs: object) -> None:
-        """Stores metadata for the current run"""
+        """Store key-value metadata for this run."""
         for backend in self.backends:
             backend.add_metadata(self.id, **kwargs)
 
     def add_artifact(
-        self, name: str, path: str, metadata: Optional[Mapping[str, object]] = None
+        self, name: str, path: str, metadata: Mapping[str, object] | None = None
     ) -> None:
-        """Stores artifacts for the current run
-
-        Args:
-            name(str): name of the artifact
-            path(str): path of the artifact that is stored
-            metadata(Optional[Mapping[str, object]]): optional metadata attached to artifact information
-        """
+        """Store an artifact (name, path, optional metadata) for this run."""
         for backend in self.backends:
             backend.add_artifact(self.id, name, path, metadata)
 
     def job_id(self) -> str:
-        """Current Id of the run"""
+        """Return the run ID."""
         return self.id
 
-    def add_source(self, source_id: str, artifact_name: Optional[str] = None) -> None:
-        """
-        Attaches source to this run. Sources can be either other TorchX runs or external entities such as experiments that may
-        or may not be queriable.
-
-        Args:
-            source_id(str): identity of the source
-            artifact_name(Optional[str]): optional value of type of source
-        """
+    def add_source(self, source_id: str, artifact_name: str | None = None) -> None:
+        """Link a source (TorchX run or external entity) to this run for lineage tracking."""
         for backend in self.backends:
             backend.add_source(self.id, source_id, artifact_name)
 
     def sources(self) -> Iterable[AppRunTrackableSource]:
-        """
-        Returns `AppRunTrackableSource` for the run.
-
-        Uses first backend to query this information, although it supports list of trackers in order
-        to persist tracking information.
-        """
+        """Return source links for this run (queries the first backend)."""
         model_run_sources = []
         if self.backends:
             backend = next(iter(self.backends))
@@ -335,5 +273,4 @@ class AppRun:
 
         return model_run_sources
 
-    def children(self) -> Iterable[AppRun]:
-        ...
+    def children(self) -> Iterable[AppRun]: ...

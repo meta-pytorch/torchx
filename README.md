@@ -1,7 +1,7 @@
 [![PyPI](https://img.shields.io/pypi/v/torchx)](https://pypi.org/project/torchx/)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
-![Tests](https://github.com/pytorch/torchx/actions/workflows/python-unittests.yaml/badge.svg)
-![Lint](https://github.com/pytorch/torchx/actions/workflows/lint.yaml/badge.svg)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/meta-pytorch/torchx/blob/main/LICENSE)
+![Tests](https://github.com/meta-pytorch/torchx/actions/workflows/python-unittests.yaml/badge.svg)
+![Lint](https://github.com/meta-pytorch/torchx/actions/workflows/lint.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/pytorch/torchx/branch/main/graph/badge.svg?token=ceHHIm0hXy)](https://codecov.io/gh/pytorch/torchx)
 
 
@@ -19,19 +19,17 @@ TorchX currently supports:
 * AWS Batch
 * Docker
 * Local
-* Ray (prototype)
-* GCP Batch (prototype)
 
-Need a scheduler not listed? [Let us know!](https://github.com/pytorch/torchx/issues?q=is%3Aopen+is%3Aissue+label%3Ascheduler-request)
+Need a scheduler not listed? [Let us know!](https://github.com/meta-pytorch/torchx/issues?q=is%3Aopen+is%3Aissue+label%3Ascheduler-request)
 
 ## Quickstart
 
-See the [quickstart guide](https://pytorch.org/torchx/latest/quickstart.html).
+See the [quickstart guide](https://meta-pytorch.org/torchx/latest/quickstart.html).
 
 ## Documentation
 
-* [Stable Documentation](https://pytorch.org/torchx/latest/)
-* [Nightly Documentation](https://pytorch.org/torchx/main/)
+* [Stable Documentation](https://meta-pytorch.org/torchx/latest/)
+* [Nightly Documentation](https://meta-pytorch.org/torchx/main/)
 
 ## Requirements
 
@@ -52,17 +50,11 @@ for info.
 # install torchx sdk and CLI -- minimum dependencies
 pip install torchx
 
-# install torchx sdk and CLI -- all dependencies
+# install with all dependencies
 pip install "torchx[dev]"
-
-# install torchx kubeflow pipelines (kfp) support
-pip install "torchx[kfp]"
 
 # install torchx Kubernetes / Volcano support
 pip install "torchx[kubernetes]"
-
-# install torchx Ray support
-pip install "torchx[ray]"
 
 # install torchx GCP Batch support
 pip install "torchx[gcp_batch]"
@@ -75,26 +67,30 @@ pip install "torchx[gcp_batch]"
 pip install torchx-nightly[dev]
 ```
 
-### Source
+### Source (Development)
 
 ```bash
-# install torchx sdk and CLI from source
-$ pip install -e git+https://github.com/pytorch/torchx.git#egg=torchx
+# clone the repo
+git clone https://github.com/meta-pytorch/torchx.git
+cd torchx
 
-# install extra dependencies
-$ pip install -e git+https://github.com/pytorch/torchx.git#egg=torchx[dev]
+# install with uv (recommended for development)
+uv sync --extra dev
+
+# or with pip
+pip install -e ".[dev]"
 ```
 
 ### Docker
 
 TorchX provides a docker container for using as as part of a TorchX role.
 
-See: https://github.com/pytorch/torchx/pkgs/container/torchx
+See: https://github.com/meta-pytorch/torchx/pkgs/container/torchx
 
 ## Contributing
 
-We welcome PRs! See the [CONTRIBUTING](CONTRIBUTING.md) file.
+We welcome PRs! See the [CONTRIBUTING](https://github.com/meta-pytorch/torchx/blob/main/CONTRIBUTING.md) file.
 
 ## License
 
-TorchX is BSD licensed, as found in the [LICENSE](LICENSE) file.
+TorchX is BSD licensed, as found in the [LICENSE](https://github.com/meta-pytorch/torchx/blob/main/LICENSE) file.
