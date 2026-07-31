@@ -146,7 +146,7 @@ def python(
     memMB: int = 1024,
     h: str | None = None,
     num_replicas: int = 1,
-    mounts: Optional[List[str]] = None,
+    mounts: list[str] | None = None,
 ) -> specs.AppDef:
     """
     Runs ``python`` with the specified module, command or script on the specified
@@ -242,7 +242,12 @@ def binary(
     )
 
 
-def copy(src: str, dst: str, image: str = torchx.IMAGE, mounts: Optional[List[str]] = None,) -> specs.AppDef:
+def copy(
+    src: str,
+    dst: str,
+    image: str = torchx.IMAGE,
+    mounts: list[str] | None = None,
+) -> specs.AppDef:
     """
     copy copies the file from src to dst. src and dst can be any valid fsspec
     url.

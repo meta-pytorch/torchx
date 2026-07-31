@@ -8,7 +8,7 @@
 
 import torchx.components.utils as utils
 from torchx.components.component_test_base import ComponentTestCase
-from torchx.specs import AppState
+from torchx.specs import AppState, BindMount
 
 
 class UtilsComponentTest(ComponentTestCase):
@@ -29,6 +29,26 @@ class UtilsComponentTest(ComponentTestCase):
 
     def test_copy(self) -> None:
         self.validate(utils, "copy")
+
+    def test_python_mounts(self) -> None:
+        app = utils.python(
+            m="foo.main", mounts=["type=bind", "src=/host", "dst=/job", "readonly"]
+        )
+        self.assertEqual(
+            [BindMount(src_path="/host", dst_path="/job", read_only=True)],
+            app.roles[0].mounts,
+            "python component should pass its parsed mounts through to the role",
+        )
+
+    def test_copy_mounts(self) -> None:
+        app = utils.copy(
+            src="foo", dst="bar", mounts=["type=bind", "src=/host", "dst=/job"]
+        )
+        self.assertEqual(
+            [BindMount(src_path="/host", dst_path="/job")],
+            app.roles[0].mounts,
+            "copy component should pass its parsed mounts through to the role",
+        )
 
     def test_booth(self) -> None:
         self.validate(utils, "booth")
