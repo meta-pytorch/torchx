@@ -593,6 +593,7 @@
     <span class="n">memMB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
     <span class="n">h</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">num_replicas</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">mounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Runs ``python`` with the specified module, command or script on the specified</span>
@@ -615,6 +616,8 @@
 <span class="sd">        memMB: cpu memory in MB per replica</span>
 <span class="sd">        h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)</span>
 <span class="sd">        num_replicas: number of copies to run (each on its own container)</span>
+<span class="sd">        mounts: mounts to mount into the worker environment/container (ex. type=&lt;bind/volume&gt;,src=/host,dst=/job[,readonly]).</span>
+<span class="sd">                See scheduler documentation for more info.</span>
 <span class="sd">    :return:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">sum</span><span class="p">([</span><span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">c</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="n">script</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
@@ -642,6 +645,7 @@
                 <span class="n">resource</span><span class="o">=</span><span class="n">specs</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="n">cpu</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="n">gpu</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="n">memMB</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">),</span>
                 <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">cmd</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">],</span>
                 <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;HYDRA_MAIN_MODULE&quot;</span><span class="p">:</span> <span class="n">m</span><span class="p">}</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="p">{},</span>
+                <span class="n">mounts</span><span class="o">=</span><span class="n">specs</span><span class="o">.</span><span class="n">parse_mounts</span><span class="p">(</span><span class="n">mounts</span><span class="p">)</span> <span class="k">if</span> <span class="n">mounts</span> <span class="k">else</span> <span class="p">[],</span>
             <span class="p">)</span>
         <span class="p">],</span>
     <span class="p">)</span></div>
@@ -691,7 +695,12 @@
 
 <div class="viewcode-block" id="copy">
 <a class="viewcode-back" href="../../../components/utils.html#torchx.components.utils.copy">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span>
+    <span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">dst</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">,</span>
+    <span class="n">mounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    copy copies the file from src to dst. src and dst can be any valid fsspec</span>
 <span class="sd">    url.</span>
@@ -702,6 +711,8 @@
 <span class="sd">        src: the source fsspec file location</span>
 <span class="sd">        dst: the destination fsspec file location</span>
 <span class="sd">        image: the image that contains the copy app</span>
+<span class="sd">        mounts: mounts to mount into the worker environment/container (ex. type=&lt;bind/volume&gt;,src=/host,dst=/job[,readonly]).</span>
+<span class="sd">                See scheduler documentation for more info.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">(</span>
@@ -720,6 +731,7 @@
                     <span class="n">dst</span><span class="p">,</span>
                 <span class="p">],</span>
                 <span class="n">resource</span><span class="o">=</span><span class="n">specs</span><span class="o">.</span><span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">1024</span><span class="p">),</span>
+                <span class="n">mounts</span><span class="o">=</span><span class="n">specs</span><span class="o">.</span><span class="n">parse_mounts</span><span class="p">(</span><span class="n">mounts</span><span class="p">)</span> <span class="k">if</span> <span class="n">mounts</span> <span class="k">else</span> <span class="p">[],</span>
             <span class="p">),</span>
         <span class="p">],</span>
     <span class="p">)</span></div>
