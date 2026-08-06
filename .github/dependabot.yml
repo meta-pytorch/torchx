@@ -17,6 +17,27 @@ updates:
       - dependency-name: "usort"
       - dependency-name: "stdlibs"
 
+  # Dependabot classifies this repo's Python security updates under the `uv`
+  # ecosystem (uv.lock is present; PR branches are `dependabot/uv/...`), and
+  # ignore conditions only apply to security updates when the entry's
+  # package-ecosystem matches — the `pip` ignore above did not block #1347.
+  # open-pull-requests-limit: 0 disables scheduled version updates for this
+  # entry; the ignore list below still applies to security updates.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 0
+    ignore:
+      # Keep in sync with the pip entry above (same rationale).
+      - dependency-name: "black"
+      - dependency-name: "ruff-api"
+      - dependency-name: "ufmt"
+      - dependency-name: "usort"
+      - dependency-name: "stdlibs"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
