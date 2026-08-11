@@ -85,29 +85,33 @@ class ProcessTest(unittest.TestCase):
         start_on_file = "memory://start"
         fs, path = fsspec.core.url_to_fs(start_on_file)
 
-        args = [
-            "--timeout",
-            "0.001",
-            "--poll_rate",
-            "0.001",
-            "--start_on_file",
-            start_on_file,
-            "--",
-            "echo",
-            "banana",
-        ]
+        def args(timeout: str) -> list[str]:
+            return [
+                "--timeout",
+                timeout,
+                "--poll_rate",
+                "0.001",
+                "--start_on_file",
+                start_on_file,
+                "--",
+                "echo",
+                "banana",
+            ]
 
         with patch("sys.stdout", new_callable=io.StringIO) as stdout:
             with self.assertRaisesRegex(SystemExit, f"^{TIMEOUT_EXIT_CODE}$"):
-                main(args)
+                main(args("0.001"))
             self.assertIn(
                 "reached timeout before launching, terminating...", stdout.getvalue()
             )
 
         fs.touch(path)
 
+        # long timeout: the process must not be killed before it exits on its
+        # own -- with a tiny timeout the monitor can win the race against the
+        # child's startup and terminate it (exit -15 instead of 0)
         with self.assertRaisesRegex(SystemExit, r"^0$"):
-            main(args)
+            main(args("60"))
 
     def test_exit_on_file(self) -> None:
         start_on_file = "memory://end"
