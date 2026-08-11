@@ -28,9 +28,8 @@ If so, no need to even author an app spec!
 
  $ torchx builtins
  Found <n> builtin configs:
-  1. metrics.tensorboard
-  2. serve.torchserve
-  3. utils.binary
+  1. serve.torchserve
+  2. utils.binary
   ... <omitted for brevity>
 
 Listing the supported schedulers and arguments
