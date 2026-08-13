@@ -43,8 +43,6 @@ Use `TensorBoard <https://pytorch.org/tutorials/intermediate/tensorboard_tutoria
 for logging metrics. TensorBoard supports remote storage (S3, GCS) for viewing
 metrics during training.
 
-See :ref:`components/metrics:Metrics` for TorchX metric components.
-
 Checkpointing
 ----------------
 

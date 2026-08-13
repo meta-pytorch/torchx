@@ -154,7 +154,6 @@ COMPONENT --help`` to see the arguments for a specific component.
    components/train
    components/distributed
    components/interpret
-   components/metrics
    components/serve
    components/utils
 
