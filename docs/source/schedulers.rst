@@ -85,10 +85,6 @@ Every scheduler accepts the same ``AppDef``; only the ``--scheduler`` flag
         - **All Meta-internal GPU workloads.** Delegates between MAST and MSL
           backends based on the cluster UUID. Supports Jetter, Conda, and Sapling
           workspaces.
-      * - ``flow``
-        - FBLearner Flow
-        - Flow workflow (gang)
-        - Workloads managed by FBLearner Flow. Gang scheduling only.
       * - ``quickflow`` / ``quickflow_msl``
         - FBLearner QuickFlow
         - QuickApp job (MAST or MSL)
