@@ -21,3 +21,12 @@ class VersionTest(unittest.TestCase):
         from torchx.version import __version__, TORCHX_IMAGE
 
         self.assertEqual(TORCHX_IMAGE, f"ghcr.io/pytorch/torchx:{__version__}")
+
+    def test_get_torchx_image_uses_version_arg(self) -> None:
+        from torchx.version import _get_torchx_image
+
+        self.assertEqual(
+            _get_torchx_image("0.1.2"),
+            "ghcr.io/pytorch/torchx:0.1.2",
+            "_get_torchx_image must tag the image with the version argument",
+        )
