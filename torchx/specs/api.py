@@ -210,7 +210,6 @@ class macros:
     """
 
     img_root = "${img_root}"
-    base_img_root = "${base_img_root}"
     app_id = "${app_id}"
     replica_id = "${replica_id}"
 
@@ -227,7 +226,6 @@ class macros:
         app_id: str
         replica_id: str
         rank0_env: str
-        base_img_root: str = "DEPRECATED"
 
         def apply(self, role: "Role") -> "Role":
             """Returns a deep copy of ``role`` with macros substituted."""
