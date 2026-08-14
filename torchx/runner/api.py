@@ -24,6 +24,7 @@ from typing import (
     TypeVar,
 )
 
+from torchx import settings
 from torchx.runner.events import log_event
 from torchx.schedulers import get_scheduler_factories, SchedulerFactory
 from torchx.schedulers.api import ListAppResponse, Scheduler, Stream
@@ -42,12 +43,7 @@ from torchx.specs import (
     Workspace,
 )
 from torchx.specs.finder import get_component
-from torchx.tracker.api import (
-    ENV_TORCHX_JOB_ID,
-    ENV_TORCHX_PARENT_RUN_ID,
-    ENV_TORCHX_TRACKERS,
-    tracker_config_env_var_name,
-)
+from torchx.tracker.api import tracker_config_env_var_name
 from torchx.util.session import get_session_id_or_create_new, TORCHX_INTERNAL_SESSION_ID
 from torchx.util.types import none_throws
 from torchx.workspace import WorkspaceMixin
@@ -67,9 +63,9 @@ T = TypeVar("T")
 
 def get_configured_trackers() -> dict[str, str | None]:
     tracker_names = list(get_configs(prefix="torchx", name="tracker").keys())
-    if ENV_TORCHX_TRACKERS in os.environ:
+    if settings.ENV_TORCHX_TRACKERS in os.environ:
         logger.info(f"Using TORCHX_TRACKERS={tracker_names} as tracker names")
-        tracker_names = os.environ[ENV_TORCHX_TRACKERS].split(",")
+        tracker_names = os.environ[settings.ENV_TORCHX_TRACKERS].split(",")
 
     tracker_names_with_config = {}
     for tracker_name in tracker_names:
@@ -350,10 +346,10 @@ class Runner:
                 f"No roles for app: {app.name}. Did you forget to add roles to AppDef?"
             )
 
-        if ENV_TORCHX_PARENT_RUN_ID in os.environ:
-            parent_run_id = os.environ[ENV_TORCHX_PARENT_RUN_ID]
+        if settings.ENV_TORCHX_PARENT_RUN_ID in os.environ:
+            parent_run_id = os.environ[settings.ENV_TORCHX_PARENT_RUN_ID]
             logger.info(
-                f"Using {ENV_TORCHX_PARENT_RUN_ID}={parent_run_id} env variable as tracker parent run id"
+                f"Using {settings.ENV_TORCHX_PARENT_RUN_ID}={parent_run_id} env variable as tracker parent run id"
             )
 
         configured_trackers = get_configured_trackers()
@@ -376,16 +372,18 @@ class Runner:
             #    - inject it as TORCHX_TRACKERS=names (it is expected that entrypoints are defined)
             #    - for each backend check configuration file, if exists:
             #        - inject it as TORCHX_TRACKER_<name>_CONFIGFILE=filename
-            role.env[ENV_TORCHX_JOB_ID] = make_app_handle(
+            role.env[settings.ENV_TORCHX_JOB_ID] = make_app_handle(
                 scheduler, self._name, macros.app_id
             )
             role.env[TORCHX_INTERNAL_SESSION_ID] = get_session_id_or_create_new()
 
             if parent_run_id:
-                role.env[ENV_TORCHX_PARENT_RUN_ID] = parent_run_id
+                role.env[settings.ENV_TORCHX_PARENT_RUN_ID] = parent_run_id
 
             if configured_trackers:
-                role.env[ENV_TORCHX_TRACKERS] = ",".join(configured_trackers.keys())
+                role.env[settings.ENV_TORCHX_TRACKERS] = ",".join(
+                    configured_trackers.keys()
+                )
 
             for name, config in configured_trackers.items():
                 if config:

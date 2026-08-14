@@ -17,15 +17,10 @@ from urllib.parse import urlparse
 import mlflow
 from mlflow import MlflowClient
 from mlflow.entities import Experiment, Run
+from torchx import settings
 from torchx.distributed import on_rank0_first
 from torchx.runner.config import get_configs
-from torchx.tracker.api import (
-    ENV_TORCHX_JOB_ID,
-    Lineage,
-    TrackerArtifact,
-    TrackerBase,
-    TrackerSource,
-)
+from torchx.tracker.api import Lineage, TrackerArtifact, TrackerBase, TrackerSource
 
 log: Logger = getLogger(__name__)
 TAG_ARTIFACT_MD_PREFIX = "torchx.artifact.metadata"
@@ -109,7 +104,7 @@ class MLflowTracker(TrackerBase):
             # so this env var will exist if the job is launched with torchx
             # if so, then prime the run here so that rank0 creates the run first
             # and the rest of the ranks can point to the existing run
-            run_name = os.getenv(ENV_TORCHX_JOB_ID)
+            run_name = os.getenv(settings.ENV_TORCHX_JOB_ID)
             if run_name:
                 run = self.get_run(run_name)
                 log.info(f"Primed run `{run.info.run_name}` ({run.info.run_id})")

@@ -22,6 +22,7 @@ from torchx.schedulers.local_scheduler import (
     create_scheduler,
     LocalDirectoryImageProvider,
 )
+from torchx.settings import ENV_TORCHX_JOB_ID, ENV_TORCHX_PARENT_RUN_ID
 from torchx.specs import (
     AppDef,
     AppDryRunInfo,
@@ -37,7 +38,6 @@ from torchx.specs import (
 )
 from torchx.specs.finder import ComponentNotFoundException
 from torchx.test.fixtures import TestWithTmpDir
-from torchx.tracker.api import ENV_TORCHX_JOB_ID, ENV_TORCHX_PARENT_RUN_ID
 from torchx.util.types import none_throws
 from torchx.workspace import WorkspaceMixin
 

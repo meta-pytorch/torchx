@@ -86,9 +86,6 @@ LABEL_APP_ID: str = "torchx.pytorch.org/app-id"
 LABEL_ROLE_NAME: str = "torchx.pytorch.org/role-name"
 LABEL_REPLICA_ID: str = "torchx.pytorch.org/replica-id"
 
-# BC re-export — new code should import from torchx.settings
-ENV_TORCHX_IMAGE: str = settings.ENV_TORCHX_IMAGE
-
 NETWORK = "torchx"
 
 
@@ -292,7 +289,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
 
                 # configure distributed host envs
                 env["TORCHX_RANK0_HOST"] = rank0_name
-                env[ENV_TORCHX_IMAGE] = replica_role.image
+                env[settings.ENV_TORCHX_IMAGE] = replica_role.image
 
                 c = DockerContainer(
                     image=replica_role.image,

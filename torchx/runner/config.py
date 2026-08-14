@@ -172,8 +172,6 @@ from torchx.util import entrypoints
 
 CONFIG_FILE = ".torchxconfig"
 CONFIG_PREFIX_DELIM = ":"
-# BC re-export — new code should import from torchx.settings
-ENV_TORCHXCONFIG: str = settings.ENV_TORCHXCONFIG
 DEFAULT_CONFIG_DIRS = [str(Path.home()), str(Path.cwd())]
 
 _NONE = "None"
@@ -486,14 +484,14 @@ def find_configs(dirs: Iterable[str] | None = None) -> list[str]:
 
     """
 
-    config = os.getenv(ENV_TORCHXCONFIG)
+    config = os.getenv(settings.ENV_TORCHXCONFIG)
     if config is not None:
         if not config:
             return []
         configfile = Path(config)
         if not configfile.is_file():
             raise FileNotFoundError(
-                f"`{ENV_TORCHXCONFIG}={config}` does not exist or is not a file."
+                f"`{settings.ENV_TORCHXCONFIG}={config}` does not exist or is not a file."
             )
         return [str(configfile)]
     else:
