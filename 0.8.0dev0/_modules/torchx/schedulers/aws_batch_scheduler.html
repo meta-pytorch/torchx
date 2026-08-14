@@ -515,13 +515,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">none_throws</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
 
-<span class="c1"># BC re-exports — new code should import from torchx.settings</span>
-<span class="n">ENV_TORCHX_ROLE_IDX</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_IDX</span>
-
-<span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_NAME</span>
-
-<span class="n">ENV_TORCHX_IMAGE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_IMAGE</span>
-
 <span class="n">DEFAULT_ROLE_NAME</span> <span class="o">=</span> <span class="s2">&quot;node&quot;</span>
 
 <span class="n">TAG_TORCHX_VER</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/version&quot;</span>
@@ -993,9 +986,9 @@
                 <span class="n">rank0_env</span><span class="o">=</span><span class="s2">&quot;AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS&quot;</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">role</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_ROLE_IDX</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role_idx</span><span class="p">)</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_IMAGE</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_IDX</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role_idx</span><span class="p">)</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_IMAGE</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
 
             <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">_role_to_node_properties</span><span class="p">(</span>
@@ -1099,7 +1092,7 @@
             <span class="n">command</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span>
             <span class="n">roles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">Role</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">,</span> <span class="n">DEFAULT_ROLE_NAME</span><span class="p">),</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">,</span> <span class="n">DEFAULT_ROLE_NAME</span><span class="p">),</span>
                     <span class="n">num_replicas</span><span class="o">=</span><span class="n">_parse_num_replicas</span><span class="p">(</span>
                         <span class="n">node_group</span><span class="p">[</span><span class="s2">&quot;targetNodes&quot;</span><span class="p">],</span> <span class="n">num_nodes</span>
                     <span class="p">),</span>
@@ -1149,7 +1142,7 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
             <span class="n">container</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s2">&quot;container&quot;</span><span class="p">]</span>
             <span class="n">env</span> <span class="o">=</span> <span class="p">{</span><span class="n">opt</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span> <span class="n">opt</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;environment&quot;</span><span class="p">]}</span>
-            <span class="n">node_role</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">,</span> <span class="n">DEFAULT_ROLE_NAME</span><span class="p">)</span>
+            <span class="n">node_role</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_ROLE_NAME</span><span class="p">,</span> <span class="n">DEFAULT_ROLE_NAME</span><span class="p">)</span>
             <span class="n">start_idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_parse_start_and_end_idx</span><span class="p">(</span>
                 <span class="n">node</span><span class="p">[</span><span class="s2">&quot;targetNodes&quot;</span><span class="p">],</span>
                 <span class="n">node_properties</span><span class="p">[</span><span class="s2">&quot;numNodes&quot;</span><span class="p">],</span>

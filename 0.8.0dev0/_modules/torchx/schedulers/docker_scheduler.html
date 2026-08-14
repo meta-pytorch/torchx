@@ -530,9 +530,6 @@
 <span class="n">LABEL_ROLE_NAME</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/role-name&quot;</span>
 <span class="n">LABEL_REPLICA_ID</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torchx.pytorch.org/replica-id&quot;</span>
 
-<span class="c1"># BC re-export — new code should import from torchx.settings</span>
-<span class="n">ENV_TORCHX_IMAGE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_IMAGE</span>
-
 <span class="n">NETWORK</span> <span class="o">=</span> <span class="s2">&quot;torchx&quot;</span>
 
 
@@ -744,7 +741,7 @@
 
                 <span class="c1"># configure distributed host envs</span>
                 <span class="n">env</span><span class="p">[</span><span class="s2">&quot;TORCHX_RANK0_HOST&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rank0_name</span>
-                <span class="n">env</span><span class="p">[</span><span class="n">ENV_TORCHX_IMAGE</span><span class="p">]</span> <span class="o">=</span> <span class="n">replica_role</span><span class="o">.</span><span class="n">image</span>
+                <span class="n">env</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_IMAGE</span><span class="p">]</span> <span class="o">=</span> <span class="n">replica_role</span><span class="o">.</span><span class="n">image</span>
 
                 <span class="n">c</span> <span class="o">=</span> <span class="n">DockerContainer</span><span class="p">(</span>
                     <span class="n">image</span><span class="o">=</span><span class="n">replica_role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span>

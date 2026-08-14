@@ -453,15 +453,10 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">mlflow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mlflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">MlflowClient</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mlflow.entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experiment</span><span class="p">,</span> <span class="n">Run</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.distributed</span><span class="w"> </span><span class="kn">import</span> <span class="n">on_rank0_first</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_configs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">ENV_TORCHX_JOB_ID</span><span class="p">,</span>
-    <span class="n">Lineage</span><span class="p">,</span>
-    <span class="n">TrackerArtifact</span><span class="p">,</span>
-    <span class="n">TrackerBase</span><span class="p">,</span>
-    <span class="n">TrackerSource</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Lineage</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">,</span> <span class="n">TrackerBase</span><span class="p">,</span> <span class="n">TrackerSource</span>
 
 <span class="n">log</span><span class="p">:</span> <span class="n">Logger</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">TAG_ARTIFACT_MD_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;torchx.artifact.metadata&quot;</span>
@@ -547,7 +542,7 @@
             <span class="c1"># so this env var will exist if the job is launched with torchx</span>
             <span class="c1"># if so, then prime the run here so that rank0 creates the run first</span>
             <span class="c1"># and the rest of the ranks can point to the existing run</span>
-            <span class="n">run_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">ENV_TORCHX_JOB_ID</span><span class="p">)</span>
+            <span class="n">run_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_JOB_ID</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">run_name</span><span class="p">:</span>
                 <span class="n">run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">run_name</span><span class="p">)</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Primed run `</span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">run_name</span><span class="si">}</span><span class="s2">` (</span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>

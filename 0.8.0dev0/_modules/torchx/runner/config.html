@@ -608,8 +608,6 @@
 
 <span class="n">CONFIG_FILE</span> <span class="o">=</span> <span class="s2">&quot;.torchxconfig&quot;</span>
 <span class="n">CONFIG_PREFIX_DELIM</span> <span class="o">=</span> <span class="s2">&quot;:&quot;</span>
-<span class="c1"># BC re-export — new code should import from torchx.settings</span>
-<span class="n">ENV_TORCHXCONFIG</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHXCONFIG</span>
 <span class="n">DEFAULT_CONFIG_DIRS</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()),</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">())]</span>
 
 <span class="n">_NONE</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
@@ -939,14 +937,14 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">config</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">ENV_TORCHXCONFIG</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHXCONFIG</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">configfile</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">configfile</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">ENV_TORCHXCONFIG</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">` does not exist or is not a file.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHXCONFIG</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">` does not exist or is not a file.&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">configfile</span><span class="p">)]</span>
     <span class="k">else</span><span class="p">:</span>
