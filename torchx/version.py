@@ -28,10 +28,9 @@ def _version() -> str:
 __version__: str = _version()
 
 
-# Use the github container registry images corresponding to the current package
-# version.
+# Use the github container registry image tagged with the given version.
 def _get_torchx_image(torchx_version: str) -> str:
-    return f"ghcr.io/pytorch/torchx:{__version__}"
+    return f"ghcr.io/pytorch/torchx:{torchx_version}"
 
 
 # Check if there's an environment override on the default image.
