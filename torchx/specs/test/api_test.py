@@ -1064,7 +1064,6 @@ class MacrosTest(unittest.TestCase):
             img_root="img_root",
             app_id="app_id",
             replica_id="replica_id",
-            base_img_root="base_img_root",
             rank0_env="rank0_env",
         )
         for key, val in asdict(v).items():
@@ -1083,7 +1082,6 @@ class MacrosTest(unittest.TestCase):
             img_root="img_root",
             app_id="app_id",
             replica_id="replica_id",
-            base_img_root="base_img_root",
             rank0_env="rank0_env",
         )
         newrole = v.apply(role)
@@ -1108,7 +1106,6 @@ class MacrosTest(unittest.TestCase):
             img_root="img_root_value",
             app_id="app_id_value",
             replica_id="replica_id_value",
-            base_img_root="base_img_root_value",
             rank0_env="rank0_env_value",
         )
         newrole = v.apply(role)
@@ -1141,7 +1138,6 @@ class MacrosTest(unittest.TestCase):
             img_root="img_root_value",
             app_id="app_id_value",
             replica_id="replica_id_value",
-            base_img_root="base_img_root_value",
             rank0_env="rank0_env_value",
         )
         newrole = v.apply(role)
@@ -1175,7 +1171,6 @@ class MacrosTest(unittest.TestCase):
             img_root="img_root_value",
             app_id="app_id_value",
             replica_id="replica_id_value",
-            base_img_root="base_img_root_value",
             rank0_env="rank0_env_value",
         )
         newrole = v.apply(role)
@@ -1202,7 +1197,6 @@ class MacrosTest(unittest.TestCase):
             img_root="img_root_value",
             app_id="app_id_value",
             replica_id="replica_id_value",
-            base_img_root="base_img_root_value",
             rank0_env="rank0_env_value",
         )
         newrole = v.apply(role)

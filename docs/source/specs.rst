@@ -48,14 +48,13 @@ Macros
 
 .. note::
 
-   In addition to the three macros listed in the class docstring, two more
-   attributes exist:
+   In addition to the three macros listed in the class docstring, one more
+   attribute exists:
 
    * ``macros.rank0_env`` -- expands to the **name** of the environment variable
      that provides the rank-0 (master) host address. Resolve it via shell
      expansion (``$${rank0_env}``) or in application code. Not available on all
      schedulers.
-   * ``macros.base_img_root`` -- **deprecated**. Do not use in new code.
 
 Run Configs
 --------------
