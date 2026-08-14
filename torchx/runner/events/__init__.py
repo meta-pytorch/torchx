@@ -58,13 +58,14 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
     else:
         logging_handler = get_logging_handler(destination)
         logging_handler.setLevel(logging.DEBUG)
-        _events_logger = logging.getLogger(f"torchx-events-{destination}")
+        events_logger = logging.getLogger(f"torchx-events-{destination}")
+        events_logger.setLevel(logging.INFO)
         # Do not propagate message to the root logger
-        _events_logger.propagate = False
-        _events_logger.addHandler(logging_handler)
+        events_logger.propagate = False
+        events_logger.addHandler(logging_handler)
 
-        assert _events_logger  # make type-checker happy
-        return _events_logger
+        _events_logger = events_logger
+        return events_logger
 
 
 def record(event: TorchxEvent, destination: str = "null") -> None:
