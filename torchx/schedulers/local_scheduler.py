@@ -199,10 +199,6 @@ class Opts(StructuredOpts):
     """Sets CUDA_VISIBLE_DEVICES for roles that request GPU resources."""
 
 
-# Type alias for backwards compatibility with existing code
-LocalOpts = Mapping[str, CfgVal]
-
-
 class LocalDirectoryImageProvider(ImageProvider):
     """
     Interprets the image name as the path to a directory on
@@ -219,7 +215,7 @@ class LocalDirectoryImageProvider(ImageProvider):
 
     """
 
-    def __init__(self, cfg: LocalOpts) -> None:
+    def __init__(self, cfg: Mapping[str, CfgVal]) -> None:
         pass
 
     def fetch(self, image: str) -> str:
@@ -266,7 +262,7 @@ class CWDImageProvider(ImageProvider):
 
     """
 
-    def __init__(self, cfg: LocalOpts) -> None:
+    def __init__(self, cfg: Mapping[str, CfgVal]) -> None:
         pass
 
     def fetch(self, image: str) -> str:
@@ -551,7 +547,7 @@ def _register_termination_signals() -> None:
         signal.signal(signal.SIGINT, _terminate_process_handler)
 
 
-class LocalScheduler(Scheduler[LocalOpts]):
+class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
     """
     Schedules on localhost. Containers are modeled as processes and
     certain properties of the container that are either not relevant
@@ -606,7 +602,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
     def __init__(
         self,
         session_name: str,
-        image_provider_class: Callable[[LocalOpts], ImageProvider],
+        image_provider_class: Callable[[Mapping[str, CfgVal]], ImageProvider],
         cache_size: int = 100,
         extra_paths: list[str] | None = None,
     ) -> None:
@@ -829,7 +825,7 @@ class LocalScheduler(Scheduler[LocalOpts]):
         return app_id
 
     def _submit_dryrun(
-        self, app: AppDef, cfg: LocalOpts
+        self, app: AppDef, cfg: Mapping[str, CfgVal]
     ) -> AppDryRunInfo[PopenRequest]:
         request = self._to_popen_request(app, cfg)
         return AppDryRunInfo(
@@ -949,7 +945,7 @@ Reduce requested GPU resources or use a host with more GPUs
     def _to_popen_request(
         self,
         app: AppDef,
-        cfg: LocalOpts,
+        cfg: Mapping[str, CfgVal],
     ) -> PopenRequest:
         """
         Converts the application and cfg into a ``PopenRequest``.
@@ -1202,7 +1198,9 @@ def create_scheduler(
     session_name: str,
     cache_size: int = 100,
     extra_paths: list[str] | None = None,
-    image_provider_class: Callable[[LocalOpts], ImageProvider] = CWDImageProvider,
+    image_provider_class: Callable[
+        [Mapping[str, CfgVal]], ImageProvider
+    ] = CWDImageProvider,
     **kwargs: Any,
 ) -> LocalScheduler:
     return LocalScheduler(

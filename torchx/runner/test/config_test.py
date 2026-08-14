@@ -17,7 +17,6 @@ from unittest.mock import patch
 from torchx.runner.config import (
     apply,
     dump,
-    ENV_TORCHXCONFIG,
     find_configs,
     get_config,
     get_configs,
@@ -31,6 +30,7 @@ from torchx.schedulers.api import (
     Stream,
     StructuredOpts,
 )
+from torchx.settings import ENV_TORCHXCONFIG
 from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts, Workspace
 from torchx.test.fixtures import TestWithTmpDir
 

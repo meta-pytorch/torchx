@@ -20,11 +20,6 @@ from torchx.util.modules import load_module
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-# BC re-exports — new code should import from torchx.settings
-ENV_TORCHX_TRACKERS: str = settings.ENV_TORCHX_TRACKERS
-ENV_TORCHX_PARENT_RUN_ID: str = settings.ENV_TORCHX_PARENT_RUN_ID
-ENV_TORCHX_JOB_ID: str = settings.ENV_TORCHX_JOB_ID
-
 
 @dataclass
 class TrackerSource:
@@ -128,12 +123,14 @@ def tracker_config_env_var_name(entrypoint_key: str) -> str:
 
 
 def _extract_tracker_name_and_config_from_environ() -> Mapping[str, str | None]:
-    if ENV_TORCHX_TRACKERS not in os.environ:
+    if settings.ENV_TORCHX_TRACKERS not in os.environ:
         logger.info("No trackers were configured, skipping setup.")
         return {}
 
-    tracker_backend_entrypoints = os.environ[ENV_TORCHX_TRACKERS]
-    logger.info(f"Trackers: {ENV_TORCHX_TRACKERS}={tracker_backend_entrypoints}")
+    tracker_backend_entrypoints = os.environ[settings.ENV_TORCHX_TRACKERS]
+    logger.info(
+        f"Trackers: {settings.ENV_TORCHX_TRACKERS}={tracker_backend_entrypoints}"
+    )
 
     entries = {}
     for entrypoint_key in tracker_backend_entrypoints.split(","):
@@ -228,11 +225,11 @@ class AppRun:
 
         """
 
-        torchx_job_id = os.getenv(ENV_TORCHX_JOB_ID, default="<UNDEFINED>")
+        torchx_job_id = os.getenv(settings.ENV_TORCHX_JOB_ID, default="<UNDEFINED>")
 
         trackers = trackers_from_environ()
-        if ENV_TORCHX_PARENT_RUN_ID in os.environ:
-            parent_run_id = os.environ[ENV_TORCHX_PARENT_RUN_ID]
+        if settings.ENV_TORCHX_PARENT_RUN_ID in os.environ:
+            parent_run_id = os.environ[settings.ENV_TORCHX_PARENT_RUN_ID]
             logger.info(f"Tracker parent run ID: '{parent_run_id}'")
             for tracker in trackers:
                 tracker.add_source(torchx_job_id, parent_run_id, artifact_name=None)

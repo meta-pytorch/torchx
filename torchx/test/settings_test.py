@@ -40,34 +40,6 @@ class SettingsBCReexportTest(unittest.TestCase):
     so ``is`` checks and identity-based caching remain correct.
     """
 
-    def test_bc_reexport_tracker(self) -> None:
-        from torchx.tracker import api as tracker_api
-
-        self.assertIs(
-            tracker_api.ENV_TORCHX_TRACKERS,
-            settings.ENV_TORCHX_TRACKERS,
-            "tracker re-export should be the same object",
-        )
-        self.assertIs(
-            tracker_api.ENV_TORCHX_PARENT_RUN_ID,
-            settings.ENV_TORCHX_PARENT_RUN_ID,
-            "tracker re-export should be the same object",
-        )
-        self.assertIs(
-            tracker_api.ENV_TORCHX_JOB_ID,
-            settings.ENV_TORCHX_JOB_ID,
-            "tracker re-export should be the same object",
-        )
-
-    def test_bc_reexport_config(self) -> None:
-        from torchx.runner import config
-
-        self.assertIs(
-            config.ENV_TORCHXCONFIG,
-            settings.ENV_TORCHXCONFIG,
-            "config re-export should be the same object",
-        )
-
     def test_bc_reexport_session(self) -> None:
         from torchx.util import session
 
@@ -75,32 +47,4 @@ class SettingsBCReexportTest(unittest.TestCase):
             session.TORCHX_INTERNAL_SESSION_ID,
             settings.TORCHX_INTERNAL_SESSION_ID,
             "session re-export should be the same object",
-        )
-
-    def test_bc_reexport_aws_batch(self) -> None:
-        from torchx.schedulers import aws_batch_scheduler
-
-        self.assertIs(
-            aws_batch_scheduler.ENV_TORCHX_ROLE_IDX,
-            settings.ENV_TORCHX_ROLE_IDX,
-            "aws_batch re-export should be the same object",
-        )
-        self.assertIs(
-            aws_batch_scheduler.ENV_TORCHX_ROLE_NAME,
-            settings.ENV_TORCHX_ROLE_NAME,
-            "aws_batch re-export should be the same object",
-        )
-        self.assertIs(
-            aws_batch_scheduler.ENV_TORCHX_IMAGE,
-            settings.ENV_TORCHX_IMAGE,
-            "aws_batch re-export should be the same object",
-        )
-
-    def test_bc_reexport_docker(self) -> None:
-        from torchx.schedulers import docker_scheduler
-
-        self.assertIs(
-            docker_scheduler.ENV_TORCHX_IMAGE,
-            settings.ENV_TORCHX_IMAGE,
-            "docker re-export should be the same object",
         )

@@ -21,14 +21,13 @@ from torchx.schedulers.aws_batch_scheduler import (
     _role_to_node_properties,
     AWSBatchScheduler,
     create_scheduler,
-    ENV_TORCHX_IMAGE,
-    ENV_TORCHX_ROLE_NAME,
     Opts,
     parse_ulimits,
     resource_from_resource_requirements,
     resource_requirements_from_resource,
     to_millis_since_epoch,
 )
+from torchx.settings import ENV_TORCHX_IMAGE, ENV_TORCHX_ROLE_NAME
 from torchx.specs import AppState, Resource
 
 
