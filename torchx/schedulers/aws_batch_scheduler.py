@@ -77,13 +77,6 @@ from torchx.specs.named_resources_aws import instance_type_from_resource
 from torchx.util.types import none_throws
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
-# BC re-exports — new code should import from torchx.settings
-ENV_TORCHX_ROLE_IDX: str = settings.ENV_TORCHX_ROLE_IDX
-
-ENV_TORCHX_ROLE_NAME: str = settings.ENV_TORCHX_ROLE_NAME
-
-ENV_TORCHX_IMAGE: str = settings.ENV_TORCHX_IMAGE
-
 DEFAULT_ROLE_NAME = "node"
 
 TAG_TORCHX_VER = "torchx.pytorch.org/version"
@@ -547,9 +540,9 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
                 rank0_env="AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS",
             )
             role = values.apply(role)
-            role.env[ENV_TORCHX_ROLE_IDX] = str(role_idx)
-            role.env[ENV_TORCHX_ROLE_NAME] = str(role.name)
-            role.env[ENV_TORCHX_IMAGE] = role.image
+            role.env[settings.ENV_TORCHX_ROLE_IDX] = str(role_idx)
+            role.env[settings.ENV_TORCHX_ROLE_NAME] = str(role.name)
+            role.env[settings.ENV_TORCHX_IMAGE] = role.image
 
             nodes.append(
                 _role_to_node_properties(
@@ -651,7 +644,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             command = container["command"]
             roles.append(
                 Role(
-                    name=env.get(ENV_TORCHX_ROLE_NAME, DEFAULT_ROLE_NAME),
+                    name=env.get(settings.ENV_TORCHX_ROLE_NAME, DEFAULT_ROLE_NAME),
                     num_replicas=_parse_num_replicas(
                         node_group["targetNodes"], num_nodes
                     ),
@@ -698,7 +691,7 @@ class AWSBatchScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         for i, node in enumerate(nodes):
             container = node["container"]
             env = {opt["name"]: opt["value"] for opt in container["environment"]}
-            node_role = env.get(ENV_TORCHX_ROLE_NAME, DEFAULT_ROLE_NAME)
+            node_role = env.get(settings.ENV_TORCHX_ROLE_NAME, DEFAULT_ROLE_NAME)
             start_idx, _ = _parse_start_and_end_idx(
                 node["targetNodes"],
                 node_properties["numNodes"],

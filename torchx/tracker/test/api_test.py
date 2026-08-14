@@ -11,14 +11,16 @@ from typing import cast, DefaultDict, Iterable, Mapping
 from unittest import mock, TestCase
 from unittest.mock import MagicMock, patch
 
+from torchx.settings import (
+    ENV_TORCHX_JOB_ID,
+    ENV_TORCHX_PARENT_RUN_ID,
+    ENV_TORCHX_TRACKERS,
+)
 from torchx.tracker import app_run_from_env
 from torchx.tracker.api import (
     _extract_tracker_name_and_config_from_environ,
     AppRun,
     build_trackers,
-    ENV_TORCHX_JOB_ID,
-    ENV_TORCHX_PARENT_RUN_ID,
-    ENV_TORCHX_TRACKERS,
     Lineage,
     tracker_config_env_var_name,
     TrackerArtifact,
