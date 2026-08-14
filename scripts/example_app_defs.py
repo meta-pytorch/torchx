@@ -20,7 +20,7 @@ from torchx.specs import AppDef
 class CvTrainerComponentProvider(ComponentProvider):
     def get_app_def(self) -> AppDef:
         return dist_ddp(
-            *("--output_path", "/tmp", "--skip_export", "--log_path", "/tmp"),
+            *("--output_path", "/tmp", "--log_path", "/tmp"),
             image=self._image,
             j="1x1",
             m="torchx.examples.apps.lightning.train",

@@ -44,9 +44,6 @@ TorchX ships the following component categories out of the box:
    * - :doc:`interpret`
      - Model interpretability jobs (Captum)
      - Generating feature attributions
-   * - :doc:`serve`
-     - Model serving (TorchServe)
-     - Deploying a model behind an HTTP endpoint
    * - :doc:`utils`
      - General-purpose utilities
      - Running an arbitrary Python script (``utils.python``)

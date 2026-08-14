@@ -51,12 +51,9 @@ dev = [
     "pytorch-lightning",
     "tensorboard",
     "torch",
-    "torch-model-archiver",
     "torchmetrics",
-    "torchserve",
     "torchtext",
     "torchvision",
-    "ts",
     # -- lintrunner deps
     "lintrunner",
     "lintrunner-adapters",

@@ -824,15 +824,6 @@ wheels = [
 ]
 
 [[package]]
-name = "enum-compat"
-version = "0.0.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/41/46/8ed2368976d934652d8f33f1fdd86f5580fab45e890c90a848e83097a093/enum-compat-0.0.3.tar.gz", hash = "sha256:3677daabed56a6f724451d585662253d8fb4e5569845aafa8bb0da36b1a8751e", size = 1389, upload-time = "2019-10-14T18:48:35.264Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/ae/467bc4509246283bb59746e21a1a2f5a8aecbef56b1fa6eaca78cd438c8b/enum_compat-0.0.3-py3-none-any.whl", hash = "sha256:88091b617c7fc3bbbceae50db5958023c48dc40b50520005aa3bf27f8f7ea157", size = 1322, upload-time = "2019-10-14T18:48:37.663Z" },
-]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3445,17 +3436,6 @@ wheels = [
 ]
 
 [[package]]
-name = "torch-model-archiver"
-version = "0.12.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "enum-compat" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/06/90a14e757eadc9a3590199b5bd8eec82aaf59183776fb18b457d1ccefcb8/torch_model_archiver-0.12.0-py3-none-any.whl", hash = "sha256:baaf66065396c3512030b3b2c57cce333edab9fffe9e528352cb4cc291645a78", size = 16107, upload-time = "2024-09-30T18:57:46.434Z" },
-]
-
-[[package]]
 name = "torchmetrics"
 version = "1.6.3"
 source = { registry = "https://pypi.org/simple" }
@@ -3468,20 +3448,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8e/30/2575bd8bbf2274dd117f591838c70916df98812874a32e3e91200b291cb2/torchmetrics-1.6.3.tar.gz", hash = "sha256:be59ffe9e9abf12ac12c3ac4383b2fc7731ad2bf3748ae1b06e8dea34e9f8a65", size = 544716, upload-time = "2025-03-14T07:03:20.196Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/68/80a2df3924f354e06e82cc030d86de9936057f74d8482109be3042a4f1d5/torchmetrics-1.6.3-py3-none-any.whl", hash = "sha256:034640d4e1c30b7d3488551b1ce3fc1f363070811e6b97b9cb6b60a9ec15e9f4", size = 931705, upload-time = "2025-03-14T07:03:17.768Z" },
-]
-
-[[package]]
-name = "torchserve"
-version = "0.12.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "psutil" },
-    { name = "wheel" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/57/3e9d9579f6300c475c13e5cbaa38be93c8e44aecfb85dfd16825adb6e9c6/torchserve-0.12.0-py3-none-any.whl", hash = "sha256:db127160102d29f390964f758b7ecc5039d3d278fafc85bf9994c273b3ef6954", size = 42159615, upload-time = "2024-09-30T18:57:42.216Z" },
 ]
 
 [[package]]
@@ -3574,12 +3540,9 @@ dev = [
     { name = "s3fs" },
     { name = "tensorboard" },
     { name = "torch" },
-    { name = "torch-model-archiver" },
     { name = "torchmetrics" },
-    { name = "torchserve" },
     { name = "torchtext" },
     { name = "torchvision" },
-    { name = "ts" },
 ]
 kubernetes = [
     { name = "kubernetes" },
@@ -3610,12 +3573,9 @@ requires-dist = [
     { name = "tabulate" },
     { name = "tensorboard", marker = "extra == 'dev'" },
     { name = "torch", marker = "extra == 'dev'" },
-    { name = "torch-model-archiver", marker = "extra == 'dev'" },
     { name = "torchmetrics", marker = "extra == 'dev'" },
-    { name = "torchserve", marker = "extra == 'dev'" },
     { name = "torchtext", marker = "extra == 'dev'" },
     { name = "torchvision", marker = "extra == 'dev'" },
-    { name = "ts", marker = "extra == 'dev'" },
     { name = "typing-extensions" },
 ]
 provides-extras = ["kubernetes", "dev"]
@@ -3659,18 +3619,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/f8/448220c3092019f9fdfab39ec47985968181d67da34b44f6a7f6280a5cbb/triton-3.7.1-cp314-cp314t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c58e4c61f0c73b5dba3b5d19b4a7093c32f90dc18b2a7f121a7c16ccd31107b7", size = 184814760, upload-time = "2026-06-17T20:04:04.984Z" },
     { url = "https://files.pythonhosted.org/packages/f0/ac/229b7d4589d2e5937310e72c6d46e89599d16a4a12b479ffa1499fee8eb8/triton-3.7.1-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:10ba85fa2cca4a2fbdeb36bf1cb082f2c252bda55bf9fccd74f65ec5bc647e68", size = 197824404, upload-time = "2026-06-17T19:53:42.772Z" },
 ]
-
-[[package]]
-name = "ts"
-version = "0.5.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "python-dateutil" },
-    { name = "requests" },
-    { name = "requests-oauthlib" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/26/dd/76551999e37032441d1190d7df27c30fc75adbb203dacb91a2a72e8b7202/ts-0.5.1.tar.gz", hash = "sha256:acf085d6000c0a45e847e26164a31bd3685bd80d836ee9585e7dd826b72449c7", size = 13690, upload-time = "2018-07-03T11:54:45.802Z" }
 
 [[package]]
 name = "typeguard"
