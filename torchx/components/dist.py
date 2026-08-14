@@ -236,8 +236,7 @@ def ddp(
     else:
         # for multi-node, rely on the rank0_env environment variable set by
         # the schedulers (see scheduler implementation for the actual env var this maps to)
-        # some schedulers (e.g. aws batch) make the rank0's ip-addr available on all BUT on rank0
-        # so default to "localhost" if the env var is not set or is empty
+        # default to "localhost" if the env var is not set or is empty
         # rdzv_endpoint bash resolves to something to the effect of
         # ${TORCHX_RANK0_HOST:=localhost}:29500
         # use $$ in the prefix to escape the '$' literal (rather than a string Template substitution argument)
@@ -277,7 +276,6 @@ def ddp(
         "--role",
         "",
     ]
-    # TODO 'node_rank' is made optional as it currently does not work with the AWS Batch scheduler.
     # node_rank is only used when rdzv_backend is 'static'
     if rdzv_backend == "static":
         cmd += ["--node_rank", f"{macros.replica_id}"]

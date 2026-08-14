@@ -9,13 +9,13 @@ torchx.schedulers
 
 Each scheduler translates a scheduler-agnostic
 :py:class:`~torchx.specs.AppDef` into a native job format (Kubernetes Job,
-Slurm sbatch, AWS Batch job, etc.) and manages the job lifecycle. Because the
+Slurm sbatch, etc.) and manages the job lifecycle. Because the
 interface is pluggable, you switch backends without changing application code.
 TorchX ships with schedulers for:
 
 * **Local development:** ``local_cwd``, ``local_docker``
 * **HPC (High-Performance Computing) clusters:** ``slurm``
-* **Cloud / container orchestrators:** ``kubernetes``, ``aws_batch``
+* **Cloud / container orchestrators:** ``kubernetes``
 
 Need a scheduler that isn't listed? See
 :ref:`Implementing a Custom Scheduler <implementing-scheduler>` below and
@@ -55,11 +55,6 @@ Every scheduler accepts the same ``AppDef``; only the ``--scheduler`` flag
      - ``sbatch`` script
      - Traditional HPC environments. Uses the shared filesystem as the
        workspace (no container build needed).
-   * - ``aws_batch``
-     - AWS
-     - AWS Batch job definition + job
-     - AWS-native batch compute. Requires a Batch compute environment and
-       job queue.
 
 .. fbcode::
 
@@ -195,7 +190,7 @@ Method Reference
      - No
      - Delete a job definition from the scheduler's data plane. Default
        delegates to ``_cancel_existing``. Override for schedulers with
-       persistent definitions (e.g. Kubernetes, AWS Batch).
+       persistent definitions (e.g. Kubernetes).
    * - ``close() -> None``
      - No
      - Release local resources. Default is a no-op.
@@ -400,7 +395,7 @@ To support automatic image patching, inherit from a
 
 TorchX ships two workspace mixins:
 :py:class:`~torchx.workspace.docker_workspace.DockerWorkspaceMixin` (for
-container-based schedulers like Kubernetes and AWS Batch) and
+container-based schedulers like Kubernetes) and
 :py:class:`~torchx.workspace.dir_workspace.DirWorkspaceMixin` (for
 shared-filesystem schedulers like Slurm). You can also subclass
 :py:class:`~torchx.workspace.WorkspaceMixin` directly for custom strategies.

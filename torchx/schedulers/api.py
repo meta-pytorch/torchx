@@ -474,7 +474,7 @@ class Scheduler(abc.ABC, Generic[T]):
     def delete(self, app_id: str) -> None:
         """Deletes the job definition from the scheduler's data-plane.
 
-        On schedulers with persistent job definitions (e.g. Kubernetes, AWS Batch),
+        On schedulers with persistent job definitions (e.g. Kubernetes),
         this purges the definition. On others (e.g. Slurm), this is equivalent to
         :py:meth:`cancel`. Calling on a live job cancels it first.
         """

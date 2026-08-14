@@ -34,7 +34,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-aws_batch = ["boto3"]
 kubernetes = ["kubernetes>=11"]
 dev = [
     # -- test deps
@@ -42,9 +41,7 @@ dev = [
     "pytest-cov",
     # -- plugin deps (schedulers, workspaces)
     "aiobotocore",
-    "boto3",
     "kubernetes>=11",
-    "moto>=5",
     "s3fs",
     # -- torchx.apps deps (examples)
     "ax-platform[mysql]",

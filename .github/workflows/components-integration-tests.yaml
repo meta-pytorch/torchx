@@ -11,13 +11,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # Temporarily disabled - real AWS Batch scheduling
-          # - scheduler: "aws_batch"
-          #   platform: linux.24_04.4x
-          - scheduler: "aws_batch"
-            container_repo: localhost
-            extra_args: "--mock"
-            platform: linux.24_04.4x
           # Temporarily disabled
           # - scheduler: "kubernetes"
           #   container_repo: localhost:5000/torchx
@@ -68,4 +61,4 @@ jobs:
         env:
           INTEGRATION_TEST_STORAGE: ${{ secrets.INTEGRATION_TEST_STORAGE }}
         run: |
-          uv run scripts/component_integration_tests.py --scheduler ${{ matrix.scheduler }} --container_repo "${{ matrix.container_repo || secrets.TF_CONTAINER_REPO }}"  ${{ matrix.extra_args }}
+          uv run scripts/component_integration_tests.py --scheduler ${{ matrix.scheduler }} --container_repo "${{ matrix.container_repo || secrets.TF_CONTAINER_REPO }}"
