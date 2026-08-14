@@ -172,7 +172,6 @@ Works With
    schedulers/kubernetes
    schedulers/slurm
    schedulers/aws_batch
-   schedulers/aws_sagemaker
 
 .. fbcode::
 

@@ -462,9 +462,6 @@ Scheduler Reference
    * - ``aws_batch``
      - AWS Batch
      - Creates job definitions and submits jobs.
-   * - ``aws_sagemaker``
-     - AWS SageMaker
-     - Creates training jobs.
 
 
 Named Resources Reference
