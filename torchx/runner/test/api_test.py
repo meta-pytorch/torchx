@@ -7,6 +7,8 @@
 
 # pyre-strict
 
+from __future__ import annotations
+
 import datetime
 import os
 from contextlib import contextmanager
@@ -63,7 +65,7 @@ class RunnerTest(TestWithTmpDir):
         self.write_shell_script("fail.sh", ["exit 1"])
         self.write_shell_script("sleep.sh", ["sleep $1"])
 
-        self.cfg = {}
+        self.cfg: dict[str, CfgVal] = {}
 
     @contextmanager
     def get_runner(self) -> Generator[Runner, None, None]:
@@ -76,13 +78,13 @@ class RunnerTest(TestWithTmpDir):
         ) as runner:
             yield runner
 
-    def test_validate_no_roles(self, _) -> None:
+    def test_validate_no_roles(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             app = AppDef("no roles")
             with self.assertRaises(ValueError):
                 runner.run(app, scheduler="local_dir")
 
-    def test_validate_no_resource(self, _) -> None:
+    def test_validate_no_resource(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             role = Role(
                 "no resource",
@@ -94,7 +96,7 @@ class RunnerTest(TestWithTmpDir):
             with self.assertRaises(ValueError):
                 runner.run(app, scheduler="local_dir")
 
-    def test_validate_invalid_replicas(self, _) -> None:
+    def test_validate_invalid_replicas(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             role = Role(
                 "invalid replicas",
@@ -255,7 +257,7 @@ class RunnerTest(TestWithTmpDir):
                 event = record_mock.call_args_list[i].args[0]
                 self.assertEqual(event.session, CURRENT_SESSION_ID)
 
-    def test_dryrun_env_variables(self, _) -> None:
+    def test_dryrun_env_variables(self, _: MagicMock) -> None:
         scheduler_mock = MagicMock()
         with Runner(
             name=SESSION_NAME,
@@ -285,7 +287,7 @@ class RunnerTest(TestWithTmpDir):
                     "local_dir://" + SESSION_NAME + "/${app_id}",
                 )
 
-    def test_dryrun_trackers_parent_run_id_as_paramenter(self, _) -> None:
+    def test_dryrun_trackers_parent_run_id_as_paramenter(self, _: MagicMock) -> None:
         scheduler_mock = MagicMock()
         expected_parent_run_id = "123"
         with Runner(
@@ -319,7 +321,9 @@ class RunnerTest(TestWithTmpDir):
                 )
 
     @patch("torchx.runner.api.get_configured_trackers")
-    def test_dryrun_setup_trackers(self, config_trackers_mock: MagicMock, _) -> None:
+    def test_dryrun_setup_trackers(
+        self, config_trackers_mock: MagicMock, _: MagicMock
+    ) -> None:
         config_trackers_mock.return_value = {
             "my_tracker1": "manifold://config1.txt",
             "my_tracker2": "manifold://config2.txt",
@@ -373,7 +377,7 @@ class RunnerTest(TestWithTmpDir):
             "TORCHX_TRACKER_MY_TRACKER2_CONFIG": "manifold://config2.txt",
         },
     )
-    def test_dryrun_setup_trackers_as_env_variable(self, _) -> None:
+    def test_dryrun_setup_trackers_as_env_variable(self, _: MagicMock) -> None:
         scheduler_mock = MagicMock()
         expected_trackers = "my_tracker1,my_tracker2"
         expected_tracker1_config = "manifold://config1.txt"
@@ -415,9 +419,9 @@ class RunnerTest(TestWithTmpDir):
                     expected_tracker2_config,
                 )
 
-    def test_dryrun_with_workspace(self, _) -> None:
+    def test_dryrun_with_workspace(self, _: MagicMock) -> None:
         class TestScheduler(WorkspaceMixin[None], Scheduler):
-            def __init__(self, build_new_img: bool):
+            def __init__(self, build_new_img: bool) -> None:
                 super().__init__(backend="ignored", session_name="ignored")
                 self.build_new_img = build_new_img
 
@@ -541,7 +545,7 @@ class RunnerTest(TestWithTmpDir):
             self.assertEqual("bar_new", roles[1].image)
             self.assertEqual("//bar", roles[1].env["SRC_WORKSPACE"])
 
-    def test_describe(self, _) -> None:
+    def test_describe(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             metadata = {"a": "b", "c": "d"}
             role = Role(
@@ -558,7 +562,7 @@ class RunnerTest(TestWithTmpDir):
             # unknown app should return None
             self.assertIsNone(runner.describe("local_dir://session1/unknown_app"))
 
-    def test_status(self, _) -> None:
+    def test_status(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             role = Role(
                 name="sleep",
@@ -575,12 +579,12 @@ class RunnerTest(TestWithTmpDir):
             app_status = none_throws(runner.status(app_handle))
             self.assertEqual(AppState.CANCELLED, app_status.state)
 
-    def test_status_unknown_app(self, _) -> None:
+    def test_status_unknown_app(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             self.assertIsNone(runner.status("local_dir://test_session/unknown_app_id"))
 
     @patch("json.dumps")
-    def test_status_ui_url(self, json_dumps_mock: MagicMock, _) -> None:
+    def test_status_ui_url(self, json_dumps_mock: MagicMock, _: MagicMock) -> None:
         app_id = "test_app"
         json_dumps_mock.return_value = "{}"
         mock_scheduler = MagicMock()
@@ -606,7 +610,9 @@ class RunnerTest(TestWithTmpDir):
             self.assertEqual(resp.ui_url, status.ui_url)
 
     @patch("json.dumps")
-    def test_status_structured_msg(self, json_dumps_mock: MagicMock, _) -> None:
+    def test_status_structured_msg(
+        self, json_dumps_mock: MagicMock, _: MagicMock
+    ) -> None:
         app_id = "test_app"
         json_dumps_mock.return_value = "{}"
         mock_scheduler = MagicMock()
@@ -631,7 +637,7 @@ class RunnerTest(TestWithTmpDir):
             status = none_throws(runner.status(app_handle))
             self.assertEqual(resp.structured_error_msg, status.structured_error_msg)
 
-    def test_wait_unknown_app(self, _) -> None:
+    def test_wait_unknown_app(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             self.assertIsNone(
                 runner.wait(
@@ -642,24 +648,24 @@ class RunnerTest(TestWithTmpDir):
                 runner.wait("local_dir://another_session/some_app", wait_interval=0.1)
             )
 
-    def test_cancel(self, _) -> None:
+    def test_cancel(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             self.assertIsNone(runner.cancel("local_dir://test_session/unknown_app_id"))
 
-    def test_delete(self, _) -> None:
+    def test_delete(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             self.assertIsNone(runner.delete("local_dir://test_session/unknown_app_id"))
 
-    def test_stop(self, _) -> None:
+    def test_stop(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             self.assertIsNone(runner.stop("local_dir://test_session/unknown_app_id"))
 
-    def test_log_lines_unknown_app(self, _) -> None:
+    def test_log_lines_unknown_app(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             with self.assertRaises(UnknownAppException):
                 runner.log_lines("local_dir://test_session/unknown", "trainer")
 
-    def test_log_lines(self, _) -> None:
+    def test_log_lines(self, _: MagicMock) -> None:
         app_id = "mock_app"
 
         scheduler_mock = MagicMock()
@@ -695,7 +701,7 @@ class RunnerTest(TestWithTmpDir):
                 app_id, role_name, replica_id, regex, since, until, False, streams=None
             )
 
-    def test_list(self, _) -> None:
+    def test_list(self, _: MagicMock) -> None:
         scheduler_mock = MagicMock()
         sched_list_return = [
             ListAppResponse(app_id="app_id1", state=AppState.RUNNING),
@@ -725,7 +731,7 @@ class RunnerTest(TestWithTmpDir):
             scheduler_mock.list.assert_called_once()
 
     @patch("json.dumps")
-    def test_get_schedulers(self, json_dumps_mock: MagicMock, _) -> None:
+    def test_get_schedulers(self, json_dumps_mock: MagicMock, _: MagicMock) -> None:
         local_dir_sched_mock = MagicMock()
         json_dumps_mock.return_value = "{}"
         local_sched_mock = MagicMock()
@@ -766,7 +772,7 @@ class RunnerTest(TestWithTmpDir):
         self.assertEqual(1, len(actual_app.roles))
         self.assertEqual("test", actual_app.roles[0].name)
 
-    def test_run_from_file_no_function_found(self, _) -> None:
+    def test_run_from_file_no_function_found(self, _: MagicMock) -> None:
         local_sched_mock = MagicMock()
         schedulers = {
             "local_dir": lambda session_name, **kwargs: local_sched_mock,
@@ -780,7 +786,7 @@ class RunnerTest(TestWithTmpDir):
                         f"{component_path}:unknown_function", [], "local"
                     )
 
-    def test_runner_context_manager(self, _) -> None:
+    def test_runner_context_manager(self, _: MagicMock) -> None:
         mock_scheduler = MagicMock()
         with patch(
             GET_SCHEDULER_FACTORIES,
@@ -791,7 +797,7 @@ class RunnerTest(TestWithTmpDir):
                 runner.scheduler_run_opts("local_dir")
         mock_scheduler.close.assert_called_once()
 
-    def test_runner_context_manager_with_error(self, _) -> None:
+    def test_runner_context_manager_with_error(self, _: MagicMock) -> None:
         mock_scheduler = MagicMock()
         with patch(
             GET_SCHEDULER_FACTORIES,
@@ -801,7 +807,7 @@ class RunnerTest(TestWithTmpDir):
                 with get_runner():
                     raise RuntimeError("foobar")
 
-    def test_runner_manual_close(self, _) -> None:
+    def test_runner_manual_close(self, _: MagicMock) -> None:
         mock_scheduler = MagicMock()
         with patch(
             GET_SCHEDULER_FACTORIES,
@@ -817,11 +823,11 @@ class RunnerTest(TestWithTmpDir):
         # can call close twice
         runner.close()
 
-    def test_get_default_runner(self, _) -> None:
+    def test_get_default_runner(self, _: MagicMock) -> None:
         runner = get_runner()
         self.assertEqual("torchx", runner._name)
 
-    def test_runner_autodiscovers_schedulers(self, _) -> None:
+    def test_runner_autodiscovers_schedulers(self, _: MagicMock) -> None:
         """Runner() auto-discovers plugins; explicit factories skip discovery."""
         mock_factory = MagicMock()
         with patch(
@@ -851,7 +857,7 @@ class RunnerTest(TestWithTmpDir):
                 )
             mock_get.assert_not_called()
 
-    def test_cfg_from_str(self, _) -> None:
+    def test_cfg_from_str(self, _: MagicMock) -> None:
         scheduler_mock = MagicMock()
         opts = runopts()
         opts.add("foo", type_=str, default="", help="")
