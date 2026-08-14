@@ -28,7 +28,6 @@ from torchx.tracker.api import (
     trackers_from_environ,
     TrackerSource,
 )
-from torchx.tracker.mlflow import MLflowTracker
 
 RunId = str
 
@@ -270,7 +269,7 @@ class TrackerFactoryMethodsTest(TestCase):
 
     def test_build_trackers_with_module(self) -> None:
         module = MagicMock()
-        module.return_value = MagicMock(spec=MLflowTracker)
+        module.return_value = MagicMock(spec=TestTrackerBackend)
         with (
             patch("torchx.tracker.api.plugins") as plugins_mock,
             patch(
@@ -280,13 +279,13 @@ class TrackerFactoryMethodsTest(TestCase):
         ):
             plugins_mock.registry.return_value.get.return_value = {}
             tracker_names = {
-                "torchx.tracker.mlflow:create_tracker": (config := "myconfig.txt")
+                "my_module.trackers:create_tracker": (config := "myconfig.txt")
             }
             trackers = build_trackers(tracker_names)
             trackers = list(trackers)
             self.assertEqual(1, len(trackers))
             tracker = trackers[0]
-            self.assertIsInstance(tracker, MLflowTracker)
+            self.assertIsInstance(tracker, TestTrackerBackend)
             module.assert_called_once_with(config)
 
     def test_build_trackers_with_non_callable_module(self) -> None:
