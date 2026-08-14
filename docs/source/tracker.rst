@@ -21,9 +21,8 @@ Trackers operate at two levels:
 
 * **Backend level** (:py:class:`~torchx.tracker.api.TrackerBase`) -- the storage
   implementation. TorchX ships with
-  :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker` (filesystem-based)
-  and :py:class:`~torchx.tracker.mlflow.MLflowTracker`. You can implement your
-  own backend.
+  :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker` (filesystem-based).
+  You can implement your own backend.
 * **Job level** (:py:class:`~torchx.tracker.api.AppRun`) -- the user-facing API
   that delegates to one or more ``TrackerBase`` backends. ``AppRun`` is
   constructed automatically from environment variables set by the TorchX
@@ -133,10 +132,6 @@ Built-in Backends
 """""""""""""""""""
 
 .. autoclass:: torchx.tracker.backend.fsspec.FsspecTracker
-   :members:
-   :show-inheritance:
-
-.. autoclass:: torchx.tracker.mlflow.MLflowTracker
    :members:
    :show-inheritance:
 

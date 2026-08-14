@@ -74,7 +74,7 @@ For example, ~/.torchxconfig may be setup as:
     [torchx:tracker]
     tracker1=tracker1
     tracker2=backend_2_entry_point
-    tracker3=torchx.tracker.mlflow:create_tracker
+    tracker3=my_module.trackers:create_tracker
 
     [tracker:tracker1]
     config=s3://my_bucket/config.json

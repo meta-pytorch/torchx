@@ -11,11 +11,11 @@ import os
 import shutil
 import tempfile
 import unittest
+from importlib.metadata import EntryPoints
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import torchx.specs.finder as finder
-from importlib_metadata import EntryPoints
 from torchx.plugins._registry import registry
 from torchx.runner import get_runner
 from torchx.runtime.tracking import FsspecResultTracker
