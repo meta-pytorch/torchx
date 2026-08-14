@@ -46,9 +46,6 @@ dev = [
     "kubernetes>=11",
     "moto>=5",
     "s3fs",
-    # Only sagemaker-train is needed (not the full sagemaker meta-package which
-    # pulls in sagemaker-serve and its heavy onnxruntime dependency)
-    "sagemaker-train",
     # -- torchx.apps deps (examples)
     "ax-platform[mysql]",
     "captum",

@@ -193,8 +193,7 @@ registry -- integrate with Airflow, Kubeflow Pipelines, or MLflow for those.
      - You are **Kubernetes-only** and prefer managing manifests directly.
    * - AWS SageMaker SDK
      - You are **all-in on AWS** and want tight integration with SageMaker
-       features (spot training, model registry, endpoints). TorchX supports
-       SageMaker but does not expose every SageMaker API.
+       features (spot training, model registry, endpoints).
    * - Kubeflow Training Operator
      - You need **Kubernetes-native CRDs** (PyTorchJob, TFJob) with gang
        scheduling or priority queues. TorchX creates vanilla ``Job`` resources.
