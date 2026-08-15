@@ -27,7 +27,8 @@ via a :py:class:`~torchx.schedulers.api.Scheduler`.
 
 import difflib
 import os
-from typing import Callable, Iterator, Mapping
+import threading
+from typing import Callable, Iterator, KeysView, Mapping
 
 from torchx import plugins
 from torchx.specs.api import (  # noqa: F401
@@ -75,57 +76,100 @@ GiB: int = 1024
 
 ResourceFactory = Callable[[], Resource]
 
-AWS_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
-    "torchx.specs.named_resources_aws", "NAMED_RESOURCES", default={}
-)
-GENERIC_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
-    "torchx.specs.named_resources_generic", "NAMED_RESOURCES", default={}
-)
-CUSTOM_NAMED_RESOURCES: Mapping[str, ResourceFactory] = import_attr(
-    os.environ.get("TORCHX_CUSTOM_NAMED_RESOURCES", "torchx.specs.fb.named_resources"),
-    "NAMED_RESOURCES",
-    default={},
-)
-
-
-def _load_named_resources() -> dict[str, Callable[[], Resource]]:
-    materialized_resources: dict[str, Callable[[], Resource]] = {}
-
-    for name, resource in {
-        **GENERIC_NAMED_RESOURCES,
-        **AWS_NAMED_RESOURCES,
-        **CUSTOM_NAMED_RESOURCES,
-        **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
-    }.items():
-        materialized_resources[name] = resource
-
-    materialized_resources["NULL"] = lambda: NULL_RESOURCE
-    materialized_resources["MISSING"] = lambda: NULL_RESOURCE
-    return materialized_resources
-
-
-_named_resource_factories: dict[str, Callable[[], Resource]] = _load_named_resources()
-
 
 class _NamedResourcesLibrary:
+    """Lazily-loaded named-resource lookup.
+
+    ``import torchx.specs`` performs no resource-module import or plugin
+    discovery — the AWS/generic/custom resource modules and the plugin
+    registry are loaded on first lookup and cached.
+
+    Discovery is single-flight: concurrent first lookups block until one
+    scan populates the cache, and a re-entrant lookup (a plugin module
+    looking up a named resource at import time, mid-scan) raises
+    ``RuntimeError``, which the plugin scanner records as a load error for
+    that module.
+    """
+
+    def __init__(self) -> None:
+        self._factories: dict[str, ResourceFactory] | None = None
+        self._lock = threading.RLock()
+        self._loading = False
+
+    def _load(self) -> dict[str, ResourceFactory]:
+        factories = self._factories
+        if factories is not None:
+            return factories
+        # double-checked: the lock serializes concurrent first lookups so
+        # discovery runs exactly once; the RLock lets a re-entrant lookup on
+        # the loading thread reach the sentinel check below instead of
+        # deadlocking
+        with self._lock:
+            if self._factories is not None:
+                return self._factories
+            if self._loading:
+                raise RuntimeError(
+                    "re-entrant named-resource lookup: discovery is already in"
+                    " progress on this thread. A plugin module is likely looking"
+                    " up a named resource at import time; the registered set is"
+                    " incomplete mid-scan, so defer the lookup into the factory"
+                    " body."
+                )
+            self._loading = True
+            try:
+                aws: Mapping[str, ResourceFactory] = import_attr(
+                    "torchx.specs.named_resources_aws", "NAMED_RESOURCES", default={}
+                )
+                generic: Mapping[str, ResourceFactory] = import_attr(
+                    "torchx.specs.named_resources_generic",
+                    "NAMED_RESOURCES",
+                    default={},
+                )
+                custom: Mapping[str, ResourceFactory] = import_attr(
+                    os.environ.get(
+                        "TORCHX_CUSTOM_NAMED_RESOURCES",
+                        "torchx.specs.fb.named_resources",
+                    ),
+                    "NAMED_RESOURCES",
+                    default={},
+                )
+                factories = {
+                    **generic,
+                    **aws,
+                    **custom,
+                    **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
+                }
+                factories["NULL"] = lambda: NULL_RESOURCE
+                factories["MISSING"] = lambda: NULL_RESOURCE
+                self._factories = factories
+            finally:
+                self._loading = False
+            return factories
+
+    def reset(self) -> None:
+        """Test hook: drop the cached factories so the next access re-discovers."""
+        with self._lock:
+            self._factories = None
+
     def __getitem__(self, key: str) -> Resource:
-        if key in _named_resource_factories:
-            return _named_resource_factories[key]()
+        factories = self._load()
+        if key in factories:
+            return factories[key]()
         else:
             matches = difflib.get_close_matches(
                 key,
-                _named_resource_factories.keys(),
+                factories.keys(),
                 n=1,
             )
             if matches:
                 msg = f"Did you mean `{matches[0]}`?"
             else:
-                msg = f"Registered named resources: {list(_named_resource_factories.keys())}"
+                msg = f"Registered named resources: {list(factories.keys())}"
 
             raise KeyError(f"No named resource found for `{key}`. {msg}")
 
     def __contains__(self, key: str) -> bool:
-        return key in _named_resource_factories
+        return key in self._load()
 
     def __iter__(self) -> Iterator[str]:
         """Iterates through the names of the registered named_resources.
@@ -141,8 +185,27 @@ class _NamedResourcesLibrary:
                 assert isinstance(resource, specs.Resource)
 
         """
-        for key in _named_resource_factories:
-            yield (key)
+        yield from self._load()
+
+    def keys(self) -> KeysView[str]:
+        """The names of the registered named resources."""
+        return self._load().keys()
+
+    def items(self) -> Iterator[tuple[str, Resource]]:
+        """Iterates ``(name, resource)`` pairs, materializing each resource.
+
+        Usage:
+
+        .. doctest::
+
+            from torchx import specs
+
+            for name, resource in specs.named_resources.items():
+                assert isinstance(resource, specs.Resource)
+
+        """
+        for name, factory in self._load().items():
+            yield name, factory()
 
 
 named_resources: _NamedResourcesLibrary = _NamedResourcesLibrary()
