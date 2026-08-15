@@ -559,6 +559,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -567,6 +568,12 @@
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">_Overlay</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<span class="c1"># Format marker stamped into ``metadata[namespace]`` by :py:func:`set_overlay`.</span>
+<span class="c1"># Its presence means the namespace dict is in the nested ``{kind: overlay}``</span>
+<span class="c1"># format, so :py:func:`get_overlay` never falls back to treating the whole</span>
+<span class="c1"># namespace dict as a flat overlay for a kind that is not present.</span>
+<span class="n">_FORMAT_KEY</span> <span class="o">=</span> <span class="s2">&quot;__torchx_overlays__&quot;</span>
 
 <span class="c1"># Operator key prefixes. Each function returns a string key for use in overlay</span>
 <span class="c1"># dicts. The prefix encodes the operation; the suffix encodes the field name</span>
@@ -951,7 +958,15 @@
 <span class="sd">        namespace: Scheduler namespace (e.g., ``&quot;kubernetes&quot;``, ``&quot;mast&quot;``).</span>
 <span class="sd">        kind: Scheduler struct type (e.g., ``&quot;V1Pod&quot;``,</span>
 <span class="sd">            ``&quot;HpcJobDefinition&quot;``).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if ``kind`` is the reserved nested-format marker key.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="n">_FORMAT_KEY</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;overlay kind `</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">` is reserved for the nested-format marker&quot;</span>
+        <span class="p">)</span>
+
     <span class="c1"># Cast metadata to allow nested dicts</span>
     <span class="c1"># Note: AppDef.metadata is typed as dict[str, str] but overlays require nested dicts</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">_Metadata</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
@@ -972,6 +987,10 @@
         <span class="n">ns_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">metadata</span><span class="p">[</span><span class="n">namespace</span><span class="p">]</span> <span class="o">=</span> <span class="n">ns_dict</span>
 
+    <span class="c1"># Stamp the nested-format marker so get_overlay never misreads this</span>
+    <span class="c1"># namespace dict as a flat single-kind overlay.</span>
+    <span class="n">ns_dict</span><span class="p">[</span><span class="n">_FORMAT_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
     <span class="c1"># Ensure kind dict exists and merge</span>
     <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ns_dict</span><span class="p">:</span>
         <span class="n">ns_dict</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -991,16 +1010,31 @@
     <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span>
     <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">flat_fallback</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Overlay</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve overlay from ``target.metadata[namespace][kind]``.</span>
 
 <span class="sd">    Returns ``{}`` if not found. If ``metadata[namespace]`` is a string,</span>
 <span class="sd">    it is loaded as a file URI via ``fsspec`` (JSON or YAML).</span>
 
-<span class="sd">    For backwards compatibility, if ``kind`` is not a key in</span>
-<span class="sd">    ``metadata[namespace]``, the entire namespace dict is returned as a</span>
-<span class="sd">    flat overlay (with a deprecation warning).</span>
+<span class="sd">    Namespace dicts written by :py:func:`set_overlay` carry a format marker</span>
+<span class="sd">    and are **nested-only**: a missing ``kind`` returns ``{}`` — an overlay</span>
+<span class="sd">    stored under kind ``A`` is never handed to a reader asking for kind ``B``.</span>
+
+<span class="sd">    For backwards compatibility, an *unmarked* namespace dict (written via</span>
+<span class="sd">    direct metadata access) whose ``kind`` key is missing is returned whole</span>
+<span class="sd">    as a flat overlay (with a deprecation warning), unless *flat_fallback*</span>
+<span class="sd">    is ``False``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if ``kind`` is the reserved nested-format marker key.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="n">_FORMAT_KEY</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;overlay kind `</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">` is reserved for the nested-format marker&quot;</span>
+        <span class="p">)</span>
+
     <span class="k">if</span> <span class="n">namespace</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">metadata</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
@@ -1019,6 +1053,25 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">overlay</span>
 
+    <span class="n">available_kinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ns_value</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">_FORMAT_KEY</span><span class="p">]</span>
+
+    <span class="c1"># Marked nested format: a missing kind is an empty overlay, never the</span>
+    <span class="c1"># flat fallback. Debug-level: schedulers legitimately probe for kinds</span>
+    <span class="c1"># the writer never set (e.g. both TaskGroup kinds on every role).</span>
+    <span class="k">if</span> <span class="n">ns_value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_FORMAT_KEY</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">available_kinds</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;overlay kind `</span><span class="si">%s</span><span class="s2">` not found in namespace `</span><span class="si">%s</span><span class="s2">` &quot;</span>
+                <span class="s2">&quot;(available kinds: </span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">kind</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="p">,</span>
+                <span class="n">available_kinds</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">flat_fallback</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
     <span class="c1"># Backwards compat: flat format metadata[namespace] = {overlay} (no kind key).</span>
     <span class="c1"># Only fall back if ns_value doesn&#39;t look like nested format (multiple</span>
     <span class="c1"># dict-valued keys = nested, e.g. {&quot;HpcTaskGroupSpec&quot;: {...}, ...}).</span>
@@ -1034,7 +1087,7 @@
             <span class="s2">&quot;for the nested format&quot;</span><span class="p">,</span>
             <span class="n">kind</span><span class="p">,</span>
             <span class="n">namespace</span><span class="p">,</span>
-            <span class="nb">list</span><span class="p">(</span><span class="n">ns_value</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+            <span class="n">available_kinds</span><span class="p">,</span>
             <span class="n">namespace</span><span class="p">,</span>
             <span class="n">namespace</span><span class="p">,</span>
             <span class="n">kind</span><span class="p">,</span>
@@ -1107,6 +1160,77 @@
             <span class="k">if</span> <span class="n">suggestion</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">suggestion</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="OverlaySpec">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.OverlaySpec">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OverlaySpec</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Declares a scheduler&#39;s overlay surface once — namespace, kind, and the</span>
+<span class="sd">    keys users must set via ``Role``/``AppDef`` attributes instead.</span>
+
+<span class="sd">    Scheduler authors define one per overlay kind and use it at both ends,</span>
+<span class="sd">    instead of re-spelling ``(namespace, kind, blocklist)`` at every</span>
+<span class="sd">    :py:func:`set_overlay`/:py:func:`get_overlay` call site:</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from torchx.specs import Role</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.specs.overlays import OverlaySpec</span>
+
+<span class="sd">        &gt;&gt;&gt; V1POD = OverlaySpec(&quot;kubernetes&quot;, &quot;V1Pod&quot;, blocklist=(&quot;command&quot;, &quot;env&quot;))</span>
+
+<span class="sd">        &gt;&gt;&gt; role = Role(name=&quot;trainer&quot;, image=&quot;img&quot;, entrypoint=&quot;train.py&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; V1POD.set(role, {&quot;spec&quot;: {&quot;nodeSelector&quot;: {&quot;gpu&quot;: &quot;true&quot;}}})</span>
+<span class="sd">        &gt;&gt;&gt; V1POD.get(role)</span>
+<span class="sd">        {&#39;spec&#39;: {&#39;nodeSelector&#39;: {&#39;gpu&#39;: &#39;true&#39;}}}</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        namespace: scheduler namespace (e.g. ``&quot;kubernetes&quot;``, ``&quot;mast&quot;``).</span>
+<span class="sd">        kind: scheduler struct type (e.g. ``&quot;V1Pod&quot;``, ``&quot;HpcJobDefinition&quot;``).</span>
+<span class="sd">        blocklist: keys that must be set via ``Role``/``AppDef`` attributes;</span>
+<span class="sd">            :py:meth:`get` raises ``ValueError`` when the stored overlay</span>
+<span class="sd">            contains any of them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">blocklist</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+
+<div class="viewcode-block" id="OverlaySpec.set">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.OverlaySpec.set">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span> <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store *overlay* via :py:func:`set_overlay` (accumulates).</span>
+
+<span class="sd">        Validates against ``blocklist`` so a disallowed key fails at write</span>
+<span class="sd">        time (at the call site that supplied it), not at read time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">validate_overlay</span><span class="p">(</span>
+            <span class="n">overlay</span><span class="p">,</span>
+            <span class="n">blocklist</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocklist</span><span class="p">),</span>
+            <span class="n">overlay_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">set_overlay</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">overlay</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OverlaySpec.get">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.OverlaySpec.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Overlay</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the stored overlay, validated against ``blocklist``.</span>
+
+<span class="sd">        Reads nested-format only (``flat_fallback=False``) — an</span>
+<span class="sd">        :py:class:`OverlaySpec` reader never inherits a legacy flat</span>
+<span class="sd">        namespace dict written for some other kind.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">get_overlay</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">flat_fallback</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">validate_overlay</span><span class="p">(</span>
+            <span class="n">overlay</span><span class="p">,</span>
+            <span class="n">blocklist</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocklist</span><span class="p">),</span>
+            <span class="n">overlay_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">overlay</span></div>
+</div>
 
 </pre></div>
 

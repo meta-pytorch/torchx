@@ -461,7 +461,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">difflib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">KeysView</span><span class="p">,</span> <span class="n">Mapping</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401</span>
@@ -509,57 +510,100 @@
 
 <span class="n">ResourceFactory</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Resource</span><span class="p">]</span>
 
-<span class="n">AWS_NAMED_RESOURCES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
-    <span class="s2">&quot;torchx.specs.named_resources_aws&quot;</span><span class="p">,</span> <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{}</span>
-<span class="p">)</span>
-<span class="n">GENERIC_NAMED_RESOURCES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
-    <span class="s2">&quot;torchx.specs.named_resources_generic&quot;</span><span class="p">,</span> <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{}</span>
-<span class="p">)</span>
-<span class="n">CUSTOM_NAMED_RESOURCES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TORCHX_CUSTOM_NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="s2">&quot;torchx.specs.fb.named_resources&quot;</span><span class="p">),</span>
-    <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
-    <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
-<span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_load_named_resources</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Resource</span><span class="p">]]:</span>
-    <span class="n">materialized_resources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Resource</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">resource</span> <span class="ow">in</span> <span class="p">{</span>
-        <span class="o">**</span><span class="n">GENERIC_NAMED_RESOURCES</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">AWS_NAMED_RESOURCES</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">CUSTOM_NAMED_RESOURCES</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">NAMED_RESOURCE</span><span class="p">),</span>
-    <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">materialized_resources</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">resource</span>
-
-    <span class="n">materialized_resources</span><span class="p">[</span><span class="s2">&quot;NULL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">NULL_RESOURCE</span>
-    <span class="n">materialized_resources</span><span class="p">[</span><span class="s2">&quot;MISSING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">NULL_RESOURCE</span>
-    <span class="k">return</span> <span class="n">materialized_resources</span>
-
-
-<span class="n">_named_resource_factories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Resource</span><span class="p">]]</span> <span class="o">=</span> <span class="n">_load_named_resources</span><span class="p">()</span>
-
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_NamedResourcesLibrary</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lazily-loaded named-resource lookup.</span>
+
+<span class="sd">    ``import torchx.specs`` performs no resource-module import or plugin</span>
+<span class="sd">    discovery — the AWS/generic/custom resource modules and the plugin</span>
+<span class="sd">    registry are loaded on first lookup and cached.</span>
+
+<span class="sd">    Discovery is single-flight: concurrent first lookups block until one</span>
+<span class="sd">    scan populates the cache, and a re-entrant lookup (a plugin module</span>
+<span class="sd">    looking up a named resource at import time, mid-scan) raises</span>
+<span class="sd">    ``RuntimeError``, which the plugin scanner records as a load error for</span>
+<span class="sd">    that module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loading</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]:</span>
+        <span class="n">factories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span>
+        <span class="k">if</span> <span class="n">factories</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">factories</span>
+        <span class="c1"># double-checked: the lock serializes concurrent first lookups so</span>
+        <span class="c1"># discovery runs exactly once; the RLock lets a re-entrant lookup on</span>
+        <span class="c1"># the loading thread reach the sentinel check below instead of</span>
+        <span class="c1"># deadlocking</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loading</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;re-entrant named-resource lookup: discovery is already in&quot;</span>
+                    <span class="s2">&quot; progress on this thread. A plugin module is likely looking&quot;</span>
+                    <span class="s2">&quot; up a named resource at import time; the registered set is&quot;</span>
+                    <span class="s2">&quot; incomplete mid-scan, so defer the lookup into the factory&quot;</span>
+                    <span class="s2">&quot; body.&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loading</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">aws</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
+                    <span class="s2">&quot;torchx.specs.named_resources_aws&quot;</span><span class="p">,</span> <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{}</span>
+                <span class="p">)</span>
+                <span class="n">generic</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
+                    <span class="s2">&quot;torchx.specs.named_resources_generic&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
+                    <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
+                <span class="p">)</span>
+                <span class="n">custom</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="s2">&quot;TORCHX_CUSTOM_NAMED_RESOURCES&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;torchx.specs.fb.named_resources&quot;</span><span class="p">,</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
+                    <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
+                <span class="p">)</span>
+                <span class="n">factories</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="o">**</span><span class="n">generic</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">aws</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">custom</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">NAMED_RESOURCE</span><span class="p">),</span>
+                <span class="p">}</span>
+                <span class="n">factories</span><span class="p">[</span><span class="s2">&quot;NULL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">NULL_RESOURCE</span>
+                <span class="n">factories</span><span class="p">[</span><span class="s2">&quot;MISSING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">NULL_RESOURCE</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span> <span class="o">=</span> <span class="n">factories</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loading</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">factories</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test hook: drop the cached factories so the next access re-discovers.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span> <span class="o">=</span> <span class="kc">None</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_named_resource_factories</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_named_resource_factories</span><span class="p">[</span><span class="n">key</span><span class="p">]()</span>
+        <span class="n">factories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">factories</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">factories</span><span class="p">[</span><span class="n">key</span><span class="p">]()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">matches</span> <span class="o">=</span> <span class="n">difflib</span><span class="o">.</span><span class="n">get_close_matches</span><span class="p">(</span>
                 <span class="n">key</span><span class="p">,</span>
-                <span class="n">_named_resource_factories</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                <span class="n">factories</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
                 <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Did you mean `</span><span class="si">{</span><span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">`?&quot;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Registered named resources: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">_named_resource_factories</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Registered named resources: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">factories</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
 
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No named resource found for `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`. </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_named_resource_factories</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterates through the names of the registered named_resources.</span>
@@ -575,8 +619,27 @@
 <span class="sd">                assert isinstance(resource, specs.Resource)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_named_resource_factories</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeysView</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The names of the registered named resources.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Resource</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterates ``(name, resource)`` pairs, materializing each resource.</span>
+
+<span class="sd">        Usage:</span>
+
+<span class="sd">        .. doctest::</span>
+
+<span class="sd">            from torchx import specs</span>
+
+<span class="sd">            for name, resource in specs.named_resources.items():</span>
+<span class="sd">                assert isinstance(resource, specs.Resource)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">factory</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">name</span><span class="p">,</span> <span class="n">factory</span><span class="p">()</span>
 
 
 <span class="n">named_resources</span><span class="p">:</span> <span class="n">_NamedResourcesLibrary</span> <span class="o">=</span> <span class="n">_NamedResourcesLibrary</span><span class="p">()</span>
