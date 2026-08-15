@@ -153,6 +153,31 @@ class DockerWorkspaceMockTest(unittest.TestCase):
         self.assertEqual(mock_log.info.call_count, 2)
 
     @patch("torchx.workspace.docker_workspace.log")
+    def test_build_updates_role_image_even_if_current_image_in_repo(
+        self, mock_log: MagicMock
+    ) -> None:
+        client = MagicMock()
+        image_id = "sha256:new_build"
+        client.api.build.return_value = [{"aux": {"ID": image_id}}]
+        # role.image is an image id currently tagged under image_repo — the
+        # scenario where the old `old_imgs` guard silently discarded the build
+        old_image = MagicMock()
+        old_image.id = "sha256:old_build"
+        client.images.list.return_value = [old_image]
+        workspace = DockerWorkspaceMixin(docker_client=client)
+        role = Role(name="b", image="sha256:old_build")
+        workspace.build_workspace_and_update_role(
+            role=role,
+            workspace="bogus",
+            cfg={"image_repo": "example.com/repo", "quiet": "true"},
+        )
+        self.assertEqual(
+            image_id,
+            role.image,
+            "a successful build must always stamp the built image onto the role",
+        )
+
+    @patch("torchx.workspace.docker_workspace.log")
     def test_build_workspace_and_update_raises_error(self, mock_log: MagicMock) -> None:
         client = MagicMock()
         img = MagicMock()
