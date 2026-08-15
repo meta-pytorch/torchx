@@ -1392,6 +1392,75 @@ before checking against the blocklist.</p>
 </dd></dl>
 
 </section>
+<section id="module-torchx.specs.capabilities">
+<span id="capabilities"></span><h2>Capabilities<a class="headerlink" href="#module-torchx.specs.capabilities" title="Link to this heading">¶</a></h2>
+<p>Typed accessors for <code class="xref py py-attr docutils literal notranslate"><span class="pre">capabilities</span></code> entries.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Resource.capabilities</span></code> is a plain <code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">Any]</span></code> interpreted by
+schedulers, so every producer/consumer pair otherwise re-spells the string
+key and re-asserts the value type ad-hoc. A <a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey" title="torchx.specs.capabilities.CapabilityKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">CapabilityKey</span></code></a> names
+the key once and type-checks reads.</p>
+<p>The wire format is unchanged: values are stored under the plain string key
+<code class="docutils literal notranslate"><span class="pre">&quot;&lt;namespace&gt;.&lt;name&gt;&quot;</span></code> — existing serialized resources and readers that
+index <code class="docutils literal notranslate"><span class="pre">capabilities</span></code> directly keep working.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.specs.capabilities.CapabilityKey">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.specs.capabilities.</span></span><span class="sig-name descname"><span class="pre">CapabilityKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><span class="pre">type</span></a><span class="p"><span class="pre">[</span></span><span class="pre">V</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/specs/capabilities.html#CapabilityKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.capabilities.CapabilityKey" title="Link to this definition">¶</a></dt>
+<dd><p>A typed, namespaced key into <code class="docutils literal notranslate"><span class="pre">Resource.capabilities</span></code>.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">CapabilityKey</span><span class="p">,</span> <span class="n">Resource</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NETWORK</span> <span class="o">=</span> <span class="n">CapabilityKey</span><span class="p">(</span><span class="s2">&quot;aws&quot;</span><span class="p">,</span> <span class="s2">&quot;network_bandwidth_gbps&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NETWORK</span><span class="o">.</span><span class="n">key</span>
+<span class="go">&#39;aws.network_bandwidth_gbps&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NETWORK</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="o">.</span><span class="n">capabilities</span>
+<span class="go">{&#39;aws.network_bandwidth_gbps&#39;: 400}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NETWORK</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+<span class="go">400</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">CapabilityKey</span><span class="p">(</span><span class="s2">&quot;aws&quot;</span><span class="p">,</span> <span class="s2">&quot;efa_enabled&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>namespace</strong> – grouping prefix (e.g. a cloud provider or scheduler name).</p></li>
+<li><p><strong>name</strong> – capability name within the namespace.</p></li>
+<li><p><strong>type</strong> – expected value type; <a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey.get" title="torchx.specs.capabilities.CapabilityKey.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a> raises <code class="docutils literal notranslate"><span class="pre">TypeError</span></code> when
+the stored value does not match.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.specs.capabilities.CapabilityKey.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.api.Resource"><span class="pre">Resource</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">V</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/capabilities.html#CapabilityKey.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.capabilities.CapabilityKey.get" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.api.Resource"><span class="pre">Resource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">V</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">V</span></span></span></dt>
+<dd><p>Return the value stored under <a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey.key" title="torchx.specs.capabilities.CapabilityKey.key"><code class="xref py py-attr docutils literal notranslate"><span class="pre">key</span></code></a>, or <code class="docutils literal notranslate"><span class="pre">default</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – if the stored value is not an instance of <code class="docutils literal notranslate"><span class="pre">type</span></code>.
+    <code class="docutils literal notranslate"><span class="pre">bool</span></code> does not satisfy an <code class="docutils literal notranslate"><span class="pre">int</span></code>-typed key even though
+    <code class="docutils literal notranslate"><span class="pre">bool</span></code> subclasses <code class="docutils literal notranslate"><span class="pre">int</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="torchx.specs.capabilities.CapabilityKey.key">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><a class="headerlink" href="#torchx.specs.capabilities.CapabilityKey.key" title="Link to this definition">¶</a></dt>
+<dd><p>The plain string key stored in <code class="docutils literal notranslate"><span class="pre">Resource.capabilities</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.specs.capabilities.CapabilityKey.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.specs.Resource" title="torchx.specs.api.Resource"><span class="pre">Resource</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">V</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/capabilities.html#CapabilityKey.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.capabilities.CapabilityKey.set" title="Link to this definition">¶</a></dt>
+<dd><p>Store <code class="docutils literal notranslate"><span class="pre">value</span></code> under <a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey.key" title="torchx.specs.capabilities.CapabilityKey.key"><code class="xref py py-attr docutils literal notranslate"><span class="pre">key</span></code></a> in <code class="docutils literal notranslate"><span class="pre">resource.capabilities</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="named-resources">
 <h2>Named Resources<a class="headerlink" href="#named-resources" title="Link to this heading">¶</a></h2>
 <p>Use <code class="xref py py-func docutils literal notranslate"><span class="pre">resource()</span></code> with the <code class="docutils literal notranslate"><span class="pre">h</span></code> parameter to look up a named resource:</p>
@@ -1752,6 +1821,15 @@ on how to improve the help message and arguments descriptions will be names of t
 <li><a class="reference internal" href="#torchx.specs.overlays.get_overlay"><code class="docutils literal notranslate"><span class="pre">get_overlay()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.specs.overlays.set_overlay"><code class="docutils literal notranslate"><span class="pre">set_overlay()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.specs.overlays.validate_overlay"><code class="docutils literal notranslate"><span class="pre">validate_overlay()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-torchx.specs.capabilities">Capabilities</a><ul>
+<li><a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey"><code class="docutils literal notranslate"><span class="pre">CapabilityKey</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey.get"><code class="docutils literal notranslate"><span class="pre">CapabilityKey.get()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey.key"><code class="docutils literal notranslate"><span class="pre">CapabilityKey.key</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.capabilities.CapabilityKey.set"><code class="docutils literal notranslate"><span class="pre">CapabilityKey.set()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#named-resources">Named Resources</a><ul>
