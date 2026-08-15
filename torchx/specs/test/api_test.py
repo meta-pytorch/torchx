@@ -15,7 +15,7 @@ import time
 import unittest
 from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, List, Mapping, Union
+from typing import cast, Dict, List, Mapping, Union
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -182,6 +182,33 @@ class AppDryRunInfoTest(unittest.TestCase):
         self.assertEqual(request_mock, info.request)
 
         to_string_mock.assert_called_once_with(request_mock)
+
+    def test_app_and_cfg_accessors(self) -> None:
+        info = AppDryRunInfo(MagicMock(), repr)
+
+        self.assertIsNone(info.app, "app should be None until set by dryrun")
+        self.assertEqual({}, dict(info.cfg), "cfg should default to empty")
+
+        app = AppDef(name="test_app")
+        info._app = app
+        info._cfg = {"cluster": "foo", "priority": 1}
+
+        self.assertIs(app, info.app, "app property should return the AppDef")
+        self.assertEqual(
+            {"cluster": "foo", "priority": 1},
+            dict(info.cfg),
+            "cfg property should reflect the resolved cfg",
+        )
+
+    def test_cfg_is_read_only(self) -> None:
+        info = AppDryRunInfo(MagicMock(), repr)
+        info._cfg = {"cluster": "foo"}
+
+        # cast defeats the static Mapping protocol (no `__setitem__`) so the
+        # RUNTIME read-only guarantee (MappingProxyType) is what's exercised
+        cfg = cast(dict[str, CfgVal], info.cfg)
+        with self.assertRaises(TypeError, msg="mutating cfg view must raise"):
+            cfg["cluster"] = "bar"
 
 
 class AppDefStatusTest(unittest.TestCase):

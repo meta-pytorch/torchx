@@ -46,7 +46,7 @@ class SchedulerTest(unittest.TestCase):
             super().__init__("mock", session_name)
 
         def schedule(self, dryrun_info: AppDryRunInfo[None]) -> str:
-            app = dryrun_info._app
+            app = dryrun_info.app
             assert app is not None
             return app.name
 
@@ -120,6 +120,22 @@ class SchedulerTest(unittest.TestCase):
         cfg = {"foo": "asdf"}
         scheduler_mock.submit(app, cfg, workspace="some_workspace")
         self.assertEqual(app.roles[0].image, "some_workspace")
+
+    def test_submit_dryrun_sets_app_and_cfg(self) -> None:
+        app = AppDef(
+            name="test_app",
+            roles=[Role(name="sleep", image="", entrypoint="foo.sh")],
+        )
+        scheduler = SchedulerTest.MockScheduler("test_session")
+
+        dryrun_info = scheduler.submit_dryrun(app, {"foo": "asdf"})
+
+        self.assertIs(app, dryrun_info.app, "app should be the submitted AppDef")
+        self.assertEqual(
+            scheduler.run_opts().resolve({"foo": "asdf"}),
+            dict(dryrun_info.cfg),
+            "cfg should equal the resolved run cfg",
+        )
 
     def test_metadata_macro_substitute(self) -> None:
         role = Role(

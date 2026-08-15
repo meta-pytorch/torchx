@@ -790,9 +790,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     def schedule(self, dryrun_info: AppDryRunInfo[KubernetesJob]) -> str:
         from kubernetes.client.rest import ApiException
 
-        cfg = dryrun_info._cfg
-        assert cfg is not None, f"{dryrun_info} missing cfg"
-        namespace = cfg.get("namespace") or "default"
+        namespace = dryrun_info.cfg.get("namespace") or "default"
 
         images_to_push = dryrun_info.request.images_to_push
         self.push_images(images_to_push)

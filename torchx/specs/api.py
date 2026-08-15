@@ -20,6 +20,7 @@ from datetime import datetime
 from enum import Enum
 from json import JSONDecodeError
 from string import Template
+from types import MappingProxyType
 from typing import (
     Any,
     Callable,
@@ -828,17 +829,30 @@ class AppDryRunInfo(Generic[T]):
         self.request = request
         self._fmt = fmt
 
-        # fields below are only meant to be used by
-        # Scheduler or Session implementations
-        # and are back references to the parameters
-        # to dryrun() that returned this AppDryRunInfo object
-        # thus they are set in Runner.dryrun() and Scheduler.submit_dryrun()
-        # manually rather than through constructor arguments
-        # DO NOT create getters or make these public
-        # unless there is a good reason to
+        # back references to the parameters of the dryrun() call that
+        # returned this AppDryRunInfo object; set in Runner.dryrun() and
+        # Scheduler.submit_dryrun() manually rather than through constructor
+        # arguments. Read them via the `app` and `cfg` properties;
+        # `_scheduler` is only meant for Scheduler/Runner implementations.
         self._app: AppDef | None = None
         self._cfg: Mapping[str, CfgVal] = {}
         self._scheduler: str | None = None
+
+    @property
+    def app(self) -> AppDef | None:
+        """The :py:class:`AppDef` this dryrun info was created from.
+
+        ``None`` until set by ``Runner.dryrun()`` / ``Scheduler.submit_dryrun()``.
+        """
+        return self._app
+
+    @property
+    def cfg(self) -> Mapping[str, CfgVal]:
+        """Read-only view of the resolved scheduler run config.
+
+        Mutating the returned mapping raises ``TypeError``.
+        """
+        return MappingProxyType(self._cfg)
 
     def __repr__(self) -> str:
         return self._fmt(self.request)
