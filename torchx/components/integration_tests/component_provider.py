@@ -11,7 +11,6 @@ import tempfile
 from abc import ABC, abstractmethod
 
 import torchx.components.dist as dist_components
-import torchx.components.serve as serve_components
 import torchx.components.utils as utils_components
 from torchx.specs import AppDef
 
@@ -48,17 +47,6 @@ class DDPComponentProvider(ComponentProvider):
             env={
                 "LOGLEVEL": "INFO",
             },
-        )
-
-
-class ServeComponentProvider(ComponentProvider):
-    # TODO(aivanou): Remove dryrun and test e2e serve component+app
-    def get_app_def(self) -> AppDef:
-        return serve_components.torchserve(
-            model_path="dummy_path",
-            management_api="dummy_api",
-            image=self._image,
-            dryrun=True,
         )
 
 

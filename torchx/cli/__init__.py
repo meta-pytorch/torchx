@@ -28,7 +28,7 @@ If so, no need to even author an app spec!
 
  $ torchx builtins
  Found <n> builtin configs:
-  1. serve.torchserve
+  1. dist.ddp
   2. utils.binary
   ... <omitted for brevity>
 

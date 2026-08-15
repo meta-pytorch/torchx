@@ -14,13 +14,8 @@ This is a toy model for doing regression on the tiny imagenet dataset. It's used
 by the apps in the same folder.
 """
 
-import os.path
-import subprocess
-
-import fsspec
 import pytorch_lightning as pl
 import torch
-import torch.jit
 from torch.nn import functional as F
 from torchmetrics.classification import MulticlassAccuracy
 from torchvision.models.resnet import BasicBlock, ResNet
@@ -84,50 +79,6 @@ class TinyImageNetModel(pl.LightningModule):
     # pyre-fixme[3]: TODO(aivanou): Figure out why oss pyre can identify type but fb cannot.
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.lr)
-
-
-def export_inference_model(
-    model: TinyImageNetModel, out_path: str, tmpdir: str
-) -> None:
-    """
-    export_inference_model uses TorchScript JIT to serialize the
-    TinyImageNetModel into a standalone file that can be used during inference.
-    TorchServe can also handle interpreted models with just the model.py file if
-    your model can't be JITed.
-    """
-
-    print("exporting inference model")
-    jit_path = os.path.join(tmpdir, "model_jit.pt")
-    jitted = torch.jit.script(model)
-    print(f"saving JIT model to {jit_path}")
-    torch.jit.save(jitted, jit_path)
-
-    model_name = "tiny_image_net"
-
-    mar_path = os.path.join(tmpdir, f"{model_name}.mar")
-    print(f"creating model archive at {mar_path}")
-    subprocess.run(
-        [
-            "torch-model-archiver",
-            "--model-name",
-            "tiny_image_net",
-            "--handler",
-            "torchx/examples/apps/lightning/handler/handler.py",
-            "--version",
-            "1",
-            "--serialized-file",
-            jit_path,
-            "--export-path",
-            tmpdir,
-        ],
-        check=True,
-    )
-
-    remote_path = os.path.join(out_path, "model.mar")
-    print(f"uploading to {remote_path}")
-    fs, _, rpaths = fsspec.get_fs_token_paths(remote_path)
-    assert len(rpaths) == 1, "must have single path"
-    fs.put(mar_path, rpaths[0])
 
 
 # sphinx_gallery_thumbnail_path = '_static/img/gallery-lib.png'

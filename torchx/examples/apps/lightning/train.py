@@ -31,7 +31,6 @@ To run the trainer locally as a ddp application with 1 node and 2 workers-per-no
      --epochs=1
      --output_path=/tmp/torchx/train
      --log_path=/tmp/torchx/logs
-     --skip_export
 
 .. note:: ``--`` is used to delimit between component (``dist.ddp``) and
           application arguments.
@@ -65,10 +64,7 @@ from torchx.examples.apps.lightning.data import (
     download_data,
     TinyImageNetDataModule,
 )
-from torchx.examples.apps.lightning.model import (
-    export_inference_model,
-    TinyImageNetModel,
-)
+from torchx.examples.apps.lightning.model import TinyImageNetModel
 from torchx.examples.apps.lightning.profiler import SimpleLoggingProfiler
 
 # ensure data and module are on the path
@@ -95,7 +91,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         type=str,
         help="path to load the training data from, if not provided, random data will be generated",
     )
-    parser.add_argument("--skip_export", action="store_true")
     parser.add_argument("--load_path", type=str, help="checkpoint path to load from")
     parser.add_argument(
         "--output_path",
@@ -182,11 +177,6 @@ def main(argv: list[str]) -> None:
         print(
             f"train acc: {model.train_acc.compute()}, val acc: {model.val_acc.compute()}"
         )
-
-        rank = int(os.environ.get("RANK", 0))
-        if rank == 0 and not args.skip_export and args.output_path:
-            # Export the inference model
-            export_inference_model(model, args.output_path, tmpdir)
 
 
 if __name__ == "__main__" and "NOTEBOOK" not in globals():
