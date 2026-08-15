@@ -539,17 +539,6 @@ def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
                         f" Remove the entry from the config file to no longer see this warning"
                     )
                 else:
-                    if opt.opt_type is bool:
-                        # need to handle bool specially since str -> bool is based on
-                        # str emptiness not value (e.g. bool("False") == True)
-                        cfg[name] = config.getboolean(section, name)
-                    elif opt.is_type_list_of_str:
-                        cfg[name] = value.split(";")
-                    elif opt.is_type_dict_of_str:
-                        cfg[name] = {
-                            s.split(":", 1)[0]: s.split(":", 1)[1]
-                            for s in value.replace(",", ";").split(";")
-                        }
-                    else:
-                        # pyre-ignore[29]
-                        cfg[name] = opt.opt_type(value)
+                    # delegate casting to the runopt itself so configfile
+                    # values parse exactly like CLI `-cfg` values
+                    cfg[name] = opt.cast_to_type(value)

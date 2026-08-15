@@ -375,6 +375,56 @@ image = foobar_custom
         self.assertEqual("/home/bob/logs", cfg.get("log_dir"))
         self.assertEqual(True, cfg.get("prepend_cwd"))
 
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_casts_like_cast_to_type(self, _) -> None:
+        """load() must parse configfile values exactly like ``runopt.cast_to_type``."""
+        config = """#
+[test]
+bTrue = 1
+l = a,b
+l_typing = a;
+"""
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+
+        opts = TestScheduler("test").run_opts()
+        for name, raw in (("bTrue", "1"), ("l", "a,b"), ("l_typing", "a;")):
+            opt = opts.get(name)
+            assert opt is not None, f"TestScheduler must define runopt {name}"
+            self.assertEqual(
+                opt.cast_to_type(raw),
+                cfg[name],
+                f"load() and cast_to_type() must agree on {name}={raw!r}",
+            )
+
+        # pin the previously divergent parses
+        self.assertEqual(
+            True, cfg["bTrue"], 'bool "1" is True (INI getboolean vocabulary)'
+        )
+        self.assertEqual(
+            ["a", "b"], cfg["l"], "lists accept ',' delimiters like the CLI"
+        )
+        self.assertEqual(["a"], cfg["l_typing"], "empty trailing elements are dropped")
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_ini_bool_vocabulary_round_trips(self, _) -> None:
+        """INI booleans written as yes/on/1 (getboolean vocabulary) load as True."""
+        config = """#
+[test]
+bTrue = yes
+bFalse = off
+"""
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+        self.assertEqual(True, cfg["bTrue"], "yes must load as True")
+        self.assertEqual(False, cfg["bFalse"], "off must load as False")
+
     def test_no_override_load(self) -> None:
         cfg: dict[str, CfgVal] = {"log_dir": "/foo/bar", "debug": 1}
 

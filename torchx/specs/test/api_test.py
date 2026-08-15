@@ -1050,6 +1050,20 @@ class RunConfigTest(unittest.TestCase):
         self.assertTrue(cfg.get("preemptible"))
         self.assertIsNone(cfg.get("unknown"))
 
+    def test_runopt_cast_to_type_bool_vocabulary(self) -> None:
+        opt = runopt(default=False, opt_type=bool, is_required=False, help="help")
+        for literal in ("true", "True", "TRUE", "1", "yes", "Yes", "on", "ON"):
+            self.assertTrue(opt.cast_to_type(literal), f"`{literal}` must cast to True")
+        for literal in ("false", "False", "FALSE", "0", "no", "No", "off", "OFF"):
+            self.assertFalse(
+                opt.cast_to_type(literal), f"`{literal}` must cast to False"
+            )
+
+    def test_runopt_cast_to_type_bool_rejects_garbage(self) -> None:
+        opt = runopt(default=False, opt_type=bool, is_required=False, help="help")
+        with self.assertRaisesRegex(ValueError, "garbage"):
+            opt.cast_to_type("garbage")
+
     def test_runopt_cast_to_type_typing_list(self) -> None:
         opt = runopt(default="", opt_type=List[str], is_required=False, help="help")
         self.assertEqual(["a", "b", "c"], opt.cast_to_type("a,b,c"))

@@ -1073,7 +1073,8 @@ class runopt:
         Below are the cast rules for each option type and value literal:
 
         1. opt_type=str, value="foo" -> "foo"
-        1. opt_type=bool, value="True"/"False" -> True/False
+        1. opt_type=bool, value="true"/"1"/"yes"/"on" -> True (case-insensitive; INI vocabulary)
+        1. opt_type=bool, value="false"/"0"/"no"/"off" -> False (anything else raises ValueError)
         1. opt_type=int, value="1" -> 1
         1. opt_type=float, value="1.1" -> 1.1
         1. opt_type=list[str]/List[str], value="a,b,c" or value="a;b;c" -> ["a", "b", "c"]
@@ -1087,7 +1088,17 @@ class runopt:
         if self.opt_type is None:
             raise ValueError("runopt's opt_type cannot be `None`")
         elif self.opt_type == bool:
-            return value.lower() == "true"
+            # accept the INI boolean vocabulary (configparser.getboolean)
+            # case-insensitively; reject anything else loudly
+            lowered = value.lower()
+            if lowered in ("true", "1", "yes", "on"):
+                return True
+            elif lowered in ("false", "0", "no", "off"):
+                return False
+            raise ValueError(
+                f"`{value}` is not a valid bool literal, expected one of"
+                " (case-insensitive): true/1/yes/on or false/0/no/off"
+            )
         elif self.opt_type in (List[str], list[str]):
             # lists may be ; or , delimited
             # also deal with trailing "," by removing empty strings
