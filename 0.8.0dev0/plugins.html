@@ -574,6 +574,9 @@ path.</p></li>
 group (recorded with its <em>actual</em> <code class="docutils literal notranslate"><span class="pre">plugin_type</span></code>).</p></li>
 <li><p><strong>duplicate name</strong> — two plugins register the same name (first
 occurrence wins).</p></li>
+<li><p><strong>cross-channel collision</strong> — a name registered via both an entry
+point and the namespace package (the entry point wins and shadows
+the namespace plugin).</p></li>
 </ul>
 <p>When <em>plugin_type</em> is given, returns the errors recorded under that
 group’s namespace plus plugin-level errors tagged with that type —
