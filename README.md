@@ -82,9 +82,8 @@ pip install -e ".[dev]"
 
 ### Docker
 
-TorchX provides a docker container for using as as part of a TorchX role.
-
-See: https://github.com/meta-pytorch/torchx/pkgs/container/torchx
+TorchX provides a docker container image at `ghcr.io/pytorch/torchx` for use
+as part of a TorchX role.
 
 ## Contributing
 
