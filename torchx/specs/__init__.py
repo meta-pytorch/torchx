@@ -67,6 +67,7 @@ from torchx.specs.api import (  # noqa: F401
 )
 from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
 from torchx.specs.capabilities import CapabilityKey
+from torchx.specs.metadata_keys import app_metadata, NA, TORCHX_CONTEXT_NAME
 from torchx.util.modules import import_attr
 
 GiB: int = 1024
@@ -199,6 +200,7 @@ def get_named_resources(res: str) -> Resource:
 
 
 __all__ = [
+    "app_metadata",
     "AppDef",
     "AppDryRunInfo",
     "AppHandle",
@@ -212,6 +214,7 @@ __all__ = [
     "is_terminal",
     "macros",
     "MISSING",
+    "NA",
     "NONE",
     "NULL_RESOURCE",
     "parse_app_handle",
@@ -237,6 +240,7 @@ __all__ = [
     "materialize_appdef",
     "parse_mounts",
     "ALL",
+    "TORCHX_CONTEXT_NAME",
     "TORCHX_HOME",
     "Workspace",
 ]

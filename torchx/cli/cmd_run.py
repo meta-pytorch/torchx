@@ -26,7 +26,7 @@ from torchx.cli.cmd_log import get_logs
 from torchx.runner import config, get_runner, Runner
 from torchx.runner.config import load_sections
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
-from torchx.specs import CfgVal, Workspace
+from torchx.specs import CfgVal, TORCHX_CONTEXT_NAME, Workspace
 from torchx.specs.finder import (
     _Component,
     ComponentNotFoundException,
@@ -444,7 +444,7 @@ class CmdRun(SubCommand):
             self._run_from_cli_args(runner, args)
 
     def run(self, args: argparse.Namespace) -> None:
-        os.environ["TORCHX_CONTEXT_NAME"] = os.getenv("TORCHX_CONTEXT_NAME", "cli_run")
+        os.environ[TORCHX_CONTEXT_NAME] = os.getenv(TORCHX_CONTEXT_NAME, "cli_run")
         component_defaults = load_sections(prefix="component")
 
         with get_runner(component_defaults=component_defaults) as runner:
