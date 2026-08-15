@@ -136,6 +136,12 @@ Overlays
    .. automodule:: torchx.specs.fb.overlay_mast
       :members:
 
+Capabilities
+--------------
+
+.. automodule:: torchx.specs.capabilities
+   :members:
+
 Named Resources
 -----------------
 

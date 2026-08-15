@@ -66,6 +66,7 @@ from torchx.specs.api import (  # noqa: F401
     Workspace,
 )
 from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
+from torchx.specs.capabilities import CapabilityKey
 from torchx.util.modules import import_attr
 
 GiB: int = 1024
@@ -204,6 +205,7 @@ __all__ = [
     "AppState",
     "AppStatus",
     "BindMount",
+    "CapabilityKey",
     "CfgVal",
     "DeviceMount",
     "get_type_name",
