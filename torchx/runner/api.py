@@ -6,6 +6,7 @@
 
 # pyre-strict
 
+import copy
 import json
 import logging
 import os
@@ -341,6 +342,29 @@ class Runner:
         The returned :py:class:`~torchx.specs.AppDryRunInfo` can be
         ``print()``-ed for inspection or passed to :py:meth:`schedule`.
         """
+        # operate on a copy so that the env injection and workspace overwrite
+        # below never leak into the caller's AppDef (one AppDef can be
+        # dry-run multiple times); the copy rides in the returned
+        # AppDryRunInfo's `_app`.
+        #
+        # Role.overrides may already hold non-deepcopyable values (e.g. APF
+        # attaches an in-flight fbpkg Future before calling dryrun), so mirror
+        # the macros.Values.apply pattern: detach overrides, deepcopy, then
+        # attach the SAME dict object to both the original and the copy —
+        # sharing is the intended semantic: resolving an override through
+        # either owner benefits both.
+        detached_overrides = [role.overrides for role in app.roles]
+        for role in app.roles:
+            role.overrides = {}
+        try:
+            app_copy = copy.deepcopy(app)
+        finally:
+            for role, overrides in zip(app.roles, detached_overrides):
+                role.overrides = overrides
+        for role_copy, overrides in zip(app_copy.roles, detached_overrides):
+            role_copy.overrides = overrides
+        app = app_copy
+
         # input validation
         if not app.roles:
             raise ValueError(
