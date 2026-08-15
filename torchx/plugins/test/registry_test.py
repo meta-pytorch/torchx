@@ -648,6 +648,42 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
             sys.modules.pop("torchx_plugins.schedulers.conflict", None)
 
     @mock_install_torchx_plugins()
+    def test_cross_channel_collision_recorded(self) -> None:
+        """A name in both the entry-point and namespace channels is recorded."""
+        ep_result = {"local_cwd": "ep_version"}
+
+        with patch.object(entrypoints, "load_group", return_value=ep_result):
+            reg = PluginRegistry(
+                plugin_sources=PluginSource.NAMESPACE_PKG | PluginSource.ENTRYPOINT
+            )
+            result = reg.get(PluginType.SCHEDULER)
+
+        # priority is unchanged: the entry point still wins
+        self.assertEqual(
+            "ep_version",
+            result["local_cwd"],
+            "cross-channel collision must not flip merge priority",
+        )
+
+        collisions = [e for e in reg.errors if e.name == "local_cwd"]
+        self.assertEqual(
+            1,
+            len(collisions),
+            f"collision must be recorded as a RegistrationError, got: {reg.errors}",
+        )
+        self.assertEqual(
+            "torchx_plugins.schedulers.local",
+            collisions[0].module,
+            "the shadowed namespace plugin's module should be recorded",
+        )
+        self.assertEqual(
+            "scheduler",
+            collisions[0].plugin_type,
+            "collision error should carry the plugin type",
+        )
+        self.assertIn("entry point wins", collisions[0].error)
+
+    @mock_install_torchx_plugins()
     def test_errors_property_is_passive(self) -> None:
         """errors returns nothing before discovery ran — no side effects."""
         reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
