@@ -1003,6 +1003,20 @@ by the scheduler.</p>
 <dd><p>Returned by <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun" title="torchx.schedulers.api.Scheduler.submit_dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun</span></code></a>.</p>
 <p>Wraps the scheduler <code class="docutils literal notranslate"><span class="pre">request</span></code> that <em>would</em> have been submitted.
 <code class="docutils literal notranslate"><span class="pre">print(info)</span></code> yields a human-readable representation.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="torchx.specs.AppDryRunInfo.app">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">app</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><a class="headerlink" href="#torchx.specs.AppDryRunInfo.app" title="Link to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> this dryrun info was created from.</p>
+<p><code class="docutils literal notranslate"><span class="pre">None</span></code> until set by <code class="docutils literal notranslate"><span class="pre">Runner.dryrun()</span></code> / <code class="docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun()</span></code>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="torchx.specs.AppDryRunInfo.cfg">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cfg</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#torchx.specs.AppDryRunInfo.cfg" title="Link to this definition">¶</a></dt>
+<dd><p>Read-only view of the resolved scheduler run config.</p>
+<p>Mutating the returned mapping raises <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1700,7 +1714,11 @@ on how to improve the help message and arguments descriptions will be names of t
 </li>
 <li><a class="reference internal" href="#torchx.specs.AppState"><code class="docutils literal notranslate"><span class="pre">AppState</span></code></a></li>
 <li><a class="reference internal" href="#torchx.specs.ReplicaState"><code class="docutils literal notranslate"><span class="pre">ReplicaState</span></code></a></li>
-<li><a class="reference internal" href="#torchx.specs.AppDryRunInfo"><code class="docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.AppDryRunInfo"><code class="docutils literal notranslate"><span class="pre">AppDryRunInfo</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.AppDryRunInfo.app"><code class="docutils literal notranslate"><span class="pre">AppDryRunInfo.app</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.AppDryRunInfo.cfg"><code class="docutils literal notranslate"><span class="pre">AppDryRunInfo.cfg</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#app-handle">App Handle</a><ul>
