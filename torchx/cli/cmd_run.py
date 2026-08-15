@@ -302,7 +302,7 @@ class CmdRun(SubCommand):
                 print(
                     # pyrefly: ignore [bad-argument-type]
                     "\n=== APPLICATION ===\n"
-                    f"{pformat(asdict(dryrun_info._app), indent=2, width=80)}"
+                    f"{pformat(asdict(dryrun_info.app), indent=2, width=80)}"
                 )
 
                 print("\n=== SCHEDULER REQUEST ===\n" f"{dryrun_info}")
