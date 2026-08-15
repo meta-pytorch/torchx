@@ -459,9 +459,6 @@ Scheduler Reference
    * - ``slurm``
      - Slurm HPC
      - Generates ``sbatch`` scripts.
-   * - ``aws_batch``
-     - AWS Batch
-     - Creates job definitions and submits jobs.
 
 
 Named Resources Reference

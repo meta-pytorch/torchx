@@ -16,7 +16,6 @@ TorchX currently supports:
 
 * Kubernetes (EKS, GKE, AKS, etc)
 * Slurm
-* AWS Batch
 * Docker
 * Local
 

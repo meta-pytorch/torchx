@@ -13,7 +13,7 @@ Slurm clusters -- without rewriting configuration for each environment.
   :py:class:`~torchx.runner.Runner` call) works across all schedulers. Switch
   from local development to production clusters by changing a single flag.
 * **No vendor lock-in.** TorchX abstracts the scheduler, so your job
-  definitions stay portable across Kubernetes, Slurm, AWS Batch, and more.
+  definitions stay portable across Kubernetes, Slurm, and more.
 * **Batteries included.** A built-in :ref:`components library <Components>`
   provides ready-made launchers for distributed training, inference, and
   common utilities -- so you don't start from scratch.
@@ -171,7 +171,6 @@ Works With
    schedulers/docker
    schedulers/kubernetes
    schedulers/slurm
-   schedulers/aws_batch
 
 .. fbcode::
 

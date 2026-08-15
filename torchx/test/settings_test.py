@@ -28,8 +28,6 @@ class SettingsValueTest(unittest.TestCase):
         )
 
     def test_scheduler_env_vars(self) -> None:
-        self.assertEqual(settings.ENV_TORCHX_ROLE_IDX, "TORCHX_ROLE_IDX")
-        self.assertEqual(settings.ENV_TORCHX_ROLE_NAME, "TORCHX_ROLE_NAME")
         self.assertEqual(settings.ENV_TORCHX_IMAGE, "TORCHX_IMAGE")
 
 

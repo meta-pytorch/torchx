@@ -29,9 +29,5 @@ ENV_TORCHXCONFIG: str = "TORCHXCONFIG"
 # -- session env vars (previously in torchx.util.session) --
 TORCHX_INTERNAL_SESSION_ID: str = "TORCHX_INTERNAL_SESSION_ID"
 
-# -- scheduler env vars (previously in torchx.schedulers.aws_batch_scheduler) --
-ENV_TORCHX_ROLE_IDX: str = "TORCHX_ROLE_IDX"
-ENV_TORCHX_ROLE_NAME: str = "TORCHX_ROLE_NAME"
-
-# -- image env vars (previously in torchx.schedulers.{aws_batch,docker}_scheduler) --
+# -- image env vars (previously in torchx.schedulers.docker_scheduler) --
 ENV_TORCHX_IMAGE: str = "TORCHX_IMAGE"
