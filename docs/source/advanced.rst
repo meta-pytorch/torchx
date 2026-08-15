@@ -438,9 +438,9 @@ builtins without the ``torchx.*`` prefix:
 Registering Custom Trackers
 -------------------------------
 
-TorchX ships with :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker` and
-:py:class:`~torchx.tracker.mlflow.MLflowTracker`. Implement your own by
-subclassing :py:class:`~torchx.tracker.api.TrackerBase`.
+TorchX ships with :py:class:`~torchx.tracker.backend.fsspec.FsspecTracker`.
+Implement your own by subclassing
+:py:class:`~torchx.tracker.api.TrackerBase`.
 
 **The TrackerBase ABC** defines eight abstract methods:
 

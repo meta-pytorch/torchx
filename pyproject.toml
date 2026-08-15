@@ -54,7 +54,6 @@ dev = [
     "captum",
     "hydra-core",
     "ipython",
-    "mlflow-skinny",
     "pytorch-lightning",
     "tensorboard",
     "torch",
