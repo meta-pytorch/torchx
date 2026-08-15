@@ -90,8 +90,6 @@ complements -- rather than replaces -- other PyTorch projects:
 * **TorchElastic** handles fault-tolerant distributed training *within* a job.
   TorchX launches the job itself and the built-in ``dist.ddp`` component
   uses TorchElastic under the hood.
-* **TorchServe** serves models in production. TorchX can launch TorchServe
-  instances on remote clusters.
 * **TorchRec / TorchVision / TorchAudio** provide domain-specific libraries.
   TorchX launches training and inference jobs that use them.
 

@@ -89,7 +89,6 @@ Serving / Inference
 ---------------------
 
 Use `TorchServe <https://github.com/pytorch/serve>`_ for standard use cases.
-See :ref:`components/serve:Serve` for built-in components.
 
 Testing
 ---------
