@@ -80,7 +80,7 @@ Built-in Mixins
    * - :py:class:`~torchx.workspace.docker_workspace.DockerWorkspaceMixin`
      - Builds a Docker image from a ``Dockerfile.torchx`` in the workspace,
        tags it with a content hash, and pushes to the configured
-       ``image_repo``. Used by ``kubernetes``, ``aws_batch``, ``local_docker``.
+       ``image_repo``. Used by ``kubernetes``, ``local_docker``.
    * - :py:class:`~torchx.workspace.dir_workspace.DirWorkspaceMixin`
      - Copies workspace files into a shared job directory on the filesystem.
        Used by ``slurm``.

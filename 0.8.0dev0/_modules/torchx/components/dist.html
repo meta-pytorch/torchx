@@ -344,7 +344,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/slurm.html">Slurm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_batch.html">AWS Batch</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -676,8 +675,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># for multi-node, rely on the rank0_env environment variable set by</span>
         <span class="c1"># the schedulers (see scheduler implementation for the actual env var this maps to)</span>
-        <span class="c1"># some schedulers (e.g. aws batch) make the rank0&#39;s ip-addr available on all BUT on rank0</span>
-        <span class="c1"># so default to &quot;localhost&quot; if the env var is not set or is empty</span>
+        <span class="c1"># default to &quot;localhost&quot; if the env var is not set or is empty</span>
         <span class="c1"># rdzv_endpoint bash resolves to something to the effect of</span>
         <span class="c1"># ${TORCHX_RANK0_HOST:=localhost}:29500</span>
         <span class="c1"># use $$ in the prefix to escape the &#39;$&#39; literal (rather than a string Template substitution argument)</span>
@@ -717,7 +715,6 @@
         <span class="s2">&quot;--role&quot;</span><span class="p">,</span>
         <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="p">]</span>
-    <span class="c1"># TODO &#39;node_rank&#39; is made optional as it currently does not work with the AWS Batch scheduler.</span>
     <span class="c1"># node_rank is only used when rdzv_backend is &#39;static&#39;</span>
     <span class="k">if</span> <span class="n">rdzv_backend</span> <span class="o">==</span> <span class="s2">&quot;static&quot;</span><span class="p">:</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--node_rank&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">macros</span><span class="o">.</span><span class="n">replica_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>

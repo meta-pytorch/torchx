@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="_static/css/torchx.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="AWS Batch" href="schedulers/aws_batch.html" />
+    <link rel="next" title="Docker" href="schedulers/docker.html" />
     <link rel="prev" title="torchx.plugins" href="plugins.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -347,7 +347,6 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -447,13 +446,13 @@ options (StructuredOpts vs runopts).</p>
 </div>
 <p>Each scheduler translates a scheduler-agnostic
 <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> into a native job format (Kubernetes Job,
-Slurm sbatch, AWS Batch job, etc.) and manages the job lifecycle. Because the
+Slurm sbatch, etc.) and manages the job lifecycle. Because the
 interface is pluggable, you switch backends without changing application code.
 TorchX ships with schedulers for:</p>
 <ul class="simple">
 <li><p><strong>Local development:</strong> <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code>, <code class="docutils literal notranslate"><span class="pre">local_docker</span></code></p></li>
 <li><p><strong>HPC (High-Performance Computing) clusters:</strong> <code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></li>
-<li><p><strong>Cloud / container orchestrators:</strong> <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></li>
+<li><p><strong>Cloud / container orchestrators:</strong> <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code></p></li>
 </ul>
 <p>Need a scheduler that isn’t listed? See
 <a class="reference internal" href="#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> below and
@@ -499,12 +498,6 @@ container registry.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">sbatch</span></code> script</p></td>
 <td><p>Traditional HPC environments. Uses the shared filesystem as the
 workspace (no container build needed).</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></td>
-<td><p>AWS</p></td>
-<td><p>AWS Batch job definition + job</p></td>
-<td><p>AWS-native batch compute. Requires a Batch compute environment and
-job queue.</p></td>
 </tr>
 </tbody>
 </table>
@@ -613,7 +606,7 @@ checks that every role has a non-null resource.</p></td>
 <td><p>No</p></td>
 <td><p>Delete a job definition from the scheduler’s data plane. Default
 delegates to <code class="docutils literal notranslate"><span class="pre">_cancel_existing</span></code>. Override for schedulers with
-persistent definitions (e.g. Kubernetes, AWS Batch).</p></td>
+persistent definitions (e.g. Kubernetes).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">close()</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p></td>
 <td><p>No</p></td>
@@ -809,7 +802,7 @@ become typed config options with auto-generated help text from docstrings:</p>
 </div>
 <p>TorchX ships two workspace mixins:
 <a class="reference internal" href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin" title="torchx.workspace.docker_workspace.DockerWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code></a> (for
-container-based schedulers like Kubernetes and AWS Batch) and
+container-based schedulers like Kubernetes) and
 <a class="reference internal" href="workspace.html#torchx.workspace.dir_workspace.DirWorkspaceMixin" title="torchx.workspace.dir_workspace.DirWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirWorkspaceMixin</span></code></a> (for
 shared-filesystem schedulers like Slurm). You can also subclass
 <a class="reference internal" href="workspace.html#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a> directly for custom strategies.</p>
@@ -830,7 +823,6 @@ and a guide to implementing your own workspace mixin.</p>
 <h2>All Schedulers<a class="headerlink" href="#all-schedulers" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/local.html">Local</a></li>
@@ -884,7 +876,7 @@ await the terminal state.</p>
 <dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.delete">
 <span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.delete" title="Link to this definition">¶</a></dt>
 <dd><p>Deletes the job definition from the scheduler’s data-plane.</p>
-<p>On schedulers with persistent job definitions (e.g. Kubernetes, AWS Batch),
+<p>On schedulers with persistent job definitions (e.g. Kubernetes),
 this purges the definition. On others (e.g. Slurm), this is equivalent to
 <a class="reference internal" href="#torchx.schedulers.api.Scheduler.cancel" title="torchx.schedulers.api.Scheduler.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a>. Calling on a live job cancels it first.</p>
 </dd></dl>
@@ -1061,7 +1053,7 @@ dot-prefixed keys (e.g., <code class="docutils literal notranslate"><span class=
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="schedulers/aws_batch.html" class="btn btn-neutral float-right" title="AWS Batch" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="schedulers/docker.html" class="btn btn-neutral float-right" title="Docker" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
         <a href="plugins.html" class="btn btn-neutral" title="torchx.plugins" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>

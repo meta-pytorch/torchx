@@ -347,7 +347,6 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -585,7 +584,6 @@ every code change. See <a class="reference internal" href="workspace.html"><span
 <code class="docutils literal notranslate"><span class="pre">--scheduler</span></code> flag changes.</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>slurm<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 <span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
-<span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>aws_batch<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
 </div>
 <p>List all scheduler-specific options:</p>

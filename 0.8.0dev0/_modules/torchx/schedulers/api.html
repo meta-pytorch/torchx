@@ -344,7 +344,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../schedulers/slurm.html">Slurm</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../schedulers/aws_batch.html">AWS Batch</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -960,7 +959,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes the job definition from the scheduler&#39;s data-plane.</span>
 
-<span class="sd">        On schedulers with persistent job definitions (e.g. Kubernetes, AWS Batch),</span>
+<span class="sd">        On schedulers with persistent job definitions (e.g. Kubernetes),</span>
 <span class="sd">        this purges the definition. On others (e.g. Slurm), this is equivalent to</span>
 <span class="sd">        :py:meth:`cancel`. Calling on a live job cancels it first.</span>
 <span class="sd">        &quot;&quot;&quot;</span>

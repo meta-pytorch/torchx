@@ -237,7 +237,7 @@ registry -- integrate with Airflow, Kubeflow Pipelines, or MLflow for those.
 
    Image
       The base runtime environment for a job. For container-based schedulers
-      (``local_docker``, ``kubernetes``, ``aws_batch``) this is a Docker
+      (``local_docker``, ``kubernetes``) this is a Docker
       container image. For ``local_cwd`` and ``slurm`` it is the current
       working directory or shared filesystem path.
 

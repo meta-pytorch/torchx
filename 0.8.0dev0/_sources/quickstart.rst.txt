@@ -177,7 +177,6 @@ The same ``torchx run`` command works on remote schedulers -- only the
 
     $ torchx run --scheduler slurm dist.ddp -j 2x2 --script dist_app.py
     $ torchx run --scheduler kubernetes dist.ddp -j 2x2 --script dist_app.py
-    $ torchx run --scheduler aws_batch dist.ddp -j 2x2 --script dist_app.py
 
 List all scheduler-specific options:
 
