@@ -9,8 +9,10 @@
 
 import asyncio
 import concurrent
+import copy
 import os
 import tempfile
+import threading
 import time
 import unittest
 from dataclasses import asdict
@@ -21,6 +23,8 @@ from unittest.mock import MagicMock
 
 from torchx.specs import named_resources, named_resources_aws, resource
 from torchx.specs.api import (
+    _OVERRIDES_LOCK_KEY,
+    _OverridesLock,
     _TERMINAL_STATES,
     AppDef,
     AppDryRunInfo,
@@ -473,6 +477,40 @@ class ResourceTest(unittest.TestCase):
         self.assertEqual(new_resource.capabilities["new_key"], "new_value")
         self.assertEqual(resource.capabilities["test_key"], "test_value")
 
+    def test_copy_resource_copies_devices_and_tags(self) -> None:
+        resource = Resource(
+            1,
+            2,
+            3,
+            devices={"vpc.amazonaws.com/efa": 4},
+            tags={"resource_name": "test"},
+        )
+        new_resource = Resource.copy(resource)
+
+        self.assertEqual(
+            new_resource.devices,
+            {"vpc.amazonaws.com/efa": 4},
+            "copy must carry the original's devices",
+        )
+        self.assertEqual(
+            new_resource.tags,
+            {"resource_name": "test"},
+            "copy must carry the original's tags",
+        )
+
+        new_resource.devices["nvidia.com/gpu"] = 1
+        new_resource.tags["extra"] = "x"
+        self.assertEqual(
+            resource.devices,
+            {"vpc.amazonaws.com/efa": 4},
+            "mutating the copy's devices must not leak into the original",
+        )
+        self.assertEqual(
+            resource.tags,
+            {"resource_name": "test"},
+            "mutating the copy's tags must not leak into the original",
+        )
+
     def test_is_fractional_default(self) -> None:
         """Resource with no tags is not fractional."""
         res = Resource(cpu=4, gpu=1, memMB=1024)
@@ -650,6 +688,266 @@ class RoleBuilderTest(unittest.TestCase):
         )
         self.assertEqual("base", default.image)
         self.assertEqual("nentry", default.entrypoint)
+
+    def test_override_role_resolved_in_place(self) -> None:
+        calls = 0
+
+        def produce() -> str:
+            nonlocal calls
+            calls += 1
+            return "base"
+
+        default = Role(
+            "foobar",
+            "torch",
+            overrides={"image": produce},
+        )
+        self.assertEqual("base", default.image)
+        self.assertEqual("base", default.image, "the resolved value must persist")
+        self.assertEqual(1, calls, "the producer must run exactly once")
+        self.assertIn(
+            "image",
+            default.overrides,
+            "resolution writes back in place — the key must stay in `overrides`",
+        )
+
+    def test_override_role_single_flight_under_concurrency(self) -> None:
+        calls = 0
+
+        def produce() -> str:
+            nonlocal calls
+            calls += 1
+            time.sleep(0.05)  # widen the race window
+            return "base"
+
+        role = Role("foobar", "torch", overrides={"image": produce})
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(lambda _: role.image, range(8)))
+        self.assertEqual(["base"] * 8, results)
+        self.assertEqual(
+            1, calls, "concurrent readers must resolve the override exactly once"
+        )
+
+    def test_override_single_flight_across_roles_sharing_dict(self) -> None:
+        calls = 0
+
+        def produce() -> str:
+            nonlocal calls
+            calls += 1
+            time.sleep(0.05)  # widen the race window
+            return "base"
+
+        overrides: dict[str, object] = {"image": produce}
+        role_a = Role("a", "torch", overrides=overrides)
+        role_b = Role("b", "torch", overrides=overrides)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(
+                pool.map(lambda i: (role_a if i % 2 else role_b).image, range(8))
+            )
+        self.assertEqual(["base"] * 8, results)
+        self.assertEqual(
+            1,
+            calls,
+            "roles sharing an overrides dict must share its single-flight lock",
+        )
+
+    def test_override_resolution_not_serialized_across_dicts(self) -> None:
+        producer_entered: threading.Event = threading.Event()
+        release_producer: threading.Event = threading.Event()
+
+        def slow_produce() -> str:
+            producer_entered.set()
+            assert release_producer.wait(timeout=30), "watchdog: test never released"
+            return "slow"
+
+        slow_role = Role("slow", "torch", overrides={"image": slow_produce})
+        fast_role = Role("fast", "torch", overrides={"image": lambda: "fast"})
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            slow_read = pool.submit(lambda: slow_role.image)
+            self.assertTrue(
+                producer_entered.wait(timeout=30),
+                "watchdog: slow producer never started",
+            )
+            try:
+                # bounded read: under a process-wide resolution lock this
+                # blocks behind the (still-running) slow producer and times out
+                fast_read = pool.submit(lambda: fast_role.image)
+                self.assertEqual(
+                    "fast",
+                    fast_read.result(timeout=10),
+                    "one dict's slow producer must not stall reads on another",
+                )
+            finally:
+                release_producer.set()
+            self.assertEqual("slow", slow_read.result(timeout=30))
+
+    def test_override_producer_rereads_same_role(self) -> None:
+        overrides: dict[str, object] = {"entrypoint": lambda: "nentry"}
+        role = Role("foobar", "torch", overrides=overrides)
+        # the producer reads another overridden attr on the same role,
+        # re-entering the same dict's resolution lock on its own thread
+        overrides["image"] = lambda: f"{role.entrypoint}-img"
+        # daemon thread (not a pool): on deadlock the join times out and the
+        # test fails instead of hanging the process on worker shutdown
+        result: list[str] = []
+        reader = threading.Thread(target=lambda: result.append(role.image))
+        reader.daemon = True
+        reader.start()
+        reader.join(timeout=30)
+        self.assertEqual(
+            ["nentry-img"],
+            result,
+            "a producer reading an overridden attr on the same role must"
+            " not self-deadlock (resolution lock is re-entrant)",
+        )
+        self.assertEqual("nentry", role.entrypoint)
+
+    def test_resolved_override_dict_entry_remains_callable(self) -> None:
+        role = Role("foobar", "torch", overrides={"image": lambda: "base"})
+        self.assertEqual("base", role.image)  # resolves + writes back
+        self.assertEqual(
+            "base",
+            role.overrides["image"](),
+            "raw-dict consumers invoke the memoized entry post-resolution"
+            " (legacy callable contract)",
+        )
+
+    def test_override_resolved_read_skips_resolution_lock(self) -> None:
+        role = Role("foobar", "torch", overrides={"image": lambda: "base"})
+        self.assertEqual("base", role.image)  # resolves + mints the dict's lock
+
+        class FailingLock:
+            def __enter__(self) -> None:
+                raise AssertionError(
+                    "a resolved override read must not take the resolution lock"
+                )
+
+            def __exit__(self, *exc: object) -> None:
+                pass
+
+        role.overrides[_OVERRIDES_LOCK_KEY].lock = FailingLock()
+        self.assertEqual("base", role.image, "fast path must serve resolved values")
+        self.assertEqual("foobar", role.name, "non-overridden reads must not lock")
+
+    def test_role_with_resolved_overrides_deepcopies(self) -> None:
+        role = Role("foobar", "torch", overrides={"image": lambda: "base"})
+        self.assertEqual("base", role.image)  # resolves + mints the dict's lock
+        clone = copy.deepcopy(role)
+        self.assertEqual(
+            "base",
+            clone.image,
+            "a role with a minted resolution lock must stay deep-copyable",
+        )
+
+    def test_async_override_role_inside_running_loop(self) -> None:
+        async def update(value: str) -> str:
+            await asyncio.sleep(0)
+            return value
+
+        async def resolve_image() -> str:
+            role = Role(
+                "foobar",
+                "torch",
+                overrides={"image": update("base")},
+            )
+            return role.image
+
+        self.assertEqual(
+            "base",
+            asyncio.run(resolve_image()),
+            "awaitable overrides must resolve when accessed inside a running event loop",
+        )
+
+    def test_override_role_failed_resolution_keeps_override(self) -> None:
+        def boom() -> str:
+            raise RuntimeError("boom")
+
+        role = Role("foobar", "torch", overrides={"image": boom})
+        with self.assertRaisesRegex(RuntimeError, "boom"):
+            _ = role.image
+        self.assertIs(
+            boom,
+            role.overrides.get("image"),
+            "a failed resolution must leave the producer in `overrides` for retry",
+        )
+
+    def test_override_role_future_bound_to_other_running_loop(self) -> None:
+        owner_loop = asyncio.new_event_loop()
+        thread = threading.Thread(target=owner_loop.run_forever, daemon=True)
+        thread.start()
+        try:
+
+            async def make_future() -> "asyncio.Future[str]":
+                loop = asyncio.get_running_loop()
+                fut: "asyncio.Future[str]" = loop.create_future()
+                loop.call_later(0.05, fut.set_result, "base")
+                return fut
+
+            fut: "asyncio.Future[str]" = asyncio.run_coroutine_threadsafe(
+                make_future(), owner_loop
+            ).result()
+
+            async def resolve_image() -> str:
+                role = Role("foobar", "torch", overrides={"image": fut})
+                return role.image
+
+            self.assertEqual(
+                "base",
+                asyncio.run(resolve_image()),
+                "a future bound to another thread's running loop must resolve"
+                " when accessed inside this thread's running loop",
+            )
+        finally:
+            owner_loop.call_soon_threadsafe(owner_loop.stop)
+            thread.join(timeout=5)
+            owner_loop.close()
+
+    def test_override_role_future_bound_to_other_running_loop_no_local_loop(
+        self,
+    ) -> None:
+        owner_loop = asyncio.new_event_loop()
+        thread = threading.Thread(target=owner_loop.run_forever, daemon=True)
+        thread.start()
+        try:
+
+            async def make_future() -> "asyncio.Future[str]":
+                loop = asyncio.get_running_loop()
+                fut: "asyncio.Future[str]" = loop.create_future()
+                loop.call_later(0.05, fut.set_result, "base")
+                return fut
+
+            fut: "asyncio.Future[str]" = asyncio.run_coroutine_threadsafe(
+                make_future(), owner_loop
+            ).result()
+            role = Role("foobar", "torch", overrides={"image": fut})
+            self.assertEqual(
+                "base",
+                role.image,
+                "a future bound to another thread's running loop must resolve"
+                " from a thread with no loop of its own",
+            )
+        finally:
+            owner_loop.call_soon_threadsafe(owner_loop.stop)
+            thread.join(timeout=5)
+            owner_loop.close()
+
+    def test_override_role_future_bound_to_current_loop_raises(self) -> None:
+        async def resolve_image() -> None:
+            fut: "asyncio.Future[str]" = asyncio.get_running_loop().create_future()
+            role = Role("foobar", "torch", overrides={"image": fut})
+            with self.assertRaisesRegex(
+                RuntimeError, "currently running in this thread"
+            ):
+                _ = role.image
+            self.assertIs(
+                fut,
+                role.overrides.get("image"),
+                "an unresolvable loop-bound override must stay in `overrides`"
+                " so the caller can still `await` it",
+            )
+
+        asyncio.run(resolve_image())
 
     def test_concurrent_override_role(self) -> None:
 
@@ -1115,6 +1413,68 @@ class MacrosTest(unittest.TestCase):
         self.assertNotEqual(newrole, role)
         self.assertEqual(newrole.args, ["img_root"])
         self.assertEqual(newrole.env, {"FOO": "app_id"})
+
+    def test_apply_preserves_role_overrides(self) -> None:
+        overrides = {"entrypoint": lambda: "lazy.py"}
+        role = Role(
+            name="test",
+            image="test_image",
+            args=[macros.img_root],
+            overrides=overrides,
+        )
+        v = macros.Values(
+            img_root="img_root",
+            app_id="app_id",
+            replica_id="replica_id",
+            rank0_env="rank0_env",
+        )
+        newrole = v.apply(role)
+        self.assertIs(
+            role.overrides,
+            overrides,
+            "apply() must restore the caller role's overrides",
+        )
+        self.assertIs(
+            newrole.overrides,
+            overrides,
+            "the copy shares the dict — write-back resolution makes either"
+            " owner's resolution visible to both",
+        )
+        self.assertEqual("lazy.py", newrole.entrypoint)
+        self.assertEqual(
+            "lazy.py",
+            role.entrypoint,
+            "resolving on the copy must resolve for the original too",
+        )
+        self.assertEqual(newrole.args, ["img_root"])
+
+    def test_apply_without_overrides_gives_copy_its_own_dict(self) -> None:
+        v = macros.Values(
+            img_root="img_root",
+            app_id="app_id",
+            replica_id="replica_id",
+            rank0_env="rank0_env",
+        )
+
+        role = Role(name="test", image="test_image")
+        with self.assertNoLogs("torchx.specs.api", level="DEBUG"):
+            newrole = v.apply(role)
+        self.assertIsNot(
+            newrole.overrides,
+            role.overrides,
+            "with nothing to share the copy must get its own overrides dict",
+        )
+
+        # the reserved lock-key entry alone must not read as "has overrides"
+        locked = Role(name="test", image="test_image")
+        locked.overrides[_OVERRIDES_LOCK_KEY] = _OverridesLock()
+        with self.assertNoLogs("torchx.specs.api", level="DEBUG"):
+            newlocked = v.apply(locked)
+        self.assertIsNot(
+            newlocked.overrides,
+            locked.overrides,
+            "a lock-key-only dict counts as empty — no sharing",
+        )
 
     def test_apply_nested_with_list_of_dicts(self) -> None:
         """Test that _apply_nested correctly handles dictionaries nested inside lists."""

@@ -7,14 +7,16 @@
 # pyre-strict
 
 import asyncio
+import concurrent.futures
 import copy
 import inspect
 import json
-import logging as logger
+import logging
 import os
 import pathlib
 import re
 import shutil
+import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -23,6 +25,7 @@ from string import Template
 from types import MappingProxyType
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     Generic,
@@ -36,6 +39,8 @@ from typing import (
 )
 
 from torchx.util.types import to_dict
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 _APP_STATUS_FORMAT_TEMPLATE = """AppStatus:
     State: ${state}
@@ -157,7 +162,8 @@ class Resource:
             gpu=original.gpu,
             memMB=original.memMB,
             capabilities=res_capabilities,
-            devices=original.devices,
+            devices=dict(original.devices),
+            tags=dict(original.tags),
         )
 
 
@@ -231,15 +237,28 @@ class macros:
         def apply(self, role: "Role") -> "Role":
             """Returns a deep copy of ``role`` with macros substituted."""
 
-            # Overrides might contain future values which can't be serialized so taken out for the copy
-            overrides = role.overrides
-            if len(overrides) > 0:
-                logger.warning(
-                    "Role overrides are not supported for macros. Overrides will not be copied"
+            # Overrides may hold futures/coroutines that cannot be deep-copied,
+            # so detach them during the copy (restoring them on the original).
+            # The copy SHARES the dict with the original: resolution writes the
+            # resolved value back in place, so whichever role resolves an
+            # override first, both see the plain value thereafter (single-shot
+            # coroutines are resolved at most once).
+            original = role
+            overrides = original.overrides
+            if any(key != _OVERRIDES_LOCK_KEY for key in overrides):
+                logger.debug(
+                    "role overrides are shared with the macro-substituted copy"
                 )
-                role.overrides = {}
-            role = copy.deepcopy(role)
-            role.overrides = overrides
+                original.overrides = {}
+                try:
+                    role = copy.deepcopy(original)
+                finally:
+                    original.overrides = overrides
+                role.overrides = overrides
+            else:
+                # nothing to share — a plain deep copy gives the copy its own
+                # (empty) overrides dict instead of sharing the original's
+                role = copy.deepcopy(original)
 
             role.args = [self.substitute(arg) for arg in role.args]
             role.env = {key: self.substitute(arg) for key, arg in role.env.items()}
@@ -410,6 +429,139 @@ class Workspace:
             )
 
 
+# sentinel distinguishing "no override registered" from a legitimate None value
+_NO_OVERRIDE: object = object()
+
+# reserved key under which an overrides dict stores its own resolution lock.
+# NOT an identifier, so it can never collide with an attribute name; copies
+# share the overrides dict by reference, so they share the lock the same way.
+_OVERRIDES_LOCK_KEY: str = "<overrides resolution lock>"
+
+# guards only the mint-on-first-use of a dict's resolution lock (two cheap
+# dict ops); never held across resolution itself
+_overrides_lock_mint_guard = threading.Lock()
+
+
+class _OverridesLock:
+    """Reserved-key dict entry (see ``_OVERRIDES_LOCK_KEY``) holding an
+    overrides dict's single-flight resolution lock."""
+
+    __slots__ = ("lock",)
+
+    def __init__(self) -> None:
+        # re-entrant: a producer that itself reads another overridden
+        # attribute on the same Role re-acquires this lock on the same
+        # thread — an RLock resolves the nested override instead of
+        # self-deadlocking (a plain Lock would)
+        self.lock = threading.RLock()
+
+    def __deepcopy__(self, memo: dict[int, object]) -> "_OverridesLock":
+        # locks cannot be deep-copied; sharing is also the right semantic —
+        # a deep-copied dict keeps single-flight with its source
+        return self
+
+
+def _overrides_resolution_lock(ov: dict[str, Any]) -> "threading.RLock":
+    """Returns ``ov``'s single-flight resolution lock, minting it on first use.
+
+    Per-overrides-dict (never process-wide) so a slow producer on one dict
+    cannot stall override reads on unrelated ones. The lock is held across
+    the resolution itself and is RE-ENTRANT (see ``_OverridesLock``), so a
+    producer may read other overridden attributes backed by the same dict
+    from its own thread; only a producer that blocks on ANOTHER thread's
+    read of the same dict deadlocks — producers are plain value factories
+    (APF ``lazy_overrides``), not cross-thread Role readers.
+    """
+    holder = ov.get(_OVERRIDES_LOCK_KEY)
+    if holder is None:
+        with _overrides_lock_mint_guard:
+            holder = ov.get(_OVERRIDES_LOCK_KEY)
+            if holder is None:
+                holder = _OverridesLock()
+                ov[_OVERRIDES_LOCK_KEY] = holder
+    return holder.lock
+
+
+class _ResolvedOverride:
+    """Write-back marker wrapping a resolved override value in the (shared)
+    ``overrides`` dict — distinguishes an already-resolved value from an
+    unresolved producer (callable/awaitable), so a resolved value that
+    happens to be callable is never re-invoked."""
+
+    __slots__ = ("value",)
+
+    def __init__(self, value: object) -> None:
+        self.value = value
+
+    def __call__(self) -> object:
+        # preserves the legacy memoized-callable contract for consumers that
+        # index the raw dict and invoke the entry (the APF launcher wraps
+        # `overrides.get("image")` and later calls it): post-resolution the
+        # entry is this marker, so calling it returns the resolved value
+        return self.value
+
+
+def _resolve_awaitable_override(attrname: str, value: "Awaitable[object]") -> object:
+    """Blocks until the awaitable override ``value`` resolves, regardless of
+    the thread/event-loop context the attribute access happens in.
+    """
+    get_loop = getattr(value, "get_loop", None)
+    try:
+        running_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        running_loop = None
+
+    async def _await(aw: "Awaitable[object]") -> object:
+        return await aw
+
+    if running_loop is None:
+        # no event loop running in this thread — safe to block on one
+        if get_loop is not None:
+            # futures/tasks are bound to their creating loop; drive that
+            # loop — or, if it is already running in another thread,
+            # schedule the await on it
+            bound_loop = get_loop()
+            if bound_loop.is_running():
+                return asyncio.run_coroutine_threadsafe(
+                    _await(value), bound_loop
+                ).result()
+            return bound_loop.run_until_complete(value)
+        # plain coroutines are loop-less — drive a fresh loop
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(value)
+        finally:
+            loop.close()
+
+    # called from inside a running event loop, where both
+    # run_until_complete() and asyncio.run() raise RuntimeError
+    if get_loop is None:
+        # plain coroutines are loop-less — resolve on a worker thread
+        # with its own loop
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(lambda: asyncio.run(_await(value))).result()
+
+    # futures/tasks are bound to their creating loop; a fresh loop
+    # awaiting them raises "attached to a different loop"
+    bound_loop = get_loop()
+    if bound_loop is running_loop:
+        # this thread's loop cannot progress while this call blocks on it —
+        # resolving here would deadlock (the caller keeps the override, so it
+        # can still be awaited)
+        raise RuntimeError(
+            f"override `{attrname}` is bound to the event loop"
+            " currently running in this thread; `await` it"
+            " instead of accessing the attribute synchronously"
+        )
+    if bound_loop.is_running():
+        # completed by its own (other-thread) loop; best-effort check — a loop
+        # stopping between the check and the call is the caller's race to lose
+        return asyncio.run_coroutine_threadsafe(_await(value), bound_loop).result()
+    # bound loop is idle — drive it from a worker thread
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(bound_loop.run_until_complete, value).result()
+
+
 @dataclass
 class Role:
     """
@@ -465,7 +617,10 @@ class Role:
     mounts: list[BindMount | VolumeMount | DeviceMount] = field(default_factory=list)
     workspace: Workspace | None = None
 
-    # DEPRECATED DO NOT SET, WILL BE REMOVED SOON
+    # Deprecated — do not set. Kept while the APF launcher still produces
+    # lazy overrides at runtime (apf/launcher/torchx_utils.py sets
+    # `role.overrides` from `PkgInfo.lazy_overrides`); removal tracked in
+    # T237753541.
     overrides: dict[str, Any] = field(default_factory=dict)
 
     # pyre-ignore
@@ -476,17 +631,30 @@ class Role:
             ov = super().__getattribute__("overrides")
         except AttributeError:
             ov = {}
-        if attrname in ov:
-            if inspect.isawaitable(ov[attrname]):
-                try:
-                    loop = asyncio.get_event_loop()
-                    result = loop.run_until_complete(ov[attrname])
-                except RuntimeError:
-                    result = asyncio.run(ov[attrname])
-            else:
-                result = ov[attrname]()
-            setattr(self, attrname, result)
-            ov[attrname] = lambda: result
+        # lock-free fast path: keys are never removed (resolution writes back
+        # in place) and the write-back is an atomic reference assignment, so
+        # this unlocked read is stable — already-resolved overrides return
+        # without touching the resolution lock
+        value = ov.get(attrname, _NO_OVERRIDE)
+        if isinstance(value, _ResolvedOverride):
+            return value.value
+        if value is not _NO_OVERRIDE:
+            # single-flight read-resolve-writeback: concurrent readers of the
+            # same attribute run the producer exactly once
+            with _overrides_resolution_lock(ov):
+                value = ov[attrname]
+                if isinstance(value, _ResolvedOverride):
+                    return value.value
+                # on failure the producer stays in the dict untouched —
+                # nothing is popped before success
+                if inspect.isawaitable(value):
+                    result = _resolve_awaitable_override(attrname, value)
+                else:
+                    result = value()
+                # write back into the (possibly shared) dict: every role
+                # sharing this dict sees the resolved value
+                ov[attrname] = _ResolvedOverride(result)
+                return result
         return super().__getattribute__(attrname)
 
     def pre_proc(
@@ -669,7 +837,9 @@ class AppStatus:
             raise AppStatusError(self, f"job did not succeed: {self}")
 
     def _format_error_message(self, msg: str, header: str, width: int = 80) -> str:
-        assert len(header) < width
+        assert (
+            len(header) < width
+        ), f"header {header!r} (len {len(header)}) must be shorter than width {width}"
 
         match = re.search(_RPC_ERROR_MESSAGE_RE, msg)
         if match:
@@ -1266,8 +1436,6 @@ def parse_app_handle(app_handle: AppHandle) -> ParsedAppHandle:
 
     # parse it manually b/c currently torchx does not
     # define allowed characters nor length for session name and app_id
-    import re
-
     pattern = r"(?P<scheduler_backend>.+)://(?P<session_name>.*)/(?P<app_id>.+)"
     match = re.match(pattern, app_handle)
     if not match:

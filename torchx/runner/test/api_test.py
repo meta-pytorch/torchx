@@ -34,6 +34,7 @@ from torchx.specs import (
     Role,
     runopts,
     UnknownAppException,
+    UnknownSchedulerException,
     Workspace,
 )
 from torchx.specs.finder import ComponentNotFoundException
@@ -77,6 +78,19 @@ class RunnerTest(TestWithTmpDir):
             },
         ) as runner:
             yield runner
+
+    def test_unknown_scheduler(self, _) -> None:
+        with self.get_runner() as runner:
+            role = Role(
+                name="sleep",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="sleep.sh",
+                args=["1"],
+            )
+            app = AppDef("name", roles=[role])
+            with self.assertRaises(UnknownSchedulerException):
+                runner.run(app, scheduler="does_not_exist", cfg=self.cfg)
 
     def test_validate_no_roles(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
