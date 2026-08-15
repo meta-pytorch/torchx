@@ -215,10 +215,23 @@ Once installed, use the named resource:
 
 .. testsetup:: role
 
-   from torchx.specs import _named_resource_factories, Resource
+   import os
+   import sys
+   import types
 
-   _named_resource_factories["gpu_x2"] = lambda: Resource(cpu=16, gpu=2, memMB=122_000)
+   from torchx.specs import named_resources, Resource
 
+   _mod = types.ModuleType("_gpu_x2_resources")
+   _mod.NAMED_RESOURCES = {"gpu_x2": lambda: Resource(cpu=16, gpu=2, memMB=122_000)}
+   sys.modules["_gpu_x2_resources"] = _mod
+   os.environ["TORCHX_CUSTOM_NAMED_RESOURCES"] = "_gpu_x2_resources"
+   named_resources.reset()
+
+.. testcleanup:: role
+
+   del os.environ["TORCHX_CUSTOM_NAMED_RESOURCES"]
+   del sys.modules["_gpu_x2_resources"]
+   named_resources.reset()
 
 .. doctest:: role
 
