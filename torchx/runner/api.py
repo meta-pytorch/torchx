@@ -40,6 +40,7 @@ from torchx.specs import (
     parse_app_handle,
     runopts,
     UnknownAppException,
+    UnknownSchedulerException,
     Workspace,
 )
 from torchx.specs.finder import get_component
@@ -625,9 +626,7 @@ class Runner:
                 sched = factory(self._name, **self._scheduler_params)
                 self._scheduler_instances[scheduler] = sched
         if not sched:
-            raise KeyError(
-                f"Undefined scheduler backend: {scheduler}. Use one of: {self._scheduler_factories.keys()}"
-            )
+            raise UnknownSchedulerException(scheduler)
         return sched
 
     def _scheduler_app_id(
