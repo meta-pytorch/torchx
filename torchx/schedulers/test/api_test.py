@@ -35,6 +35,7 @@ from torchx.specs.api import (
     Role,
     runopts,
 )
+from torchx.util.types import none_throws
 from torchx.workspace.api import WorkspaceMixin
 
 T = TypeVar("T")
@@ -261,6 +262,14 @@ class SampleOpts(StructuredOpts):
     """Optional tag for the job."""
 
 
+@dataclass
+class KebabOpts(StructuredOpts):
+    """Options with a hyphenated external config key."""
+
+    mail_user: str | None = field(default=None, metadata={"cfg_key": "mail-user"})
+    """User to mail on job end."""
+
+
 class StructuredOptsTest(unittest.TestCase):
     """Tests for StructuredOpts base class functionality."""
 
@@ -303,6 +312,26 @@ class StructuredOptsTest(unittest.TestCase):
         opts = SampleOpts.from_cfg(cfg)
 
         self.assertEqual(opts.cluster_name, "snake_value")
+
+    def test_cfg_key_metadata_alias(self) -> None:
+        """Field metadata ``cfg_key`` maps external keys that cannot be
+        field names (e.g. hyphenated ``mail-user``) across from_cfg,
+        as_runopts, __getitem__, and iteration."""
+        opts = KebabOpts.from_cfg({"mail-user": "foo@bar.com"})
+        self.assertEqual(
+            "foo@bar.com", opts.mail_user, "from_cfg must accept the cfg_key alias"
+        )
+        self.assertEqual(
+            "foo@bar.com", opts["mail-user"], "__getitem__ must accept the cfg_key"
+        )
+        self.assertEqual(["mail-user"], list(opts), "iteration must yield the cfg_key")
+        runopt = KebabOpts.as_runopts().get("mail-user")
+        self.assertIsNotNone(runopt, "as_runopts must register the cfg_key")
+        self.assertEqual(
+            "User to mail on job end.",
+            none_throws(runopt).help,
+            "help text must come from the field docstring",
+        )
 
     # -------------------------------------------------------------------------
     # Mapping Protocol Tests

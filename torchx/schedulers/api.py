@@ -87,6 +87,9 @@ class StructuredOpts(Mapping[str, CfgVal]):
         - Auto-generates ``runopts`` from dataclass fields via :py:meth:`as_runopts`
         - Parses raw config dicts into typed instances via :py:meth:`from_cfg`
         - Supports snake_case field names with camelCase aliases
+        - Field metadata ``cfg_key`` overrides the external config key for
+          names that cannot be field names (e.g. hyphenated ``mail-user``):
+          ``mail_user: str | None = field(default=None, metadata={"cfg_key": "mail-user"})``
         - Extracts help text from field docstrings
         - Supports nested ``StructuredOpts`` fields, flattened with dot-prefixed
           keys (e.g., ``k8s.context``)
@@ -144,7 +147,10 @@ class StructuredOpts(Mapping[str, CfgVal]):
                     kwargs[name] = field_type.from_cfg({})
                 continue
 
-            if name in cfg:
+            cfg_key = f.metadata.get("cfg_key", name)
+            if cfg_key in cfg:
+                kwargs[name] = cfg[cfg_key]
+            elif name in cfg:
                 kwargs[name] = cfg[name]
             else:
                 camel_case = cases.snake_to_camel(name)
@@ -182,6 +188,10 @@ class StructuredOpts(Mapping[str, CfgVal]):
         snake_key = cases.camel_to_snake(key)
         if hasattr(self, snake_key):
             return getattr(self, snake_key)
+        # pyrefly: ignore [bad-argument-type]
+        for f in fields(self):
+            if f.metadata.get("cfg_key") == key:
+                return getattr(self, f.name)
         raise KeyError(key) from None
 
     def __len__(self) -> int:
@@ -198,7 +208,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
                     for nested_key in nested:
                         yield f"{f.name}.{nested_key}"
             else:
-                yield f.name
+                yield f.metadata.get("cfg_key", f.name)
 
     # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
     def __contains__(self, key: object) -> bool:
@@ -220,9 +230,10 @@ class StructuredOpts(Mapping[str, CfgVal]):
             return docstrings
 
         # Match: field_name: type...\n    """docstring"""
+        # (non-greedy body so docstrings may contain single/double quotes)
         pattern = re.compile(
-            r'^\s+(\w+):\s*[^\n]+\n\s+"""([^"]+)"""',
-            re.MULTILINE,
+            r'^\s+(\w+):\s*[^\n]+\n\s+"""(.+?)"""',
+            re.MULTILINE | re.DOTALL,
         )
         for match in pattern.finditer(source):
             field_name = match.group(1)
@@ -284,7 +295,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             required = not has_default and not has_default_factory
 
             opts.add(
-                name,
+                f.metadata.get("cfg_key", name),
                 type_=type_,
                 # pyrefly: ignore [bad-argument-type]
                 default=default,
