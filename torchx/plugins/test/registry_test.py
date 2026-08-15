@@ -49,6 +49,11 @@ _TEST_PLUGINS_DIRS: list[str] = [
     str(_TEST_DIR / "bad"),
 ]
 
+# Used ALONE (never merged with the dirs above): its torchx_plugins/schedulers
+# is a regular package whose __init__.py raises, which would shadow the
+# PEP 420 namespace merging of the healthy fixture dirs.
+_BROKEN_ROOT_DIR: str = str(_TEST_DIR / "broken_root")
+
 
 def mock_install_torchx_plugins() -> Any:  # pyre-ignore[3]: returns mock._patch
     """Mock-install the test ``torchx_plugins`` namespace package.
@@ -641,6 +646,91 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
             )
         finally:
             sys.modules.pop("torchx_plugins.schedulers.conflict", None)
+
+    @mock_install_torchx_plugins()
+    def test_errors_property_is_passive(self) -> None:
+        """errors returns nothing before discovery ran — no side effects."""
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        self.assertEqual(
+            [],
+            reg.errors,
+            "errors property must not trigger discovery",
+        )
+
+    @mock_install_torchx_plugins()
+    def test_load_errors_forces_discovery(self) -> None:
+        """load_errors() reports planted broken modules before any get()."""
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+
+        error_modules = {e.module for e in reg.load_errors()}
+
+        self.assertIn(
+            "torchx_plugins.schedulers.airflow",
+            error_modules,
+            "load_errors() should trigger discovery and report airflow.py",
+        )
+        self.assertIn(
+            "torchx_plugins.schedulers.ray",
+            error_modules,
+            "load_errors() should trigger discovery and report ray.py",
+        )
+
+    @mock_install_torchx_plugins()
+    def test_load_errors_group_filtering(self) -> None:
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+
+        sched_errors = reg.load_errors(PluginType.SCHEDULER)
+        self.assertIn(
+            "torchx_plugins.schedulers.ray",
+            {e.module for e in sched_errors},
+            "scheduler-namespace import errors should match SCHEDULER",
+        )
+
+        self.assertEqual(
+            [],
+            reg.load_errors(PluginType.NAMED_RESOURCE),
+            "named_resource group has no broken fixtures",
+        )
+
+        # mlflow is a tracker mis-registered under schedulers/ — it matches
+        # TRACKER via its plugin_type tag.
+        tracker_errors = reg.load_errors(PluginType.TRACKER)
+        self.assertIn(
+            "mlflow",
+            {e.name for e in tracker_errors},
+            "type-mismatch errors should match their actual plugin type",
+        )
+
+    def test_load_errors_root_namespace_failure(self) -> None:
+        """A root namespace whose __init__ raises MNFE for a missing dep is recorded."""
+        with patch("sys.path", [_BROKEN_ROOT_DIR, *sys.path]):
+            reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+            errors = reg.load_errors(PluginType.SCHEDULER)
+
+        root_errors = [e for e in errors if e.module == "torchx_plugins.schedulers"]
+        self.assertEqual(
+            1,
+            len(root_errors),
+            f"root-namespace import failure should be recorded, got: {errors}",
+        )
+        self.assertIsNone(
+            root_errors[0].name,
+            "import-level errors should carry name=None",
+        )
+        self.assertIn(
+            "missing_scheduler_dep",
+            root_errors[0].error,
+            "the missing dependency should be named in the error",
+        )
+
+    def test_load_errors_namespace_not_installed_is_clean(self) -> None:
+        """A plain 'not installed' namespace is an empty registry, not an error."""
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        self.assertEqual(
+            [],
+            reg.load_errors(),
+            "missing torchx_plugins namespace must not be recorded as an error",
+        )
 
     def test_broken_path_in_iter_modules_is_caught(self) -> None:
         """A broken __path__ that causes pkgutil.iter_modules to fail is caught.

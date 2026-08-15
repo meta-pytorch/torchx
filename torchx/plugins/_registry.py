@@ -292,10 +292,30 @@ class PluginRegistry:
         namespace: str,
         expected_type: PluginType | None = None,
     ) -> dict[str, Any]:
-        """Scan a namespace package for ``@register``-decorated plugins."""
+        """Scan a namespace package for ``@register``-decorated plugins.
+
+        A ``ModuleNotFoundError`` for *namespace* itself (or a parent) means
+        the namespace package is simply not installed — an empty registry,
+        not an error. Any other exception raised while importing the root
+        namespace (broken ``__init__``, missing dependency) is recorded as a
+        :py:class:`RegistrationError`.
+        """
         try:
             pkg: ModuleType = importlib.import_module(namespace)
-        except ImportError:
+        except ModuleNotFoundError as e:
+            missing = e.name
+            if missing and (
+                namespace == missing or namespace.startswith(f"{missing}.")
+            ):
+                return {}
+            msg = f"{type(e).__name__}: {e}"
+            logger.warning("failed to import namespace `%s`: %s", namespace, e)
+            self._errors.append(RegistrationError(module=namespace, error=msg))
+            return {}
+        except Exception as e:
+            msg = f"{type(e).__name__}: {e}"
+            logger.warning("failed to import namespace `%s`: %s", namespace, e)
+            self._errors.append(RegistrationError(module=namespace, error=msg))
             return {}
 
         if not hasattr(pkg, "__path__"):
@@ -369,8 +389,67 @@ class PluginRegistry:
 
     @property
     def errors(self) -> list[RegistrationError]:
-        """Errors encountered during plugin discovery."""
+        """Errors recorded by discovery that has already run.
+
+        A passive read with no side effects — groups that were never
+        :py:meth:`get`-ed contribute nothing here (an empty list does not
+        mean "no broken plugins"). Use :py:meth:`load_errors` to force
+        discovery before reading.
+        """
         return list(self._errors)
+
+    def load_errors(
+        self, plugin_type: PluginType | None = None
+    ) -> list[RegistrationError]:
+        """Force discovery, then return the errors it recorded.
+
+        Unlike the :py:attr:`errors` property, this first triggers discovery
+        for *plugin_type* (all groups when ``None``) via :py:meth:`get`, so
+        broken plugins are reported even before anything explicitly asked
+        for them.
+
+        The recorded set (import-level entries carry ``name=None``):
+
+        - **root-namespace import failure** — ``torchx_plugins.<group>``
+          exists but raises on import (e.g. a ``ModuleNotFoundError`` for a
+          missing dependency raised from its ``__init__``). A plain
+          "namespace not installed" ``ModuleNotFoundError`` for the
+          namespace itself is not recorded — that is the empty registry.
+        - **submodule import failure** — a plugin module inside the
+          namespace raises on import.
+        - **scan failure** — ``pkgutil.iter_modules`` fails on a namespace
+          path.
+        - **type mismatch** — a plugin registered under the wrong namespace
+          group (recorded with its *actual* ``plugin_type``).
+        - **duplicate name** — two plugins register the same name (first
+          occurrence wins).
+
+        When *plugin_type* is given, returns the errors recorded under that
+        group's namespace plus plugin-level errors tagged with that type —
+        a type-mismatch error therefore matches both the group it was found
+        under and the group it belongs to.
+        """
+        # __members__.values() over list(PluginType): OSS pyre cannot iterate
+        # Type[Enum] directly (equivalent while PluginType has no aliases)
+        plugin_types: list[PluginType] = (
+            [plugin_type]
+            if plugin_type is not None
+            else list(PluginType.__members__.values())
+        )
+        for pt in plugin_types:
+            self.get(pt)
+
+        if plugin_type is None:
+            return list(self._errors)
+
+        namespace = self._namespace_for_type(plugin_type)
+        return [
+            err
+            for err in self._errors
+            if err.plugin_type == plugin_type.name.lower()
+            or err.module == namespace
+            or err.module.startswith(f"{namespace}.")
+        ]
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize all discovered plugins to a plain dict.
