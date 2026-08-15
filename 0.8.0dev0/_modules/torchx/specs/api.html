@@ -1585,7 +1585,8 @@
 <span class="sd">        Below are the cast rules for each option type and value literal:</span>
 
 <span class="sd">        1. opt_type=str, value=&quot;foo&quot; -&gt; &quot;foo&quot;</span>
-<span class="sd">        1. opt_type=bool, value=&quot;True&quot;/&quot;False&quot; -&gt; True/False</span>
+<span class="sd">        1. opt_type=bool, value=&quot;true&quot;/&quot;1&quot;/&quot;yes&quot;/&quot;on&quot; -&gt; True (case-insensitive; INI vocabulary)</span>
+<span class="sd">        1. opt_type=bool, value=&quot;false&quot;/&quot;0&quot;/&quot;no&quot;/&quot;off&quot; -&gt; False (anything else raises ValueError)</span>
 <span class="sd">        1. opt_type=int, value=&quot;1&quot; -&gt; 1</span>
 <span class="sd">        1. opt_type=float, value=&quot;1.1&quot; -&gt; 1.1</span>
 <span class="sd">        1. opt_type=list[str]/List[str], value=&quot;a,b,c&quot; or value=&quot;a;b;c&quot; -&gt; [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]</span>
@@ -1599,7 +1600,17 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;runopt&#39;s opt_type cannot be `None`&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span>
+            <span class="c1"># accept the INI boolean vocabulary (configparser.getboolean)</span>
+            <span class="c1"># case-insensitively; reject anything else loudly</span>
+            <span class="n">lowered</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">lowered</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">lowered</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">` is not a valid bool literal, expected one of&quot;</span>
+                <span class="s2">&quot; (case-insensitive): true/1/yes/on or false/0/no/off&quot;</span>
+            <span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
             <span class="c1"># lists may be ; or , delimited</span>
             <span class="c1"># also deal with trailing &quot;,&quot; by removing empty strings</span>

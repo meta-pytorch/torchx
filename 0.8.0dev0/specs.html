@@ -865,7 +865,8 @@ or type mismatches. Accepts camelCase keys.</p>
 <dd><p>Casts the given <cite>value</cite> (in its string representation) to the type of this run option.
 Below are the cast rules for each option type and value literal:</p>
 <p>1. opt_type=str, value=”foo” -&gt; “foo”
-1. opt_type=bool, value=”True”/”False” -&gt; True/False
+1. opt_type=bool, value=”true”/”1”/”yes”/”on” -&gt; True (case-insensitive; INI vocabulary)
+1. opt_type=bool, value=”false”/”0”/”no”/”off” -&gt; False (anything else raises ValueError)
 1. opt_type=int, value=”1” -&gt; 1
 1. opt_type=float, value=”1.1” -&gt; 1.1
 1. opt_type=list[str]/List[str], value=”a,b,c” or value=”a;b;c” -&gt; [“a”, “b”, “c”]

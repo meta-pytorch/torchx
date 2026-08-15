@@ -993,20 +993,9 @@
                         <span class="sa">f</span><span class="s2">&quot; Remove the entry from the config file to no longer see this warning&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">opt_type</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
-                        <span class="c1"># need to handle bool specially since str -&gt; bool is based on</span>
-                        <span class="c1"># str emptiness not value (e.g. bool(&quot;False&quot;) == True)</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">getboolean</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_list_of_str</span><span class="p">:</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_dict_of_str</span><span class="p">:</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                            <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-                            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
-                        <span class="p">}</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="c1"># pyre-ignore[29]</span>
-                        <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">opt_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+                    <span class="c1"># delegate casting to the runopt itself so configfile</span>
+                    <span class="c1"># values parse exactly like CLI `-cfg` values</span>
+                    <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
 
 </pre></div>
 
