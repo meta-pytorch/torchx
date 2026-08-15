@@ -10,9 +10,12 @@ Core API
 .. autofunction:: torchx.plugins.registry
 
 .. autoclass:: torchx.plugins.PluginRegistry
-   :members: get, info
+   :members: get, info, errors, load_errors
 
 .. autoclass:: torchx.plugins.PluginType
+   :members:
+
+.. autoclass:: torchx.plugins.RegistrationError
    :members:
 
 Registration

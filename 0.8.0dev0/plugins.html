@@ -514,6 +514,16 @@ to enable a subset.</p>
 Defaults to <code class="docutils literal notranslate"><span class="pre">NAMESPACE_PKG</span> <span class="pre">|</span> <span class="pre">ENTRYPOINT</span></code>.</p>
 </dd>
 </dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="torchx.plugins.PluginRegistry.errors">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">errors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.plugins.RegistrationError" title="torchx.plugins._registry.RegistrationError"><span class="pre">RegistrationError</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#torchx.plugins.PluginRegistry.errors" title="Link to this definition">¶</a></dt>
+<dd><p>Errors recorded by discovery that has already run.</p>
+<p>A passive read with no side effects — groups that were never
+<a class="reference internal" href="#torchx.plugins.PluginRegistry.get" title="torchx.plugins.PluginRegistry.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a>-ed contribute nothing here (an empty list does not
+mean “no broken plugins”). Use <a class="reference internal" href="#torchx.plugins.PluginRegistry.load_errors" title="torchx.plugins.PluginRegistry.load_errors"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_errors()</span></code></a> to force
+discovery before reading.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.plugins.PluginRegistry.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins._registry.PluginType"><span class="pre">PluginType</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry.get" title="Link to this definition">¶</a></dt>
@@ -541,6 +551,36 @@ plugins dict for that single group.</p>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.plugins.PluginRegistry.load_errors">
+<span class="sig-name descname"><span class="pre">load_errors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#torchx.plugins.PluginType" title="torchx.plugins._registry.PluginType"><span class="pre">PluginType</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.plugins.RegistrationError" title="torchx.plugins._registry.RegistrationError"><span class="pre">RegistrationError</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#PluginRegistry.load_errors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.PluginRegistry.load_errors" title="Link to this definition">¶</a></dt>
+<dd><p>Force discovery, then return the errors it recorded.</p>
+<p>Unlike the <a class="reference internal" href="#torchx.plugins.PluginRegistry.errors" title="torchx.plugins.PluginRegistry.errors"><code class="xref py py-attr docutils literal notranslate"><span class="pre">errors</span></code></a> property, this first triggers discovery
+for <em>plugin_type</em> (all groups when <code class="docutils literal notranslate"><span class="pre">None</span></code>) via <a class="reference internal" href="#torchx.plugins.PluginRegistry.get" title="torchx.plugins.PluginRegistry.get"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get()</span></code></a>, so
+broken plugins are reported even before anything explicitly asked
+for them.</p>
+<p>The recorded set (import-level entries carry <code class="docutils literal notranslate"><span class="pre">name=None</span></code>):</p>
+<ul class="simple">
+<li><p><strong>root-namespace import failure</strong> — <code class="docutils literal notranslate"><span class="pre">torchx_plugins.&lt;group&gt;</span></code>
+exists but raises on import (e.g. a <code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError</span></code> for a
+missing dependency raised from its <code class="docutils literal notranslate"><span class="pre">__init__</span></code>). A plain
+“namespace not installed” <code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError</span></code> for the
+namespace itself is not recorded — that is the empty registry.</p></li>
+<li><p><strong>submodule import failure</strong> — a plugin module inside the
+namespace raises on import.</p></li>
+<li><p><strong>scan failure</strong> — <code class="docutils literal notranslate"><span class="pre">pkgutil.iter_modules</span></code> fails on a namespace
+path.</p></li>
+<li><p><strong>type mismatch</strong> — a plugin registered under the wrong namespace
+group (recorded with its <em>actual</em> <code class="docutils literal notranslate"><span class="pre">plugin_type</span></code>).</p></li>
+<li><p><strong>duplicate name</strong> — two plugins register the same name (first
+occurrence wins).</p></li>
+</ul>
+<p>When <em>plugin_type</em> is given, returns the errors recorded under that
+group’s namespace plus plugin-level errors tagged with that type —
+a type-mismatch error therefore matches both the group it was found
+under and the group it belongs to.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -551,6 +591,15 @@ plugins dict for that single group.</p>
 <p>This enum is used internally to tag decorated functions and to filter
 plugins during discovery.  It is part of the public API only to support
 advanced subclassing of <a class="reference internal" href="#torchx.plugins.register" title="torchx.plugins.register"><code class="xref py py-class docutils literal notranslate"><span class="pre">register</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="torchx.plugins.RegistrationError">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.plugins.</span></span><span class="sig-name descname"><span class="pre">RegistrationError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plugin_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/plugins/_registry.html#RegistrationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.plugins.RegistrationError" title="Link to this definition">¶</a></dt>
+<dd><p>An error encountered during plugin registration or discovery.</p>
+<p>Import-level errors (module fails to import) only have <em>module</em> and
+<em>error</em>.  Plugin-level errors (type mismatch, duplicate name)
+additionally carry <em>name</em> and <em>plugin_type</em>.</p>
 </dd></dl>
 
 </section>
@@ -776,11 +825,14 @@ GiB values.</p>
 <li><a class="reference internal" href="#core-api">Core API</a><ul>
 <li><a class="reference internal" href="#torchx.plugins.registry"><code class="docutils literal notranslate"><span class="pre">registry()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.plugins.PluginRegistry"><code class="docutils literal notranslate"><span class="pre">PluginRegistry</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.plugins.PluginRegistry.errors"><code class="docutils literal notranslate"><span class="pre">PluginRegistry.errors</span></code></a></li>
 <li><a class="reference internal" href="#torchx.plugins.PluginRegistry.get"><code class="docutils literal notranslate"><span class="pre">PluginRegistry.get()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.plugins.PluginRegistry.info"><code class="docutils literal notranslate"><span class="pre">PluginRegistry.info()</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.PluginRegistry.load_errors"><code class="docutils literal notranslate"><span class="pre">PluginRegistry.load_errors()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#torchx.plugins.PluginType"><code class="docutils literal notranslate"><span class="pre">PluginType</span></code></a></li>
+<li><a class="reference internal" href="#torchx.plugins.RegistrationError"><code class="docutils literal notranslate"><span class="pre">RegistrationError</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#registration">Registration</a><ul>

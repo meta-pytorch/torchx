@@ -502,6 +502,8 @@
 <span class="c1"># ── Public API ────────────────────────────────────────────────────────────────</span>
 
 
+<div class="viewcode-block" id="RegistrationError">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.RegistrationError">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RegistrationError</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;An error encountered during plugin registration or discovery.</span>
@@ -514,7 +516,8 @@
     <span class="n">module</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">error</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">plugin_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">plugin_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
 
 
 <div class="viewcode-block" id="PluginRegistry">
@@ -731,10 +734,30 @@
         <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">expected_type</span><span class="p">:</span> <span class="n">PluginType</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scan a namespace package for ``@register``-decorated plugins.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scan a namespace package for ``@register``-decorated plugins.</span>
+
+<span class="sd">        A ``ModuleNotFoundError`` for *namespace* itself (or a parent) means</span>
+<span class="sd">        the namespace package is simply not installed — an empty registry,</span>
+<span class="sd">        not an error. Any other exception raised while importing the root</span>
+<span class="sd">        namespace (broken ``__init__``, missing dependency) is recorded as a</span>
+<span class="sd">        :py:class:`RegistrationError`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">pkg</span><span class="p">:</span> <span class="n">ModuleType</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">ModuleNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">missing</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">if</span> <span class="n">missing</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">namespace</span> <span class="o">==</span> <span class="n">missing</span> <span class="ow">or</span> <span class="n">namespace</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="p">{}</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;failed to import namespace `</span><span class="si">%s</span><span class="s2">`: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegistrationError</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;failed to import namespace `</span><span class="si">%s</span><span class="s2">`: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RegistrationError</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span>
             <span class="k">return</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span> <span class="s2">&quot;__path__&quot;</span><span class="p">):</span>
@@ -814,8 +837,70 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">errors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RegistrationError</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Errors encountered during plugin discovery.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Errors recorded by discovery that has already run.</span>
+
+<span class="sd">        A passive read with no side effects — groups that were never</span>
+<span class="sd">        :py:meth:`get`-ed contribute nothing here (an empty list does not</span>
+<span class="sd">        mean &quot;no broken plugins&quot;). Use :py:meth:`load_errors` to force</span>
+<span class="sd">        discovery before reading.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PluginRegistry.load_errors">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.PluginRegistry.load_errors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_errors</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">plugin_type</span><span class="p">:</span> <span class="n">PluginType</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RegistrationError</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Force discovery, then return the errors it recorded.</span>
+
+<span class="sd">        Unlike the :py:attr:`errors` property, this first triggers discovery</span>
+<span class="sd">        for *plugin_type* (all groups when ``None``) via :py:meth:`get`, so</span>
+<span class="sd">        broken plugins are reported even before anything explicitly asked</span>
+<span class="sd">        for them.</span>
+
+<span class="sd">        The recorded set (import-level entries carry ``name=None``):</span>
+
+<span class="sd">        - **root-namespace import failure** — ``torchx_plugins.&lt;group&gt;``</span>
+<span class="sd">          exists but raises on import (e.g. a ``ModuleNotFoundError`` for a</span>
+<span class="sd">          missing dependency raised from its ``__init__``). A plain</span>
+<span class="sd">          &quot;namespace not installed&quot; ``ModuleNotFoundError`` for the</span>
+<span class="sd">          namespace itself is not recorded — that is the empty registry.</span>
+<span class="sd">        - **submodule import failure** — a plugin module inside the</span>
+<span class="sd">          namespace raises on import.</span>
+<span class="sd">        - **scan failure** — ``pkgutil.iter_modules`` fails on a namespace</span>
+<span class="sd">          path.</span>
+<span class="sd">        - **type mismatch** — a plugin registered under the wrong namespace</span>
+<span class="sd">          group (recorded with its *actual* ``plugin_type``).</span>
+<span class="sd">        - **duplicate name** — two plugins register the same name (first</span>
+<span class="sd">          occurrence wins).</span>
+
+<span class="sd">        When *plugin_type* is given, returns the errors recorded under that</span>
+<span class="sd">        group&#39;s namespace plus plugin-level errors tagged with that type —</span>
+<span class="sd">        a type-mismatch error therefore matches both the group it was found</span>
+<span class="sd">        under and the group it belongs to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># __members__.values() over list(PluginType): OSS pyre cannot iterate</span>
+        <span class="c1"># Type[Enum] directly (equivalent while PluginType has no aliases)</span>
+        <span class="n">plugin_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PluginType</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">plugin_type</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">plugin_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">PluginType</span><span class="o">.</span><span class="n">__members__</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">plugin_types</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plugin_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="p">)</span>
+
+        <span class="n">namespace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namespace_for_type</span><span class="p">(</span><span class="n">plugin_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">err</span>
+            <span class="k">for</span> <span class="n">err</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_errors</span>
+            <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">plugin_type</span> <span class="o">==</span> <span class="n">plugin_type</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="ow">or</span> <span class="n">err</span><span class="o">.</span><span class="n">module</span> <span class="o">==</span> <span class="n">namespace</span>
+            <span class="ow">or</span> <span class="n">err</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="p">]</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize all discovered plugins to a plain dict.</span>
