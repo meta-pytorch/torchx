@@ -423,6 +423,9 @@ class PluginRegistry:
           group (recorded with its *actual* ``plugin_type``).
         - **duplicate name** — two plugins register the same name (first
           occurrence wins).
+        - **cross-channel collision** — a name registered via both an entry
+          point and the namespace package (the entry point wins and shadows
+          the namespace plugin).
 
         When *plugin_type* is given, returns the errors recorded under that
         group's namespace plus plugin-level errors tagged with that type —
@@ -577,6 +580,11 @@ class PluginRegistry:
         1. ``importlib.metadata`` entry points (when ``ENTRYPOINT`` is set)
         2. ``torchx_plugins.<suffix>`` namespace submodules (when
            ``NAMESPACE_PKG`` is set)
+
+        A name registered through BOTH channels is a cross-channel collision:
+        the entry point silently shadows the namespace plugin, so the
+        collision is recorded as a :py:class:`RegistrationError` (and a
+        warning) to make the shadowing observable via :py:meth:`load_errors`.
         """
         group: str = plugin_type.value
         namespace = self._namespace_for_type(plugin_type)
@@ -586,7 +594,24 @@ class PluginRegistry:
             else {}
         )
         if PluginSource.ENTRYPOINT in self._plugin_sources:
-            plugins |= entrypoints.load_group(group) or {}
+            ep_plugins = entrypoints.load_group(group) or {}
+            for name in sorted(ep_plugins.keys() & plugins.keys()):
+                shadowed_module = getattr(plugins[name], "__module__", namespace)
+                msg = (
+                    f"registered via both a `{group}` entry point and the"
+                    f" `{namespace}` namespace package — the entry point wins;"
+                    f" remove one of the registrations"
+                )
+                logger.warning("`%s` in `%s` %s", name, shadowed_module, msg)
+                self._errors.append(
+                    RegistrationError(
+                        name=name,
+                        module=shadowed_module,
+                        plugin_type=plugin_type.name.lower(),
+                        error=msg,
+                    )
+                )
+            plugins |= ep_plugins
         return plugins
 
 
