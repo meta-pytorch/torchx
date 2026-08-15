@@ -181,7 +181,7 @@ class Runner:
                 parent_run_id=parent_run_id,
             )
             handle = self.schedule(dryrun_info)
-            app = none_throws(dryrun_info._app)
+            app = none_throws(dryrun_info.app)
 
             ctx._torchx_event.workspace = str(workspace)
             ctx._torchx_event.scheduler = none_throws(dryrun_info._scheduler)
@@ -288,7 +288,7 @@ class Runner:
             event.runcfg = json.dumps(dict(cfg)) if cfg else None
             event.workspace = str(workspace)
             event.app_id = parse_app_handle(handle)[2]
-            event.app_image = none_throws(dryrun_info._app).roles[0].image
+            event.app_image = none_throws(dryrun_info.app).roles[0].image
             event.app_metadata = app.metadata
 
             return handle
@@ -306,20 +306,20 @@ class Runner:
                      cause your usage to diverge from TorchX's supported API.
         """
         scheduler = none_throws(dryrun_info._scheduler)
-        cfg = dryrun_info._cfg
+        cfg = dryrun_info.cfg
         with log_event("schedule") as ctx:
             sched = self._scheduler(scheduler)
             app_id = sched.schedule(dryrun_info)
             app_handle = make_app_handle(scheduler, self._name, app_id)
 
-            app = none_throws(dryrun_info._app)
+            app = none_throws(dryrun_info.app)
             self._apps[app_handle] = app
 
             event = ctx._torchx_event
             event.scheduler = scheduler
             event.runcfg = json.dumps(dict(cfg)) if cfg else None
             event.app_id = app_id
-            event.app_image = none_throws(dryrun_info._app).roles[0].image
+            event.app_image = none_throws(dryrun_info.app).roles[0].image
             event.app_metadata = app.metadata
 
             return app_handle
@@ -430,7 +430,7 @@ class Runner:
             event.scheduler = scheduler
             event.runcfg = json.dumps(dict(cfg)) if cfg else None
             event.app_id = app.name
-            event.app_image = none_throws(dryrun_info._app).roles[0].image
+            event.app_image = none_throws(dryrun_info.app).roles[0].image
             event.app_metadata = app.metadata
 
             return dryrun_info
