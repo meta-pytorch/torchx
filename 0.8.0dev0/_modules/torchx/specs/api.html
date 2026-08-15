@@ -443,14 +443,16 @@
 <span class="c1"># pyre-strict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">logger</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
@@ -459,6 +461,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Awaitable</span><span class="p">,</span>
     <span class="n">Callable</span><span class="p">,</span>
     <span class="n">Dict</span><span class="p">,</span>
     <span class="n">Generic</span><span class="p">,</span>
@@ -472,6 +475,8 @@
 <span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_dict</span>
+
+<span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">_APP_STATUS_FORMAT_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;AppStatus:</span>
 <span class="s2">    State: $</span><span class="si">{state}</span>
@@ -603,7 +608,8 @@
             <span class="n">gpu</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
             <span class="n">memMB</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">memMB</span><span class="p">,</span>
             <span class="n">capabilities</span><span class="o">=</span><span class="n">res_capabilities</span><span class="p">,</span>
-            <span class="n">devices</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">devices</span><span class="p">,</span>
+            <span class="n">devices</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">devices</span><span class="p">),</span>
+            <span class="n">tags</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">tags</span><span class="p">),</span>
         <span class="p">)</span></div>
 </div>
 
@@ -685,15 +691,28 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="s2">&quot;Role&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Role&quot;</span><span class="p">:</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns a deep copy of ``role`` with macros substituted.&quot;&quot;&quot;</span>
 
-            <span class="c1"># Overrides might contain future values which can&#39;t be serialized so taken out for the copy</span>
-            <span class="n">overrides</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">overrides</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">overrides</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;Role overrides are not supported for macros. Overrides will not be copied&quot;</span>
+            <span class="c1"># Overrides may hold futures/coroutines that cannot be deep-copied,</span>
+            <span class="c1"># so detach them during the copy (restoring them on the original).</span>
+            <span class="c1"># The copy SHARES the dict with the original: resolution writes the</span>
+            <span class="c1"># resolved value back in place, so whichever role resolves an</span>
+            <span class="c1"># override first, both see the plain value thereafter (single-shot</span>
+            <span class="c1"># coroutines are resolved at most once).</span>
+            <span class="n">original</span> <span class="o">=</span> <span class="n">role</span>
+            <span class="n">overrides</span> <span class="o">=</span> <span class="n">original</span><span class="o">.</span><span class="n">overrides</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">key</span> <span class="o">!=</span> <span class="n">_OVERRIDES_LOCK_KEY</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">overrides</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;role overrides are shared with the macro-substituted copy&quot;</span>
                 <span class="p">)</span>
-                <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">role</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+                <span class="n">original</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">role</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="n">original</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+                <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># nothing to share — a plain deep copy gives the copy its own</span>
+                <span class="c1"># (empty) overrides dict instead of sharing the original&#39;s</span>
+                <span class="n">role</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">original</span><span class="p">)</span>
 
             <span class="n">role</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">role</span><span class="o">.</span><span class="n">args</span><span class="p">]</span>
             <span class="n">role</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -894,6 +913,139 @@
 
 
 
+<span class="c1"># sentinel distinguishing &quot;no override registered&quot; from a legitimate None value</span>
+<span class="n">_NO_OVERRIDE</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+<span class="c1"># reserved key under which an overrides dict stores its own resolution lock.</span>
+<span class="c1"># NOT an identifier, so it can never collide with an attribute name; copies</span>
+<span class="c1"># share the overrides dict by reference, so they share the lock the same way.</span>
+<span class="n">_OVERRIDES_LOCK_KEY</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;overrides resolution lock&gt;&quot;</span>
+
+<span class="c1"># guards only the mint-on-first-use of a dict&#39;s resolution lock (two cheap</span>
+<span class="c1"># dict ops); never held across resolution itself</span>
+<span class="n">_overrides_lock_mint_guard</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_OverridesLock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reserved-key dict entry (see ``_OVERRIDES_LOCK_KEY``) holding an</span>
+<span class="sd">    overrides dict&#39;s single-flight resolution lock.&quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;lock&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># re-entrant: a producer that itself reads another overridden</span>
+        <span class="c1"># attribute on the same Role re-acquires this lock on the same</span>
+        <span class="c1"># thread — an RLock resolves the nested override instead of</span>
+        <span class="c1"># self-deadlocking (a plain Lock would)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">RLock</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;_OverridesLock&quot;</span><span class="p">:</span>
+        <span class="c1"># locks cannot be deep-copied; sharing is also the right semantic —</span>
+        <span class="c1"># a deep-copied dict keeps single-flight with its source</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_overrides_resolution_lock</span><span class="p">(</span><span class="n">ov</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;threading.RLock&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns ``ov``&#39;s single-flight resolution lock, minting it on first use.</span>
+
+<span class="sd">    Per-overrides-dict (never process-wide) so a slow producer on one dict</span>
+<span class="sd">    cannot stall override reads on unrelated ones. The lock is held across</span>
+<span class="sd">    the resolution itself and is RE-ENTRANT (see ``_OverridesLock``), so a</span>
+<span class="sd">    producer may read other overridden attributes backed by the same dict</span>
+<span class="sd">    from its own thread; only a producer that blocks on ANOTHER thread&#39;s</span>
+<span class="sd">    read of the same dict deadlocks — producers are plain value factories</span>
+<span class="sd">    (APF ``lazy_overrides``), not cross-thread Role readers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">holder</span> <span class="o">=</span> <span class="n">ov</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_OVERRIDES_LOCK_KEY</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">_overrides_lock_mint_guard</span><span class="p">:</span>
+            <span class="n">holder</span> <span class="o">=</span> <span class="n">ov</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_OVERRIDES_LOCK_KEY</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">holder</span> <span class="o">=</span> <span class="n">_OverridesLock</span><span class="p">()</span>
+                <span class="n">ov</span><span class="p">[</span><span class="n">_OVERRIDES_LOCK_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">holder</span>
+    <span class="k">return</span> <span class="n">holder</span><span class="o">.</span><span class="n">lock</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_ResolvedOverride</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write-back marker wrapping a resolved override value in the (shared)</span>
+<span class="sd">    ``overrides`` dict — distinguishes an already-resolved value from an</span>
+<span class="sd">    unresolved producer (callable/awaitable), so a resolved value that</span>
+<span class="sd">    happens to be callable is never re-invoked.&quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+        <span class="c1"># preserves the legacy memoized-callable contract for consumers that</span>
+        <span class="c1"># index the raw dict and invoke the entry (the APF launcher wraps</span>
+        <span class="c1"># `overrides.get(&quot;image&quot;)` and later calls it): post-resolution the</span>
+        <span class="c1"># entry is this marker, so calling it returns the resolved value</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_awaitable_override</span><span class="p">(</span><span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;Awaitable[object]&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Blocks until the awaitable override ``value`` resolves, regardless of</span>
+<span class="sd">    the thread/event-loop context the attribute access happens in.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">get_loop</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;get_loop&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">running_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+        <span class="n">running_loop</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_await</span><span class="p">(</span><span class="n">aw</span><span class="p">:</span> <span class="s2">&quot;Awaitable[object]&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">aw</span>
+
+    <span class="k">if</span> <span class="n">running_loop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># no event loop running in this thread — safe to block on one</span>
+        <span class="k">if</span> <span class="n">get_loop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># futures/tasks are bound to their creating loop; drive that</span>
+            <span class="c1"># loop — or, if it is already running in another thread,</span>
+            <span class="c1"># schedule the await on it</span>
+            <span class="n">bound_loop</span> <span class="o">=</span> <span class="n">get_loop</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">bound_loop</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run_coroutine_threadsafe</span><span class="p">(</span>
+                    <span class="n">_await</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">bound_loop</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">bound_loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="c1"># plain coroutines are loop-less — drive a fresh loop</span>
+        <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">loop</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># called from inside a running event loop, where both</span>
+    <span class="c1"># run_until_complete() and asyncio.run() raise RuntimeError</span>
+    <span class="k">if</span> <span class="n">get_loop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># plain coroutines are loop-less — resolve on a worker thread</span>
+        <span class="c1"># with its own loop</span>
+        <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">_await</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+    <span class="c1"># futures/tasks are bound to their creating loop; a fresh loop</span>
+    <span class="c1"># awaiting them raises &quot;attached to a different loop&quot;</span>
+    <span class="n">bound_loop</span> <span class="o">=</span> <span class="n">get_loop</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">bound_loop</span> <span class="ow">is</span> <span class="n">running_loop</span><span class="p">:</span>
+        <span class="c1"># this thread&#39;s loop cannot progress while this call blocks on it —</span>
+        <span class="c1"># resolving here would deadlock (the caller keeps the override, so it</span>
+        <span class="c1"># can still be awaited)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;override `</span><span class="si">{</span><span class="n">attrname</span><span class="si">}</span><span class="s2">` is bound to the event loop&quot;</span>
+            <span class="s2">&quot; currently running in this thread; `await` it&quot;</span>
+            <span class="s2">&quot; instead of accessing the attribute synchronously&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">bound_loop</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+        <span class="c1"># completed by its own (other-thread) loop; best-effort check — a loop</span>
+        <span class="c1"># stopping between the check and the call is the caller&#39;s race to lose</span>
+        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run_coroutine_threadsafe</span><span class="p">(</span><span class="n">_await</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">bound_loop</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+    <span class="c1"># bound loop is idle — drive it from a worker thread</span>
+    <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">bound_loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="Role">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.Role">[docs]</a>
 <span class="nd">@dataclass</span>
@@ -951,7 +1103,10 @@
     <span class="n">mounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">BindMount</span> <span class="o">|</span> <span class="n">VolumeMount</span> <span class="o">|</span> <span class="n">DeviceMount</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">workspace</span><span class="p">:</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="c1"># DEPRECATED DO NOT SET, WILL BE REMOVED SOON</span>
+    <span class="c1"># Deprecated — do not set. Kept while the APF launcher still produces</span>
+    <span class="c1"># lazy overrides at runtime (apf/launcher/torchx_utils.py sets</span>
+    <span class="c1"># `role.overrides` from `PkgInfo.lazy_overrides`); removal tracked in</span>
+    <span class="c1"># T237753541.</span>
     <span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 
     <span class="c1"># pyre-ignore</span>
@@ -962,17 +1117,30 @@
             <span class="n">ov</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="s2">&quot;overrides&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="n">ov</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">attrname</span> <span class="ow">in</span> <span class="n">ov</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isawaitable</span><span class="p">(</span><span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">]):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
-                    <span class="n">result</span> <span class="o">=</span> <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">])</span>
-                <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
-                    <span class="n">result</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">]()</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
-            <span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">result</span>
+        <span class="c1"># lock-free fast path: keys are never removed (resolution writes back</span>
+        <span class="c1"># in place) and the write-back is an atomic reference assignment, so</span>
+        <span class="c1"># this unlocked read is stable — already-resolved overrides return</span>
+        <span class="c1"># without touching the resolution lock</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">ov</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="n">_NO_OVERRIDE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_ResolvedOverride</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NO_OVERRIDE</span><span class="p">:</span>
+            <span class="c1"># single-flight read-resolve-writeback: concurrent readers of the</span>
+            <span class="c1"># same attribute run the producer exactly once</span>
+            <span class="k">with</span> <span class="n">_overrides_resolution_lock</span><span class="p">(</span><span class="n">ov</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_ResolvedOverride</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">value</span>
+                <span class="c1"># on failure the producer stays in the dict untouched —</span>
+                <span class="c1"># nothing is popped before success</span>
+                <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isawaitable</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">_resolve_awaitable_override</span><span class="p">(</span><span class="n">attrname</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">value</span><span class="p">()</span>
+                <span class="c1"># write back into the (possibly shared) dict: every role</span>
+                <span class="c1"># sharing this dict sees the resolved value</span>
+                <span class="n">ov</span><span class="p">[</span><span class="n">attrname</span><span class="p">]</span> <span class="o">=</span> <span class="n">_ResolvedOverride</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">result</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Role.pre_proc">
@@ -1170,7 +1338,9 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_format_error_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">80</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">width</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">width</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;header </span><span class="si">{</span><span class="n">header</span><span class="si">!r}</span><span class="s2"> (len </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">)</span><span class="si">}</span><span class="s2">) must be shorter than width </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2">&quot;</span>
 
         <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">_RPC_ERROR_MESSAGE_RE</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
@@ -1806,8 +1976,6 @@
 
     <span class="c1"># parse it manually b/c currently torchx does not</span>
     <span class="c1"># define allowed characters nor length for session name and app_id</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-
     <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;(?P&lt;scheduler_backend&gt;.+)://(?P&lt;session_name&gt;.*)/(?P&lt;app_id&gt;.+)&quot;</span>
     <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
