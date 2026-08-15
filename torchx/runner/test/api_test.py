@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import concurrent.futures
+import copy
 import datetime
 import os
 from contextlib import contextmanager
@@ -259,9 +261,10 @@ class RunnerTest(TestWithTmpDir):
             )
             app = AppDef("name", roles=[role])
             runner.dryrun(app, "local_dir", cfg=self.cfg)
-            scheduler_mock.submit_dryrun.assert_called_once_with(
-                app, {**self.cfg, "foo": "bar"}
-            )
+            scheduler_mock.submit_dryrun.assert_called_once()
+            submitted_app, resolved_cfg = scheduler_mock.submit_dryrun.call_args[0]
+            self.assertEqual(app.name, submitted_app.name)
+            self.assertEqual({**self.cfg, "foo": "bar"}, resolved_cfg)
             scheduler_mock._validate.assert_called_once()
             from torchx.util.session import CURRENT_SESSION_ID
 
@@ -295,10 +298,15 @@ class RunnerTest(TestWithTmpDir):
             )
             app = AppDef("name", roles=[role1, role2])
             runner.dryrun(app, "local_dir", cfg=self.cfg)
-            for role in app.roles:
+            submitted_app = scheduler_mock.submit_dryrun.call_args[0][0]
+            for role in submitted_app.roles:
                 self.assertEqual(
                     role.env[ENV_TORCHX_JOB_ID],
                     "local_dir://" + SESSION_NAME + "/${app_id}",
+                )
+            for role in app.roles:
+                self.assertNotIn(
+                    ENV_TORCHX_JOB_ID, role.env, "caller's AppDef must not be mutated"
                 )
 
     def test_dryrun_trackers_parent_run_id_as_paramenter(self, _: MagicMock) -> None:
@@ -328,7 +336,8 @@ class RunnerTest(TestWithTmpDir):
             runner.dryrun(
                 app, "local_dir", cfg=self.cfg, parent_run_id=expected_parent_run_id
             )
-            for role in app.roles:
+            submitted_app = scheduler_mock.submit_dryrun.call_args[0][0]
+            for role in submitted_app.roles:
                 self.assertEqual(
                     role.env[ENV_TORCHX_PARENT_RUN_ID],
                     expected_parent_run_id,
@@ -369,7 +378,8 @@ class RunnerTest(TestWithTmpDir):
             )
             app = AppDef("name", roles=[role1, role2])
             runner.dryrun(app, "local_dir", cfg=self.cfg, parent_run_id="999")
-            for role in app.roles:
+            submitted_app = scheduler_mock.submit_dryrun.call_args[0][0]
+            for role in submitted_app.roles:
                 self.assertEqual(
                     role.env["TORCHX_TRACKERS"],
                     expected_trackers,
@@ -419,7 +429,8 @@ class RunnerTest(TestWithTmpDir):
             )
             app = AppDef("name", roles=[role1, role2])
             runner.dryrun(app, "local_dir", cfg=self.cfg, parent_run_id="999")
-            for role in app.roles:
+            submitted_app = scheduler_mock.submit_dryrun.call_args[0][0]
+            for role in submitted_app.roles:
                 self.assertEqual(
                     role.env["TORCHX_TRACKERS"],
                     expected_trackers,
@@ -432,6 +443,78 @@ class RunnerTest(TestWithTmpDir):
                     role.env["TORCHX_TRACKER_MY_TRACKER2_CONFIG"],
                     expected_tracker2_config,
                 )
+
+    def test_dryrun_does_not_mutate_caller_appdef(self, _: MagicMock) -> None:
+        sched1_mock = MagicMock()
+        sched2_mock = MagicMock()
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={
+                "sched1": lambda session_name, **kwargs: sched1_mock,
+                "sched2": lambda session_name, **kwargs: sched2_mock,
+            },
+        ) as runner:
+            role = Role(
+                name="echo",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="echo",
+                args=["hello world"],
+            )
+            app = AppDef("name", roles=[role])
+            pristine_app = copy.deepcopy(app)
+
+            runner.dryrun(app, "sched1", cfg=self.cfg)
+            runner.dryrun(app, "sched2", cfg=self.cfg)
+
+            self.assertEqual(
+                pristine_app, app, "dryrun must not mutate the caller's AppDef"
+            )
+            # each dryrun's env injection lands on the submitted copy
+            for scheduler, scheduler_mock in [
+                ("sched1", sched1_mock),
+                ("sched2", sched2_mock),
+            ]:
+                submitted_app = scheduler_mock.submit_dryrun.call_args[0][0]
+                self.assertEqual(
+                    f"{scheduler}://{SESSION_NAME}/${{app_id}}",
+                    submitted_app.roles[0].env[ENV_TORCHX_JOB_ID],
+                )
+
+    def test_dryrun_with_non_deepcopyable_overrides(self, _: MagicMock) -> None:
+        """Role.overrides may hold values deepcopy chokes on (e.g. an APF
+        fbpkg Future attached before dryrun); dryrun must succeed and the
+        submitted copy must SHARE the overrides dict with the caller's role
+        so a resolution through either side benefits both."""
+        sched_mock = MagicMock()
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={
+                "sched": lambda session_name, **kwargs: sched_mock,
+            },
+        ) as runner:
+            future: concurrent.futures.Future[str] = concurrent.futures.Future()
+            role = Role(
+                name="echo",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="echo",
+                args=["hello world"],
+                overrides={"image": future, "entrypoint": lambda: "echo"},
+            )
+            app = AppDef("name", roles=[role])
+
+            runner.dryrun(app, "sched", cfg=self.cfg)
+
+            submitted_role = sched_mock.submit_dryrun.call_args[0][0].roles[0]
+            self.assertIs(
+                role.overrides,
+                submitted_role.overrides,
+                "the copy must share the caller's overrides dict",
+            )
+            self.assertIsNot(
+                role, submitted_role, "dryrun must still operate on a role copy"
+            )
 
     def test_dryrun_with_workspace(self, _: MagicMock) -> None:
         class TestScheduler(WorkspaceMixin[None], Scheduler):
@@ -572,7 +655,13 @@ class RunnerTest(TestWithTmpDir):
             app = AppDef("sleeper", roles=[role], metadata=metadata)
 
             app_handle = runner.run(app, scheduler="local_dir", cfg=self.cfg)
-            self.assertEqual(app, runner.describe(app_handle))
+            described = none_throws(runner.describe(app_handle))
+            # describe() returns the submitted copy which additionally carries
+            # the runner's env injection (TORCHX_*) and scheduler-side env
+            # tweaks (e.g. local scheduler's PATH prepend); ignore env
+            for role in described.roles:
+                role.env.clear()
+            self.assertEqual(app, described)
             # unknown app should return None
             self.assertIsNone(runner.describe("local_dir://session1/unknown_app"))
 
