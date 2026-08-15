@@ -10,11 +10,9 @@
 import argparse
 import json
 import logging
-import sys
 
-from torchx.cli.cmd_base import SubCommand
-from torchx.runner import get_runner
-from torchx.specs.api import parse_app_handle
+from torchx.cli.cmd_base import AppHandleSubCommand
+from torchx.runner import Runner
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -36,13 +34,9 @@ def parse_list_arg(arg: str) -> list[str] | None:
     return arg.split(",")
 
 
-class CmdStatus(SubCommand):
+class CmdStatus(AppHandleSubCommand):
     def add_arguments(self, subparser: argparse.ArgumentParser) -> None:
-        subparser.add_argument(
-            "app_handle",
-            type=str,
-            help="torchx app handle (e.g. local://session-name/app-id)",
-        )
+        super().add_arguments(subparser)
         subparser.add_argument(
             "--roles", type=str, default="", help="comma separated roles to filter"
         )
@@ -52,11 +46,8 @@ class CmdStatus(SubCommand):
             help="output the status in JSON format",
         )
 
-    def run(self, args: argparse.Namespace) -> None:
-        app_handle = args.app_handle
-        scheduler, _, app_id = parse_app_handle(app_handle)
-        runner = get_runner()
-        app_status = runner.status(app_handle)
+    def run_with_runner(self, args: argparse.Namespace, runner: Runner) -> None:
+        app_status = runner.status(args.app_handle)
         filter_roles = parse_list_arg(args.roles)
         if app_status:
             if args.json:
@@ -64,8 +55,4 @@ class CmdStatus(SubCommand):
             else:
                 print(app_status.format(filter_roles))
         else:
-            logger.error(
-                f"AppDef: {app_id},"
-                f" does not exist or has been removed from {scheduler}'s data plane"
-            )
-            sys.exit(1)
+            self.exit_missing_app(args.app_handle)

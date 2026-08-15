@@ -16,7 +16,6 @@ import time
 from queue import Queue
 from typing import TextIO
 
-from torchx import specs
 from torchx.cli.cmd_base import SubCommand
 from torchx.runner import get_runner, Runner
 from torchx.schedulers.api import Stream
@@ -206,6 +205,12 @@ class CmdLog(SubCommand):
         )
 
     def run(self, args: argparse.Namespace) -> None:
-        get_logs(
-            sys.stdout, args.identifier, args.regex, args.tail, streams=args.streams
-        )
+        with get_runner() as runner:
+            get_logs(
+                sys.stdout,
+                args.identifier,
+                args.regex,
+                args.tail,
+                runner=runner,
+                streams=args.streams,
+            )
