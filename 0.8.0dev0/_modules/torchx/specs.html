@@ -501,6 +501,7 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.builders</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_app_handle</span><span class="p">,</span> <span class="n">materialize_appdef</span><span class="p">,</span> <span class="n">parse_mounts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.capabilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">CapabilityKey</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.metadata_keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_metadata</span><span class="p">,</span> <span class="n">NA</span><span class="p">,</span> <span class="n">TORCHX_CONTEXT_NAME</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_attr</span>
 
 <span class="n">GiB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>
@@ -636,6 +637,7 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;app_metadata&quot;</span><span class="p">,</span>
     <span class="s2">&quot;AppDef&quot;</span><span class="p">,</span>
     <span class="s2">&quot;AppDryRunInfo&quot;</span><span class="p">,</span>
     <span class="s2">&quot;AppHandle&quot;</span><span class="p">,</span>
@@ -649,6 +651,7 @@
     <span class="s2">&quot;is_terminal&quot;</span><span class="p">,</span>
     <span class="s2">&quot;macros&quot;</span><span class="p">,</span>
     <span class="s2">&quot;MISSING&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;NA&quot;</span><span class="p">,</span>
     <span class="s2">&quot;NONE&quot;</span><span class="p">,</span>
     <span class="s2">&quot;NULL_RESOURCE&quot;</span><span class="p">,</span>
     <span class="s2">&quot;parse_app_handle&quot;</span><span class="p">,</span>
@@ -674,6 +677,7 @@
     <span class="s2">&quot;materialize_appdef&quot;</span><span class="p">,</span>
     <span class="s2">&quot;parse_mounts&quot;</span><span class="p">,</span>
     <span class="s2">&quot;ALL&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TORCHX_CONTEXT_NAME&quot;</span><span class="p">,</span>
     <span class="s2">&quot;TORCHX_HOME&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Workspace&quot;</span><span class="p">,</span>
 <span class="p">]</span>
