@@ -151,9 +151,7 @@ COMPONENT --help`` to see the arguments for a specific component.
    :maxdepth: 1
 
    components/overview
-   components/train
    components/distributed
-   components/interpret
    components/utils
 
 .. fbcode::

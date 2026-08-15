@@ -34,8 +34,6 @@ Common choices:
 * `PyTorch Lightning <https://lightning.ai/docs/pytorch/stable/>`__
 * `PyTorch Ignite <https://github.com/pytorch/ignite>`__
 
-See :ref:`components/train:Train` for more information.
-
 Metrics
 ----------------
 
@@ -61,7 +59,6 @@ Interpretability
 ----------------
 
 Use `Captum <https://captum.ai/>`__ for model interpretability.
-See :ref:`components/interpret:Interpret` for built-in components.
 
 Model Packaging
 -----------------
