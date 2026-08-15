@@ -23,6 +23,7 @@ from torchx.specs.builders import (
     DeviceMount,
     make_app_handle,
     materialize_appdef,
+    parse_args,
     parse_mounts,
     VolumeMount,
 )
@@ -53,6 +54,84 @@ def get_dummy_application(role: str) -> AppDef:
 def example_empty_fn() -> AppDef:
     """Empty function that returns dummy app"""
     return get_dummy_application("trainer")
+
+
+def example_fn_for_config(
+    foo: str = "declared_foo", bar: int = 1, baz: str = "declared_baz"
+) -> AppDef:
+    """Dummy app parameterized by foo, bar, baz
+
+    Args:
+        foo: foo param
+        bar: bar param
+        baz: baz param
+    """
+    return get_dummy_application("trainer")
+
+
+class ParseArgsConfigPrecedenceTest(unittest.TestCase):
+    def test_cli_args_beat_config_values(self) -> None:
+        parsed = parse_args(
+            example_fn_for_config,
+            ["--foo", "from_cli"],
+            config={"foo": "from_config", "bar": 2},
+        )
+        self.assertEqual(
+            "from_cli", parsed.foo, "explicitly passed CLI arg must win over config"
+        )
+        self.assertEqual(2, parsed.bar, "config must fill args not passed on the CLI")
+        self.assertEqual(
+            "declared_baz",
+            parsed.baz,
+            "declared default must be kept when neither CLI nor config set the arg",
+        )
+
+    def test_config_beats_cmpnt_defaults(self) -> None:
+        parsed = parse_args(
+            example_fn_for_config,
+            [],
+            cmpnt_defaults={"foo": "from_cmpnt_defaults"},
+            config={"foo": "from_config"},
+        )
+        self.assertEqual(
+            "from_config", parsed.foo, "config must win over cmpnt_defaults"
+        )
+
+    def test_config_fills_varargs_on_empty_cli(self) -> None:
+        parsed = parse_args(
+            example_var_args,
+            ["--foo", "fooval"],
+            config={"args": ["cfg1", "cfg2"]},
+        )
+        self.assertEqual(
+            ["cfg1", "cfg2"],
+            parsed.args,
+            "config must fill *args when no varargs were passed on the CLI",
+        )
+
+    def test_cli_varargs_beat_config(self) -> None:
+        parsed = parse_args(
+            example_var_args,
+            ["--foo", "fooval", "arg1", "arg2"],
+            config={"args": ["cfg1", "cfg2"]},
+        )
+        self.assertEqual(
+            ["arg1", "arg2"],
+            parsed.args,
+            "explicitly passed CLI varargs must win over config",
+        )
+
+    def test_cli_args_beat_config_via_materialize_appdef(self) -> None:
+        app = materialize_appdef(
+            example_fn_with_bool,
+            ["--flag", "True"],
+            config={"flag": False},
+        )
+        self.assertEqual(
+            "trainer-with-flag",
+            app.roles[0].name,
+            "explicitly passed CLI arg must win over config",
+        )
 
 
 def example_fn_with_bool(flag: bool = False) -> AppDef:
