@@ -35,15 +35,9 @@ TorchX ships the following component categories out of the box:
    * - Category
      - What it does
      - Example use case
-   * - :doc:`train`
-     - Single-node training launchers
-     - Fine-tuning a model on one GPU
    * - :doc:`distributed`
      - Multi-node / multi-GPU training via TorchElastic
      - Large-scale distributed training (``dist.ddp``)
-   * - :doc:`interpret`
-     - Model interpretability jobs (Captum)
-     - Generating feature attributions
    * - :doc:`utils`
      - General-purpose utilities
      - Running an arbitrary Python script (``utils.python``)
