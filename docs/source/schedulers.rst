@@ -15,8 +15,7 @@ TorchX ships with schedulers for:
 
 * **Local development:** ``local_cwd``, ``local_docker``
 * **HPC (High-Performance Computing) clusters:** ``slurm``
-* **Cloud / container orchestrators:** ``kubernetes``, ``aws_batch``,
-  ``aws_sagemaker``
+* **Cloud / container orchestrators:** ``kubernetes``, ``aws_batch``
 
 Need a scheduler that isn't listed? See
 :ref:`Implementing a Custom Scheduler <implementing-scheduler>` below and
@@ -61,11 +60,6 @@ Every scheduler accepts the same ``AppDef``; only the ``--scheduler`` flag
      - AWS Batch job definition + job
      - AWS-native batch compute. Requires a Batch compute environment and
        job queue.
-   * - ``aws_sagemaker``
-     - AWS
-     - SageMaker training job
-     - Managed training with SageMaker features (spot instances, managed
-       infrastructure).
 
 .. fbcode::
 

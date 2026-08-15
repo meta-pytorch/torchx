@@ -109,11 +109,10 @@ templates_path = ["_templates"]
 source_suffix = [".rst"]
 
 # Mock imports for modules with external dependencies not available during doc build.
-# These schedulers have optional dependencies (boto3, sagemaker, kubernetes) that may
+# These schedulers have optional dependencies (boto3, kubernetes) that may
 # not be installed in the documentation build environment.
 autodoc_mock_imports = [
     "boto3",
-    "sagemaker",
     "kubernetes",
 ]
 
