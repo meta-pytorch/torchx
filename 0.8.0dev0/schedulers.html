@@ -348,7 +348,6 @@
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/slurm.html">Slurm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Workspaces</span></p>
 <ul>
@@ -454,8 +453,7 @@ TorchX ships with schedulers for:</p>
 <ul class="simple">
 <li><p><strong>Local development:</strong> <code class="docutils literal notranslate"><span class="pre">local_cwd</span></code>, <code class="docutils literal notranslate"><span class="pre">local_docker</span></code></p></li>
 <li><p><strong>HPC (High-Performance Computing) clusters:</strong> <code class="docutils literal notranslate"><span class="pre">slurm</span></code></p></li>
-<li><p><strong>Cloud / container orchestrators:</strong> <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code>,
-<code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></li>
+<li><p><strong>Cloud / container orchestrators:</strong> <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">aws_batch</span></code></p></li>
 </ul>
 <p>Need a scheduler that isn’t listed? See
 <a class="reference internal" href="#implementing-scheduler"><span class="std std-ref">Implementing a Custom Scheduler</span></a> below and
@@ -507,12 +505,6 @@ workspace (no container build needed).</p></td>
 <td><p>AWS Batch job definition + job</p></td>
 <td><p>AWS-native batch compute. Requires a Batch compute environment and
 job queue.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aws_sagemaker</span></code></p></td>
-<td><p>AWS</p></td>
-<td><p>SageMaker training job</p></td>
-<td><p>Managed training with SageMaker features (spot instances, managed
-infrastructure).</p></td>
 </tr>
 </tbody>
 </table>
@@ -839,7 +831,6 @@ and a guide to implementing your own workspace mixin.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/aws_batch.html">AWS Batch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="schedulers/aws_sagemaker.html">AWS SageMaker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/docker.html">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/kubernetes.html">Kubernetes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedulers/local.html">Local</a></li>
