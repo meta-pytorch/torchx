@@ -26,3 +26,16 @@ class CmdCancelTest(unittest.TestCase):
 
         self.assertEqual(cancel.call_count, 1)
         cancel.assert_called_with("foo://session/id")
+
+    @patch("torchx.runner.api.Runner.close")
+    @patch("torchx.runner.api.Runner.cancel")
+    def test_run_closes_runner(self, cancel: MagicMock, close: MagicMock) -> None:
+        """Pins AppHandleSubCommand's runner lifecycle: `with get_runner()`
+        closes scheduler clients when the command body returns."""
+        parser = argparse.ArgumentParser()
+        cmd_cancel = CmdCancel()
+        cmd_cancel.add_arguments(parser)
+
+        cmd_cancel.run(parser.parse_args(["foo://session/id"]))
+
+        close.assert_called_once()

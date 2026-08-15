@@ -10,21 +10,12 @@
 import argparse
 import logging
 
-from torchx.cli.cmd_base import SubCommand
-from torchx.runner import get_runner
+from torchx.cli.cmd_base import AppHandleSubCommand
+from torchx.runner import Runner
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-class CmdDelete(SubCommand):
-    def add_arguments(self, subparser: argparse.ArgumentParser) -> None:
-        subparser.add_argument(
-            "app_handle",
-            type=str,
-            help="torchx app handle (e.g. local://session-name/app-id)",
-        )
-
-    def run(self, args: argparse.Namespace) -> None:
-        app_handle = args.app_handle
-        runner = get_runner()
-        runner.delete(app_handle)
+class CmdDelete(AppHandleSubCommand):
+    def run_with_runner(self, args: argparse.Namespace, runner: Runner) -> None:
+        runner.delete(args.app_handle)
