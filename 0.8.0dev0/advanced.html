@@ -780,9 +780,9 @@ builtins without the <code class="docutils literal notranslate"><span class="pre
 </section>
 <section id="registering-custom-trackers">
 <span id="id1"></span><h2>Registering Custom Trackers<a class="headerlink" href="#registering-custom-trackers" title="Link to this heading">¶</a></h2>
-<p>TorchX ships with <a class="reference internal" href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a> and
-<a class="reference internal" href="tracker.html#torchx.tracker.mlflow.MLflowTracker" title="torchx.tracker.mlflow.MLflowTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a>. Implement your own by
-subclassing <a class="reference internal" href="tracker.html#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>.</p>
+<p>TorchX ships with <a class="reference internal" href="tracker.html#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a>.
+Implement your own by subclassing
+<a class="reference internal" href="tracker.html#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>.</p>
 <p><strong>The TrackerBase ABC</strong> defines eight abstract methods:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.tracker.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrackerBase</span><span class="p">,</span> <span class="n">TrackerArtifact</span><span class="p">,</span> <span class="n">TrackerSource</span><span class="p">,</span> <span class="n">Lineage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>

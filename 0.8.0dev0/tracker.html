@@ -533,7 +533,7 @@ implementation.</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[torchx:tracker]</span>
 <span class="na">tracker1</span><span class="o">=</span><span class="s">tracker1</span>
 <span class="na">tracker2</span><span class="o">=</span><span class="s">backend_2_entry_point</span>
-<span class="na">tracker3</span><span class="o">=</span><span class="s">torchx.tracker.mlflow:create_tracker</span>
+<span class="na">tracker3</span><span class="o">=</span><span class="s">my_module.trackers:create_tracker</span>
 
 <span class="k">[tracker:tracker1]</span>
 <span class="na">config</span><span class="o">=</span><span class="s">s3://my_bucket/config.json</span>
@@ -588,9 +588,8 @@ configure and use it in user application.</p>
 <ul class="simple">
 <li><p><strong>Backend level</strong> (<a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a>) – the storage
 implementation. TorchX ships with
-<a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a> (filesystem-based)
-and <a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker" title="torchx.tracker.mlflow.MLflowTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a>. You can implement your
-own backend.</p></li>
+<a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a> (filesystem-based).
+You can implement your own backend.</p></li>
 <li><p><strong>Job level</strong> (<a class="reference internal" href="#torchx.tracker.AppRun" title="torchx.tracker.api.AppRun"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppRun</span></code></a>) – the user-facing API
 that delegates to one or more <code class="docutils literal notranslate"><span class="pre">TrackerBase</span></code> backends. <code class="docutils literal notranslate"><span class="pre">AppRun</span></code> is
 constructed automatically from environment variables set by the TorchX
@@ -873,159 +872,6 @@ are no backwards compatibility gurantees with future releases yet.</p>
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.tracker.mlflow.</span></span><span class="sig-name descname"><span class="pre">MLflowTracker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracking_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'sqlite:////tmp/torchx/mlruns.db'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_location</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#torchx.tracker.api.TrackerBase" title="torchx.tracker.api.TrackerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrackerBase</span></code></a></p>
-<p>An implementation of a <code class="docutils literal notranslate"><span class="pre">Tracker</span></code> that uses mlflow as the backend.
-Don’t forget to call the <code class="docutils literal notranslate"><span class="pre">close()</span></code> method for orderly shutdown.
-This ensures that the run state in mlflow is properly marked as <code class="docutils literal notranslate"><span class="pre">FINISHED</span></code>,
-otherwise the run will remain in <code class="docutils literal notranslate"><span class="pre">UNFINISHED</span></code> status.</p>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>TorchX’s run_id is used as mlflow’s run_name! The run_id in TorchX
-is the job name. The job name in TorchX is made unique by adding
-a short random hash to the user-provided job name prefix. This is
-done because certain job schedulers supported by TorchX requires
-that the job name on the submitted job definition is globally unique
-(rather than the scheduler returning a unique job id as the return result
-of the job submission API).</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>APIs on this class may only be called with the same <code class="docutils literal notranslate"><span class="pre">run_name</span></code>.
-Typically the user does not have to worry about manually setting
-the run_name as it is picked up by default from the environment variable
-<code class="docutils literal notranslate"><span class="pre">TORCHX_JOB_ID</span></code>.</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><strong>Lineage not supported.</strong> The following <code class="docutils literal notranslate"><span class="pre">TrackerBase</span></code> methods raise
-<a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NotImplementedError</span></code></a>: <a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_source" title="torchx.tracker.mlflow.MLflowTracker.add_source"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_source()</span></code></a>,
-<a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.sources" title="torchx.tracker.mlflow.MLflowTracker.sources"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sources()</span></code></a>, and <a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.lineage" title="torchx.tracker.mlflow.MLflowTracker.lineage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lineage()</span></code></a>. If you need lineage
-tracking, use <a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker" title="torchx.tracker.backend.fsspec.FsspecTracker"><code class="xref py py-class docutils literal notranslate"><span class="pre">FsspecTracker</span></code></a>
-or implement a custom backend.</p>
-</div>
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_artifact">
-<span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.add_artifact" title="Link to this definition">¶</a></dt>
-<dd><p>Add an artifact with the given name, path, and optional metadata.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_metadata">
-<span class="sig-name descname"><span class="pre">add_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.add_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.add_metadata" title="Link to this definition">¶</a></dt>
-<dd><p>Store arbitrary key-value metadata for the given run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.add_source">
-<span class="sig-name descname"><span class="pre">add_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.add_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.add_source" title="Link to this definition">¶</a></dt>
-<dd><p>Link a source run (lineage) to the given run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.artifacts">
-<span class="sig-name descname"><span class="pre">artifacts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#torchx.tracker.api.TrackerArtifact" title="torchx.tracker.api.TrackerArtifact"><span class="pre">TrackerArtifact</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.artifacts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.artifacts" title="Link to this definition">¶</a></dt>
-<dd><p>Return all artifacts for the given run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.get_run">
-<span class="sig-name descname"><span class="pre">get_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Run</span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.get_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.get_run" title="Link to this definition">¶</a></dt>
-<dd><p>Gets mlflow’s <code class="docutils literal notranslate"><span class="pre">Run</span></code> object for the given <code class="docutils literal notranslate"><span class="pre">run_name</span></code> in the current experiment.
-If no such run exists, this method creates a new run under
-this experiment and starts the run so that subsequent calls to
-mlflow logs metadata, metrics, artifacts to the newly created run.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This method should only be called with the same run_name!
-This is because of the way mlflow
-APIs work is by setting an “active run” for which subsequent
-mlflow logging APIs are made against the current active run
-in the stack. If you call <code class="docutils literal notranslate"><span class="pre">mlflow.start_run()</span></code> directly
-or pass different run names, then you may be logging into two different
-mlflow runs from the same job!</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>run_name</strong> – equal to torchx’s run_id</p>
-</dd>
-</dl>
-<p>Returns: mlflow’s <code class="docutils literal notranslate"><span class="pre">Run</span></code> object for the <code class="docutils literal notranslate"><span class="pre">run_name</span></code></p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.get_run_id">
-<span class="sig-name descname"><span class="pre">get_run_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.get_run_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.get_run_id" title="Link to this definition">¶</a></dt>
-<dd><p>Gets the mlflow run’s run_id for the given <code class="docutils literal notranslate"><span class="pre">run_name</span></code> and additionally sets
-this run as the active run. Hence this method has a side-effect where all subsequent
-calls to mlflow log APIs are against the run for the given <code class="docutils literal notranslate"><span class="pre">run_name</span></code>.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.lineage">
-<span class="sig-name descname"><span class="pre">lineage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Lineage</span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.lineage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.lineage" title="Link to this definition">¶</a></dt>
-<dd><p>Return full lineage (parents and consumers) for the given run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.log_params_flat">
-<span class="sig-name descname"><span class="pre">log_params_flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.log_params_flat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.log_params_flat" title="Link to this definition">¶</a></dt>
-<dd><p>Designed to be primarily used with hydra-style config objects (e.g. dataclasses),
-logs the given <code class="docutils literal notranslate"><span class="pre">cfg</span></code>, which is one of: <code class="docutils literal notranslate"><span class="pre">&#64;dataclass</span></code>, <code class="docutils literal notranslate"><span class="pre">Sequence</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">tuple</span></code>, <code class="docutils literal notranslate"><span class="pre">set</span></code>),
-or <code class="docutils literal notranslate"><span class="pre">Mapping</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">dict</span></code>), where the fields of <code class="docutils literal notranslate"><span class="pre">cfg</span></code> are flattened recursively and logged as
-the the run’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> in mlflow.</p>
-<p>For example if <code class="docutils literal notranslate"><span class="pre">cfg</span></code> is:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Config2</span><span class="p">:</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bar&quot;</span>
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
-    <span class="n">i</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">f</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.1</span>
-    <span class="n">s</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
-    <span class="n">l</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="p">:[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">])</span>
-    <span class="n">cfg_list</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Config2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="p">:</span> <span class="p">[</span><span class="n">Config2</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s2">&quot;hello&quot;</span><span class="p">),</span> <span class="n">Config2</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s2">&quot;world&quot;</span><span class="p">)])</span>
-    <span class="n">cfg2</span><span class="p">:</span> <span class="n">Config2</span> <span class="o">=</span> <span class="n">Config2</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Then this function logs the following parameters</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span>
-<span class="n">f</span><span class="p">:</span> <span class="s2">&quot;2.1&quot;</span>
-<span class="n">s</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
-<span class="n">l</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
-<span class="n">cfg_list</span><span class="o">.</span><span class="n">_0</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;hello&quot;</span>
-<span class="n">cfg_list</span><span class="o">.</span><span class="n">_1</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;hello&quot;</span>
-<span class="n">cfg2</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;bar&quot;</span>
-</pre></div>
-</div>
-<p>As shown above, primitive sequence containers are logged directly (e.g. <code class="docutils literal notranslate"><span class="pre">l:</span> <span class="pre">[&quot;a&quot;,</span> <span class="pre">&quot;b&quot;,</span> <span class="pre">&quot;c&quot;]</span></code>)
-whereas nested sequence containers will be logged per element where the key is suffixed with
-<code class="docutils literal notranslate"><span class="pre">_{INDEX}</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">cfg_list._0.foo</span> <span class="pre">=</span> <span class="pre">&quot;hello&quot;</span></code>).</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.metadata">
-<span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Mapping" title="(in Python v3.14)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.metadata" title="Link to this definition">¶</a></dt>
-<dd><p>Return metadata for the given run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.run_ids">
-<span class="sig-name descname"><span class="pre">run_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.run_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.run_ids" title="Link to this definition">¶</a></dt>
-<dd><p>Return run IDs, optionally filtered by keyword arguments.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="torchx.tracker.mlflow.MLflowTracker.sources">
-<span class="sig-name descname"><span class="pre">sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchx.tracker.api.TrackerSource" title="torchx.tracker.api.TrackerSource"><span class="pre">TrackerSource</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/tracker/mlflow.html#MLflowTracker.sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.tracker.mlflow.MLflowTracker.sources" title="Link to this definition">¶</a></dt>
-<dd><p>Return sources for the given run, optionally filtered by <code class="docutils literal notranslate"><span class="pre">artifact_name</span></code>.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="cli-command">
 <h4>CLI Command<a class="headerlink" href="#cli-command" title="Link to this heading">¶</a></h4>
@@ -1200,20 +1046,6 @@ read by <a class="reference internal" href="#torchx.tracker.AppRun.run_from_env"
 <li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.metadata"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.metadata()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.run_ids"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.run_ids()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.tracker.backend.fsspec.FsspecTracker.sources"><code class="docutils literal notranslate"><span class="pre">FsspecTracker.sources()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker"><code class="docutils literal notranslate"><span class="pre">MLflowTracker</span></code></a><ul>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_artifact"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.add_artifact()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_metadata"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.add_metadata()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.add_source"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.add_source()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.artifacts"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.artifacts()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.get_run"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.get_run()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.get_run_id"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.get_run_id()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.lineage"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.lineage()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.log_params_flat"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.log_params_flat()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.metadata"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.metadata()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.run_ids"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.run_ids()</span></code></a></li>
-<li><a class="reference internal" href="#torchx.tracker.mlflow.MLflowTracker.sources"><code class="docutils literal notranslate"><span class="pre">MLflowTracker.sources()</span></code></a></li>
 </ul>
 </li>
 </ul>
