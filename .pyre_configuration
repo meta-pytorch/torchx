@@ -5,6 +5,7 @@
     ".*/setup.py",
     ".*/IPython/core/tests/nonascii.*",
     ".*/torchx/examples/apps/compute_world_size/.*",
+    ".*/torchx/plugins/test/broken_root/.*",
     ".*/site-packages/sagemaker/.*"
   ],
   "ignore_all_errors": [
