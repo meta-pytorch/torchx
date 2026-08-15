@@ -123,6 +123,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from dataclasses import dataclass
 from typing import Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -131,6 +132,12 @@ if TYPE_CHECKING:
 logger: logging.Logger = logging.getLogger(__name__)
 
 _Overlay = dict[str, Any]
+
+# Format marker stamped into ``metadata[namespace]`` by :py:func:`set_overlay`.
+# Its presence means the namespace dict is in the nested ``{kind: overlay}``
+# format, so :py:func:`get_overlay` never falls back to treating the whole
+# namespace dict as a flat overlay for a kind that is not present.
+_FORMAT_KEY = "__torchx_overlays__"
 
 # Operator key prefixes. Each function returns a string key for use in overlay
 # dicts. The prefix encodes the operation; the suffix encodes the field name
@@ -501,7 +508,15 @@ def set_overlay(
         namespace: Scheduler namespace (e.g., ``"kubernetes"``, ``"mast"``).
         kind: Scheduler struct type (e.g., ``"V1Pod"``,
             ``"HpcJobDefinition"``).
+
+    Raises:
+        ValueError: if ``kind`` is the reserved nested-format marker key.
     """
+    if kind == _FORMAT_KEY:
+        raise ValueError(
+            f"overlay kind `{kind}` is reserved for the nested-format marker"
+        )
+
     # Cast metadata to allow nested dicts
     # Note: AppDef.metadata is typed as dict[str, str] but overlays require nested dicts
     metadata = cast(_Metadata, target.metadata)
@@ -522,6 +537,10 @@ def set_overlay(
         ns_dict = {}
         metadata[namespace] = ns_dict
 
+    # Stamp the nested-format marker so get_overlay never misreads this
+    # namespace dict as a flat single-kind overlay.
+    ns_dict[_FORMAT_KEY] = True
+
     # Ensure kind dict exists and merge
     if kind not in ns_dict:
         ns_dict[kind] = {}
@@ -538,16 +557,31 @@ def get_overlay(
     target: AppDef | Role,
     namespace: str,
     kind: str,
+    *,
+    flat_fallback: bool = True,
 ) -> _Overlay:
     """Retrieve overlay from ``target.metadata[namespace][kind]``.
 
     Returns ``{}`` if not found. If ``metadata[namespace]`` is a string,
     it is loaded as a file URI via ``fsspec`` (JSON or YAML).
 
-    For backwards compatibility, if ``kind`` is not a key in
-    ``metadata[namespace]``, the entire namespace dict is returned as a
-    flat overlay (with a deprecation warning).
+    Namespace dicts written by :py:func:`set_overlay` carry a format marker
+    and are **nested-only**: a missing ``kind`` returns ``{}`` — an overlay
+    stored under kind ``A`` is never handed to a reader asking for kind ``B``.
+
+    For backwards compatibility, an *unmarked* namespace dict (written via
+    direct metadata access) whose ``kind`` key is missing is returned whole
+    as a flat overlay (with a deprecation warning), unless *flat_fallback*
+    is ``False``.
+
+    Raises:
+        ValueError: if ``kind`` is the reserved nested-format marker key.
     """
+    if kind == _FORMAT_KEY:
+        raise ValueError(
+            f"overlay kind `{kind}` is reserved for the nested-format marker"
+        )
+
     if namespace not in target.metadata:
         return {}
 
@@ -566,6 +600,25 @@ def get_overlay(
         if isinstance(overlay, dict):
             return overlay
 
+    available_kinds = [k for k in ns_value if k != _FORMAT_KEY]
+
+    # Marked nested format: a missing kind is an empty overlay, never the
+    # flat fallback. Debug-level: schedulers legitimately probe for kinds
+    # the writer never set (e.g. both TaskGroup kinds on every role).
+    if ns_value.get(_FORMAT_KEY):
+        if available_kinds:
+            logger.debug(
+                "overlay kind `%s` not found in namespace `%s` "
+                "(available kinds: %s)",
+                kind,
+                namespace,
+                available_kinds,
+            )
+        return {}
+
+    if not flat_fallback:
+        return {}
+
     # Backwards compat: flat format metadata[namespace] = {overlay} (no kind key).
     # Only fall back if ns_value doesn't look like nested format (multiple
     # dict-valued keys = nested, e.g. {"HpcTaskGroupSpec": {...}, ...}).
@@ -581,7 +634,7 @@ def get_overlay(
             "for the nested format",
             kind,
             namespace,
-            list(ns_value.keys()),
+            available_kinds,
             namespace,
             namespace,
             kind,
@@ -651,3 +704,65 @@ def validate_overlay(
             if suggestion:
                 msg = f"{msg} {suggestion}"
             raise ValueError(msg)
+
+
+@dataclass(frozen=True)
+class OverlaySpec:
+    """Declares a scheduler's overlay surface once — namespace, kind, and the
+    keys users must set via ``Role``/``AppDef`` attributes instead.
+
+    Scheduler authors define one per overlay kind and use it at both ends,
+    instead of re-spelling ``(namespace, kind, blocklist)`` at every
+    :py:func:`set_overlay`/:py:func:`get_overlay` call site:
+
+    .. doctest::
+
+        >>> from torchx.specs import Role
+        >>> from torchx.specs.overlays import OverlaySpec
+
+        >>> V1POD = OverlaySpec("kubernetes", "V1Pod", blocklist=("command", "env"))
+
+        >>> role = Role(name="trainer", image="img", entrypoint="train.py")
+        >>> V1POD.set(role, {"spec": {"nodeSelector": {"gpu": "true"}}})
+        >>> V1POD.get(role)
+        {'spec': {'nodeSelector': {'gpu': 'true'}}}
+
+    Args:
+        namespace: scheduler namespace (e.g. ``"kubernetes"``, ``"mast"``).
+        kind: scheduler struct type (e.g. ``"V1Pod"``, ``"HpcJobDefinition"``).
+        blocklist: keys that must be set via ``Role``/``AppDef`` attributes;
+            :py:meth:`get` raises ``ValueError`` when the stored overlay
+            contains any of them.
+    """
+
+    namespace: str
+    kind: str
+    blocklist: tuple[str, ...] = ()
+
+    def set(self, target: AppDef | Role, overlay: _Overlay) -> None:
+        """Store *overlay* via :py:func:`set_overlay` (accumulates).
+
+        Validates against ``blocklist`` so a disallowed key fails at write
+        time (at the call site that supplied it), not at read time.
+        """
+        validate_overlay(
+            overlay,
+            blocklist=list(self.blocklist),
+            overlay_name=self.kind,
+        )
+        set_overlay(target, self.namespace, self.kind, overlay)
+
+    def get(self, target: AppDef | Role) -> _Overlay:
+        """Retrieve the stored overlay, validated against ``blocklist``.
+
+        Reads nested-format only (``flat_fallback=False``) — an
+        :py:class:`OverlaySpec` reader never inherits a legacy flat
+        namespace dict written for some other kind.
+        """
+        overlay = get_overlay(target, self.namespace, self.kind, flat_fallback=False)
+        validate_overlay(
+            overlay,
+            blocklist=list(self.blocklist),
+            overlay_name=self.kind,
+        )
+        return overlay

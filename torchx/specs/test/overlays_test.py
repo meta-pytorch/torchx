@@ -7,6 +7,7 @@
 # pyre-strict
 import copy
 import json
+import logging
 import os
 import tempfile
 import unittest
@@ -14,11 +15,13 @@ from typing import Any
 
 from torchx.specs import AppDef, Role
 from torchx.specs.overlays import (
+    _FORMAT_KEY,
     _load_overlay_file,
     apply_overlay,
     DEL,
     get_overlay,
     JOIN,
+    OverlaySpec,
     PUT,
     set_overlay,
     validate_overlay,
@@ -382,6 +385,164 @@ class SetGetOverlayTest(unittest.TestCase):
         role = Role(name="w", image="img", entrypoint="e")
         role.metadata["kubernetes"] = 123
         self.assertEqual(get_overlay(role, "kubernetes", "V1Pod"), {})
+
+    def test_set_kind_a_read_kind_b_returns_empty(self) -> None:
+        """Misfire regression: a single kind written via set_overlay must not
+        be handed to a reader asking for a different kind."""
+        role = Role(name="w", image="img", entrypoint="e")
+        set_overlay(role, "mast", "HpcTaskGroupSpec", {"resourceRequirement": {}})
+
+        self.assertEqual(
+            {},
+            get_overlay(role, "mast", "HpcTaskGroupDefinition"),
+            "kind written as HpcTaskGroupSpec must not fall back flat for "
+            "HpcTaskGroupDefinition readers",
+        )
+        # ... while the written kind stays readable
+        self.assertEqual(
+            {"resourceRequirement": {}},
+            get_overlay(role, "mast", "HpcTaskGroupSpec"),
+        )
+
+    def test_marker_survives_set_overlay_merges(self) -> None:
+        role = Role(name="w", image="img", entrypoint="e")
+        set_overlay(role, "sched", "JobSpec", {"priority": "high"})
+        set_overlay(role, "sched", "JobSpec", {"oncall": "myoncall"})
+        set_overlay(role, "sched", "JobConfig", {"retries": 3})
+
+        self.assertTrue(
+            role.metadata["sched"][_FORMAT_KEY],
+            "format marker must survive accumulating set_overlay calls",
+        )
+
+    def test_marker_survives_metadata_dict_merge(self) -> None:
+        """apply_overlay-merging two marked namespace dicts keeps the marker."""
+        role_a = Role(name="a", image="img", entrypoint="e")
+        role_b = Role(name="b", image="img", entrypoint="e")
+        set_overlay(role_a, "sched", "JobSpec", {"priority": "high"})
+        set_overlay(role_b, "sched", "JobConfig", {"retries": 3})
+
+        merged = copy.deepcopy(role_a.metadata)
+        apply_overlay(merged, role_b.metadata)
+
+        self.assertTrue(
+            merged["sched"][_FORMAT_KEY],
+            "format marker must survive merging namespace dicts",
+        )
+        role_a.metadata = merged
+        self.assertEqual(
+            {},
+            get_overlay(role_a, "sched", "SomethingElse"),
+            "merged namespace dict must stay nested-only",
+        )
+
+    def test_marked_kind_miss_logs_debug_not_warning(self) -> None:
+        role = Role(name="w", image="img", entrypoint="e")
+        set_overlay(role, "sched", "JobSpec", {"priority": "high"})
+
+        with self.assertLogs("torchx.specs.overlays", level="DEBUG") as logs:
+            self.assertEqual({}, get_overlay(role, "sched", "JobConfig"))
+        self.assertTrue(
+            all(r.levelno < logging.WARNING for r in logs.records),
+            "kind miss on a marked namespace is a normal scheduler probe,"
+            " must not warn",
+        )
+        self.assertNotIn(
+            _FORMAT_KEY,
+            "\n".join(logs.output),
+            "format marker must not be listed as an available kind",
+        )
+        self.assertIn("JobSpec", "\n".join(logs.output))
+
+    def test_legacy_unmarked_flat_still_falls_back_with_warning(self) -> None:
+        role = Role(name="w", image="img", entrypoint="e")
+        # written via direct metadata access — no marker
+        role.metadata["kubernetes"] = {"spec": {"nodeSelector": {"gpu": "true"}}}
+
+        with self.assertLogs("torchx.specs.overlays", level="WARNING") as logs:
+            overlay = get_overlay(role, "kubernetes", "V1Pod")
+
+        self.assertEqual(
+            {"spec": {"nodeSelector": {"gpu": "true"}}},
+            overlay,
+            "unmarked flat namespace dict must keep the legacy fallback",
+        )
+        self.assertIn("flat", "\n".join(logs.output))
+
+    def test_flat_fallback_false_disables_legacy_fallback(self) -> None:
+        role = Role(name="w", image="img", entrypoint="e")
+        role.metadata["kubernetes"] = {"spec": {"nodeSelector": {"gpu": "true"}}}
+
+        self.assertEqual(
+            {},
+            get_overlay(role, "kubernetes", "V1Pod", flat_fallback=False),
+            "flat_fallback=False must never return the flat namespace dict",
+        )
+
+
+class OverlaySpecTest(unittest.TestCase):
+    def test_set_get_round_trip(self) -> None:
+        spec = OverlaySpec("kubernetes", "V1Pod")
+        role = Role(name="w", image="img", entrypoint="e")
+
+        spec.set(role, {"spec": {"nodeSelector": {"gpu": "true"}}})
+        spec.set(role, {"spec": {"tolerations": [{"key": "gpu"}]}})
+
+        self.assertEqual(
+            {
+                "spec": {
+                    "nodeSelector": {"gpu": "true"},
+                    "tolerations": [{"key": "gpu"}],
+                }
+            },
+            spec.get(role),
+            "OverlaySpec.set calls must accumulate like set_overlay",
+        )
+
+    def test_get_missing_returns_empty(self) -> None:
+        spec = OverlaySpec("kubernetes", "V1Pod")
+        role = Role(name="w", image="img", entrypoint="e")
+        self.assertEqual({}, spec.get(role))
+
+    def test_get_never_inherits_flat_namespace(self) -> None:
+        spec = OverlaySpec("kubernetes", "V1Pod")
+        role = Role(name="w", image="img", entrypoint="e")
+        role.metadata["kubernetes"] = {"spec": {"nodeSelector": {"gpu": "true"}}}
+
+        self.assertEqual(
+            {},
+            spec.get(role),
+            "OverlaySpec.get must read nested-format only",
+        )
+
+    def test_blocklist_enforced_on_set(self) -> None:
+        spec = OverlaySpec("kubernetes", "V1Pod", blocklist=("command", "env"))
+        role = Role(name="w", image="img", entrypoint="e")
+
+        with self.assertRaisesRegex(ValueError, "V1Pod.env"):
+            spec.set(role, {"env": {"FOO": "bar"}})
+        self.assertEqual(
+            {},
+            spec.get(role),
+            "a rejected OverlaySpec.set must not store anything",
+        )
+
+    def test_blocklist_enforced_on_get(self) -> None:
+        spec = OverlaySpec("kubernetes", "V1Pod", blocklist=("command", "env"))
+        role = Role(name="w", image="img", entrypoint="e")
+        # write through the raw storage API (bypasses OverlaySpec.set validation)
+        set_overlay(role, "kubernetes", "V1Pod", {"env": {"FOO": "bar"}})
+
+        with self.assertRaisesRegex(ValueError, "V1Pod.env"):
+            spec.get(role)
+
+    def test_reserved_format_marker_kind_rejected(self) -> None:
+        role = Role(name="w", image="img", entrypoint="e")
+
+        with self.assertRaisesRegex(ValueError, "reserved"):
+            set_overlay(role, "kubernetes", _FORMAT_KEY, {"spec": {}})
+        with self.assertRaisesRegex(ValueError, "reserved"):
+            get_overlay(role, "kubernetes", _FORMAT_KEY)
 
 
 # =============================================================================
