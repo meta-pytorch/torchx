@@ -440,6 +440,7 @@
 
 <span class="c1"># pyre-strict</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -794,6 +795,29 @@
 <span class="sd">        The returned :py:class:`~torchx.specs.AppDryRunInfo` can be</span>
 <span class="sd">        ``print()``-ed for inspection or passed to :py:meth:`schedule`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># operate on a copy so that the env injection and workspace overwrite</span>
+        <span class="c1"># below never leak into the caller&#39;s AppDef (one AppDef can be</span>
+        <span class="c1"># dry-run multiple times); the copy rides in the returned</span>
+        <span class="c1"># AppDryRunInfo&#39;s `_app`.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Role.overrides may already hold non-deepcopyable values (e.g. APF</span>
+        <span class="c1"># attaches an in-flight fbpkg Future before calling dryrun), so mirror</span>
+        <span class="c1"># the macros.Values.apply pattern: detach overrides, deepcopy, then</span>
+        <span class="c1"># attach the SAME dict object to both the original and the copy —</span>
+        <span class="c1"># sharing is the intended semantic: resolving an override through</span>
+        <span class="c1"># either owner benefits both.</span>
+        <span class="n">detached_overrides</span> <span class="o">=</span> <span class="p">[</span><span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">app_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">detached_overrides</span><span class="p">):</span>
+                <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+        <span class="k">for</span> <span class="n">role_copy</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">app_copy</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">detached_overrides</span><span class="p">):</span>
+            <span class="n">role_copy</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+        <span class="n">app</span> <span class="o">=</span> <span class="n">app_copy</span>
+
         <span class="c1"># input validation</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
