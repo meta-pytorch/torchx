@@ -7,8 +7,11 @@
 # pyre-strict
 
 import importlib
+import logging
 from types import ModuleType
 from typing import Callable, TypeVar
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def load_module(path: str) -> ModuleType | Callable[..., object] | None:
@@ -17,8 +20,13 @@ def load_module(path: str) -> ModuleType | Callable[..., object] | None:
 
     1. ``load_module("this.is.a_module:fn")`` -> equivalent to ``this.is.a_module.fn``
     1. ``load_module("this.is.a_module")`` -> equivalent to ``this.is.a_module``
+
+    Always returns ``None`` on failure, but only the absence of the module
+    (or one of its parent packages) is silent — a module that exists but is
+    broken (e.g. fails importing one of its own dependencies) logs a warning
+    naming the failure.
     """
-    parts = path.split(":", 2)
+    parts = path.split(":", 1)
     module_path, method = parts[0], parts[1] if len(parts) > 1 else None
     module = None
     i, n = -1, len(module_path)
@@ -28,7 +36,16 @@ def load_module(path: str) -> ModuleType | Callable[..., object] | None:
             i = i if i >= 0 else n
             module = importlib.import_module(module_path[:i])
         return getattr(module, method) if method else module
-    except Exception:
+    except Exception as e:
+        missing = e.name if isinstance(e, ModuleNotFoundError) else None
+        if missing is not None and (
+            missing == module_path or module_path.startswith(missing + ".")
+        ):
+            # the requested module (or a parent package of it) is absent —
+            # the expected miss for optional modules; stay silent
+            return None
+        # `module_path` exists but is broken (or the attr lookup failed)
+        logger.warning("failed to load module `%s`: %s", path, e)
         return None
 
 
@@ -54,12 +71,21 @@ def import_attr(name: str, attr: str, default: T) -> T:
         all_resources.update(aws_resources)
 
     Raises:
+        ModuleNotFoundError: If the module ``name`` exists but is broken —
+            i.e. it failed importing one of its own dependencies. Only the
+            absence of ``name`` itself (or one of its parent packages)
+            returns ``default``.
         AttributeError: If the module exists (e.g. can be imported)
             but does not have an attribute with name ``attr``.
     """
     try:
         mod = importlib.import_module(name)
-    except ModuleNotFoundError:
-        return default
+    except ModuleNotFoundError as e:
+        missing = e.name
+        if missing is not None and (missing == name or name.startswith(missing + ".")):
+            # the requested module (or a parent package of it) is absent
+            return default
+        # `name` exists but is broken: it failed importing `missing`
+        raise
     else:
         return getattr(mod, attr)

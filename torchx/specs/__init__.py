@@ -125,14 +125,21 @@ class _NamedResourcesLibrary:
                     "NAMED_RESOURCES",
                     default={},
                 )
-                custom: Mapping[str, ResourceFactory] = import_attr(
-                    os.environ.get(
-                        "TORCHX_CUSTOM_NAMED_RESOURCES",
-                        "torchx.specs.fb.named_resources",
-                    ),
-                    "NAMED_RESOURCES",
-                    default={},
-                )
+                try:
+                    custom: Mapping[str, ResourceFactory] = import_attr(
+                        os.environ.get(
+                            "TORCHX_CUSTOM_NAMED_RESOURCES",
+                            "torchx.specs.fb.named_resources",
+                        ),
+                        "NAMED_RESOURCES",
+                        default={},
+                    )
+                except ModuleNotFoundError:
+                    if "TORCHX_CUSTOM_NAMED_RESOURCES" in os.environ:
+                        raise  # the user explicitly pointed at this module — surface its breakage
+                    # the built-in fb default exists in a github checkout of fbsource but
+                    # cannot resolve its fbcode-only deps there — treat as absent
+                    custom = {}
                 factories = {
                     **generic,
                     **aws,

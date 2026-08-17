@@ -5,14 +5,26 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-# pyre-ignore-all-errors[3, 2, 16]
 
 from importlib import metadata
 from importlib.metadata import EntryPoint
-from typing import Any
+from typing import Callable, cast, overload, TypeVar
+
+T = TypeVar("T")
+
+# sentinel distinguishing "no default given" from an explicit `default=None`
+_NO_DEFAULT: object = object()
 
 
-def load(group: str, name: str, default=None):
+@overload
+def load(group: str, name: str) -> object: ...
+
+
+@overload
+def load(group: str, name: str, default: T) -> T: ...
+
+
+def load(group: str, name: str, default: T | object = _NO_DEFAULT) -> T | object:
     """
     Loads the entry point specified by
 
@@ -28,38 +40,18 @@ def load(group: str, name: str, default=None):
     and the entry point is not found, then this method
     raises an error.
     """
+    entrypoints = metadata.entry_points().select(group=group)
 
-    # [note_on_entrypoints]
-    # return type of importlib.metadata.entry_points() is different between python-3.9 and python-3.10
-    # https://docs.python.org/3.9/library/importlib.metadata.html#importlib.metadata.entry_points
-    # https://docs.python.org/3.10/library/importlib.metadata.html#importlib.metadata.entry_points
-    if hasattr(metadata.entry_points(), "select"):
-        # python>=3.10
-        entrypoints = metadata.entry_points().select(group=group)
-
-        if name not in entrypoints.names and default is not None:
+    if name not in entrypoints.names:
+        if default is not _NO_DEFAULT:
             return default
+        raise KeyError(f"entrypoint {group}.{name} not found")
 
-        ep = entrypoints[name]
-        return ep.load()
-
-    else:
-        # python<3.10 (e.g. 3.9)
-        # metadata.entry_points() returns dict[str, tuple[EntryPoint]] (not EntryPoints) in python-3.9
-        entrypoints = metadata.entry_points().get(group, ())
-
-        for ep in entrypoints:
-            if ep.name == name:
-                return ep.load()
-
-        # [group].name not found
-        if default is not None:
-            return default
-        else:
-            raise KeyError(f"entrypoint {group}.{name} not found")
+    # the caller declares the expected type via `default`
+    return cast(T, entrypoints[name].load())
 
 
-def _defer_load_ep(ep: EntryPoint) -> object:
+def _defer_load_ep(ep: EntryPoint) -> Callable[..., object]:
     def run(*args: object, **kwargs: object) -> object:
         if ep.attr is None:  # this is a module
             return ep.load()
@@ -69,7 +61,7 @@ def _defer_load_ep(ep: EntryPoint) -> object:
     return run
 
 
-def load_group(group: str, default: dict[str, Any] | None = None):
+def load_group(group: str) -> dict[str, Callable[..., object]]:
     """
     Loads all the entry points specified by ``group`` and returns
     the entry points as a map of ``name (str) -> deferred_load_fn``.
@@ -86,8 +78,7 @@ def load_group(group: str, default: dict[str, Any] | None = None):
      baz = this.is:b_fn
 
     1. ``load_group("foo")["bar"]("baz")`` -> equivalent to calling ``this.is.a_fn("baz")``
-    1. ``load_group("food")`` -> ``None``
-    1. ``load_group("food", default={"hello": this.is.c_fn})["hello"]("world")`` -> equivalent to calling ``this.is.c_fn("world")``
+    1. ``load_group("food")`` -> ``{}``
 
 
     If the entrypoint is a module (versus a function as shown above), then calling the ``deferred_load_fn``
@@ -102,19 +93,7 @@ def load_group(group: str, default: dict[str, Any] | None = None):
     1. ``load_group("foo")["bar"]("baz", hello="world")`` -> same as above (ignores ``*args`` and ``**kwargs``)
 
     """
-
-    # see [note_on_entrypoints] above
-    if hasattr(metadata.entry_points(), "select"):
-        # python>=3.10
-        entrypoints = metadata.entry_points().select(group=group)
-    else:
-        # python<3.10 (e.g. 3.9)
-        entrypoints = metadata.entry_points().get(group, ())
-
-    if len(entrypoints) == 0:
-        return default
-
-    eps = {}
-    for ep in entrypoints:
-        eps[ep.name] = _defer_load_ep(ep)
-    return eps
+    return {
+        ep.name: _defer_load_ep(ep)
+        for ep in metadata.entry_points().select(group=group)
+    }

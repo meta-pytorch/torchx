@@ -594,7 +594,7 @@ class PluginRegistry:
             else {}
         )
         if PluginSource.ENTRYPOINT in self._plugin_sources:
-            ep_plugins = entrypoints.load_group(group) or {}
+            ep_plugins = entrypoints.load_group(group)
             for name in sorted(ep_plugins.keys() & plugins.keys()):
                 shadowed_module = getattr(plugins[name], "__module__", namespace)
                 msg = (
