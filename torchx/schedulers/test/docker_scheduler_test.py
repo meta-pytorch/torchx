@@ -8,6 +8,7 @@
 # pyre-strict
 
 import posixpath
+import sys
 import unittest
 from datetime import datetime, timedelta
 from unittest.mock import patch
@@ -176,6 +177,30 @@ class DockerSchedulerTest(unittest.TestCase):
                 "/dev/neuron1:/dev/neuron1:rwm",
             ],
         )
+
+    def test_resource_devices_dryrun_idempotent(self) -> None:
+        app = _test_app()
+        app.roles[0].mounts = []
+        app.roles[0].resource.devices = {"vpc.amazonaws.com/efa": 1}
+        want = ["/dev/infiniband/uverbs0:/dev/infiniband/uverbs0:rwm"]
+
+        info_1 = self.scheduler.submit_dryrun(app, cfg=Opts())
+        info_2 = self.scheduler.submit_dryrun(app, cfg=Opts())
+
+        # a dryrun must not mutate the AppDef; the second dryrun would
+        # otherwise see (and re-add) the previously appended DeviceMounts
+        self.assertEqual([], app.roles[0].mounts)
+        self.assertEqual(want, info_1.request.containers[0].kwargs["devices"])
+        self.assertEqual(want, info_2.request.containers[0].kwargs["devices"])
+
+    def test_describe_no_containers(self) -> None:
+        with patch.object(self.scheduler, "_get_containers", return_value=[]):
+            self.assertIsNone(self.scheduler.describe("does-not-exist"))
+
+    def test_has_docker_no_docker_module(self) -> None:
+        # simulate docker-py not being installed
+        with patch.dict(sys.modules, {"docker": None}):
+            self.assertFalse(has_docker())
 
     @patch("os.environ", {"FOO_1": "f1", "BAR_1": "b1", "FOOBAR_1": "fb1"})
     def test_copy_env(self) -> None:
