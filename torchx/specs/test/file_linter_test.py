@@ -12,6 +12,7 @@
 import argparse
 import os
 import sys
+import tempfile
 import unittest
 from typing import Dict, List, Optional
 from unittest.mock import patch
@@ -150,6 +151,16 @@ def _test_invalid_fn_with_varags_and_kwargs(*args, id: int) -> AppDef:
     return IGNORED
 
 
+def _test_single_element_tuple_type(arg0: tuple[str]) -> AppDef:
+    """
+    Test description
+
+    Args:
+        arg0: arg0 desc
+    """
+    return IGNORED
+
+
 def current_file_path() -> str:
     return os.path.join(os.path.dirname(__file__), __file__)
 
@@ -255,6 +266,52 @@ class SpecsFileValidatorTest(unittest.TestCase):
                 "Unsupported container type 'Optional' for argument 'arg7: Optional[Optional[str]]' in function '_test_args_builtin_complex_types'",
             ],
             error_msgs,
+        )
+
+    def test_validate_malformed_dict_type(self) -> None:
+        # the malformed annotation lives in a generated file: as real module
+        # code it would (correctly) fail the strict type checkers
+        src = (
+            "from torchx.specs import AppDef\n"
+            "\n"
+            "def _test_malformed_dict_type(arg0: dict[str]) -> AppDef:\n"
+            '    """\n'
+            "    Test description\n"
+            "\n"
+            "    Args:\n"
+            "        arg0: arg0 desc\n"
+            '    """\n'
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            malformed_path = os.path.join(tmpdir, "malformed_component.py")
+            with open(malformed_path, "w") as f:
+                f.write(src)
+            linter_errors = validate(malformed_path, "_test_malformed_dict_type")
+        self.assertEqual(
+            1,
+            len(linter_errors),
+            "dict[str] must produce a linter error, not an AssertionError",
+        )
+        self.assertEqual(
+            "Malformed dict type 'dict[str]', expected exactly two type"
+            " parameters (dict[K, V]) for argument 'arg0: dict[str]'"
+            " in function '_test_malformed_dict_type'",
+            linter_errors[0].description,
+        )
+
+    def test_validate_single_element_tuple_type(self) -> None:
+        linter_errors = validate(self._path, "_test_single_element_tuple_type")
+        self.assertEqual(
+            1,
+            len(linter_errors),
+            "tuple[str] must produce a linter error, not an AssertionError",
+        )
+        self.assertEqual(
+            "Unsupported tuple type 'tuple[str]': single-element tuples are"
+            " valid typing but not supported for components; expected element"
+            " types (tuple[T1, T2, ...]) for argument 'arg0: tuple[str]'"
+            " in function '_test_single_element_tuple_type'",
+            linter_errors[0].description,
         )
 
     # pyre-ignore[56]
