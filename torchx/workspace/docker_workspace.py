@@ -96,10 +96,6 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
         updates ``role.image`` with the resulting image id.
         """
 
-        old_imgs = [
-            image.id
-            for image in self._docker_client.images.list(name=cfg["image_repo"])
-        ]
         context = _build_context(role.image, workspace)
 
         try:
@@ -136,9 +132,8 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
                     image_id = aux["ID"]
                 if error := event.get("error"):
                     raise BuildError(reason=error, build_log=None)
-            if len(old_imgs) == 0 or role.image not in old_imgs:
-                assert image_id, "image id was not found"
-                role.image = image_id
+            assert image_id, "image id was not found"
+            role.image = image_id
 
         finally:
             context.close()
