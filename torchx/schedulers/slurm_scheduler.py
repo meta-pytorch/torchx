@@ -13,6 +13,7 @@ components on a Slurm cluster.
 """
 
 import csv
+import functools
 import json
 import logging
 import os.path
@@ -85,10 +86,13 @@ def get_appstate_from_job(job: dict[str, object]) -> AppState:
         return appstate_from_slurm_state(str(job_state))
 
 
+@functools.cache
 def version() -> tuple[int, int]:
     """
     Uses ``sinfo --version`` to get the slurm version. If the command fails, it
-    assumes the version is ``slurm 24.05.8``.
+    assumes the version is ``slurm 24.05.8``. The result is cached for the
+    lifetime of the process (the cluster's slurm version does not change
+    between calls).
 
     Returns:
     -------
@@ -101,16 +105,17 @@ def version() -> tuple[int, int]:
     except (CalledProcessError, FileNotFoundError):
         out = "slurm 24.05.8"
         warnings.warn(
-            "Error running: `{sinfo_cmd}` to get SLURM version. Are you running outside the "
+            f"Error running: `{' '.join(cmd)}` to get SLURM version. Are you running outside the "
             "cluster's login or head node? This typically happens when running in `--dryrun`"
             " mode. Assuming version is `slurm 24.05.8`.",
             RuntimeWarning,
             stacklevel=2,
         )
 
-    # sinfo --version returns in the form "slurm 24.1.0"
-    _, version_literal = out.split(" ", maxsplit=2)
-    major, minor = [int(v) for v in version_literal.split(".")][:2]
+    # sinfo --version returns in the form "slurm 24.1.0" (tolerate trailing
+    # tokens like "slurm 24.1.0 rev1")
+    version_literal = out.split()[1]
+    major, minor = [int(v) for v in version_literal.split(".")[:2]]
 
     return (major, minor)
 
@@ -426,15 +431,18 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
         job_dir = req.job_dir
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(job_dir or tmpdir, "torchx-sbatch.sh")
+            # build the final argv locally; appending to `req.cmd` would make
+            # a retried `schedule(dryrun_info)` pass sbatch two scripts
+            cmd = list(req.cmd)
             if job_dir is not None:
-                req.cmd += [f"--chdir={job_dir}"]
-            req.cmd += [path]
+                cmd += [f"--chdir={job_dir}"]
+            cmd += [path]
             script = req.materialize()
 
             with open(path, "w") as f:
                 f.write(script)
 
-            p = subprocess.run(req.cmd, stdout=subprocess.PIPE, check=True)
+            p = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
             job_id = p.stdout.decode("utf-8").strip()
 
             if job_dir is not None:
@@ -619,6 +627,73 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
             msg=msg,
         )
 
+    @staticmethod
+    def _squeue_pending_hostname(
+        job: dict[str, Any], job_resources: dict[str, Any] | None
+    ) -> str:
+        """Hostname of a pending job across the squeue format generations."""
+        if job_resources is None:
+            # SLURM 24.11.5+ returns job_resources=None for pending jobs
+            # (issue #1101): check top-level fields
+            return job.get("nodes", "") or job.get("scheduled_nodes", "")
+        # NOTE: torchx launched jobs point to exactly one host; otherwise,
+        # scheduled_nodes could be a node list expression
+        # (eg. 'slurm-compute-node[0-20,21,45-47]')
+        hostname = job_resources.get("scheduled_nodes", "")
+        if not hostname and "nodes" in job_resources:
+            nodes_info = job_resources.get("nodes", {})
+            if isinstance(nodes_info, dict):
+                hostname = nodes_info.get("list", "")
+        return hostname
+
+    @staticmethod
+    def _squeue_allocated_nodes(
+        job_resources: dict[str, Any],
+    ) -> list[tuple[str, Resource | None]]:
+        """Normalizes the three squeue node-allocation formats to
+        ``(hostname, resource)`` pairs (resource ``None`` when the format
+        carries no per-node resource data)."""
+        nodes_data = job_resources.get("nodes", {})
+        if isinstance(nodes_data, dict) and isinstance(
+            nodes_data.get("allocation"), list
+        ):
+            # SLURM 24.11+ format: nodes.allocation is a list
+            return [
+                (
+                    node_info["name"],
+                    Resource(
+                        cpu=int(node_info["cpus"]["used"]),
+                        memMB=int(node_info["memory"]["allocated"]) // 1024,
+                        gpu=-1,
+                    ),
+                )
+                for node_info in nodes_data["allocation"]
+            ]
+        if isinstance(job_resources.get("allocated_nodes"), list):
+            # Legacy format: allocated_nodes is a list
+            # NOTE: we expect resource specs for all the nodes to be the same
+            # NOTE: use allocated (not used/requested) memory since users may
+            #  only specify --cpu, in which case slurm uses the (system)
+            #  configured {mem-per-cpu} * {cpus} to allocate memory.
+            # NOTE: getting gpus is tricky because it modeled as a
+            #  trackable-resource or not configured at all
+            return [
+                (
+                    node_info["nodename"],
+                    Resource(
+                        cpu=int(node_info["cpus_used"]),
+                        memMB=int(node_info["memory_allocated"]),
+                        gpu=-1,
+                    ),
+                )
+                for node_info in job_resources["allocated_nodes"]
+            ]
+        # Fallback: use hostname from nodes.list
+        if isinstance(nodes_data, str):
+            return [(nodes_data, None)]
+        hostname = nodes_data.get("list", "") if isinstance(nodes_data, dict) else ""
+        return [(hostname, None)]
+
     def _describe_squeue(self, app_id: str) -> DescribeAppResponse | None:
         # NOTE: This method contains multiple compatibility checks for different SLURM versions
         # due to API format changes across versions (20.02, 23.02, 24.05, 24.11+).
@@ -640,6 +715,10 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
         for job in jobs:
             # job name is of the form "{role_name}-{replica_id}"
             role_name, _, replica_id = job["name"].rpartition("-")
+            if not role_name or not replica_id.isdigit():
+                # not a torchx-launched job; skip it rather than fail the
+                # whole describe on `int(replica_id)`
+                continue
 
             entrypoint = job["command"]
             image = job["current_working_directory"]
@@ -662,28 +741,13 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
             )
 
             if state == AppState.PENDING:
-                # NOTE: torchx launched jobs points to exactly one host
-                #  otherwise, scheduled_nodes could be a node list expression (eg. 'slurm-compute-node[0-20,21,45-47]')
-
-                # SLURM 24.11.5+ returns job_resources=None for pending jobs (issue #1101)
-                if job_resources is not None:
-                    hostname = job_resources.get("scheduled_nodes", "")
-                    # If scheduled_nodes not found in job_resources, try nodes.list
-                    if not hostname and "nodes" in job_resources:
-                        nodes_info = job_resources.get("nodes", {})
-                        if isinstance(nodes_info, dict):
-                            hostname = nodes_info.get("list", "")
-                else:
-                    # For pending jobs where job_resources is None, check top-level fields
-                    hostname = job.get("nodes", "") or job.get("scheduled_nodes", "")
-
                 role.num_replicas += 1
                 role_status.replicas.append(
                     ReplicaStatus(
                         id=int(replica_id),
                         role=role_name,
                         state=state,
-                        hostname=hostname,
+                        hostname=self._squeue_pending_hostname(job, job_resources),
                     )
                 )
             else:  # state == AppState.RUNNING
@@ -691,68 +755,9 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
                 # where each replica is a "sub-job" so `allocated_nodes` will always be 1
                 # but we deal with jobs that have not been launched with torchx
                 # which can have multiple hosts per sub-job (count them as replicas)
-                nodes_data = job_resources.get("nodes", {})
-
-                # SLURM 24.11+ changed from allocated_nodes to nodes.allocation structure
-                if "allocation" in nodes_data and isinstance(
-                    nodes_data["allocation"], list
-                ):
-                    # SLURM 24.11+ format: nodes.allocation is a list
-                    for node_info in nodes_data["allocation"]:
-                        hostname = node_info["name"]
-                        cpu = int(node_info["cpus"]["used"])
-                        memMB = (
-                            int(node_info["memory"]["allocated"]) // 1024
-                        )  # Convert to MB
-
-                        role.resource = Resource(cpu=cpu, memMB=memMB, gpu=-1)
-                        role.num_replicas += 1
-                        role_status.replicas.append(
-                            ReplicaStatus(
-                                id=int(replica_id),
-                                role=role_name,
-                                state=state,
-                                hostname=hostname,
-                            )
-                        )
-                elif "allocated_nodes" in job_resources and isinstance(
-                    job_resources["allocated_nodes"], list
-                ):
-                    # Legacy format: allocated_nodes is a list
-                    for node_info in job_resources["allocated_nodes"]:
-                        # NOTE: we expect resource specs for all the nodes to be the same
-                        # NOTE: use allocated (not used/requested) memory since
-                        #  users may only specify --cpu, in which case slurm
-                        #  uses the (system) configured {mem-per-cpu} * {cpus}
-                        #  to allocate memory.
-                        # NOTE: getting gpus is tricky because it modeled as a trackable-resource
-                        #  or not configured at all (use total-cpu-on-host as proxy for gpus)
-                        cpu = int(node_info["cpus_used"])
-                        memMB = int(node_info["memory_allocated"])
-
-                        hostname = node_info["nodename"]
-
-                        role.resource = Resource(cpu=cpu, memMB=memMB, gpu=-1)
-                        role.num_replicas += 1
-                        role_status.replicas.append(
-                            ReplicaStatus(
-                                id=int(replica_id),
-                                role=role_name,
-                                state=state,
-                                hostname=hostname,
-                            )
-                        )
-                else:
-                    # Fallback: use hostname from nodes.list
-                    if isinstance(nodes_data, str):
-                        hostname = nodes_data
-                    else:
-                        hostname = (
-                            nodes_data.get("list", "")
-                            if isinstance(nodes_data, dict)
-                            else ""
-                        )
-
+                for hostname, resource in self._squeue_allocated_nodes(job_resources):
+                    if resource is not None:
+                        role.resource = resource
                     role.num_replicas += 1
                     role_status.replicas.append(
                         ReplicaStatus(
@@ -825,12 +830,23 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
             check=True,
         )
         output_json = json.loads(p.stdout.decode("utf-8"))
-        return [
-            ListAppResponse(
-                app_id=str(job["job_id"]), state=SLURM_STATES[job["state"]["current"]]
+        out = []
+        for job in output_json["jobs"]:
+            # `state.current` changed from str to a list of str in newer
+            # slurm versions; only the FIRST (primary) state is mapped —
+            # unlisted (or missing) states map to UNKNOWN
+            current = job["state"]["current"]
+            if isinstance(current, list):
+                state = str(current[0]) if current else ""
+            else:
+                state = str(current)
+            out.append(
+                ListAppResponse(
+                    app_id=str(job["job_id"]),
+                    state=appstate_from_slurm_state(state),
+                )
             )
-            for job in output_json["jobs"]
-        ]
+        return out
 
     def _list_squeue(self) -> List[ListAppResponse]:
         # if sacct isn't configured on the cluster, fallback to squeue which
