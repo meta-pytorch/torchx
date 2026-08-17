@@ -20,10 +20,10 @@ import shlex
 import subprocess
 import tempfile
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from subprocess import CalledProcessError, PIPE
-from typing import Any, Iterable, List, Mapping, TypedDict
+from typing import Any, Iterable, List, Mapping
 
 import torchx
 from torchx.schedulers.api import (
@@ -33,6 +33,7 @@ from torchx.schedulers.api import (
     Scheduler,
     split_lines_iterator,
     Stream,
+    StructuredOpts,
 )
 from torchx.schedulers.local_scheduler import LogIterator
 from torchx.specs import (
@@ -133,19 +134,6 @@ def _should_use_gpus_per_node_from_version() -> bool:
     )  # Major version is equal and minor version is greater or equal
 
 
-SBATCH_JOB_OPTIONS = {
-    "comment",
-    "mail-user",
-    "mail-type",
-    "account",
-}
-SBATCH_GROUP_OPTIONS = {
-    "partition",
-    "time",
-    "constraint",
-    "qos",
-}
-
 log: logging.Logger = logging.getLogger(__name__)
 
 
@@ -158,22 +146,41 @@ def _apply_app_id_env(s: str) -> str:
     return '"$SLURM_JOB_ID"'.join(escaped_parts)
 
 
-# Using old typed dict syntax to handle hyphenated params
-SlurmOpts = TypedDict(
-    "SlurmOpts",
-    {
-        "account": str | None,
-        "partition": str,
-        "time": str,
-        "comment": str | None,
-        "constraint": str | None,
-        "mail-user": str | None,
-        "mail-type": str | None,
-        "job_dir": str | None,
-        "qos": str | None,
-    },
-    total=False,
-)
+@dataclass
+class SlurmOpts(StructuredOpts):
+    """Typed configuration options for SlurmScheduler."""
+
+    account: str | None = None
+    """The account to use for the slurm job."""
+
+    partition: str | None = None
+    """The partition to run the job in."""
+
+    time: str | None = None
+    """The maximum time the job is allowed to run for. Formats: "minutes",
+    "minutes:seconds", "hours:minutes:seconds", "days-hours",
+    "days-hours:minutes" or "days-hours:minutes:seconds"
+    """
+
+    comment: str | None = None
+    """Comment to set on the slurm job."""
+
+    constraint: str | None = None
+    """Constraint to use for the slurm job."""
+
+    mail_user: str | None = field(default=None, metadata={"cfg_key": "mail-user"})
+    """User to mail on job end."""
+
+    mail_type: str | None = field(default=None, metadata={"cfg_key": "mail-type"})
+    """What events to mail users on."""
+
+    job_dir: str | None = None
+    """The directory to place the job code and outputs. The
+    directory must not exist and will be created. To enable log
+    iteration, jobs will be tracked in ``.torchxslurmjobdirs``."""
+
+    qos: str | None = None
+    """Quality of Service (QoS) to assign to the job."""
 
 
 @dataclass
@@ -204,10 +211,15 @@ class SlurmReplicaRequest:
         sbatch_opts: dict[str, str | None] = {
             "requeue": None,
         }
-        for k, v in cfg.items():
-            if v is None:
-                continue
-            if k in SBATCH_GROUP_OPTIONS:
+        # sbatch options that apply per heterogeneous job group
+        group_opts = {
+            "partition": cfg.partition,
+            "time": cfg.time,
+            "constraint": cfg.constraint,
+            "qos": cfg.qos,
+        }
+        for k, v in group_opts.items():
+            if v is not None:
                 sbatch_opts[k] = str(v)
         sbatch_opts.setdefault("ntasks-per-node", "1")
         resource = role.resource
@@ -339,7 +351,7 @@ fi
 {self.materialize()}"""
 
 
-class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
+class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
     """
     SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects
     that slurm CLI tools are locally installed and job accounting is enabled.
@@ -407,61 +419,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
         super().__init__("slurm", session_name)
 
     def _run_opts(self) -> runopts:
-        opts = runopts()
-        opts.add(
-            "account",
-            type_=str,
-            help="The account to use for the slurm job.",
-            default=None,
-        )
-        opts.add(
-            "partition",
-            type_=str,
-            help="The partition to run the job in.",
-            default=None,
-        )
-        opts.add(
-            "time",
-            type_=str,
-            default=None,
-            help='The maximum time the job is allowed to run for. Formats: \
-            "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", \
-            "days-hours:minutes" or "days-hours:minutes:seconds"',
-        )
-        opts.add(
-            "comment",
-            type_=str,
-            help="Comment to set on the slurm job.",
-        )
-        opts.add(
-            "constraint",
-            type_=str,
-            help="Constraint to use for the slurm job.",
-        )
-        opts.add(
-            "mail-user",
-            type_=str,
-            help="User to mail on job end.",
-        )
-        opts.add(
-            "mail-type",
-            type_=str,
-            help="What events to mail users on.",
-        )
-        opts.add(
-            "job_dir",
-            type_=str,
-            help="""The directory to place the job code and outputs. The
-            directory must not exist and will be created. To enable log
-            iteration, jobs will be tracked in ``.torchxslurmjobdirs``.
-            """,
-        )
-        opts.add(
-            "qos",
-            type_=str,
-            help="Quality of Service (QoS) to assign to the job.",
-        )
-        return opts
+        return SlurmOpts.as_runopts()
 
     def schedule(self, dryrun_info: AppDryRunInfo[SlurmBatchRequest]) -> str:
         req = dryrun_info.request
@@ -516,17 +474,14 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
         return None
 
     def _submit_dryrun(
-        self, app: AppDef, cfg: SlurmOpts
+        self, app: AppDef, cfg: Mapping[str, CfgVal]
     ) -> AppDryRunInfo[SlurmBatchRequest]:
-        job_dir = cfg.get("job_dir")
-        assert job_dir is None or isinstance(job_dir, str), "job_dir must be str"
-
-        partition = cfg.get("partition")
-        assert partition is None or isinstance(partition, str), "partition must be str"
+        # Convert to typed opts for attribute access (resolve() passes a raw dict)
+        opts = cfg if isinstance(cfg, SlurmOpts) else SlurmOpts.from_cfg(cfg)
 
         # check if the partition has at least 1GB memory, if we're not sure,
         # default to using memory allocations
-        memmb = self._partition_memmb(partition)
+        memmb = self._partition_memmb(opts.partition)
         nomem = memmb is not None and memmb <= 1000
 
         replicas = {}
@@ -543,27 +498,32 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
                 replicas[name] = SlurmReplicaRequest.from_role(
                     name,
                     replica_role,
-                    cfg,
+                    opts,
                     nomem=nomem,
                 )
         cmd = ["sbatch", "--parsable"]
 
-        for k in SBATCH_JOB_OPTIONS:
-            # pyre-fixme: Typed Dict requires string literal
-            if k in cfg and cfg[k] is not None:
-                # pyre-fixme: Typed Dict requires string literal
-                cmd += [f"--{k}={cfg[k]}"]
+        # sbatch options that apply once to the whole job
+        job_opts = {
+            "comment": opts.comment,
+            "mail-user": opts.mail_user,
+            "mail-type": opts.mail_type,
+            "account": opts.account,
+        }
+        for k, v in job_opts.items():
+            if v is not None:
+                cmd += [f"--{k}={v}"]
 
         req = SlurmBatchRequest(
             cmd=cmd,
             replicas=replicas,
-            job_dir=job_dir,
+            job_dir=opts.job_dir,
             max_retries=min(role.max_retries for role in app.roles),
         )
 
         return AppDryRunInfo(req, repr)
 
-    def _validate(self, app: AppDef, scheduler: str, cfg: SlurmOpts) -> None:
+    def _validate(self, app: AppDef, scheduler: str, cfg: Mapping[str, CfgVal]) -> None:
         # Skip validation step for slurm
         pass
 

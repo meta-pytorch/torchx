@@ -118,7 +118,7 @@ class SlurmSchedulerTest(unittest.TestCase):
     def test_replica_request(self, mock_version: MagicMock) -> None:
         role = simple_role()
         sbatch, srun = SlurmReplicaRequest.from_role(
-            "role-0", role, cfg={}, nomem=False
+            "role-0", role, cfg=SlurmOpts(), nomem=False
         ).materialize()
         self.assertEqual(
             sbatch,
@@ -154,7 +154,7 @@ class SlurmSchedulerTest(unittest.TestCase):
         sbatch, srun = SlurmReplicaRequest.from_role(
             "role-name",
             simple_role(),
-            cfg={},
+            cfg=SlurmOpts(),
             nomem=True,
         ).materialize()
         self.assertEqual(
@@ -177,7 +177,7 @@ class SlurmSchedulerTest(unittest.TestCase):
         sbatch, srun = SlurmReplicaRequest.from_role(
             "role-name",
             simple_role(),
-            cfg={"constraint": "orange"},
+            cfg=SlurmOpts(constraint="orange"),
             nomem=False,
         ).materialize()
         self.assertIn(
@@ -193,7 +193,7 @@ class SlurmSchedulerTest(unittest.TestCase):
             args=[f"hello {specs.macros.app_id}"],
         )
         _, srun = SlurmReplicaRequest.from_role(
-            "role-name", role, cfg={}, nomem=False
+            "role-name", role, cfg=SlurmOpts(), nomem=False
         ).materialize()
         self.assertIn(
             "echo 'hello '\"$SLURM_JOB_ID\"''",
@@ -208,12 +208,7 @@ class SlurmSchedulerTest(unittest.TestCase):
             entrypoint="echo",
             args=["hello"],
         )
-        cfg = SlurmOpts(
-            {
-                "partition": "bubblegum",
-                "time": "5:13",
-            }
-        )
+        cfg = SlurmOpts(partition="bubblegum", time="5:13")
 
         sbatch, _ = SlurmReplicaRequest.from_role(
             "role-name", role, cfg, nomem=False
@@ -221,7 +216,7 @@ class SlurmSchedulerTest(unittest.TestCase):
 
         run_opts = scheduler.run_opts()
 
-        for k, v in cfg.items():
+        for k, v in {"partition": "bubblegum", "time": "5:13"}.items():
             self.assertIsNotNone(run_opts.get(k))
             self.assertIn(
                 f"--{k}={v}",
@@ -863,7 +858,7 @@ source sbatch.sh
         sbatch, srun = SlurmReplicaRequest.from_role(
             "role-name",
             simple_role(),
-            cfg={"qos": "high"},
+            cfg=SlurmOpts(qos="high"),
             nomem=False,
         ).materialize()
         self.assertIn(
@@ -947,7 +942,7 @@ source sbatch.sh
             sbatch, srun = SlurmReplicaRequest.from_role(
                 "role-name",
                 role,
-                cfg={},
+                cfg=SlurmOpts(),
                 nomem=False,
             ).materialize()
             self.assertIn("--gpus-per-node=3", sbatch)
@@ -961,7 +956,7 @@ source sbatch.sh
             sbatch, srun = SlurmReplicaRequest.from_role(
                 "role-name",
                 role,
-                cfg={},
+                cfg=SlurmOpts(),
                 nomem=False,
             ).materialize()
             self.assertIn("--gpus-per-task=3", sbatch)
@@ -1010,7 +1005,7 @@ source sbatch.sh
         sbatch, srun = SlurmReplicaRequest.from_role(
             "role-name",
             simple_role(),
-            cfg={"qos": "high", "constraint": "gpu"},
+            cfg=SlurmOpts(qos="high", constraint="gpu"),
             nomem=False,
         ).materialize()
         self.assertIn("--qos=high", sbatch)
@@ -1055,7 +1050,7 @@ source sbatch.sh
             sbatch, srun = SlurmReplicaRequest.from_role(
                 "role-name",
                 role,
-                cfg={},
+                cfg=SlurmOpts(),
                 nomem=False,
             ).materialize()
             self.assertNotIn("--gpus-per-node", " ".join(sbatch))
@@ -1069,7 +1064,7 @@ source sbatch.sh
             sbatch, srun = SlurmReplicaRequest.from_role(
                 "role-name",
                 role,
-                cfg={},
+                cfg=SlurmOpts(),
                 nomem=False,
             ).materialize()
             self.assertNotIn("--gpus-per-node", " ".join(sbatch))
