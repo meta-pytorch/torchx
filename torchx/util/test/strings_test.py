@@ -17,3 +17,15 @@ class StringsTest(unittest.TestCase):
         self.assertEqual("abcd123", normalize_str("-/_a/b/CD!123!"))
         self.assertEqual("a-bcd123", normalize_str("-a-bcd123"))
         self.assertEqual("", normalize_str("!!!"))
+
+    def test_normalize_str_strips_all_leading_dashes(self) -> None:
+        self.assertEqual(
+            "job",
+            normalize_str("_-job"),
+            "leading `-` uncovered by dropped chars must be stripped",
+        )
+        self.assertEqual(
+            "job",
+            normalize_str("--job"),
+            "every leading `-` must be stripped, not just the first",
+        )

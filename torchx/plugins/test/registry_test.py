@@ -230,7 +230,7 @@ class RegistryTest(_RegistryTestBase):
     @mock_install_torchx_plugins()
     def test_clear_resets_cache(self) -> None:
         """registry().clear() discards cached discovery results."""
-        with patch.object(entrypoints, "load_group", return_value=None):
+        with patch.object(entrypoints, "load_group", return_value={}):
             reg = registry()
             first = reg.get(PluginType.SCHEDULER)
             reg.clear()

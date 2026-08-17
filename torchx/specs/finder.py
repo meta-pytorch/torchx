@@ -314,8 +314,7 @@ def _load_custom_components(
         for name, load_fn in
         # load_group() defers the module load so you have to call
         # the deferred load_fn to actually load the module
-        # pyrefly: ignore [missing-attribute]
-        entrypoints.load_group("torchx.components", default={}).items()
+        entrypoints.load_group("torchx.components").items()
     }
 
     components: list[_Component] = []
@@ -327,6 +326,10 @@ def _load_custom_components(
         # [torchx.components]
         # _0 = torchx.components.dist
         # _1 = torchx.components.utils
+        assert isinstance(module, (ModuleType, str)), (
+            f"the `{group}` entry point in group `torchx.components` must load"
+            f" a module or a module name, got {type(module).__name__}"
+        )
         group = "" if group.startswith("_") else group
         components += ModuleComponentsFinder(module, group).find(validators)
     return components
