@@ -14,8 +14,11 @@ priority, named resource discovery, and fault-tolerance of discovery against
 broken plugin modules.
 """
 
+import importlib
 import os
+import shutil
 import sys
+import tempfile
 import types
 import unittest
 from pathlib import Path
@@ -95,6 +98,45 @@ class RegistryTest(_RegistryTestBase):
             result,
             {},
             "should return empty dict when nothing is installed",
+        )
+
+    def test_missing_namespace_records_no_error(self) -> None:
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        self.assertEqual(
+            {},
+            reg.get(PluginType.SCHEDULER),
+            "an uninstalled namespace must yield no plugins",
+        )
+        self.assertEqual(
+            [], list(reg.errors), "an uninstalled namespace is not an error"
+        )
+
+    def test_root_namespace_import_error_is_recorded(self) -> None:
+        """A namespace package whose root import crashes is recorded, not masked."""
+        tmpdir = tempfile.mkdtemp(prefix="torchx_registry_test")
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        pkg_dir = Path(tmpdir) / "torchx_plugins"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            "raise ImportError('broken root namespace')\n"
+        )
+
+        def drop_torchx_plugins_modules() -> None:
+            for mod in [m for m in sys.modules if m.startswith("torchx_plugins")]:
+                del sys.modules[mod]
+
+        self.addCleanup(drop_torchx_plugins_modules)
+        with patch("sys.path", [tmpdir, *sys.path]):
+            importlib.invalidate_caches()
+            reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+            result = reg.get(PluginType.SCHEDULER)
+
+        self.assertEqual({}, result, "a broken namespace must yield no plugins")
+        error_modules = {e.module for e in reg.errors}
+        self.assertIn(
+            "torchx_plugins.schedulers",
+            error_modules,
+            "a root-namespace import failure must be recorded, not swallowed",
         )
 
     def test_namespace_for_type(self) -> None:
