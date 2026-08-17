@@ -14,7 +14,7 @@ Example of usage:
 
 ::
 
-  from torchx import events
+  from torchx.runner import events
   event = TorchxEvent(..)
   events.record(event)
 
@@ -23,6 +23,7 @@ Example of usage:
 import json
 import logging
 import sys
+import threading
 import time
 import traceback
 from types import TracebackType
@@ -33,38 +34,39 @@ from torchx.util.session import get_session_id_or_create_new
 
 from .api import SourceType, TorchxEvent  # noqa F401
 
-_events_logger: logging.Logger | None = None
+_events_loggers: dict[str, logging.Logger] = {}
+# `logging.getLogger` returns the SAME logger object per name, so a racing
+# check-then-create would addHandler twice — every event would emit twice
+_events_loggers_lock = threading.Lock()
 
 log: logging.Logger = logging.getLogger(__name__)
 
 
 def _get_or_create_logger(destination: str = "null") -> logging.Logger:
     """
-    Constructs python logger based on the destination type or extends if provided.
-    Available destination could be found in ``handlers.py`` file.
+    Constructs a python logger for the destination type.
+    Available destinations could be found in ``handlers.py`` file.
     The constructed logger does not propagate messages to the upper level loggers,
     e.g. root logger. This makes sure that a single event can be processed once.
+
+    Loggers are cached per destination, so each destination gets its own
+    logger + handler pair.
 
     Args:
         destination: The string representation of the event handler.
             Available handlers found in ``handlers`` module
-        logger: Logger to be extended with the events handler. Method constructs
-            a new logger if None provided.
     """
-    global _events_logger
-
-    if _events_logger:
-        return _events_logger
-    else:
-        logging_handler = get_logging_handler(destination)
-        logging_handler.setLevel(logging.DEBUG)
-        _events_logger = logging.getLogger(f"torchx-events-{destination}")
-        # Do not propagate message to the root logger
-        _events_logger.propagate = False
-        _events_logger.addHandler(logging_handler)
-
-        assert _events_logger  # make type-checker happy
-        return _events_logger
+    with _events_loggers_lock:
+        events_logger = _events_loggers.get(destination)
+        if events_logger is None:
+            logging_handler = get_logging_handler(destination)
+            logging_handler.setLevel(logging.DEBUG)
+            events_logger = logging.getLogger(f"torchx-events-{destination}")
+            # Do not propagate message to the root logger
+            events_logger.propagate = False
+            events_logger.addHandler(logging_handler)
+            _events_loggers[destination] = events_logger
+        return events_logger
 
 
 def record(event: TorchxEvent, destination: str = "null") -> None:

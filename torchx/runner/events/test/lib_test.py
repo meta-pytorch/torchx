@@ -10,6 +10,7 @@
 import json
 import logging
 import unittest
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 from torchx.runner.events import (
@@ -43,6 +44,33 @@ class TorchxEventLibTest(unittest.TestCase):
         self.assertEqual(1, len(logger.handlers))
         self.assertIsInstance(logger.handlers[0], logging.NullHandler)
 
+    @patch("torchx.runner.events.get_logging_handler")
+    def test_get_or_create_logger_per_destination(
+        self, logging_handler_mock: MagicMock
+    ) -> None:
+        logging_handler_mock.side_effect = [
+            logging.NullHandler(),
+            logging.StreamHandler(),
+        ]
+        null_logger = _get_or_create_logger("test_destination_null")
+        stream_logger = _get_or_create_logger("test_destination_stream")
+        self.assertIsNot(
+            null_logger,
+            stream_logger,
+            "each destination must get its own logger; the first call must not"
+            " pin every later destination to its logger",
+        )
+        self.assertIsInstance(
+            stream_logger.handlers[0],
+            logging.StreamHandler,
+            "the second destination must carry its own handler",
+        )
+        self.assertIs(
+            stream_logger,
+            _get_or_create_logger("test_destination_stream"),
+            "loggers must be cached per destination",
+        )
+
     def test_event_created(self) -> None:
         test_metadata = {"test_key": "test_value"}
         event = TorchxEvent(
@@ -75,6 +103,12 @@ class TorchxEventLibTest(unittest.TestCase):
         json_event = event.serialize()
         deser_event = TorchxEvent.deserialize(json_event)
         self.assert_event(event, deser_event)
+
+    def test_event_deser_invalid_type(self) -> None:
+        with self.assertRaises(
+            TypeError, msg="non str/TorchxEvent input must raise TypeError"
+        ):
+            TorchxEvent.deserialize(cast(str, 123))
 
 
 @patch("torchx.runner.events.record")

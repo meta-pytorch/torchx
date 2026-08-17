@@ -50,34 +50,43 @@ MEM_TAX = 0.96
 # determines instance type for non-honogeneous CEs
 # see https://github.com/meta-pytorch/torchx/issues/780
 K8S_ITYPE = "node.kubernetes.io/instance-type"
-GiB: int = int(1024 * MEM_TAX)
+GiB: int = 1024
 
 
-def instance_type_from_resource(resource: Resource) -> str:
+def instance_type_from_resource(resource: Resource) -> str | None:
     instance_type = resource.capabilities.get(K8S_ITYPE)
     if instance_type is None:
         warnings.warn(
-            "Cannot determine resource instance type which can cause issues for non-homogeneous CEs and multinode jobs. Consider providing torchx.specs.named_resources_aws:K8S_TYPE resource capability."
+            "Cannot determine resource instance type which can cause issues for non-homogeneous CEs and multinode jobs. Consider providing torchx.specs.named_resources_aws:K8S_ITYPE resource capability.",
+            stacklevel=2,
         )
-    # pyrefly: ignore [bad-return]
     return instance_type
 
 
 def aws_p3_2xlarge() -> Resource:
     return Resource(
-        cpu=8, gpu=1, memMB=61 * GiB, capabilities={K8S_ITYPE: "p3.2xlarge"}
+        cpu=8,
+        gpu=1,
+        memMB=61 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "p3.2xlarge"},
     )
 
 
 def aws_p3_8xlarge() -> Resource:
     return Resource(
-        cpu=32, gpu=4, memMB=244 * GiB, capabilities={K8S_ITYPE: "p3.8xlarge"}
+        cpu=32,
+        gpu=4,
+        memMB=244 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "p3.8xlarge"},
     )
 
 
 def aws_p3_16xlarge() -> Resource:
     return Resource(
-        cpu=64, gpu=8, memMB=488 * GiB, capabilities={K8S_ITYPE: "p3.16xlarge"}
+        cpu=64,
+        gpu=8,
+        memMB=488 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "p3.16xlarge"},
     )
 
 
@@ -85,7 +94,7 @@ def aws_p3dn_24xlarge() -> Resource:
     return Resource(
         cpu=96,
         gpu=8,
-        memMB=768 * GiB,
+        memMB=768 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p3dn.24xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -95,7 +104,7 @@ def aws_p4d_24xlarge() -> Resource:
     return Resource(
         cpu=96,
         gpu=8,
-        memMB=1152 * GiB,
+        memMB=1152 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p4d.24xlarge"},
         devices={EFA_DEVICE: 4},
     )
@@ -106,7 +115,7 @@ def aws_p4de_24xlarge() -> Resource:
     return Resource(
         cpu=96,
         gpu=8,
-        memMB=1152 * GiB,
+        memMB=1152 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p4de.24xlarge"},
         devices={EFA_DEVICE: 4},
     )
@@ -116,7 +125,7 @@ def aws_p5_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=2048 * GiB,
+        memMB=2048 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p5.48xlarge"},
         devices={EFA_DEVICE: 32},
     )
@@ -126,7 +135,7 @@ def aws_p5e_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=2048 * GiB,
+        memMB=2048 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p5e.48xlarge"},
         devices={EFA_DEVICE: 32},
     )
@@ -136,7 +145,7 @@ def aws_p5en_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=2048 * GiB,
+        memMB=2048 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p5en.48xlarge"},
         devices={EFA_DEVICE: 16},
     )
@@ -150,7 +159,7 @@ def aws_p6_b200_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=2048 * GiB,
+        memMB=2048 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p6-b200.48xlarge"},
         devices={EFA_DEVICE: 8},
     )
@@ -165,7 +174,7 @@ def aws_p6_b300_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=4096 * GiB,
+        memMB=4096 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p6-b300.48xlarge"},
         devices={EFA_DEVICE: 16},
     )
@@ -180,64 +189,97 @@ def aws_p6e_gb200_36xlarge() -> Resource:
     return Resource(
         cpu=144,
         gpu=4,
-        memMB=960 * GiB,
+        memMB=960 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "p6e-gb200.36xlarge"},
         devices={EFA_DEVICE: 16},
     )
 
 
 def aws_t3_medium() -> Resource:
-    return Resource(cpu=2, gpu=0, memMB=4 * GiB, capabilities={K8S_ITYPE: "t3.medium"})
+    return Resource(
+        cpu=2,
+        gpu=0,
+        memMB=4 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "t3.medium"},
+    )
 
 
 def aws_m5_large() -> Resource:
-    return Resource(cpu=2, gpu=0, memMB=8 * GiB, capabilities={K8S_ITYPE: "m5.large"})
+    return Resource(
+        cpu=2, gpu=0, memMB=8 * int(GiB * MEM_TAX), capabilities={K8S_ITYPE: "m5.large"}
+    )
 
 
 def aws_m5_xlarge() -> Resource:
-    return Resource(cpu=4, gpu=0, memMB=16 * GiB, capabilities={K8S_ITYPE: "m5.xlarge"})
+    return Resource(
+        cpu=4,
+        gpu=0,
+        memMB=16 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.xlarge"},
+    )
 
 
 def aws_m5_2xlarge() -> Resource:
     return Resource(
-        cpu=8, gpu=0, memMB=32 * GiB, capabilities={K8S_ITYPE: "m5.2xlarge"}
+        cpu=8,
+        gpu=0,
+        memMB=32 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.2xlarge"},
     )
 
 
 def aws_m5_4xlarge() -> Resource:
     return Resource(
-        cpu=16, gpu=0, memMB=64 * GiB, capabilities={K8S_ITYPE: "m5.4xlarge"}
+        cpu=16,
+        gpu=0,
+        memMB=64 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.4xlarge"},
     )
 
 
 def aws_m5_8xlarge() -> Resource:
     return Resource(
-        cpu=32, gpu=0, memMB=128 * GiB, capabilities={K8S_ITYPE: "m5.8xlarge"}
+        cpu=32,
+        gpu=0,
+        memMB=128 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.8xlarge"},
     )
 
 
 def aws_m5_12xlarge() -> Resource:
     return Resource(
-        cpu=48, gpu=0, memMB=192 * GiB, capabilities={K8S_ITYPE: "m5.12xlarge"}
+        cpu=48,
+        gpu=0,
+        memMB=192 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.12xlarge"},
     )
 
 
 def aws_m5_16xlarge() -> Resource:
     return Resource(
-        cpu=64, gpu=0, memMB=256 * GiB, capabilities={K8S_ITYPE: "m5.16xlarge"}
+        cpu=64,
+        gpu=0,
+        memMB=256 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.16xlarge"},
     )
 
 
 def aws_m5_24xlarge() -> Resource:
     return Resource(
-        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5.24xlarge"}
+        cpu=96,
+        gpu=0,
+        memMB=384 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.24xlarge"},
     )
 
 
 def aws_m5_metal() -> Resource:
     # m5.metal: 96 logical processors on 48 physical cores, 384 GiB memory
     return Resource(
-        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5.metal"}
+        cpu=96,
+        gpu=0,
+        memMB=384 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5.metal"},
     )
 
 
@@ -246,48 +288,74 @@ def aws_m5_metal() -> Resource:
 
 
 def aws_m5d_large() -> Resource:
-    return Resource(cpu=2, gpu=0, memMB=8 * GiB, capabilities={K8S_ITYPE: "m5d.large"})
+    return Resource(
+        cpu=2,
+        gpu=0,
+        memMB=8 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.large"},
+    )
 
 
 def aws_m5d_xlarge() -> Resource:
     return Resource(
-        cpu=4, gpu=0, memMB=16 * GiB, capabilities={K8S_ITYPE: "m5d.xlarge"}
+        cpu=4,
+        gpu=0,
+        memMB=16 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.xlarge"},
     )
 
 
 def aws_m5d_2xlarge() -> Resource:
     return Resource(
-        cpu=8, gpu=0, memMB=32 * GiB, capabilities={K8S_ITYPE: "m5d.2xlarge"}
+        cpu=8,
+        gpu=0,
+        memMB=32 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.2xlarge"},
     )
 
 
 def aws_m5d_4xlarge() -> Resource:
     return Resource(
-        cpu=16, gpu=0, memMB=64 * GiB, capabilities={K8S_ITYPE: "m5d.4xlarge"}
+        cpu=16,
+        gpu=0,
+        memMB=64 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.4xlarge"},
     )
 
 
 def aws_m5d_8xlarge() -> Resource:
     return Resource(
-        cpu=32, gpu=0, memMB=128 * GiB, capabilities={K8S_ITYPE: "m5d.8xlarge"}
+        cpu=32,
+        gpu=0,
+        memMB=128 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.8xlarge"},
     )
 
 
 def aws_m5d_12xlarge() -> Resource:
     return Resource(
-        cpu=48, gpu=0, memMB=192 * GiB, capabilities={K8S_ITYPE: "m5d.12xlarge"}
+        cpu=48,
+        gpu=0,
+        memMB=192 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.12xlarge"},
     )
 
 
 def aws_m5d_16xlarge() -> Resource:
     return Resource(
-        cpu=64, gpu=0, memMB=256 * GiB, capabilities={K8S_ITYPE: "m5d.16xlarge"}
+        cpu=64,
+        gpu=0,
+        memMB=256 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.16xlarge"},
     )
 
 
 def aws_m5d_24xlarge() -> Resource:
     return Resource(
-        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5d.24xlarge"}
+        cpu=96,
+        gpu=0,
+        memMB=384 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.24xlarge"},
     )
 
 
@@ -295,7 +363,10 @@ def aws_m5d_metal() -> Resource:
     # m5d.metal: 96 logical processors on 48 physical cores, 384 GiB memory,
     # plus 4 x 900 NVMe SSD local storage.
     return Resource(
-        cpu=96, gpu=0, memMB=384 * GiB, capabilities={K8S_ITYPE: "m5d.metal"}
+        cpu=96,
+        gpu=0,
+        memMB=384 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "m5d.metal"},
     )
 
 
@@ -304,26 +375,35 @@ def aws_c5_18xlarge() -> Resource:
         # using lower memory size than the spec since MEM_TAX is not enough for adjustment
         cpu=72,
         gpu=0,
-        memMB=142 * GiB,
+        memMB=142 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "c5.18xlarge"},
     )
 
 
 def aws_g4dn_xlarge() -> Resource:
     return Resource(
-        cpu=4, gpu=1, memMB=16 * GiB, capabilities={K8S_ITYPE: "g4dn.xlarge"}
+        cpu=4,
+        gpu=1,
+        memMB=16 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "g4dn.xlarge"},
     )
 
 
 def aws_g4dn_2xlarge() -> Resource:
     return Resource(
-        cpu=8, gpu=1, memMB=32 * GiB, capabilities={K8S_ITYPE: "g4dn.2xlarge"}
+        cpu=8,
+        gpu=1,
+        memMB=32 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "g4dn.2xlarge"},
     )
 
 
 def aws_g4dn_4xlarge() -> Resource:
     return Resource(
-        cpu=16, gpu=1, memMB=64 * GiB, capabilities={K8S_ITYPE: "g4dn.4xlarge"}
+        cpu=16,
+        gpu=1,
+        memMB=64 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "g4dn.4xlarge"},
     )
 
 
@@ -331,7 +411,7 @@ def aws_g4dn_8xlarge() -> Resource:
     return Resource(
         cpu=32,
         gpu=1,
-        memMB=128 * GiB,
+        memMB=128 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g4dn.8xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -341,7 +421,7 @@ def aws_g4dn_12xlarge() -> Resource:
     return Resource(
         cpu=48,
         gpu=4,
-        memMB=192 * GiB,
+        memMB=192 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g4dn.12xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -351,7 +431,7 @@ def aws_g4dn_16xlarge() -> Resource:
     return Resource(
         cpu=64,
         gpu=1,
-        memMB=256 * GiB,
+        memMB=256 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g4dn.16xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -361,25 +441,36 @@ def aws_g4dn_metal() -> Resource:
     return Resource(
         cpu=96,
         gpu=8,
-        memMB=384 * GiB,
+        memMB=384 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g4dn.metal"},
         devices={EFA_DEVICE: 1},
     )
 
 
 def aws_g5_xlarge() -> Resource:
-    return Resource(cpu=4, gpu=1, memMB=16 * GiB, capabilities={K8S_ITYPE: "g5.xlarge"})
+    return Resource(
+        cpu=4,
+        gpu=1,
+        memMB=16 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "g5.xlarge"},
+    )
 
 
 def aws_g5_2xlarge() -> Resource:
     return Resource(
-        cpu=8, gpu=1, memMB=32 * GiB, capabilities={K8S_ITYPE: "g5.2xlarge"}
+        cpu=8,
+        gpu=1,
+        memMB=32 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "g5.2xlarge"},
     )
 
 
 def aws_g5_4xlarge() -> Resource:
     return Resource(
-        cpu=16, gpu=1, memMB=64 * GiB, capabilities={K8S_ITYPE: "g5.4xlarge"}
+        cpu=16,
+        gpu=1,
+        memMB=64 * int(GiB * MEM_TAX),
+        capabilities={K8S_ITYPE: "g5.4xlarge"},
     )
 
 
@@ -387,7 +478,7 @@ def aws_g5_8xlarge() -> Resource:
     return Resource(
         cpu=32,
         gpu=1,
-        memMB=128 * GiB,
+        memMB=128 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g5.8xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -397,7 +488,7 @@ def aws_g5_12xlarge() -> Resource:
     return Resource(
         cpu=48,
         gpu=4,
-        memMB=192 * GiB,
+        memMB=192 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g5.12xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -407,7 +498,7 @@ def aws_g5_16xlarge() -> Resource:
     return Resource(
         cpu=64,
         gpu=1,
-        memMB=256 * GiB,
+        memMB=256 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g5.16xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -417,7 +508,7 @@ def aws_g5_24xlarge() -> Resource:
     return Resource(
         cpu=96,
         gpu=4,
-        memMB=384 * GiB,
+        memMB=384 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g5.24xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -427,7 +518,7 @@ def aws_g5_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=768 * GiB,
+        memMB=768 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g5.48xlarge"},
         devices={EFA_DEVICE: 1},
     )
@@ -437,7 +528,7 @@ def aws_g6e_xlarge() -> Resource:
     return Resource(
         cpu=4,
         gpu=1,
-        memMB=32 * GiB,
+        memMB=32 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.xlarge"},
     )
 
@@ -446,7 +537,7 @@ def aws_g6e_2xlarge() -> Resource:
     return Resource(
         cpu=8,
         gpu=1,
-        memMB=64 * GiB,
+        memMB=64 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.2xlarge"},
     )
 
@@ -455,7 +546,7 @@ def aws_g6e_4xlarge() -> Resource:
     return Resource(
         cpu=16,
         gpu=1,
-        memMB=128 * GiB,
+        memMB=128 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.4xlarge"},
     )
 
@@ -464,7 +555,7 @@ def aws_g6e_8xlarge() -> Resource:
     return Resource(
         cpu=32,
         gpu=1,
-        memMB=256 * GiB,
+        memMB=256 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.8xlarge"},
     )
 
@@ -473,7 +564,7 @@ def aws_g6e_16xlarge() -> Resource:
     return Resource(
         cpu=64,
         gpu=1,
-        memMB=512 * GiB,
+        memMB=512 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.16xlarge"},
     )
 
@@ -482,7 +573,7 @@ def aws_g6e_12xlarge() -> Resource:
     return Resource(
         cpu=48,
         gpu=4,
-        memMB=384 * GiB,
+        memMB=384 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.12xlarge"},
     )
 
@@ -491,7 +582,7 @@ def aws_g6e_24xlarge() -> Resource:
     return Resource(
         cpu=96,
         gpu=4,
-        memMB=768 * GiB,
+        memMB=768 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.24xlarge"},
         devices={EFA_DEVICE: 2},
     )
@@ -501,7 +592,7 @@ def aws_g6e_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=8,
-        memMB=1536 * GiB,
+        memMB=1536 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "g6e.48xlarge"},
         devices={EFA_DEVICE: 4},
     )
@@ -511,7 +602,7 @@ def aws_trn1_2xlarge() -> Resource:
     return Resource(
         cpu=8,
         gpu=0,
-        memMB=32 * GiB,
+        memMB=32 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "trn1.2xlarge"},
         devices={NEURON_DEVICE: 1},
     )
@@ -521,7 +612,7 @@ def aws_trn1_32xlarge() -> Resource:
     return Resource(
         cpu=128,
         gpu=0,
-        memMB=512 * GiB,
+        memMB=512 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "trn1.32xlarge"},
         devices={EFA_DEVICE: 8, NEURON_DEVICE: 16},
     )
@@ -531,7 +622,7 @@ def aws_inf2_xlarge() -> Resource:
     return Resource(
         cpu=4,
         gpu=0,
-        memMB=16 * GiB,
+        memMB=16 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "inf2.xlarge"},
         devices={NEURON_DEVICE: 1},
     )
@@ -541,7 +632,7 @@ def aws_inf2_8xlarge() -> Resource:
     return Resource(
         cpu=32,
         gpu=0,
-        memMB=128 * GiB,
+        memMB=128 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "inf2.8xlarge"},
         devices={NEURON_DEVICE: 1},
     )
@@ -551,7 +642,7 @@ def aws_inf2_24xlarge() -> Resource:
     return Resource(
         cpu=96,
         gpu=0,
-        memMB=384 * GiB,
+        memMB=384 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "inf2.24xlarge"},
         devices={NEURON_DEVICE: 6},
     )
@@ -561,7 +652,7 @@ def aws_inf2_48xlarge() -> Resource:
     return Resource(
         cpu=192,
         gpu=0,
-        memMB=768 * GiB,
+        memMB=768 * int(GiB * MEM_TAX),
         capabilities={K8S_ITYPE: "inf2.48xlarge"},
         devices={NEURON_DEVICE: 12},
     )

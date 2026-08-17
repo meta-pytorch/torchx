@@ -7,6 +7,7 @@
 
 import unittest
 
+from torchx.specs.api import Resource
 from torchx.specs.named_resources_aws import (
     aws_c5_18xlarge,
     aws_g4dn_12xlarge,
@@ -71,7 +72,9 @@ from torchx.specs.named_resources_aws import (
     aws_trn1_32xlarge,
     EFA_DEVICE,
     GiB,
+    instance_type_from_resource,
     K8S_ITYPE,
+    MEM_TAX,
     NAMED_RESOURCES,
     NEURON_DEVICE,
 )
@@ -82,7 +85,7 @@ class NamedResourcesTest(unittest.TestCase):
         p3_2 = aws_p3_2xlarge()
         self.assertEqual(8, p3_2.cpu)
         self.assertEqual(1, p3_2.gpu)
-        self.assertEqual(61 * GiB, p3_2.memMB)
+        self.assertEqual(61 * int(GiB * MEM_TAX), p3_2.memMB)
 
         p3_8 = aws_p3_8xlarge()
         self.assertEqual(p3_8.cpu, p3_2.cpu * 4)
@@ -97,7 +100,7 @@ class NamedResourcesTest(unittest.TestCase):
         p3dn_24 = aws_p3dn_24xlarge()
         self.assertEqual(96, p3dn_24.cpu)
         self.assertEqual(p3_16.gpu, p3dn_24.gpu)
-        self.assertEqual(768 * GiB, p3dn_24.memMB)
+        self.assertEqual(768 * int(GiB * MEM_TAX), p3dn_24.memMB)
         self.assertEqual({EFA_DEVICE: 1}, p3dn_24.devices)
 
     def test_aws_p4(self) -> None:
@@ -106,7 +109,7 @@ class NamedResourcesTest(unittest.TestCase):
 
         self.assertEqual(96, p4d.cpu)
         self.assertEqual(8, p4d.gpu)
-        self.assertEqual(1152 * GiB, p4d.memMB)
+        self.assertEqual(1152 * int(GiB * MEM_TAX), p4d.memMB)
         self.assertEqual({EFA_DEVICE: 4}, p4d.devices)
 
         self.assertEqual(p4de.cpu, p4d.cpu)
@@ -121,17 +124,17 @@ class NamedResourcesTest(unittest.TestCase):
 
         self.assertEqual(192, p5.cpu)
         self.assertEqual(8, p5.gpu)
-        self.assertEqual(2048 * GiB, p5.memMB)
+        self.assertEqual(2048 * int(GiB * MEM_TAX), p5.memMB)
         self.assertEqual({EFA_DEVICE: 32}, p5.devices)
 
         self.assertEqual(192, p5e.cpu)
         self.assertEqual(8, p5e.gpu)
-        self.assertEqual(2048 * GiB, p5e.memMB)
+        self.assertEqual(2048 * int(GiB * MEM_TAX), p5e.memMB)
         self.assertEqual({EFA_DEVICE: 32}, p5e.devices)
 
         self.assertEqual(192, p5en.cpu)
         self.assertEqual(8, p5en.gpu)
-        self.assertEqual(2048 * GiB, p5en.memMB)
+        self.assertEqual(2048 * int(GiB * MEM_TAX), p5en.memMB)
         self.assertEqual({EFA_DEVICE: 16}, p5en.devices)
 
     def test_aws_p6(self) -> None:
@@ -143,7 +146,7 @@ class NamedResourcesTest(unittest.TestCase):
         # 8 EFA-capable network cards
         self.assertEqual(192, p6_b200.cpu)
         self.assertEqual(8, p6_b200.gpu)
-        self.assertEqual(2048 * GiB, p6_b200.memMB)
+        self.assertEqual(2048 * int(GiB * MEM_TAX), p6_b200.memMB)
         self.assertEqual({EFA_DEVICE: 8}, p6_b200.devices)
         self.assertEqual("p6-b200.48xlarge", p6_b200.capabilities[K8S_ITYPE])
 
@@ -151,7 +154,7 @@ class NamedResourcesTest(unittest.TestCase):
         # memory, 16 EFA-capable network cards (NCI 0 is ENA-only)
         self.assertEqual(192, p6_b300.cpu)
         self.assertEqual(8, p6_b300.gpu)
-        self.assertEqual(4096 * GiB, p6_b300.memMB)
+        self.assertEqual(4096 * int(GiB * MEM_TAX), p6_b300.memMB)
         self.assertEqual({EFA_DEVICE: 16}, p6_b300.devices)
         self.assertEqual("p6-b300.48xlarge", p6_b300.capabilities[K8S_ITYPE])
 
@@ -159,7 +162,7 @@ class NamedResourcesTest(unittest.TestCase):
         # system memory, up to 16 EFA-capable network cards
         self.assertEqual(144, p6e_gb200.cpu)
         self.assertEqual(4, p6e_gb200.gpu)
-        self.assertEqual(960 * GiB, p6e_gb200.memMB)
+        self.assertEqual(960 * int(GiB * MEM_TAX), p6e_gb200.memMB)
         self.assertEqual({EFA_DEVICE: 16}, p6e_gb200.devices)
         self.assertEqual("p6e-gb200.36xlarge", p6e_gb200.capabilities[K8S_ITYPE])
 
@@ -175,43 +178,43 @@ class NamedResourcesTest(unittest.TestCase):
 
         self.assertEqual(4, g6e.cpu)
         self.assertEqual(1, g6e.gpu)
-        self.assertEqual(32 * GiB, g6e.memMB)
+        self.assertEqual(32 * int(GiB * MEM_TAX), g6e.memMB)
 
         self.assertEqual(8, g6e_2.cpu)
         self.assertEqual(1, g6e_2.gpu)
-        self.assertEqual(64 * GiB, g6e_2.memMB)
+        self.assertEqual(64 * int(GiB * MEM_TAX), g6e_2.memMB)
 
         self.assertEqual(16, g6e_4.cpu)
         self.assertEqual(1, g6e_4.gpu)
-        self.assertEqual(128 * GiB, g6e_4.memMB)
+        self.assertEqual(128 * int(GiB * MEM_TAX), g6e_4.memMB)
 
         self.assertEqual(32, g6e_8.cpu)
         self.assertEqual(1, g6e_8.gpu)
-        self.assertEqual(256 * GiB, g6e_8.memMB)
+        self.assertEqual(256 * int(GiB * MEM_TAX), g6e_8.memMB)
 
         self.assertEqual(64, g6e_16.cpu)
         self.assertEqual(1, g6e_16.gpu)
-        self.assertEqual(512 * GiB, g6e_16.memMB)
+        self.assertEqual(512 * int(GiB * MEM_TAX), g6e_16.memMB)
 
         self.assertEqual(48, g6e_12.cpu)
         self.assertEqual(4, g6e_12.gpu)
-        self.assertEqual(384 * GiB, g6e_12.memMB)
+        self.assertEqual(384 * int(GiB * MEM_TAX), g6e_12.memMB)
 
         self.assertEqual(96, g6e_24.cpu)
         self.assertEqual(4, g6e_24.gpu)
-        self.assertEqual(768 * GiB, g6e_24.memMB)
+        self.assertEqual(768 * int(GiB * MEM_TAX), g6e_24.memMB)
         self.assertEqual({EFA_DEVICE: 2}, g6e_24.devices)
 
         self.assertEqual(192, g6e_48.cpu)
         self.assertEqual(8, g6e_48.gpu)
-        self.assertEqual(1536 * GiB, g6e_48.memMB)
+        self.assertEqual(1536 * int(GiB * MEM_TAX), g6e_48.memMB)
         self.assertEqual({EFA_DEVICE: 4}, g6e_48.devices)
 
     def test_aws_g4dn(self) -> None:
         g4d = aws_g4dn_xlarge()
         self.assertEqual(4, g4d.cpu)
         self.assertEqual(1, g4d.gpu)
-        self.assertEqual(16 * GiB, g4d.memMB)
+        self.assertEqual(16 * int(GiB * MEM_TAX), g4d.memMB)
 
         g4d_2 = aws_g4dn_2xlarge()
         self.assertEqual(g4d_2.cpu, g4d.cpu * 2)
@@ -248,7 +251,7 @@ class NamedResourcesTest(unittest.TestCase):
 
         self.assertEqual(4, g5.cpu)
         self.assertEqual(1, g5.gpu)
-        self.assertEqual(16 * GiB, g5.memMB)
+        self.assertEqual(16 * int(GiB * MEM_TAX), g5.memMB)
 
         g5_2 = aws_g5_2xlarge()
         self.assertEqual(g5_2.cpu, g5.cpu * 2)
@@ -273,7 +276,7 @@ class NamedResourcesTest(unittest.TestCase):
         g5_12 = aws_g5_12xlarge()
         self.assertEqual(48, g5_12.cpu)
         self.assertEqual(4, g5_12.gpu)
-        self.assertEqual(384 * GiB, g5_12.memMB * 2)
+        self.assertEqual(384 * int(GiB * MEM_TAX), g5_12.memMB * 2)
 
         g5_24 = aws_g5_24xlarge()
         self.assertEqual(g5_24.cpu, g5_12.cpu * 2)
@@ -290,7 +293,7 @@ class NamedResourcesTest(unittest.TestCase):
 
         self.assertEqual(8, trn1_2.cpu)
         self.assertEqual(0, trn1_2.gpu)
-        self.assertEqual(32 * GiB, trn1_2.memMB)
+        self.assertEqual(32 * int(GiB * MEM_TAX), trn1_2.memMB)
         self.assertEqual({NEURON_DEVICE: 1}, trn1_2.devices)
 
         trn1_32 = aws_trn1_32xlarge()
@@ -303,32 +306,32 @@ class NamedResourcesTest(unittest.TestCase):
         inf2_xlarge = aws_inf2_xlarge()
         self.assertEqual(4, inf2_xlarge.cpu)
         self.assertEqual(0, inf2_xlarge.gpu)
-        self.assertEqual(16 * GiB, inf2_xlarge.memMB)
+        self.assertEqual(16 * int(GiB * MEM_TAX), inf2_xlarge.memMB)
         self.assertEqual({NEURON_DEVICE: 1}, inf2_xlarge.devices)
 
         inf2_8xlarge = aws_inf2_8xlarge()
         self.assertEqual(32, inf2_8xlarge.cpu)
         self.assertEqual(0, inf2_8xlarge.gpu)
-        self.assertEqual(128 * GiB, inf2_8xlarge.memMB)
+        self.assertEqual(128 * int(GiB * MEM_TAX), inf2_8xlarge.memMB)
         self.assertEqual({NEURON_DEVICE: 1}, inf2_8xlarge.devices)
 
         inf2_24xlarge = aws_inf2_24xlarge()
         self.assertEqual(96, inf2_24xlarge.cpu)
         self.assertEqual(0, inf2_24xlarge.gpu)
-        self.assertEqual(384 * GiB, inf2_24xlarge.memMB)
+        self.assertEqual(384 * int(GiB * MEM_TAX), inf2_24xlarge.memMB)
         self.assertEqual({NEURON_DEVICE: 6}, inf2_24xlarge.devices)
 
         inf2_48xlarge = aws_inf2_48xlarge()
         self.assertEqual(192, inf2_48xlarge.cpu)
         self.assertEqual(0, inf2_48xlarge.gpu)
-        self.assertEqual(768 * GiB, inf2_48xlarge.memMB)
+        self.assertEqual(768 * int(GiB * MEM_TAX), inf2_48xlarge.memMB)
         self.assertEqual({NEURON_DEVICE: 12}, inf2_48xlarge.devices)
 
     def test_aws_m5_2xlarge(self) -> None:
         resource = aws_m5_2xlarge()
         self.assertEqual(8, resource.cpu)
         self.assertEqual(0, resource.gpu)
-        self.assertEqual(32 * GiB, resource.memMB)
+        self.assertEqual(32 * int(GiB * MEM_TAX), resource.memMB)
 
     def test_aws_m5(self) -> None:
         # (size_label, factory, expected_cpu, expected_mem_gib, k8s_itype)
@@ -350,7 +353,7 @@ class NamedResourcesTest(unittest.TestCase):
                 r = factory()
                 self.assertEqual(cpu, r.cpu)
                 self.assertEqual(0, r.gpu)
-                self.assertEqual(mem_gib * GiB, r.memMB)
+                self.assertEqual(mem_gib * int(GiB * MEM_TAX), r.memMB)
                 self.assertEqual(k8s, r.capabilities[K8S_ITYPE])
 
     def test_aws_m5d(self) -> None:
@@ -372,7 +375,7 @@ class NamedResourcesTest(unittest.TestCase):
                 r = factory()
                 self.assertEqual(cpu, r.cpu)
                 self.assertEqual(0, r.gpu)
-                self.assertEqual(mem_gib * GiB, r.memMB)
+                self.assertEqual(mem_gib * int(GiB * MEM_TAX), r.memMB)
                 self.assertEqual(k8s, r.capabilities[K8S_ITYPE])
 
         # Confirm m5d matches m5 by size for vCPU/memory
@@ -400,13 +403,29 @@ class NamedResourcesTest(unittest.TestCase):
         resource = aws_c5_18xlarge()
         self.assertEqual(72, resource.cpu)
         self.assertEqual(0, resource.gpu)
-        self.assertEqual(142 * GiB, resource.memMB)
+        self.assertEqual(142 * int(GiB * MEM_TAX), resource.memMB)
 
     def test_aws_t3_medium(self) -> None:
         resource = aws_t3_medium()
         self.assertEqual(2, resource.cpu)
         self.assertEqual(0, resource.gpu)
-        self.assertEqual(4 * GiB, resource.memMB)
+        self.assertEqual(4 * int(GiB * MEM_TAX), resource.memMB)
+
+    def test_instance_type_from_resource(self) -> None:
+        self.assertEqual(
+            "p3.2xlarge",
+            instance_type_from_resource(aws_p3_2xlarge()),
+            "instance type must come from the K8S_ITYPE capability",
+        )
+        with self.assertWarnsRegex(
+            UserWarning,
+            "K8S_ITYPE",
+            msg="the warning must name the actual constant (K8S_ITYPE)",
+        ):
+            self.assertIsNone(
+                instance_type_from_resource(Resource(cpu=1, gpu=0, memMB=1)),
+                "a resource without the capability must resolve to None",
+            )
 
     def test_capabilities(self) -> None:
         for name, func in NAMED_RESOURCES.items():

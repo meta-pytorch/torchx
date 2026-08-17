@@ -351,8 +351,8 @@ def parse_mounts(opts: list[str]) -> list[BindMount | VolumeMount | DeviceMount]
         VolumeMount: type=volume,src=<name/id>,dst=<container path>[,readonly]
         DeviceMount: type=device,src=/dev/<dev>[,dst=<container path>][,perm=rwm]
     """
-    mount_opts = []
-    cur = {}
+    mount_opts: list[dict[str, str]] = []
+    cur: dict[str, str] = {}
     for opt in opts:
         key, _, val = opt.partition("=")
         if key not in _MOUNT_OPT_MAP:
@@ -367,51 +367,39 @@ def parse_mounts(opts: list[str]) -> list[BindMount | VolumeMount | DeviceMount]
             raise KeyError("type must be specified first")
         cur[key] = val
 
-    mounts = []
-    # pyrefly: ignore [bad-assignment]
-    for opts in mount_opts:
-        # pyrefly: ignore [missing-attribute]
-        typ = opts.get("type")
+    mounts: list[BindMount | VolumeMount | DeviceMount] = []
+    for mount in mount_opts:
+        typ = mount.get("type")
         if typ == MountType.BIND:
-            # pyrefly: ignore [bad-index]
-            src_path = opts["src"]
+            src_path = mount["src"]
             if src_path.startswith("~"):
                 src_path = os.path.expanduser(src_path)
             mounts.append(
                 BindMount(
                     src_path=src_path,
-                    # pyrefly: ignore [bad-index]
-                    dst_path=opts["dst"],
-                    read_only="readonly" in opts,
+                    dst_path=mount["dst"],
+                    read_only="readonly" in mount,
                 )
             )
         elif typ == MountType.VOLUME:
             mounts.append(
-                # pyrefly: ignore [bad-argument-type]
                 VolumeMount(
-                    # pyrefly: ignore [bad-index]
-                    src=opts["src"],
-                    # pyrefly: ignore [bad-index]
-                    dst_path=opts["dst"],
-                    read_only="readonly" in opts,
+                    src=mount["src"],
+                    dst_path=mount["dst"],
+                    read_only="readonly" in mount,
                 )
             )
         elif typ == MountType.DEVICE:
-            # pyrefly: ignore [bad-index]
-            src = opts["src"]
-            # pyrefly: ignore [missing-attribute]
-            dst = opts.get("dst", src)
-            # pyrefly: ignore [missing-attribute]
-            perm = opts.get("perm", "rwm")
+            src = mount["src"]
+            dst = mount.get("dst", src)
+            perm = mount.get("perm", "rwm")
             for c in perm:
                 if c not in "rwm":
                     raise ValueError(
                         f"{c} is not a valid permission flags must one of r,w,m"
                     )
-            # pyrefly: ignore [bad-argument-type]
             mounts.append(DeviceMount(src_path=src, dst_path=dst, permissions=perm))
         else:
-            valid = list(str(item.value) for item in MountType)
+            valid = [str(item.value) for item in MountType]
             raise ValueError(f"invalid mount type {repr(typ)}, must be one of {valid}")
-    # pyrefly: ignore [bad-return]
     return mounts
