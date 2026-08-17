@@ -1098,7 +1098,6 @@
         <span class="c1"># NOTE: make sure any new init options are supported in create_scheduler(...)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;local&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
 
-        <span class="c1"># TODO T72035686 replace dict with a proper LRUCache data structure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">AppId</span><span class="p">,</span> <span class="n">_LocalAppDef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_image_provider_class</span> <span class="o">=</span> <span class="n">image_provider_class</span>
 
@@ -1110,8 +1109,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_extra_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">extra_paths</span> <span class="ow">or</span> <span class="p">[]</span>
 
         <span class="c1"># sets lazily on submit or dryrun based on log_dir cfg</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_created_tmp_log_dir</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># tmp log dirs this scheduler created (deleted on close);</span>
+        <span class="c1"># user-provided `log_dir`s are never tracked here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_log_dirs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Opts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
@@ -1133,7 +1133,10 @@
         <span class="n">lru_app_id</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">app_id</span><span class="p">,</span> <span class="n">app</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">is_terminal</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">app</span><span class="o">.</span><span class="n">last_updated</span> <span class="o">&lt;=</span> <span class="n">lru_time</span><span class="p">:</span>
+                <span class="c1"># strict `&lt;`: on equal timestamps keep the first-seen</span>
+                <span class="c1"># (oldest-inserted) app as the eviction candidate</span>
+                <span class="k">if</span> <span class="n">app</span><span class="o">.</span><span class="n">last_updated</span> <span class="o">&lt;</span> <span class="n">lru_time</span><span class="p">:</span>
+                    <span class="n">lru_time</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">last_updated</span>
                     <span class="n">lru_app_id</span> <span class="o">=</span> <span class="n">app_id</span>
 
         <span class="k">if</span> <span class="n">lru_app_id</span><span class="p">:</span>
@@ -1259,25 +1262,24 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_app_log_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the log dir. We redirect stdout/err</span>
-<span class="sd">        to a log file ONLY if the log_dir is user-provided in the cfg.</span>
-
-<span class="sd">        1. if cfg.log_dir -&gt; (user-specified log dir, True)</span>
-<span class="sd">        2. if not cfg.log_dir -&gt; (autogen tmp log dir, False)</span>
+<span class="sd">        Returns the log dir for the app: ``cfg.log_dir`` when the user provided</span>
+<span class="sd">        one, otherwise an autogenerated tmp dir. Tmp dirs are tracked in</span>
+<span class="sd">        ``self._tmp_log_dirs`` and removed on ``close()``; user-provided dirs</span>
+<span class="sd">        are never deleted.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">log_dir</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;torchx_&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_created_tmp_log_dir</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">base_log_dir</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">log_dir</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">base_log_dir</span><span class="p">:</span>
+            <span class="n">base_log_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;torchx_&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_log_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base_log_dir</span><span class="p">)</span>
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;Log directory not set in scheduler cfg.&quot;</span>
                 <span class="s2">&quot; Creating a temporary log dir that will be deleted on exit.&quot;</span>
                 <span class="s2">&quot; To preserve log directory set the `log_dir` cfg option&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log directory is: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_name</span><span class="p">,</span> <span class="n">app_id</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log directory is: </span><span class="si">{</span><span class="n">base_log_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">base_log_dir</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_name</span><span class="p">,</span> <span class="n">app_id</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LocalScheduler.schedule">
 <a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.schedule">[docs]</a>
@@ -1340,6 +1342,9 @@
             <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">gpus_info</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got exception while listing GPUs: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">gpu_cmd</span><span class="si">}</span><span class="s2">` not found, assuming no GPUs on this host&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="LocalScheduler.auto_set_CUDA_VISIBLE_DEVICES">
@@ -1461,8 +1466,10 @@
 
             <span class="n">img_root</span> <span class="o">=</span> <span class="n">image_provider</span><span class="o">.</span><span class="n">fetch_role</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
 
-            <span class="c1"># prepend extra_paths to PATH</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra_paths</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">))</span>
+            <span class="c1"># build PATH locally, NOT into `role.env`; mutating the caller&#39;s</span>
+            <span class="c1"># AppDef would re-prepend on every dryrun of the same app</span>
+            <span class="c1"># (prepend extra_paths to PATH)</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra_paths</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">))</span>
             <span class="n">cwd</span> <span class="o">=</span> <span class="n">image_provider</span><span class="o">.</span><span class="n">get_cwd</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">cwd</span><span class="p">:</span>
@@ -1471,9 +1478,9 @@
                 <span class="c1"># otherwise append cwd to PATH so that the binaries in PATH</span>
                 <span class="c1"># precede over those in cwd</span>
                 <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">prepend_cwd</span><span class="p">:</span>
-                    <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">))</span>
+                    <span class="n">path</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PATH&quot;</span><span class="p">),</span> <span class="n">cwd</span><span class="p">)</span>
+                    <span class="n">path</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cwd</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">replica_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span><span class="p">):</span>
                 <span class="n">values</span> <span class="o">=</span> <span class="n">macros</span><span class="o">.</span><span class="n">Values</span><span class="p">(</span>
@@ -1483,6 +1490,9 @@
                     <span class="n">rank0_env</span><span class="o">=</span><span class="s2">&quot;TORCHX_RANK0_HOST&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="n">replica_role</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+                <span class="c1"># the composed PATH is built before values.apply, so run it</span>
+                <span class="c1"># through the same macro substitution the role&#39;s env got</span>
+                <span class="n">replica_role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">substitute</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
                 <span class="n">replica_role</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s2">&quot;TORCHX_RANK0_HOST&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span>
 
                 <span class="n">replica_log_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_log_dir</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">replica_id</span><span class="p">))</span>
@@ -1587,7 +1597,7 @@
                 <span class="sa">f</span><span class="s2">&quot;app: </span><span class="si">{</span><span class="n">app_id</span><span class="si">}</span><span class="s2"> was not configured to log into a file.&quot;</span>
                 <span class="sa">f</span><span class="s2">&quot; Did you run it with log_dir set in Dict[str, CfgVal]?&quot;</span>
             <span class="p">)</span>
-        <span class="n">iterator</span> <span class="o">=</span> <span class="n">LogIterator</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">log_file</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">iterator</span> <span class="o">=</span> <span class="n">LogIterator</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">log_file</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">should_tail</span><span class="o">=</span><span class="n">should_tail</span><span class="p">)</span>
         <span class="c1"># sometimes there&#39;s multiple lines per logged line</span>
         <span class="n">iterator</span> <span class="o">=</span> <span class="n">split_lines_iterator</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
@@ -1607,7 +1617,7 @@
         <span class="c1"># can assume app_id exists</span>
         <span class="n">local_app</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">[</span><span class="n">app_id</span><span class="p">]</span>
         <span class="n">local_app</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="n">local_app</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">CANCELLED</span>
+        <span class="n">local_app</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">AppState</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LocalScheduler.close">
 <a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.close">[docs]</a>
@@ -1616,9 +1626,10 @@
         <span class="k">for</span> <span class="n">app_id</span><span class="p">,</span> <span class="n">app</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Terminating app: </span><span class="si">{</span><span class="n">app_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">app</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
-        <span class="c1"># delete logdir if torchx created a log dir</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created_tmp_log_dir</span><span class="p">:</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_log_dir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+        <span class="c1"># delete only the log dirs torchx created, never a user-provided log_dir</span>
+        <span class="k">for</span> <span class="n">tmp_log_dir</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_log_dirs</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">tmp_log_dir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_log_dirs</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1652,13 +1663,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_app_finished</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">should_tail</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># finished is sticky: once set (non-tail iteration, or a previously</span>
+        <span class="c1"># observed terminal state) it must not flip back to unfinished</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_app_finished</span><span class="p">:</span>
+            <span class="k">return</span>
+
         <span class="c1"># either the app (already finished) was evicted from the LRU cache</span>
         <span class="c1"># -- or -- the app reached a terminal state (and still in the cache)</span>
         <span class="n">desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="o">.</span><span class="n">describe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_app_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">desc</span> <span class="ow">or</span> <span class="n">is_terminal</span><span class="p">(</span><span class="n">desc</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_app_finished</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_app_finished</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LogIterator&quot;</span><span class="p">:</span>
         <span class="c1"># wait for the log file to appear or app to finish (whichever happens first)</span>
