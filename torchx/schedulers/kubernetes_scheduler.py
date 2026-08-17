@@ -449,7 +449,7 @@ def role_to_pod(
                     name=name,
                     value_from=V1EnvVarSource(
                         field_ref=V1ObjectFieldSelector(
-                            field_path=value.strip(PLACEHOLDER_FIELD_PATH)
+                            field_path=value.removeprefix(PLACEHOLDER_FIELD_PATH)
                         )
                     ),
                 )
@@ -777,8 +777,8 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
     def _get_job_name_from_exception(self, e: "ApiException") -> str | None:
         try:
             return json.loads(e.body)["details"]["name"]
-        except Exception as e:
-            logger.exception("Unable to retrieve job name, got exception", e)
+        except Exception:
+            logger.exception("unable to retrieve job name from api exception")
             return None
 
     def _get_active_context(self) -> dict[str, Any]:
@@ -909,7 +909,7 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             plural="jobs",
             name=name,
         )
-        vcjob["status"]["state"]["phase"] = "Aborted"
+        vcjob.setdefault("status", {}).setdefault("state", {})["phase"] = "Aborted"
         self._custom_objects_api().replace_namespaced_custom_object_status(
             group="batch.volcano.sh",
             version="v1alpha1",
@@ -1063,8 +1063,18 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
                 yield f"{prefix_container_name(container.name, role_name, k)}{line}"
 
     def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
-        active_context = self._get_active_context()
-        namespace = active_context["context"]["namespace"]
+        from kubernetes.config import ConfigException
+
+        namespace = (cfg or {}).get("namespace")
+        if not namespace:
+            try:
+                # in-cluster pods have no kubeconfig; the context may also
+                # omit `namespace`
+                namespace = self._get_active_context()["context"].get("namespace")
+            except ConfigException:
+                namespace = None
+        namespace = namespace or "default"
+
         resp = self._custom_objects_api().list_namespaced_custom_object(
             group="batch.volcano.sh",
             version="v1alpha1",
@@ -1075,7 +1085,11 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         return [
             ListAppResponse(
                 app_id=f"{namespace}:{app['metadata']['name']}",
-                state=JOB_STATE[app["status"]["state"]["phase"]],
+                # just-created jobs may not have `status.state.phase` yet
+                state=JOB_STATE.get(
+                    app.get("status", {}).get("state", {}).get("phase", ""),
+                    AppState.UNKNOWN,
+                ),
             )
             for app in resp["items"]
         ]

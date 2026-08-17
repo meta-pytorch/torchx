@@ -271,6 +271,22 @@ class KubernetesSchedulerTest(unittest.TestCase):
             want,
         )
 
+    def test_role_to_pod_field_path_strips_prefix_only(self) -> None:
+        app = _test_app()
+        role = app.roles[0]
+        role.env = {
+            "POD_IP": f"{PLACEHOLDER_FIELD_PATH}status.podIP",
+            "HOST_IP": f"{PLACEHOLDER_FIELD_PATH}status.hostIP",
+        }
+        pod = role_to_pod("name", role, service_account=None)
+        field_paths = {
+            env.name: env.value_from.field_ref.field_path
+            for env in pod.spec.containers[0].env
+        }
+        self.assertEqual(
+            {"POD_IP": "status.podIP", "HOST_IP": "status.hostIP"}, field_paths
+        )
+
     def test_submit_dryrun(self) -> None:
         scheduler = create_scheduler("test")
         app = _test_app()
@@ -980,6 +996,39 @@ spec:
             },
         )
 
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object")
+    @patch("kubernetes.client.CustomObjectsApi.replace_namespaced_custom_object_status")
+    def test_cancel_existing_no_status(
+        self,
+        replace_namespaced_custom_object_status: MagicMock,
+        get_namespaced_custom_object: MagicMock,
+    ) -> None:
+        scheduler = create_scheduler("test")
+        get_namespaced_custom_object.return_value = {
+            "metadata": {"name": "testjob"},
+        }
+        scheduler._cancel_existing("testnamespace:testjob")
+        _, kwargs = replace_namespaced_custom_object_status.call_args
+        self.assertEqual(
+            kwargs["body"],
+            {
+                "metadata": {"name": "testjob"},
+                "status": {"state": {"phase": "Aborted"}},
+            },
+        )
+
+    def test_get_job_name_from_exception_bad_body(self) -> None:
+        scheduler = create_scheduler("test")
+        api_exception = MagicMock()
+        api_exception.body = "not json"
+        with self.assertLogs(
+            "torchx.schedulers.kubernetes_scheduler", level="ERROR"
+        ) as cm:
+            self.assertIsNone(scheduler._get_job_name_from_exception(api_exception))
+        # formatting the captured records must not raise
+        # (a stray logging arg without a placeholder does)
+        self.assertEqual(len(cm.output), 1)
+
     @patch("kubernetes.client.CustomObjectsApi.delete_namespaced_custom_object")
     @patch("torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.exists")
     def test_delete(
@@ -1114,6 +1163,78 @@ spec:
             scheduler = create_scheduler("test")
             with self.assertRaises(ApiException):
                 scheduler.list()
+
+    @patch("kubernetes.client.CustomObjectsApi.list_namespaced_custom_object")
+    def test_list_namespace_from_cfg(
+        self, list_namespaced_custom_object: MagicMock
+    ) -> None:
+        list_namespaced_custom_object.return_value = {"items": []}
+        with patch(
+            "torchx.schedulers.kubernetes_scheduler.KubernetesScheduler._get_active_context"
+        ) as test_context:
+            scheduler = create_scheduler("test")
+            scheduler.list(cfg={"namespace": "testnamespace"})
+            test_context.assert_not_called()
+            _, kwargs = list_namespaced_custom_object.call_args
+            self.assertEqual(kwargs["namespace"], "testnamespace")
+
+    @patch("kubernetes.client.CustomObjectsApi.list_namespaced_custom_object")
+    def test_list_namespaceless_context(
+        self, list_namespaced_custom_object: MagicMock
+    ) -> None:
+        list_namespaced_custom_object.return_value = {"items": []}
+        with patch(
+            "torchx.schedulers.kubernetes_scheduler.KubernetesScheduler._get_active_context"
+        ) as test_context:
+            # kubeconfig contexts are not required to set a namespace
+            test_context.return_value = {
+                "name": "default",
+                "context": {"cluster": "default", "user": "torchx_fake_token"},
+            }
+            scheduler = create_scheduler("test")
+            scheduler.list()
+            _, kwargs = list_namespaced_custom_object.call_args
+            self.assertEqual(kwargs["namespace"], "default")
+
+    @patch("kubernetes.client.CustomObjectsApi.list_namespaced_custom_object")
+    def test_list_no_kubeconfig(self, list_namespaced_custom_object: MagicMock) -> None:
+        from kubernetes.config import ConfigException
+
+        list_namespaced_custom_object.return_value = {"items": []}
+        with patch(
+            "torchx.schedulers.kubernetes_scheduler.KubernetesScheduler._get_active_context"
+        ) as test_context:
+            # in-cluster pods have no kubeconfig
+            test_context.side_effect = ConfigException("no kubeconfig")
+            scheduler = create_scheduler("test")
+            scheduler.list()
+            _, kwargs = list_namespaced_custom_object.call_args
+            self.assertEqual(kwargs["namespace"], "default")
+
+    @patch("kubernetes.client.CustomObjectsApi.list_namespaced_custom_object")
+    def test_list_job_without_status(
+        self, list_namespaced_custom_object: MagicMock
+    ) -> None:
+        list_namespaced_custom_object.return_value = {
+            "items": [
+                {"metadata": {"name": "just-created"}},
+                {"metadata": {"name": "no-phase"}, "status": {}},
+            ],
+        }
+        with patch(
+            "torchx.schedulers.kubernetes_scheduler.KubernetesScheduler._get_active_context"
+        ) as test_context:
+            test_context.return_value = TEST_KUBE_CONFIG["contexts"][0]
+            scheduler = create_scheduler("test")
+            self.assertEqual(
+                scheduler.list(),
+                [
+                    ListAppResponse(
+                        app_id="default:just-created", state=AppState.UNKNOWN
+                    ),
+                    ListAppResponse(app_id="default:no-phase", state=AppState.UNKNOWN),
+                ],
+            )
 
     @patch("kubernetes.client.CoreV1Api.read_namespaced_pod")
     @patch("kubernetes.client.CoreV1Api.read_namespaced_pod_log")
