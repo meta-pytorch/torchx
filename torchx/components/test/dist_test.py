@@ -47,6 +47,15 @@ class DDPTest(ComponentTestCase):
             self.assertEqual(app.metadata[k], v)
         self.assertEqual(len(metadata), len(app.metadata))
 
+    def test_ddp_does_not_mutate_caller_env_and_metadata(self) -> None:
+        env = {"FOO": "bar"}
+        metadata = {"key": "value"}
+        app = ddp(script="foo.py", env=env, metadata=metadata)
+        self.assertEqual({"FOO": "bar"}, env)
+        self.assertEqual({"key": "value"}, metadata)
+        # the component's additions go to the AppDef, not the caller's dict
+        self.assertIn("TORCHX_TRACKING_EXPERIMENT_NAME", app.roles[0].env)
+
     def test_ddp_rdzv_backend_static(self) -> None:
         rdzv_conf = "join_timeout=600,close_timeout=600,timeout=600"
         app = ddp(script="foo.py", rdzv_backend="static", rdzv_conf=rdzv_conf)

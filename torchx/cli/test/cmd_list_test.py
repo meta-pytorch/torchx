@@ -18,12 +18,10 @@ from torchx.cli.cmd_list import CmdList
 class CmdListTest(unittest.TestCase):
     def setUp(self) -> None:
         # Reset the class variables to prevent state leaking between tests
-        torchxconfig.called_args = set()
         torchxconfig._subcmd_configs = {}
 
     def tearDown(self) -> None:
         # Reset the class variables after each test
-        torchxconfig.called_args = set()
         torchxconfig._subcmd_configs = {}
 
     @patch("torchx.runner.config.apply")

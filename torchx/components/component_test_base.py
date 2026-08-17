@@ -113,7 +113,7 @@ class ComponentTestCase(unittest.TestCase):
 
         elapsed = 0
         status = runner.status(app_handle)
-        while (status and not status.is_terminal) or elapsed < timeout:
+        while (status is None or not status.is_terminal()) and elapsed < timeout:
             time.sleep(interval)
             elapsed += interval
             status = runner.status(app_handle)

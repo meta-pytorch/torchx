@@ -242,8 +242,9 @@ def ddp(
         # use $$ in the prefix to escape the '$' literal (rather than a string Template substitution argument)
         rdzv_endpoint = _noquote(f"$${{{macros.rank0_env}:=localhost}}:{rdzv_port}")
 
-    env = env or {}
-    metadata = metadata or {}
+    # copy; this component must not mutate the caller's dicts
+    env = dict(env) if env else {}
+    metadata = dict(metadata) if metadata else {}
 
     argname = StructuredNameArgument.parse_from(
         name=name,

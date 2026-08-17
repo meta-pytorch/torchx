@@ -154,23 +154,33 @@ class FsspecTracker(TrackerBase):
         parent_ref_file = sources_path_builder.with_run_id(source_id).path()
         artifact_name = artifact_name or ""
 
-        with self.fs.open(parent_ref_file, mode="w") as f:
-            artifact_name = artifact_name or ""
-            f.write(f"{artifact_name}\n")
+        # append; overwriting would drop previously linked artifacts of the
+        # same source
+        self._append_unique(parent_ref_file, artifact_name)
 
         # write into parent as well (if exists) that will allow traversing descendants
-        parent_descendants_path_builder = self._path_builder.with_run_id(
-            source_id
-        ).with_subpath("descendants")
-        parent_descendants_ref_path = parent_descendants_path_builder.path()
-        if self.fs.exists(parent_descendants_ref_path):
-            if not self.fs.exists(parent_descendants_ref_path):
-                self.fs.mkdirs(parent_descendants_ref_path)
+        parent_path = self._path_builder.with_run_id(source_id).path()
+        if self.fs.exists(parent_path):
+            parent_descendants_path_builder = self._path_builder.with_run_id(
+                source_id
+            ).with_subpath("descendants")
+            parent_descendants_ref_path = parent_descendants_path_builder.path()
+            self.fs.mkdirs(parent_descendants_ref_path, exist_ok=True)
             descendant_ref_path = parent_descendants_path_builder.with_run_id(
                 run_id
             ).path()
-            with self.fs.open(descendant_ref_path, mode="a") as f:
-                f.write(f"{artifact_name}\n")
+            self._append_unique(descendant_ref_path, artifact_name)
+
+    def _append_unique(self, ref_file: str, line: str) -> None:
+        """Appends ``line`` unless the file already carries it — repeated
+        ``add_source`` calls for the same link must not duplicate entries."""
+        line = line.strip()
+        if self.fs.exists(ref_file):
+            with self.fs.open(ref_file) as f:
+                if line in (existing.decode().strip() for existing in f.readlines()):
+                    return
+        with self.fs.open(ref_file, mode="a") as f:
+            f.write(f"{line}\n")
 
     def _read_source_file(
         self, source_file: str, artifact_name: str | None = None
@@ -231,7 +241,7 @@ class FsspecTracker(TrackerBase):
         return all_sources
 
     def lineage(self, run_id: str) -> Lineage:
-        raise NotImplementedError("")
+        raise NotImplementedError("lineage is not yet implemented for FsspecTracker")
 
     def __repr__(self) -> str:
         return f"<FsspecTracker: root_path={self._path_builder.path()}>"
@@ -278,8 +288,11 @@ def create(config_file: str) -> TrackerBase:
     In addition any other non-comment entries will be passed to a constructor (eg. authentication data)
     """
     config = _read_config(config_file)
-    if "protocol" not in config or "root_path" not in config:
-        raise Exception(f"Please specify 'protocol' and 'root_path' in {config_file}")
+    missing_keys = [key for key in ("protocol", "root_path") if key not in config]
+    if missing_keys:
+        raise ValueError(
+            f"Missing required key(s) {missing_keys} in tracker config: {config_file}"
+        )
     protocol = config["protocol"]
     # pyrefly: ignore [unsupported-operation]
     del config["protocol"]

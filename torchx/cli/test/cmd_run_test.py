@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Generator
 from unittest.mock import MagicMock, patch
 
-from torchx.cli.argparse_util import ArgOnceAction, torchxconfig
+from torchx.cli.argparse_util import torchxconfig
 from torchx.cli.cmd_run import (
     _parse_component_name_and_args,
     CmdBuiltins,
@@ -47,8 +47,6 @@ def cwd(path: str) -> Generator[None, None, None]:
 class CmdRunTest(unittest.TestCase):
     def setUp(self) -> None:
         # Reset class variables to prevent state leaking between tests
-        ArgOnceAction.called_args = set()
-        torchxconfig.called_args = set()
         torchxconfig._subcmd_configs = {}
 
         self.tmpdir = Path(tempfile.mkdtemp())
@@ -66,8 +64,6 @@ class CmdRunTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.mock_env.stop()
         shutil.rmtree(self.tmpdir, ignore_errors=True)
-        ArgOnceAction.called_args = set()
-        torchxconfig.called_args = set()
         torchxconfig._subcmd_configs = {}
 
     def test_run_with_multiple_scheduler_args(self) -> None:
@@ -365,6 +361,13 @@ component = custom.echo
             ("custom.echo", ["-m", "hello"]),
             _parse_component_name_and_args(["-m", "hello"], sp, dirs),
         )
+
+    def test_torchx_json_from_stdin_non_dict(self) -> None:
+        """Non-dict stdin JSON must exit cleanly, even with --dryrun."""
+        args = self.parser.parse_args(["--stdin", "--dryrun"])
+        with patch("sys.stdin", io.StringIO("[1, 2, 3]")):
+            with self.assertRaises(SystemExit):
+                self.cmd_run.torchx_json_from_stdin(args)
 
     def test_verify_no_extra_args_stdin_only(self) -> None:
         """Test that only --stdin is allowed when using stdin mode."""
