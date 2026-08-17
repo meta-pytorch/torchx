@@ -92,11 +92,13 @@ NETWORK = "torchx"
 def has_docker() -> bool:
     try:
         import docker
+    except ImportError:
+        return False
 
+    try:
         docker.from_env()
         return True
-    # pyrefly: ignore [unbound-name]
-    except (ImportError, docker.errors.DockerException):
+    except docker.errors.DockerException:
         return False
 
 
@@ -242,8 +244,10 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         for role in app.roles:
             mounts = []
             devices = []
-            role.mounts += get_device_mounts(role.resource.devices)
-            for mount in role.mounts:
+            # iterate over a local concatenation; appending to `role.mounts`
+            # would mutate the caller's AppDef and duplicate the DeviceMounts
+            # on the next dryrun/schedule of the same app
+            for mount in [*role.mounts, *get_device_mounts(role.resource.devices)]:
                 if isinstance(mount, BindMount):
                     mounts.append(
                         Mount(
@@ -399,6 +403,10 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         states = []
 
         containers = self._get_containers(app_id)
+        if not containers:
+            # either the app never existed or docker already GC'ed the
+            # containers; per the Scheduler contract return None
+            return None
         for container in containers:
             role = container.labels[LABEL_ROLE_NAME]
             replica_id = container.labels[LABEL_REPLICA_ID]
@@ -482,7 +490,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
                 app_id=cntr.labels[LABEL_APP_ID], state=self._get_app_state(cntr)
             )
             for cntr in self._docker_client.containers.list(
-                all=True, filters={"label": f"{LABEL_APP_ID}"}
+                all=True, filters={"label": LABEL_APP_ID}
             )
         }
         return list(unique_apps)
