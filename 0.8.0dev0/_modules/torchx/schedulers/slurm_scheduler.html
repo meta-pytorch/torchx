@@ -456,10 +456,10 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">subprocess</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalledProcessError</span><span class="p">,</span> <span class="n">PIPE</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TypedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -469,6 +469,7 @@
     <span class="n">Scheduler</span><span class="p">,</span>
     <span class="n">split_lines_iterator</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
+    <span class="n">StructuredOpts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.local_scheduler</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogIterator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -569,19 +570,6 @@
     <span class="p">)</span>  <span class="c1"># Major version is equal and minor version is greater or equal</span>
 
 
-<span class="n">SBATCH_JOB_OPTIONS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;comment&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mail-user&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mail-type&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;account&quot;</span><span class="p">,</span>
-<span class="p">}</span>
-<span class="n">SBATCH_GROUP_OPTIONS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;partition&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;time&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;constraint&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;qos&quot;</span><span class="p">,</span>
-<span class="p">}</span>
-
 <span class="n">log</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
@@ -594,22 +582,41 @@
     <span class="k">return</span> <span class="s1">&#39;&quot;$SLURM_JOB_ID&quot;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">escaped_parts</span><span class="p">)</span>
 
 
-<span class="c1"># Using old typed dict syntax to handle hyphenated params</span>
-<span class="n">SlurmOpts</span> <span class="o">=</span> <span class="n">TypedDict</span><span class="p">(</span>
-    <span class="s2">&quot;SlurmOpts&quot;</span><span class="p">,</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;account&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;constraint&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;mail-user&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;mail-type&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;job_dir&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;qos&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">},</span>
-    <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SlurmOpts</span><span class="p">(</span><span class="n">StructuredOpts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Typed configuration options for SlurmScheduler.&quot;&quot;&quot;</span>
+
+    <span class="n">account</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The account to use for the slurm job.&quot;&quot;&quot;</span>
+
+    <span class="n">partition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The partition to run the job in.&quot;&quot;&quot;</span>
+
+    <span class="n">time</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The maximum time the job is allowed to run for. Formats: &quot;minutes&quot;,</span>
+<span class="sd">    &quot;minutes:seconds&quot;, &quot;hours:minutes:seconds&quot;, &quot;days-hours&quot;,</span>
+<span class="sd">    &quot;days-hours:minutes&quot; or &quot;days-hours:minutes:seconds&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">comment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Comment to set on the slurm job.&quot;&quot;&quot;</span>
+
+    <span class="n">constraint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constraint to use for the slurm job.&quot;&quot;&quot;</span>
+
+    <span class="n">mail_user</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cfg_key&quot;</span><span class="p">:</span> <span class="s2">&quot;mail-user&quot;</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User to mail on job end.&quot;&quot;&quot;</span>
+
+    <span class="n">mail_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cfg_key&quot;</span><span class="p">:</span> <span class="s2">&quot;mail-type&quot;</span><span class="p">})</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;What events to mail users on.&quot;&quot;&quot;</span>
+
+    <span class="n">job_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The directory to place the job code and outputs. The</span>
+<span class="sd">    directory must not exist and will be created. To enable log</span>
+<span class="sd">    iteration, jobs will be tracked in ``.torchxslurmjobdirs``.&quot;&quot;&quot;</span>
+
+    <span class="n">qos</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quality of Service (QoS) to assign to the job.&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="SlurmReplicaRequest">
@@ -644,10 +651,15 @@
         <span class="n">sbatch_opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;requeue&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">SBATCH_GROUP_OPTIONS</span><span class="p">:</span>
+        <span class="c1"># sbatch options that apply per heterogeneous job group</span>
+        <span class="n">group_opts</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;partition&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">partition</span><span class="p">,</span>
+            <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
+            <span class="s2">&quot;constraint&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">constraint</span><span class="p">,</span>
+            <span class="s2">&quot;qos&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">qos</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">group_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">sbatch_opts</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="n">sbatch_opts</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;ntasks-per-node&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
         <span class="n">resource</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">resource</span>
@@ -792,7 +804,7 @@
 
 <div class="viewcode-block" id="SlurmScheduler">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">SlurmOpts</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects</span>
 <span class="sd">    that slurm CLI tools are locally installed and job accounting is enabled.</span>
@@ -860,61 +872,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;slurm&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;account&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The account to use for the slurm job.&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;partition&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The partition to run the job in.&quot;</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;time&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The maximum time the job is allowed to run for. Formats: </span><span class="se">\</span>
-<span class="s1">            &quot;minutes&quot;, &quot;minutes:seconds&quot;, &quot;hours:minutes:seconds&quot;, &quot;days-hours&quot;, </span><span class="se">\</span>
-<span class="s1">            &quot;days-hours:minutes&quot; or &quot;days-hours:minutes:seconds&quot;&#39;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;comment&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comment to set on the slurm job.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;constraint&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Constraint to use for the slurm job.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;mail-user&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;User to mail on job end.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;mail-type&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;What events to mail users on.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;job_dir&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;The directory to place the job code and outputs. The</span>
-<span class="s2">            directory must not exist and will be created. To enable log</span>
-<span class="s2">            iteration, jobs will be tracked in ``.torchxslurmjobdirs``.</span>
-<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-            <span class="s2">&quot;qos&quot;</span><span class="p">,</span>
-            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Quality of Service (QoS) to assign to the job.&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">opts</span>
+        <span class="k">return</span> <span class="n">SlurmOpts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
 
 <div class="viewcode-block" id="SlurmScheduler.schedule">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.schedule">[docs]</a>
@@ -972,17 +930,14 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">SlurmOpts</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">]:</span>
-        <span class="n">job_dir</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;job_dir&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">job_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">job_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s2">&quot;job_dir must be str&quot;</span>
-
-        <span class="n">partition</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;partition&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">partition</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s2">&quot;partition must be str&quot;</span>
+        <span class="c1"># Convert to typed opts for attribute access (resolve() passes a raw dict)</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">cfg</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">SlurmOpts</span><span class="p">)</span> <span class="k">else</span> <span class="n">SlurmOpts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
         <span class="c1"># check if the partition has at least 1GB memory, if we&#39;re not sure,</span>
         <span class="c1"># default to using memory allocations</span>
-        <span class="n">memmb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_memmb</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+        <span class="n">memmb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_memmb</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span>
         <span class="n">nomem</span> <span class="o">=</span> <span class="n">memmb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">memmb</span> <span class="o">&lt;=</span> <span class="mi">1000</span>
 
         <span class="n">replicas</span> <span class="o">=</span> <span class="p">{}</span>
@@ -999,27 +954,32 @@
                 <span class="n">replicas</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">SlurmReplicaRequest</span><span class="o">.</span><span class="n">from_role</span><span class="p">(</span>
                     <span class="n">name</span><span class="p">,</span>
                     <span class="n">replica_role</span><span class="p">,</span>
-                    <span class="n">cfg</span><span class="p">,</span>
+                    <span class="n">opts</span><span class="p">,</span>
                     <span class="n">nomem</span><span class="o">=</span><span class="n">nomem</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sbatch&quot;</span><span class="p">,</span> <span class="s2">&quot;--parsable&quot;</span><span class="p">]</span>
 
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">SBATCH_JOB_OPTIONS</span><span class="p">:</span>
-            <span class="c1"># pyre-fixme: Typed Dict requires string literal</span>
-            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cfg</span> <span class="ow">and</span> <span class="n">cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># pyre-fixme: Typed Dict requires string literal</span>
-                <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="c1"># sbatch options that apply once to the whole job</span>
+        <span class="n">job_opts</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
+            <span class="s2">&quot;mail-user&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">mail_user</span><span class="p">,</span>
+            <span class="s2">&quot;mail-type&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">mail_type</span><span class="p">,</span>
+            <span class="s2">&quot;account&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">account</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">job_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 
         <span class="n">req</span> <span class="o">=</span> <span class="n">SlurmBatchRequest</span><span class="p">(</span>
             <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">,</span>
             <span class="n">replicas</span><span class="o">=</span><span class="n">replicas</span><span class="p">,</span>
-            <span class="n">job_dir</span><span class="o">=</span><span class="n">job_dir</span><span class="p">,</span>
+            <span class="n">job_dir</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">job_dir</span><span class="p">,</span>
             <span class="n">max_retries</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">max_retries</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">AppDryRunInfo</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">SlurmOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Skip validation step for slurm</span>
         <span class="k">pass</span>
 

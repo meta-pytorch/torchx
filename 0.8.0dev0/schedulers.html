@@ -959,6 +959,9 @@ should be <code class="docutils literal notranslate"><span class="pre">&#64;data
 <li><p>Auto-generates <code class="docutils literal notranslate"><span class="pre">runopts</span></code> from dataclass fields via <a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.as_runopts" title="torchx.schedulers.api.StructuredOpts.as_runopts"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_runopts()</span></code></a></p></li>
 <li><p>Parses raw config dicts into typed instances via <a class="reference internal" href="#torchx.schedulers.api.StructuredOpts.from_cfg" title="torchx.schedulers.api.StructuredOpts.from_cfg"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_cfg()</span></code></a></p></li>
 <li><p>Supports snake_case field names with camelCase aliases</p></li>
+<li><p>Field metadata <code class="docutils literal notranslate"><span class="pre">cfg_key</span></code> overrides the external config key for
+names that cannot be field names (e.g. hyphenated <code class="docutils literal notranslate"><span class="pre">mail-user</span></code>):
+<code class="docutils literal notranslate"><span class="pre">mail_user:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">field(default=None,</span> <span class="pre">metadata={&quot;cfg_key&quot;:</span> <span class="pre">&quot;mail-user&quot;})</span></code></p></li>
 <li><p>Extracts help text from field docstrings</p></li>
 <li><p>Supports nested <code class="docutils literal notranslate"><span class="pre">StructuredOpts</span></code> fields, flattened with dot-prefixed
 keys (e.g., <code class="docutils literal notranslate"><span class="pre">k8s.context</span></code>)</p></li>
