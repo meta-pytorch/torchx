@@ -105,8 +105,8 @@ def sh(
     """
 
     escaped_args = [shlex.quote(arg) for arg in args]
-    if env is None:
-        env = {}
+    # copy; this component must not mutate the caller's dict
+    env = dict(env) if env else {}
     env.setdefault("LOGLEVEL", os.getenv("LOGLEVEL", "WARNING"))
 
     if entrypoint is not None:

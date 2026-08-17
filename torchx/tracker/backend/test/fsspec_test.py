@@ -99,6 +99,35 @@ class FsspecTest(unittest.TestCase):
             parent_id_for_artifact,
         )
 
+    def test_sources_accumulate_artifacts(self) -> None:
+        fs = fsspec.filesystem("file")
+        tracker = FsspecTracker(fs, self.test_dir)
+        tracker.add_source(self.run_id, self.parent_run_id, "artifact_1")
+        tracker.add_source(self.run_id, self.parent_run_id, "artifact_2")
+
+        sources = list(tracker.sources(self.run_id))
+        # the second add_source must not overwrite the first link
+        self.assertEqual(
+            {"artifact_1", "artifact_2"},
+            {source.artifact_name for source in sources},
+        )
+
+    def test_add_source_writes_descendant_edge(self) -> None:
+        fs = fsspec.filesystem("file")
+        tracker = FsspecTracker(fs, self.test_dir)
+        # parent run exists (has tracked data)
+        tracker.add_metadata(self.parent_run_id, k1="1")
+
+        tracker.add_source(self.run_id, self.parent_run_id)
+
+        descendant_ref = (
+            Path(self.test_dir)
+            / _encode_torchx_run_id(self.parent_run_id)
+            / "descendants"
+            / _encode_torchx_run_id(self.run_id)
+        )
+        self.assertTrue(descendant_ref.exists())
+
     def test_run_ids(self) -> None:
         fs = fsspec.filesystem("file")
         tracker = FsspecTracker(fs, self.test_dir)
@@ -172,3 +201,9 @@ class FsspecTest(unittest.TestCase):
         self.assertEqual(
             tracker._path_builder.root_dir, tracker_root_path  # pyre-ignore
         )
+
+    def test_create_missing_required_keys(self) -> None:
+        configfile = self._write_file("config.conf", ["protocol=file"])
+
+        with self.assertRaisesRegex(ValueError, "root_path"):
+            create(f"file://{str(configfile)}")

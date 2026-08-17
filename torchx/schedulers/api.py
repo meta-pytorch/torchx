@@ -76,6 +76,7 @@ def _is_structured_opts(tp: type) -> bool:
         return False
 
 
+@dataclass
 class StructuredOpts(Mapping[str, CfgVal]):
     """Base class for typed scheduler configuration options.
 
@@ -130,7 +131,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
         """
         type_hints = get_type_hints(cls)
         kwargs = {}
-        # pyrefly: ignore [bad-argument-type]
         for f in fields(cls):
             name = f.name
             field_type = _unwrap_optional(type_hints.get(name, str))
@@ -170,13 +170,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
     # StructuredOpts field access instead of dict-like access.
     # -------------------------------------------------------------------------
 
-    # pyre-fixme[14]: Inconsistent override - Mapping.get accepts a default parameter
-    def get(self, key: str) -> CfgVal:
-        try:
-            return self[key]
-        except KeyError:
-            return None
-
     def __getitem__(self, key: str) -> CfgVal:
         if "." in key:
             prefix, rest = key.split(".", 1)
@@ -186,7 +179,9 @@ class StructuredOpts(Mapping[str, CfgVal]):
                 return nested[rest]
             raise KeyError(key) from None
         snake_key = cases.camel_to_snake(key)
-        if hasattr(self, snake_key):
+        # only dataclass fields are cfg keys; a plain hasattr() check would
+        # also resolve methods (e.g. opts["get"] -> bound method)
+        if snake_key in {f.name for f in fields(self)}:
             return getattr(self, snake_key)
         # pyrefly: ignore [bad-argument-type]
         for f in fields(self):
@@ -199,7 +194,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     def __iter__(self) -> Iterator[str]:
         type_hints = get_type_hints(type(self))
-        # pyrefly: ignore [bad-argument-type]
         for f in fields(self):
             field_type = _unwrap_optional(type_hints.get(f.name, str))
             if _is_structured_opts(field_type):
@@ -241,7 +235,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
             docstrings[field_name] = docstring
 
         type_hints = get_type_hints(cls)
-        # pyrefly: ignore [bad-argument-type]
         for f in fields(cls):
             field_type = _unwrap_optional(type_hints.get(f.name, str))
             if _is_structured_opts(field_type):
@@ -263,7 +256,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
         type_hints = get_type_hints(cls)
         docstrings = cls.get_docstrings()
 
-        # pyrefly: ignore [bad-argument-type]
         for f in fields(cls):
             name = f.name
             field_type = _unwrap_optional(type_hints.get(name, str))
@@ -407,7 +399,10 @@ class Scheduler(abc.ABC, Generic[T]):
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
-            assert isinstance(self, WorkspaceMixin)
+            if not isinstance(self, WorkspaceMixin):
+                raise ValueError(
+                    f"scheduler `{self.backend}` does not support workspaces"
+                )
 
             if isinstance(workspace, str):
                 workspace = Workspace.from_str(workspace)
@@ -538,7 +533,8 @@ class Scheduler(abc.ABC, Generic[T]):
         for role in app.roles:
             if role.resource == NULL_RESOURCE:
                 raise ValueError(
-                    f"No resource for role: {role.image}. Did you forget to attach resource to the role"
+                    f"No resource for role: {role.name} (image: {role.image})."
+                    " Did you forget to attach resource to the role"
                 )
 
 

@@ -8,12 +8,37 @@
 
 import logging
 import sys
+import weakref
 from argparse import Action, ArgumentParser, Namespace
 from typing import Any, Sequence
 
 from torchx.runner import config
 
 logger: logging.Logger = logging.getLogger(__name__)
+
+# seen-sets keyed per namespace (fresh per `parse_args` call) so state does
+# not leak across parses. A side table rather than a namespace attribute:
+# `Namespace.__eq__` compares `vars()`, so a stashed attribute breaks callers
+# that compare namespaces. Keyed by `id()` because `Namespace` is unhashable
+# (no `WeakKeyDictionary`); the finalizer drops the entry when the namespace
+# is collected, before its `id()` can be recycled.
+_called_args_by_namespace: dict[int, set[str]] = {}
+
+
+def _check_specified_once(namespace: Namespace, option_string: str | None) -> None:
+    """Exits if ``option_string`` was already seen during this parse."""
+    if option_string is None:
+        return
+    key = id(namespace)
+    called_args = _called_args_by_namespace.get(key)
+    if called_args is None:
+        called_args = set()
+        _called_args_by_namespace[key] = called_args
+        weakref.finalize(namespace, _called_args_by_namespace.pop, key)
+    if option_string in called_args:
+        logger.error(f"{option_string} is specified more than once")
+        sys.exit(1)
+    called_args.add(option_string)
 
 
 class torchxconfig(Action):
@@ -22,8 +47,6 @@ class torchxconfig(Action):
     from .torchxconfig file.
 
     """
-
-    called_args: set[str] = set()
 
     # since this action is used for each argparse argument
     # load the config section for the subcmd once
@@ -72,11 +95,7 @@ class torchxconfig(Action):
         values: Any,  # pyre-ignore[2] declared as Any in superclass Action
         option_string: str | None = None,
     ) -> None:
-        if option_string is not None:
-            if option_string in self.called_args:
-                logger.error(f"{option_string} is specified more than once")
-                sys.exit(1)
-            self.called_args.add(option_string)
+        _check_specified_once(namespace, option_string)
         setattr(namespace, self.dest, values)
 
 
@@ -136,8 +155,6 @@ class ArgOnceAction(Action):
     Custom argparse action only allows argument to be specified once
     """
 
-    called_args: set[str] = set()
-
     def __call__(
         self,
         parser: ArgumentParser,
@@ -145,9 +162,5 @@ class ArgOnceAction(Action):
         values: list[str],
         option_string: str | None = None,
     ) -> None:
-        if option_string is not None:
-            if option_string in self.called_args:
-                logger.error(f"{option_string} is specified more than once")
-                sys.exit(1)
-            self.called_args.add(option_string)
+        _check_specified_once(namespace, option_string)
         setattr(namespace, self.dest, values)
