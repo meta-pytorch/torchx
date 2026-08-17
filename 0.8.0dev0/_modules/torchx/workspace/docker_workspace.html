@@ -537,10 +537,6 @@
 <span class="sd">        updates ``role.image`` with the resulting image id.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">old_imgs</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">image</span><span class="o">.</span><span class="n">id</span>
-            <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_docker_client</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;image_repo&quot;</span><span class="p">])</span>
-        <span class="p">]</span>
         <span class="n">context</span> <span class="o">=</span> <span class="n">_build_context</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">workspace</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -577,9 +573,8 @@
                     <span class="n">image_id</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;ID&quot;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">error</span> <span class="o">:=</span> <span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="n">BuildError</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="n">error</span><span class="p">,</span> <span class="n">build_log</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_imgs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">old_imgs</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="n">image_id</span><span class="p">,</span> <span class="s2">&quot;image id was not found&quot;</span>
-                <span class="n">role</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">image_id</span>
+            <span class="k">assert</span> <span class="n">image_id</span><span class="p">,</span> <span class="s2">&quot;image id was not found&quot;</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">image_id</span>
 
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">context</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
