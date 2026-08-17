@@ -11,12 +11,10 @@ import re
 
 def normalize_str(data: str) -> str:
     """
-    Invokes ``lower`` on thes string and removes all
-    characters that do not satisfy ``[a-z0-9\\-]`` pattern.
+    Invokes ``lower`` on the string, removes all characters that do not
+    satisfy the ``[a-z0-9\\-]`` pattern, then strips leading ``-`` characters.
     This method is mostly used to make sure kubernetes scheduler gets
     the job name that does not violate its restrictions.
     """
-    if data.startswith("-"):
-        data = data[1:]
     pattern = r"[a-z0-9\-]"
-    return "".join(re.findall(pattern, data.lower()))
+    return "".join(re.findall(pattern, data.lower())).lstrip("-")

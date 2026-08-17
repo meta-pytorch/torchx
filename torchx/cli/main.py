@@ -61,13 +61,14 @@ def get_sub_cmds() -> dict[str, SubCommand]:
     """
     sub_cmds = get_default_sub_cmds()
 
-    override_sub_cmds = load_group(
-        "torchx.cli.cmds",
-        default={},
-    )
-    # pyrefly: ignore [missing-attribute]
-    for cmd_name, cmd_cls in override_sub_cmds.items():
-        sub_cmds[cmd_name] = cmd_cls()
+    override_sub_cmds = load_group("torchx.cli.cmds")
+    for cmd_name, load_cmd in override_sub_cmds.items():
+        cmd = load_cmd()
+        assert isinstance(cmd, SubCommand), (
+            f"`{cmd_name}` in entry point group `torchx.cli.cmds` must produce"
+            f" a SubCommand, got {type(cmd).__name__}"
+        )
+        sub_cmds[cmd_name] = cmd
     return sub_cmds
 
 

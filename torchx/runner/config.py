@@ -200,7 +200,7 @@ def _configparser() -> configparser.ConfigParser:
 def _get_scheduler(name: str) -> Scheduler:
     schedulers = {
         **get_scheduler_factories(),
-        **(entrypoints.load_group("torchx.schedulers.orchestrator") or {}),
+        **entrypoints.load_group("torchx.schedulers.orchestrator"),
     }
     if name not in schedulers:
         raise ValueError(
@@ -208,6 +208,9 @@ def _get_scheduler(name: str) -> Scheduler:
         )
     # pyrefly: ignore [not-callable]
     sched = schedulers[name](session_name="_")
+    assert isinstance(
+        sched, Scheduler
+    ), f"the factory registered for `{name}` must produce a Scheduler, got {type(sched).__name__}"
     return sched
 
 
@@ -248,7 +251,7 @@ def dump(
     else:
         scheduler_factories = {
             **get_scheduler_factories(),
-            **(entrypoints.load_group("torchx.schedulers.orchestrator") or {}),
+            **entrypoints.load_group("torchx.schedulers.orchestrator"),
         }
         scheds = scheduler_factories.keys()
 
