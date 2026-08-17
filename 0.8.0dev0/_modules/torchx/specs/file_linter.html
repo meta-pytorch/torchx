@@ -447,7 +447,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 
@@ -558,10 +557,6 @@
         <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">OK</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinterMessage</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="p">[]</span>  <span class="c1"># empty linter error means validation passes</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">is_primitive</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="c1"># whether the arg is a primitive type (e.g. int, float, str, bool)</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
@@ -573,21 +568,19 @@
     <span class="c1"># in this validator&#39;s context, this is the generic type of a container type</span>
     <span class="c1"># e.g. for Optional[str] returns the expr for str</span>
 
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">)</span>  <span class="c1"># e.g. arg = C[T]</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected a subscripted type (C[T]), got </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">slice</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>  <span class="c1"># python&gt;=3.10</span>
-        <span class="c1"># pyrefly: ignore [missing-attribute]</span>
-        <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">slice</span><span class="o">.</span><span class="n">value</span>
-    <span class="k">else</span><span class="p">:</span>  <span class="c1"># python-3.9</span>
-        <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">slice</span>
+    <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">slice</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_optional_type</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ast</span><span class="o">.</span><span class="n">expr</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if ``arg``</span>
 <span class="sd">    is not an ``Optional``. Handles both:</span>
-<span class="sd">        1. ``typing.Optional[T]`` (python&lt;3.10)</span>
-<span class="sd">        2.  ``T | None`` or ``None | T`` (python&gt;=3.10 - PEP 604)</span>
+<span class="sd">        1. ``typing.Optional[T]``</span>
+<span class="sd">        2. ``T | None`` or ``None | T`` (PEP 604)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># case 1: &#39;a: Optional[T]&#39;</span>
     <span class="c1"># pyrefly: ignore [missing-attribute]</span>
@@ -595,12 +588,11 @@
         <span class="k">return</span> <span class="n">get_generic_type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
 
     <span class="c1"># case 2: &#39;a: T | None&#39; or &#39;a: None | T&#39;</span>
-    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>  <span class="c1"># PEP 604 introduced in python-3.10</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">BinOp</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">BitOr</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">left</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">right</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">BinOp</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">op</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">BitOr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">left</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">right</span>
 
     <span class="c1"># case 3: is not optional</span>
     <span class="k">return</span> <span class="kc">None</span>
@@ -667,7 +659,12 @@
             <span class="k">if</span> <span class="n">container_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Dict&quot;</span><span class="p">,</span> <span class="s2">&quot;dict&quot;</span><span class="p">]:</span>
                 <span class="n">KV</span> <span class="o">=</span> <span class="n">get_generic_type</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span>
 
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">KV</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Tuple</span><span class="p">)</span>  <span class="c1"># dict[K,V] has ast.Tuple slice</span>
+                <span class="c1"># dict[K, V] has an ast.Tuple slice with exactly two elements</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">KV</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Tuple</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">KV</span><span class="o">.</span><span class="n">elts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">err</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Malformed dict type </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span><span class="si">!r}</span><span class="s2">,&quot;</span>
+                        <span class="s2">&quot; expected exactly two type parameters (dict[K, V])&quot;</span>
+                    <span class="p">)</span>
 
                 <span class="n">K</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">KV</span><span class="o">.</span><span class="n">elts</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">is_primitive</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
@@ -683,7 +680,14 @@
                     <span class="k">return</span> <span class="n">err</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Non-primitive element type </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">container_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Tuple&quot;</span><span class="p">,</span> <span class="s2">&quot;tuple&quot;</span><span class="p">]:</span>
                 <span class="n">E_N</span> <span class="o">=</span> <span class="n">get_generic_type</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span>
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">E_N</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Tuple</span><span class="p">)</span>  <span class="c1"># tuple[...] has ast.Tuple slice</span>
+                <span class="c1"># tuple[T1, T2, ...] has an ast.Tuple slice</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">E_N</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Tuple</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">err</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Unsupported tuple type </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span><span class="si">!r}</span><span class="s2">:&quot;</span>
+                        <span class="s2">&quot; single-element tuples are valid typing but not&quot;</span>
+                        <span class="s2">&quot; supported for components; expected element types&quot;</span>
+                        <span class="s2">&quot; (tuple[T1, T2, ...])&quot;</span>
+                    <span class="p">)</span>
 
                 <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">E_N</span><span class="o">.</span><span class="n">elts</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">is_primitive</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
@@ -711,9 +715,6 @@
             <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">attr</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_def</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Name</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">id</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_def</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Str</span><span class="p">):</span>
-            <span class="c1"># pyrefly: ignore [bad-return]</span>
-            <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">s</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_def</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Constant</span><span class="p">):</span>
             <span class="c1"># pyrefly: ignore [bad-return]</span>
             <span class="k">return</span> <span class="n">return_def</span><span class="o">.</span><span class="n">value</span>
