@@ -559,14 +559,21 @@
                     <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
                     <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
                 <span class="p">)</span>
-                <span class="n">custom</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                        <span class="s2">&quot;TORCHX_CUSTOM_NAMED_RESOURCES&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;torchx.specs.fb.named_resources&quot;</span><span class="p">,</span>
-                    <span class="p">),</span>
-                    <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
-                    <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
-                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">custom</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_attr</span><span class="p">(</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                            <span class="s2">&quot;TORCHX_CUSTOM_NAMED_RESOURCES&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;torchx.specs.fb.named_resources&quot;</span><span class="p">,</span>
+                        <span class="p">),</span>
+                        <span class="s2">&quot;NAMED_RESOURCES&quot;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">&quot;TORCHX_CUSTOM_NAMED_RESOURCES&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+                        <span class="k">raise</span>  <span class="c1"># the user explicitly pointed at this module — surface its breakage</span>
+                    <span class="c1"># the built-in fb default exists in a github checkout of fbsource but</span>
+                    <span class="c1"># cannot resolve its fbcode-only deps there — treat as absent</span>
+                    <span class="n">custom</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="n">factories</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="o">**</span><span class="n">generic</span><span class="p">,</span>
                     <span class="o">**</span><span class="n">aws</span><span class="p">,</span>
