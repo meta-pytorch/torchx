@@ -70,6 +70,15 @@ def _create_args_parser_from_parameters(
             values: Any,
             option_string: str | None = None,
         ) -> None:
+            if (
+                len(values) == 0
+                and getattr(namespace, self.dest, None) is not self.default
+            ):
+                # REMAINDER actions fire even when no varargs were passed on the
+                # CLI; keep a pre-seeded namespace attr (e.g. the cli_unset
+                # sentinel in parse_args) intact so an empty CLI is not
+                # mistaken for an explicitly passed empty varargs list
+                return
             setattr(
                 namespace,
                 self.dest,
@@ -116,10 +125,12 @@ def _create_args_parser_from_parameters(
 
 
 def _merge_config_values_with_args(
-    parsed_args: argparse.Namespace, config: dict[str, Any]
+    parsed_args: argparse.Namespace, config: dict[str, Any], cli_set_args: set[str]
 ) -> None:
+    """Fills ``parsed_args`` with ``config`` values for the args that were not
+    explicitly passed on the CLI (config overrides defaults, never CLI args)."""
     for key, val in config.items():
-        if key in parsed_args:
+        if key in parsed_args and key not in cli_set_args:
             setattr(parsed_args, key, val)
 
 
@@ -132,6 +143,9 @@ def parse_args(
     """
     Parse passed arguments, defaults, and config values into a namespace for
     a component function.
+
+    Precedence (high -> low): explicitly passed ``cmpnt_args`` > ``config`` >
+    ``cmpnt_defaults`` > defaults declared on the fn signature.
 
     Args:
     cmpnt_fn: Component function
@@ -147,7 +161,20 @@ def parse_args(
     script_parser = _create_args_parser(cmpnt_fn, cmpnt_defaults, config)
     parsed_args = script_parser.parse_args(cmpnt_args)
     if config:
-        _merge_config_values_with_args(parsed_args, config)
+        # re-parse onto a sentinel-seeded namespace: argparse applies defaults
+        # only for attrs missing from the given namespace, so attrs still
+        # holding the sentinel afterwards were NOT explicitly passed on the CLI
+        cli_unset = object()
+        seeded_namespace = Namespace(
+            **dict.fromkeys(inspect.signature(cmpnt_fn).parameters, cli_unset)
+        )
+        script_parser.parse_args(cmpnt_args, namespace=seeded_namespace)
+        cli_set_args = {
+            name
+            for name, value in vars(seeded_namespace).items()
+            if value is not cli_unset
+        }
+        _merge_config_values_with_args(parsed_args, config, cli_set_args)
 
     return parsed_args
 
