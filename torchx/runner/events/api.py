@@ -64,16 +64,17 @@ class TorchxEvent:
     def deserialize(data: str | "TorchxEvent") -> "TorchxEvent":
         if isinstance(data, TorchxEvent):
             return data
-        if isinstance(data, str):
-            data_dict = json.loads(data)
-            if "source" in data_dict:
-                # Convert string to enum
-                try:
-                    data_dict["source"] = SourceType(data_dict["source"])
-                except ValueError:
-                    data_dict.pop("source", None)
-
-        # pyre-fixme[61]: `data_dict` may not be initialized here.
+        if not isinstance(data, str):
+            raise TypeError(
+                f"expected a serialized TorchxEvent (str) or a TorchxEvent, got {type(data).__name__}"
+            )
+        data_dict = json.loads(data)
+        if "source" in data_dict:
+            # Convert string to enum
+            try:
+                data_dict["source"] = SourceType(data_dict["source"])
+            except ValueError:
+                data_dict.pop("source", None)
         return TorchxEvent(**data_dict)
 
     def serialize(self) -> str:
