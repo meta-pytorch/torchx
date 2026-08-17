@@ -11,7 +11,6 @@ import abc
 import argparse
 import ast
 import inspect
-import sys
 from dataclasses import dataclass
 from typing import Callable
 
@@ -116,10 +115,6 @@ class ComponentFunctionValidator(abc.ABC):
         )
 
 
-def OK() -> list[LinterMessage]:
-    return []  # empty linter error means validation passes
-
-
 def is_primitive(arg: ast.expr) -> bool:
     # whether the arg is a primitive type (e.g. int, float, str, bool)
     return isinstance(arg, ast.Name)
@@ -131,21 +126,19 @@ def get_generic_type(arg: ast.expr) -> ast.expr:
     # in this validator's context, this is the generic type of a container type
     # e.g. for Optional[str] returns the expr for str
 
-    assert isinstance(arg, ast.Subscript)  # e.g. arg = C[T]
+    assert isinstance(
+        arg, ast.Subscript
+    ), f"expected a subscripted type (C[T]), got {ast.unparse(arg)!r}"
 
-    if isinstance(arg.slice, ast.Index):  # python>=3.10
-        # pyrefly: ignore [missing-attribute]
-        return arg.slice.value
-    else:  # python-3.9
-        return arg.slice
+    return arg.slice
 
 
 def get_optional_type(arg: ast.expr) -> ast.expr | None:
     """
     Returns the type parameter ``T`` of ``Optional[T]`` or ``None`` if ``arg``
     is not an ``Optional``. Handles both:
-        1. ``typing.Optional[T]`` (python<3.10)
-        2.  ``T | None`` or ``None | T`` (python>=3.10 - PEP 604)
+        1. ``typing.Optional[T]``
+        2. ``T | None`` or ``None | T`` (PEP 604)
     """
     # case 1: 'a: Optional[T]'
     # pyrefly: ignore [missing-attribute]
@@ -153,12 +146,11 @@ def get_optional_type(arg: ast.expr) -> ast.expr | None:
         return get_generic_type(arg)
 
     # case 2: 'a: T | None' or 'a: None | T'
-    if sys.version_info >= (3, 10):  # PEP 604 introduced in python-3.10
-        if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.BitOr):
-            if isinstance(arg.right, ast.Constant) and arg.right.value is None:
-                return arg.left
-            if isinstance(arg.left, ast.Constant) and arg.left.value is None:
-                return arg.right
+    if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.BitOr):
+        if isinstance(arg.right, ast.Constant) and arg.right.value is None:
+            return arg.left
+        if isinstance(arg.left, ast.Constant) and arg.left.value is None:
+            return arg.right
 
     # case 3: is not optional
     return None
@@ -225,7 +217,12 @@ class ArgTypeValidator(ComponentFunctionValidator):
             if container_type in ["Dict", "dict"]:
                 KV = get_generic_type(arg_type)
 
-                assert isinstance(KV, ast.Tuple)  # dict[K,V] has ast.Tuple slice
+                # dict[K, V] has an ast.Tuple slice with exactly two elements
+                if not isinstance(KV, ast.Tuple) or len(KV.elts) != 2:
+                    return err(
+                        f"Malformed dict type {ast.unparse(arg_type)!r},"
+                        " expected exactly two type parameters (dict[K, V])"
+                    )
 
                 K, V = KV.elts
                 if not is_primitive(K):
@@ -241,7 +238,14 @@ class ArgTypeValidator(ComponentFunctionValidator):
                     return err(f"Non-primitive element type {ast.unparse(T)!r}")
             elif container_type in ["Tuple", "tuple"]:
                 E_N = get_generic_type(arg_type)
-                assert isinstance(E_N, ast.Tuple)  # tuple[...] has ast.Tuple slice
+                # tuple[T1, T2, ...] has an ast.Tuple slice
+                if not isinstance(E_N, ast.Tuple):
+                    return err(
+                        f"Unsupported tuple type {ast.unparse(arg_type)!r}:"
+                        " single-element tuples are valid typing but not"
+                        " supported for components; expected element types"
+                        " (tuple[T1, T2, ...])"
+                    )
 
                 for e in E_N.elts:
                     if not is_primitive(e):
@@ -269,9 +273,6 @@ class ReturnTypeValidator(ComponentFunctionValidator):
             return return_def.attr
         elif isinstance(return_def, ast.Name):
             return return_def.id
-        elif isinstance(return_def, ast.Str):
-            # pyrefly: ignore [bad-return]
-            return return_def.s
         elif isinstance(return_def, ast.Constant):
             # pyrefly: ignore [bad-return]
             return return_def.value
