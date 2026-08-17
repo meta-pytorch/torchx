@@ -340,14 +340,14 @@ class CmdRun(SubCommand):
             sys.exit(1)
         except specs.InvalidRunConfigException as e:
             error_msg = (
-                "Invalid scheduler configuration: %s\n"
+                f"Invalid scheduler configuration: {e}\n"
                 "To configure scheduler options, either:\n"
                 "  1. Use the `-cfg` command-line argument, e.g., `-cfg key1=value1,key2=value2`\n"
                 "  2. Set up a `.torchxconfig` file. For more details, visit: https://meta-pytorch.org/torchx/main/runner.config.html\n"
-                "Run `torchx runopts %s` to check all available configuration options for the "
-                "`%s` scheduler."
+                f"Run `torchx runopts {args.scheduler}` to check all available configuration options for the "
+                f"`{args.scheduler}` scheduler."
             )
-            print(error_msg % (e, args.scheduler, args.scheduler), file=sys.stderr)
+            logger.error(error_msg)
             sys.exit(1)
 
     def _run_from_cli_args(self, runner: Runner, args: argparse.Namespace) -> None:
