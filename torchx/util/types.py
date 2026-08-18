@@ -51,10 +51,8 @@ def to_dict(arg: str) -> dict[str, str]:
      to_dict("FOO=''") == {"FOO": ""}
      to_dict('FOO=""') == {"FOO": ""}
 
-     to_dict("FOO=v1,v2") == {"FOO": "v1,v2"]}
-     to_dict("FOO=v1;v2") == {"FOO": "v1;v2"]}
-     to_dict("FOO=v1;v2") == {"FOO": "v1;v2,"]}
-     to_dict("FOO=v1;v2") == {"FOO": "v1;v2,"]}
+     to_dict("FOO=v1,v2") == {"FOO": "v1,v2"}
+     to_dict("FOO=v1;v2") == {"FOO": "v1;v2"}
 
      to_dict("FOO=v1,v2,BAR=v3") == {"FOO": "v1,v2", "BAR": "v3"}
      to_dict("FOO=v1;v2,BAR=v3") == {"FOO": "v1;v2", "BAR": "v3"}
@@ -208,7 +206,9 @@ def decode_from_string(
             return _decode_string_to_dict(encoded_value, value_type)
         elif value_origin is list:
             return _decode_string_to_list(encoded_value, value_type)
-    raise ValueError("Unknown")
+    raise ValueError(
+        f"unsupported argument annotation `{annotation}`, expected dict or list"
+    )
 
 
 def is_bool(param_type: Any) -> bool:

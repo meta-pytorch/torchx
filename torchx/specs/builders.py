@@ -275,10 +275,9 @@ def materialize_appdef(
     config: dict[str, Any] | None = None,
 ) -> AppDef:
     """
-    Creates an application by running user defined ``app_fn``.
+    Creates an application by running the user defined ``cmpnt_fn``.
 
-    ``app_fn`` has the following restrictions:
-        * Name must be ``app_fn``
+    ``cmpnt_fn`` has the following restrictions:
         * All arguments should be annotated
         * Supported argument types:
             - primitive: int, str, float
@@ -286,7 +285,7 @@ def materialize_appdef(
             - List[primitive]
             - Optional[Dict[primitive, primitive]]
             - Optional[List[primitive]]
-        * ``app_fn`` can define a vararg (*arg) at the end
+        * ``cmpnt_fn`` can define a vararg (*arg) at the end
         * There should be a docstring for the function that defines
             All arguments in a google-style format
         * There can be default values for the function arguments.
@@ -295,7 +294,7 @@ def materialize_appdef(
     Args:
         cmpnt_fn: Component function
         cmpnt_args: Function args
-        cmpnt_defaults: Additional default values for parameters of ``app_fn``
+        cmpnt_defaults: Additional default values for parameters of ``cmpnt_fn``
                           (overrides the defaults set on the fn declaration)
         config: Optional dict containing additional configuration for the component from a passed config file
     Returns:

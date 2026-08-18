@@ -13,7 +13,10 @@ from torchx.util.entrypoints import load
 
 def _version() -> str:
     # use importlib.resources to support zipped packages and single-file executables
-    return importlib.resources.read_text("torchx", "version.txt").strip()
+    # (files() API - read_text() is deprecated since python-3.11)
+    return (
+        importlib.resources.files("torchx").joinpath("version.txt").read_text().strip()
+    )
 
 
 # Follows PEP-0440 version scheme guidelines

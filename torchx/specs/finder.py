@@ -444,7 +444,10 @@ def get_component(
     Retrieves components by the provided name.
 
     Returns:
-        Component or None if no component with ``name`` exists
+        The component with the given ``name``.
+
+    Raises:
+        ComponentNotFoundException: if no component with ``name`` exists
     """
     if _is_custom_component(name):
         components = _find_custom_components(name, validators)
