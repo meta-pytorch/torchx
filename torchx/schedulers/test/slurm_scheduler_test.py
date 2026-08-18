@@ -325,6 +325,68 @@ fi
             ],
         )
 
+    @patch(
+        "torchx.schedulers.slurm_scheduler.SlurmScheduler._partition_memmb",
+        return_value=2048,
+    )
+    @patch(
+        "torchx.schedulers.slurm_scheduler.version",
+        return_value=SLURM_VERSION_24_5,
+    )
+    @patch("subprocess.run")
+    def test_schedule_retry_idempotent(
+        self,
+        run: MagicMock,
+        mock_version: MagicMock,
+        partition_memmb: MagicMock,
+    ) -> None:
+        run.return_value.stdout = b"1234"
+        scheduler = create_scheduler("foo")
+        info = scheduler.submit_dryrun(simple_app(), cfg={})
+
+        # a retried schedule() of the same dryrun_info must not accumulate
+        # script paths in the sbatch argv
+        scheduler.schedule(info)
+        scheduler.schedule(info)
+
+        first, second = (c.args[0] for c in run.call_args_list)
+        self.assertEqual(["sbatch", "--parsable"], first[:-1])
+        self.assertEqual(["sbatch", "--parsable"], second[:-1])
+        self.assertEqual(["sbatch", "--parsable"], info.request.cmd)
+
+    def test_version_cached(self) -> None:
+        from torchx.schedulers.slurm_scheduler import (
+            _should_use_gpus_per_node_from_version,
+            version,
+        )
+
+        version.cache_clear()
+        self.addCleanup(version.cache_clear)
+        with patch(
+            "subprocess.check_output", return_value="slurm 24.11.5"
+        ) as check_output:
+            self.assertTrue(_should_use_gpus_per_node_from_version())
+            self.assertTrue(_should_use_gpus_per_node_from_version())
+            # one sinfo shell-out per process, not one per role replica
+            self.assertEqual(1, check_output.call_count)
+
+    def test_version_tolerates_extra_tokens(self) -> None:
+        from torchx.schedulers.slurm_scheduler import version
+
+        version.cache_clear()
+        self.addCleanup(version.cache_clear)
+        with patch("subprocess.check_output", return_value="slurm 24.11.0 rev1"):
+            self.assertEqual((24, 11), version())
+
+    def test_version_warning_names_command(self) -> None:
+        from torchx.schedulers.slurm_scheduler import version
+
+        version.cache_clear()
+        self.addCleanup(version.cache_clear)
+        with patch("subprocess.check_output", side_effect=FileNotFoundError("sinfo")):
+            with self.assertWarnsRegex(RuntimeWarning, "sinfo --version"):
+                self.assertEqual((24, 5), version())
+
     @patch("torchx.schedulers.slurm_scheduler.SlurmScheduler.describe")
     @patch("subprocess.run")
     def test_cancel(self, run: MagicMock, describe: MagicMock) -> None:
@@ -540,6 +602,30 @@ JobID|JobName|Partition|Account|AllocCPUS|State|ExitCode
         apps = scheduler.list()
         self.assertIsNotNone(apps)
         self.assertEqual(apps, expected_apps)
+
+    @patch("subprocess.run")
+    def test_list_sacct_unknown_state(self, run: MagicMock) -> None:
+        run.return_value.stdout = json.dumps(
+            {
+                "jobs": [
+                    # a slurm state torchx does not map
+                    {"job_id": 123, "state": {"current": "SPECIAL_EXIT"}},
+                    # newer slurm returns `state.current` as a list
+                    {"job_id": 124, "state": {"current": ["COMPLETED"]}},
+                    # an empty state list must not crash the listing
+                    {"job_id": 125, "state": {"current": []}},
+                ]
+            }
+        ).encode()
+        scheduler = create_scheduler("foo")
+        self.assertEqual(
+            [
+                ListAppResponse(app_id="123", state=AppState.UNKNOWN),
+                ListAppResponse(app_id="124", state=AppState.SUCCEEDED),
+                ListAppResponse(app_id="125", state=AppState.UNKNOWN),
+            ],
+            scheduler.list(),
+        )
 
     @patch("subprocess.run")
     def test_list_squeue(self, run: MagicMock) -> None:
@@ -797,15 +883,17 @@ PARTITION,MEMORY
     def _run_req(
         self, req: SlurmBatchRequest, srun_exit: int, scontrol_exit: int
     ) -> int:
-        os.environ["SRUN"] = str(srun_exit)
-        os.environ["SCONTROL"] = str(scontrol_exit)
-        script = req.materialize()
-        with tmp_cwd():
-            with open("sbatch.sh", "w") as f:
-                f.write(script)
-            with open("test.sh", "w") as f:
-                f.write(
-                    """#!/bin/bash
+        with patch.dict(
+            os.environ,
+            {"SRUN": str(srun_exit), "SCONTROL": str(scontrol_exit)},
+        ):
+            script = req.materialize()
+            with tmp_cwd():
+                with open("sbatch.sh", "w") as f:
+                    f.write(script)
+                with open("test.sh", "w") as f:
+                    f.write(
+                        """#!/bin/bash
 set -evx
 
 srun () {
@@ -818,8 +906,8 @@ scontrol () {
 
 source sbatch.sh
                 """
-                )
-            return os.WEXITSTATUS(os.system("bash test.sh"))
+                    )
+                return os.WEXITSTATUS(os.system("bash test.sh"))
 
     @patch(
         "torchx.schedulers.slurm_scheduler.version",
@@ -839,16 +927,18 @@ source sbatch.sh
         scheduler = create_scheduler("foo")
         app = simple_app()
         info = scheduler.submit_dryrun(app, cfg={})
-        os.environ["SLURM_RESTART_COUNT"] = ""
-        self.assertEqual(
-            self._run_req(info.request, srun_exit=1, scontrol_exit=123), 123
-        )
-        os.environ["SLURM_RESTART_COUNT"] = "1"
-        self.assertEqual(
-            self._run_req(info.request, srun_exit=1, scontrol_exit=123), 123
-        )
-        os.environ["SLURM_RESTART_COUNT"] = "3"
-        self.assertEqual(self._run_req(info.request, srun_exit=1, scontrol_exit=123), 1)
+        with patch.dict(os.environ, {"SLURM_RESTART_COUNT": ""}):
+            self.assertEqual(
+                self._run_req(info.request, srun_exit=1, scontrol_exit=123), 123
+            )
+        with patch.dict(os.environ, {"SLURM_RESTART_COUNT": "1"}):
+            self.assertEqual(
+                self._run_req(info.request, srun_exit=1, scontrol_exit=123), 123
+            )
+        with patch.dict(os.environ, {"SLURM_RESTART_COUNT": "3"}):
+            self.assertEqual(
+                self._run_req(info.request, srun_exit=1, scontrol_exit=123), 1
+            )
 
     @patch(
         "torchx.schedulers.slurm_scheduler.version",
@@ -1015,17 +1105,22 @@ source sbatch.sh
     def test_version(self, check_output: MagicMock) -> None:
         from torchx.schedulers.slurm_scheduler import version
 
+        self.addCleanup(version.cache_clear)
+
         # Test successful version parsing
+        version.cache_clear()
         check_output.return_value = "slurm 24.05.4"
         ver = version()
         self.assertEqual(ver, (24, 5))
 
         # Test newer version
+        version.cache_clear()
         check_output.return_value = "slurm 25.11.2"
         ver = version()
         self.assertEqual(ver, (25, 11))
 
         # Test command failure - should return the default slurm version 24.05.8
+        version.cache_clear()
         check_output.side_effect = subprocess.CalledProcessError(
             returncode=1, cmd=["sinfo", "--version"], stderr="Command failed"
         )
@@ -1176,3 +1271,28 @@ source sbatch.sh
             assert result.app_id == "123"
             # should have a valid parsed state
             assert result.state == AppState.FAILED
+
+    def test_describe_squeue_non_torchx_job(self) -> None:
+        """Jobs without the torchx `{role}-{replica_id}` name shape are skipped."""
+
+        mock_job_data = {
+            "jobs": [
+                {
+                    "name": "interactive",  # no "-<replica_id>" suffix
+                    "job_state": ["RUNNING"],
+                    "job_resources": {},
+                    "command": "/bin/bash",
+                    "current_working_directory": "/tmp",
+                }
+            ]
+        }
+
+        with patch("subprocess.check_output") as mock_subprocess:
+            mock_subprocess.return_value = json.dumps(mock_job_data)
+
+            scheduler = SlurmScheduler("test")
+            result = scheduler._describe_squeue("123")
+
+            assert result is not None
+            self.assertEqual([], result.roles)
+            self.assertEqual(AppState.UNKNOWN, result.state)
