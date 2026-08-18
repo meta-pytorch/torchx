@@ -348,13 +348,13 @@ class RunnerTest(TestWithTmpDir):
         self, config_trackers_mock: MagicMock, _: MagicMock
     ) -> None:
         config_trackers_mock.return_value = {
-            "my_tracker1": "manifold://config1.txt",
-            "my_tracker2": "manifold://config2.txt",
+            "my_tracker1": "s3://config1.txt",
+            "my_tracker2": "s3://config2.txt",
         }
         scheduler_mock = MagicMock()
         expected_trackers = "my_tracker1,my_tracker2"
-        expected_tracker1_config = "manifold://config1.txt"
-        expected_tracker2_config = "manifold://config2.txt"
+        expected_tracker1_config = "s3://config1.txt"
+        expected_tracker2_config = "s3://config2.txt"
 
         with Runner(
             name=SESSION_NAME,
@@ -397,15 +397,15 @@ class RunnerTest(TestWithTmpDir):
         os.environ,
         {
             "TORCHX_TRACKERS": "my_tracker1,my_tracker2",
-            "TORCHX_TRACKER_MY_TRACKER1_CONFIG": "manifold://config1.txt",
-            "TORCHX_TRACKER_MY_TRACKER2_CONFIG": "manifold://config2.txt",
+            "TORCHX_TRACKER_MY_TRACKER1_CONFIG": "s3://config1.txt",
+            "TORCHX_TRACKER_MY_TRACKER2_CONFIG": "s3://config2.txt",
         },
     )
     def test_dryrun_setup_trackers_as_env_variable(self, _: MagicMock) -> None:
         scheduler_mock = MagicMock()
         expected_trackers = "my_tracker1,my_tracker2"
-        expected_tracker1_config = "manifold://config1.txt"
-        expected_tracker2_config = "manifold://config2.txt"
+        expected_tracker1_config = "s3://config1.txt"
+        expected_tracker2_config = "s3://config2.txt"
 
         with Runner(
             name=SESSION_NAME,
