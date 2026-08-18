@@ -46,7 +46,7 @@ from torchx.specs import (
 )
 from torchx.specs.finder import get_component
 from torchx.tracker.api import tracker_config_env_var_name
-from torchx.util.session import get_session_id_or_create_new, TORCHX_INTERNAL_SESSION_ID
+from torchx.util.session import get_session_id_or_create_new
 from torchx.util.types import none_throws
 from torchx.workspace import WorkspaceMixin
 
@@ -400,7 +400,9 @@ class Runner:
             role.env[settings.ENV_TORCHX_JOB_ID] = make_app_handle(
                 scheduler, self._name, macros.app_id
             )
-            role.env[TORCHX_INTERNAL_SESSION_ID] = get_session_id_or_create_new()
+            role.env[settings.ENV_TORCHX_INTERNAL_SESSION_ID] = (
+                get_session_id_or_create_new()
+            )
 
             if parent_run_id:
                 role.env[settings.ENV_TORCHX_PARENT_RUN_ID] = parent_run_id
