@@ -711,10 +711,9 @@
     <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates an application by running user defined ``app_fn``.</span>
+<span class="sd">    Creates an application by running the user defined ``cmpnt_fn``.</span>
 
-<span class="sd">    ``app_fn`` has the following restrictions:</span>
-<span class="sd">        * Name must be ``app_fn``</span>
+<span class="sd">    ``cmpnt_fn`` has the following restrictions:</span>
 <span class="sd">        * All arguments should be annotated</span>
 <span class="sd">        * Supported argument types:</span>
 <span class="sd">            - primitive: int, str, float</span>
@@ -722,7 +721,7 @@
 <span class="sd">            - List[primitive]</span>
 <span class="sd">            - Optional[Dict[primitive, primitive]]</span>
 <span class="sd">            - Optional[List[primitive]]</span>
-<span class="sd">        * ``app_fn`` can define a vararg (*arg) at the end</span>
+<span class="sd">        * ``cmpnt_fn`` can define a vararg (*arg) at the end</span>
 <span class="sd">        * There should be a docstring for the function that defines</span>
 <span class="sd">            All arguments in a google-style format</span>
 <span class="sd">        * There can be default values for the function arguments.</span>
@@ -731,7 +730,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        cmpnt_fn: Component function</span>
 <span class="sd">        cmpnt_args: Function args</span>
-<span class="sd">        cmpnt_defaults: Additional default values for parameters of ``app_fn``</span>
+<span class="sd">        cmpnt_defaults: Additional default values for parameters of ``cmpnt_fn``</span>
 <span class="sd">                          (overrides the defaults set on the fn declaration)</span>
 <span class="sd">        config: Optional dict containing additional configuration for the component from a passed config file</span>
 <span class="sd">    Returns:</span>

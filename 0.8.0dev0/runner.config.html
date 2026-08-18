@@ -456,7 +456,7 @@ and honored when running the component from the CLI.</p>
 <ol class="arabic">
 <li><p><code class="docutils literal notranslate"><span class="pre">cd</span></code> into the directory where you want the <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> file to be dropped.
 The CLI only picks up <code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> files from the current-working-directory (CWD)
-so chose a directory where you typically run <code class="docutils literal notranslate"><span class="pre">torchx</span></code> from. Typically this
+so choose a directory where you typically run <code class="docutils literal notranslate"><span class="pre">torchx</span></code> from. Typically this
 is the root of your project directory.</p></li>
 <li><p>Generate the config file by running</p>
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>configure<span class="w"> </span>-s<span class="w"> </span>&lt;comma,delimited,scheduler,names&gt;
@@ -476,7 +476,7 @@ file as shown below:</p>
 </pre></div>
 </div>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> in in INI format and the section names map to the scheduler names.
+<li><p><code class="docutils literal notranslate"><span class="pre">.torchxconfig</span></code> is in INI format and the section names map to the scheduler names.
 Each section contains the run configs for the scheduler as <code class="docutils literal notranslate"><span class="pre">$key</span> <span class="pre">=</span> <span class="pre">$value</span></code> pairs.
 You may find that certain schedulers have empty sections, this means that
 the scheduler defines sensible defaults for all its run configs hence no run configs
@@ -499,7 +499,7 @@ has <code class="docutils literal notranslate"><span class="pre">.torchxconfig</
 </div>
 </li>
 <li><p>In addition, it is possible to specify a different config other than .torchxconfig to
-load at runtime. Requirements are that the config path is specified by enviornment
+load at runtime. Requirements are that the config path is specified by environment
 variable TORCHXCONFIG. It also disables hierarchy loading configs from multiple
 directories as the cases otherwise.</p></li>
 <li><p>User level .torchxconfig
@@ -664,7 +664,7 @@ Or an empty map if the section does not exist.</p>
 <span class="c1"># baz = 1</span>
 
 <span class="n">get_configs</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span> <span class="c1"># returns {&quot;baz&quot;: &quot;1&quot;}</span>
-<span class="n">get_config</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr&quot;</span><span class="p">)</span> <span class="c1"># returns {}</span>
+<span class="n">get_configs</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;barr&quot;</span><span class="p">)</span> <span class="c1"># returns {}</span>
 </pre></div>
 </div>
 </dd></dl>

@@ -456,7 +456,7 @@
 
 <span class="sd">#. ``cd`` into the directory where you want the ``.torchxconfig`` file to be dropped.</span>
 <span class="sd">   The CLI only picks up ``.torchxconfig`` files from the current-working-directory (CWD)</span>
-<span class="sd">   so chose a directory where you typically run ``torchx`` from. Typically this</span>
+<span class="sd">   so choose a directory where you typically run ``torchx`` from. Typically this</span>
 <span class="sd">   is the root of your project directory.</span>
 
 <span class="sd">#. Generate the config file by running</span>
@@ -479,7 +479,7 @@
 <span class="sd">    [kubernetes]</span>
 <span class="sd">    queue = #FIXME:(str) Volcano queue to schedule job in</span>
 
-<span class="sd">#. ``.torchxconfig`` in in INI format and the section names map to the scheduler names.</span>
+<span class="sd">#. ``.torchxconfig`` is in INI format and the section names map to the scheduler names.</span>
 <span class="sd">   Each section contains the run configs for the scheduler as ``$key = $value`` pairs.</span>
 <span class="sd">   You may find that certain schedulers have empty sections, this means that</span>
 <span class="sd">   the scheduler defines sensible defaults for all its run configs hence no run configs</span>
@@ -506,7 +506,7 @@
 <span class="sd">    $ torchx run -s local_cwd ./my_component.py:train</span>
 
 <span class="sd">#. In addition, it is possible to specify a different config other than .torchxconfig to</span>
-<span class="sd">   load at runtime. Requirements are that the config path is specified by enviornment</span>
+<span class="sd">   load at runtime. Requirements are that the config path is specified by environment</span>
 <span class="sd">   variable TORCHXCONFIG. It also disables hierarchy loading configs from multiple</span>
 <span class="sd">   directories as the cases otherwise.</span>
 
@@ -695,7 +695,12 @@
     <span class="k">for</span> <span class="n">sched_name</span> <span class="ow">in</span> <span class="n">scheds</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">sched</span> <span class="o">=</span> <span class="n">_get_scheduler</span><span class="p">(</span><span class="n">sched_name</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">ModuleNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;skipping scheduler `</span><span class="si">%s</span><span class="s2">`, its module failed to load: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">sched_name</span><span class="p">,</span>
+                <span class="n">e</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="k">continue</span>
 
         <span class="n">section</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sched_name</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -883,7 +888,7 @@
 <span class="sd">     # baz = 1</span>
 
 <span class="sd">     get_configs(prefix=&quot;foo&quot;, name=&quot;bar&quot;) # returns {&quot;baz&quot;: &quot;1&quot;}</span>
-<span class="sd">     get_config(prefix=&quot;foo&quot;, name=&quot;barr&quot;) # returns {}</span>
+<span class="sd">     get_configs(prefix=&quot;foo&quot;, name=&quot;barr&quot;) # returns {}</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">sections</span> <span class="o">=</span> <span class="n">load_sections</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">dirs</span><span class="p">)</span>

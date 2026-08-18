@@ -752,10 +752,10 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ComponentFnVisitor</span><span class="p">(</span><span class="n">ast</span><span class="o">.</span><span class="n">NodeVisitor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Visitor that finds the component_function and runs registered validators on it.</span>
-<span class="sd">    Current registered validators:</span>
+<span class="sd">    Visitor that finds the component function and runs registered validators on it.</span>
+<span class="sd">    Default validators (when none are provided):</span>
 
-<span class="sd">    * TorchxFunctionArgsValidator - validates arguments of the function.</span>
+<span class="sd">    * :py:class:`ArgTypeValidator` - validates arguments of the function.</span>
 <span class="sd">        Criteria:</span>
 <span class="sd">          * Each argument should be annotated with the type</span>
 <span class="sd">          * The following types are supported:</span>
@@ -766,6 +766,7 @@
 <span class="sd">                - Optional[Dict[primitive_types, primitive_types]],</span>
 <span class="sd">                - Optional[List[primitive_types]]</span>
 
+<span class="sd">    * :py:class:`ReturnTypeValidator` - validates that the function returns ``AppDef``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
