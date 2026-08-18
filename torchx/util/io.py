@@ -41,8 +41,8 @@ def read_conf_file(conf_file: str) -> str:
         "get_file_contents",
         default=_get_file_contents,
     )(str(conf_file))
-    # user provided conf file precedes the builtin config
-    # just print a warning but use the user provided one
+    # a conf file that exists on the filesystem takes precedence
+    # over the builtin config of the same name
     if path.exists(conf_file):
         with open(conf_file, "r") as f:
             return f.read()

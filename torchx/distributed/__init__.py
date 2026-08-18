@@ -4,6 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Convenience methods to use ``torch.distributed``.
 """
@@ -12,13 +14,12 @@ import logging
 import os
 import warnings
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
 
 import torch
 import torch.distributed as dist
 from torch.distributed.distributed_c10d import _get_default_group
 from torchx.util.cuda import has_cuda_devices
-from typing_extensions import Literal
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -110,7 +111,7 @@ def world_size() -> int:
     """
     A non-distributed-safe get_world_size call. Unlike ``torch.distributed.get_world_size()``,
     this method will not fail if being invoked from a non-distributed (e.g. process group not initialized)
-    context. Therefore, this method is safe to use in internal mthods that may be used
+    context. Therefore, this method is safe to use in internal methods that may be used
     in non-distributed contexts as well.
 
     Returns:
@@ -163,7 +164,7 @@ Backend = Literal["nccl", "gloo", "auto"]
 
 def init_pg(backend: Backend = "auto", **kwargs: Any) -> torch.device:
     """
-    A convenience wrapper around ``torch.distributed.init_proces_group()``
+    A convenience wrapper around ``torch.distributed.init_process_group()``
     that makes initializing a trivial (single world_size) process group easy.
 
     Useful when you want to make your code portable across launching with

@@ -22,7 +22,7 @@ CLI Usage
 
 #. ``cd`` into the directory where you want the ``.torchxconfig`` file to be dropped.
    The CLI only picks up ``.torchxconfig`` files from the current-working-directory (CWD)
-   so chose a directory where you typically run ``torchx`` from. Typically this
+   so choose a directory where you typically run ``torchx`` from. Typically this
    is the root of your project directory.
 
 #. Generate the config file by running
@@ -45,7 +45,7 @@ CLI Usage
     [kubernetes]
     queue = #FIXME:(str) Volcano queue to schedule job in
 
-#. ``.torchxconfig`` in in INI format and the section names map to the scheduler names.
+#. ``.torchxconfig`` is in INI format and the section names map to the scheduler names.
    Each section contains the run configs for the scheduler as ``$key = $value`` pairs.
    You may find that certain schedulers have empty sections, this means that
    the scheduler defines sensible defaults for all its run configs hence no run configs
@@ -72,7 +72,7 @@ CLI Usage
     $ torchx run -s local_cwd ./my_component.py:train
 
 #. In addition, it is possible to specify a different config other than .torchxconfig to
-   load at runtime. Requirements are that the config path is specified by enviornment
+   load at runtime. Requirements are that the config path is specified by environment
    variable TORCHXCONFIG. It also disables hierarchy loading configs from multiple
    directories as the cases otherwise.
 
@@ -259,7 +259,12 @@ def dump(
     for sched_name in scheds:
         try:
             sched = _get_scheduler(sched_name)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
+            log.warning(
+                "skipping scheduler `%s`, its module failed to load: %s",
+                sched_name,
+                e,
+            )
             continue
 
         section = f"{sched_name}"
@@ -438,7 +443,7 @@ def get_configs(
      # baz = 1
 
      get_configs(prefix="foo", name="bar") # returns {"baz": "1"}
-     get_config(prefix="foo", name="barr") # returns {}
+     get_configs(prefix="foo", name="barr") # returns {}
 
     """
     sections = load_sections(prefix, dirs)
