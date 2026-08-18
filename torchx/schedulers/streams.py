@@ -45,6 +45,10 @@ class Tee:
     def _start_thread(self) -> None:
         BUFSIZE = 64000
         while True:
+            # snapshot the flag BEFORE the read pass: exit only when close()
+            # happened before a pass that read nothing -- checking it after
+            # would drop data written between the read pass and the check
+            closed = self._closed
             read = False
             for r in self.streams:
                 data = r.read(BUFSIZE)
@@ -52,7 +56,7 @@ class Tee:
                     read = True
                     self.write(data)
             if not read:
-                if self._closed:
+                if closed:
                     break
                 time.sleep(0.1)
 
