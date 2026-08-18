@@ -472,11 +472,10 @@ class Runner:
 
         .. doctest::
 
-            from torchx.runner import get_runner
-
-            runner = get_runner()
-            cfg = runner.cfg_from_str("local_cwd", "log_dir=/tmp/foobar", "prepend_cwd=True")
-            assert cfg == {"log_dir": "/tmp/foobar", "prepend_cwd": True, "auto_set_cuda_visible_devices": False}
+            >>> from torchx.runner import get_runner
+            >>> runner = get_runner()
+            >>> runner.cfg_from_str("local_cwd", "log_dir=/tmp/foobar", "prepend_cwd=True")
+            {'log_dir': '/tmp/foobar', 'prepend_cwd': True}
         """
 
         opts = self._scheduler(scheduler).run_opts()
