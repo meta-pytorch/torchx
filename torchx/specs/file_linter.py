@@ -310,10 +310,10 @@ class ReturnTypeValidator(ComponentFunctionValidator):
 
 class ComponentFnVisitor(ast.NodeVisitor):
     """
-    Visitor that finds the component_function and runs registered validators on it.
-    Current registered validators:
+    Visitor that finds the component function and runs registered validators on it.
+    Default validators (when none are provided):
 
-    * TorchxFunctionArgsValidator - validates arguments of the function.
+    * :py:class:`ArgTypeValidator` - validates arguments of the function.
         Criteria:
           * Each argument should be annotated with the type
           * The following types are supported:
@@ -324,6 +324,7 @@ class ComponentFnVisitor(ast.NodeVisitor):
                 - Optional[Dict[primitive_types, primitive_types]],
                 - Optional[List[primitive_types]]
 
+    * :py:class:`ReturnTypeValidator` - validates that the function returns ``AppDef``.
     """
 
     def __init__(
