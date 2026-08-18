@@ -20,7 +20,7 @@ class CmdDescribeTest(unittest.TestCase):
         resource = Resource(cpu=2, gpu=0, memMB=256)
         trainer = Role(
             name="trainer",
-            image="trainer_fbpkg",
+            image="trainer_image",
             entrypoint="trainer.par",
             args=["--arg1", "foo"],
             resource=resource,
