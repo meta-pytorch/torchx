@@ -495,23 +495,6 @@
         <span class="n">tabulated_job_ids</span> <span class="o">=</span> <span class="p">[[</span><span class="n">job_id</span><span class="p">]</span> <span class="k">for</span> <span class="n">job_id</span> <span class="ow">in</span> <span class="n">job_ids</span><span class="p">]</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">tabulated_job_ids</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;JOB ID&quot;</span><span class="p">]))</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_job_lineage_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subparser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">group</span> <span class="o">=</span> <span class="n">subparser</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">()</span>
-        <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-            <span class="s2">&quot;--sources-only&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Limit to sources&quot;</span>
-        <span class="p">)</span>
-        <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-            <span class="s2">&quot;--descendants-only&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Limit to descendants&quot;</span>
-        <span class="p">)</span>
-
-        <span class="n">subparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-            <span class="s2">&quot;--artifact&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Limit to specific artifact&quot;</span>
-        <span class="p">)</span>
-        <span class="n">subparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;RUN_ID&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Job run ID&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">job_lineage_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-
     <span class="k">def</span><span class="w"> </span><span class="nf">add_metadata_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subparser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">subparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;RUN_ID&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Job run ID&quot;</span><span class="p">)</span>
 
@@ -565,9 +548,12 @@
             <span class="n">sub_cmd_subparser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">func_handler</span><span class="p">)</span>
             <span class="n">args_handler</span><span class="p">(</span><span class="n">sub_cmd_subparser</span><span class="p">)</span>
 
+        <span class="c1"># registered so `list --help` is honest about the subcommand existing,</span>
+        <span class="c1"># but it is not implemented yet so reject cleanly instead of crashing</span>
         <span class="n">job_lineage_subparser</span> <span class="o">=</span> <span class="n">list_subcmd_subparsers</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span><span class="s2">&quot;lineage&quot;</span><span class="p">)</span>
-        <span class="n">job_lineage_subparser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">job_lineage_command</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_job_lineage_arguments</span><span class="p">(</span><span class="n">job_lineage_subparser</span><span class="p">)</span></div>
+        <span class="n">job_lineage_subparser</span><span class="o">.</span><span class="n">set_defaults</span><span class="p">(</span>
+            <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">args</span><span class="p">:</span> <span class="n">job_lineage_subparser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;lineage is not implemented&quot;</span><span class="p">)</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CmdTracker.run">

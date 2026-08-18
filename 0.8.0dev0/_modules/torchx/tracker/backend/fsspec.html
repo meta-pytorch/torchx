@@ -604,24 +604,34 @@
         <span class="n">parent_ref_file</span> <span class="o">=</span> <span class="n">sources_path_builder</span><span class="o">.</span><span class="n">with_run_id</span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span><span class="o">.</span><span class="n">path</span><span class="p">()</span>
         <span class="n">artifact_name</span> <span class="o">=</span> <span class="n">artifact_name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">parent_ref_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">artifact_name</span> <span class="o">=</span> <span class="n">artifact_name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># append; overwriting would drop previously linked artifacts of the</span>
+        <span class="c1"># same source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_append_unique</span><span class="p">(</span><span class="n">parent_ref_file</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">)</span>
 
         <span class="c1"># write into parent as well (if exists) that will allow traversing descendants</span>
-        <span class="n">parent_descendants_path_builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_builder</span><span class="o">.</span><span class="n">with_run_id</span><span class="p">(</span>
-            <span class="n">source_id</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">with_subpath</span><span class="p">(</span><span class="s2">&quot;descendants&quot;</span><span class="p">)</span>
-        <span class="n">parent_descendants_ref_path</span> <span class="o">=</span> <span class="n">parent_descendants_path_builder</span><span class="o">.</span><span class="n">path</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">parent_descendants_ref_path</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">parent_descendants_ref_path</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">mkdirs</span><span class="p">(</span><span class="n">parent_descendants_ref_path</span><span class="p">)</span>
+        <span class="n">parent_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_builder</span><span class="o">.</span><span class="n">with_run_id</span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span><span class="o">.</span><span class="n">path</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">parent_path</span><span class="p">):</span>
+            <span class="n">parent_descendants_path_builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_builder</span><span class="o">.</span><span class="n">with_run_id</span><span class="p">(</span>
+                <span class="n">source_id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">with_subpath</span><span class="p">(</span><span class="s2">&quot;descendants&quot;</span><span class="p">)</span>
+            <span class="n">parent_descendants_ref_path</span> <span class="o">=</span> <span class="n">parent_descendants_path_builder</span><span class="o">.</span><span class="n">path</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">mkdirs</span><span class="p">(</span><span class="n">parent_descendants_ref_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">descendant_ref_path</span> <span class="o">=</span> <span class="n">parent_descendants_path_builder</span><span class="o">.</span><span class="n">with_run_id</span><span class="p">(</span>
                 <span class="n">run_id</span>
             <span class="p">)</span><span class="o">.</span><span class="n">path</span><span class="p">()</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">descendant_ref_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_append_unique</span><span class="p">(</span><span class="n">descendant_ref_path</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">)</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_append_unique</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Appends ``line`` unless the file already carries it — repeated</span>
+<span class="sd">        ``add_source`` calls for the same link must not duplicate entries.&quot;&quot;&quot;</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">ref_file</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">ref_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">line</span> <span class="ow">in</span> <span class="p">(</span><span class="n">existing</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">existing</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()):</span>
+                    <span class="k">return</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">ref_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_source_file</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">artifact_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -690,7 +700,7 @@
 <div class="viewcode-block" id="FsspecTracker.lineage">
 <a class="viewcode-back" href="../../../../tracker.html#torchx.tracker.backend.fsspec.FsspecTracker.lineage">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">lineage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Lineage</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;lineage is not yet implemented for FsspecTracker&quot;</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -739,8 +749,11 @@
 <span class="sd">    In addition any other non-comment entries will be passed to a constructor (eg. authentication data)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">_read_config</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s2">&quot;protocol&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span> <span class="ow">or</span> <span class="s2">&quot;root_path&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please specify &#39;protocol&#39; and &#39;root_path&#39; in </span><span class="si">{</span><span class="n">config_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">missing_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="s2">&quot;root_path&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">missing_keys</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Missing required key(s) </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">}</span><span class="s2"> in tracker config: </span><span class="si">{</span><span class="n">config_file</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
     <span class="n">protocol</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;protocol&quot;</span><span class="p">]</span>
     <span class="c1"># pyrefly: ignore [unsupported-operation]</span>
     <span class="k">del</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;protocol&quot;</span><span class="p">]</span>

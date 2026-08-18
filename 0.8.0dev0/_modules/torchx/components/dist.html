@@ -681,8 +681,9 @@
         <span class="c1"># use $$ in the prefix to escape the &#39;$&#39; literal (rather than a string Template substitution argument)</span>
         <span class="n">rdzv_endpoint</span> <span class="o">=</span> <span class="n">_noquote</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$$</span><span class="se">{{</span><span class="si">{</span><span class="n">macros</span><span class="o">.</span><span class="n">rank0_env</span><span class="si">}</span><span class="s2">:=localhost</span><span class="se">}}</span><span class="s2">:</span><span class="si">{</span><span class="n">rdzv_port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">env</span> <span class="o">=</span> <span class="n">env</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="c1"># copy; this component must not mutate the caller&#39;s dicts</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">env</span><span class="p">)</span> <span class="k">if</span> <span class="n">env</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span> <span class="k">if</span> <span class="n">metadata</span> <span class="k">else</span> <span class="p">{}</span>
 
     <span class="n">argname</span> <span class="o">=</span> <span class="n">StructuredNameArgument</span><span class="o">.</span><span class="n">parse_from</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>

@@ -514,6 +514,7 @@
 
 <div class="viewcode-block" id="StructuredOpts">
 <a class="viewcode-back" href="../../../specs.html#torchx.schedulers.api.StructuredOpts">[docs]</a>
+<span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">StructuredOpts</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for typed scheduler configuration options.</span>
 
@@ -570,7 +571,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">type_hints</span> <span class="o">=</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
             <span class="n">field_type</span> <span class="o">=</span> <span class="n">_unwrap_optional</span><span class="p">(</span><span class="n">type_hints</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
@@ -611,16 +611,6 @@
     <span class="c1"># StructuredOpts field access instead of dict-like access.</span>
     <span class="c1"># -------------------------------------------------------------------------</span>
 
-    <span class="c1"># pyre-fixme[14]: Inconsistent override - Mapping.get accepts a default parameter</span>
-<div class="viewcode-block" id="StructuredOpts.get">
-<a class="viewcode-back" href="../../../specs.html#torchx.schedulers.api.StructuredOpts.get">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">None</span></div>
-
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CfgVal</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
             <span class="n">prefix</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -630,7 +620,9 @@
                 <span class="k">return</span> <span class="n">nested</span><span class="p">[</span><span class="n">rest</span><span class="p">]</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         <span class="n">snake_key</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">camel_to_snake</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snake_key</span><span class="p">):</span>
+        <span class="c1"># only dataclass fields are cfg keys; a plain hasattr() check would</span>
+        <span class="c1"># also resolve methods (e.g. opts[&quot;get&quot;] -&gt; bound method)</span>
+        <span class="k">if</span> <span class="n">snake_key</span> <span class="ow">in</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)}:</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snake_key</span><span class="p">)</span>
         <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -643,7 +635,6 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">type_hints</span> <span class="o">=</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
-        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="n">field_type</span> <span class="o">=</span> <span class="n">_unwrap_optional</span><span class="p">(</span><span class="n">type_hints</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">_is_structured_opts</span><span class="p">(</span><span class="n">field_type</span><span class="p">):</span>
@@ -685,7 +676,6 @@
             <span class="n">docstrings</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">docstring</span>
 
         <span class="n">type_hints</span> <span class="o">=</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
-        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
             <span class="n">field_type</span> <span class="o">=</span> <span class="n">_unwrap_optional</span><span class="p">(</span><span class="n">type_hints</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">_is_structured_opts</span><span class="p">(</span><span class="n">field_type</span><span class="p">):</span>
@@ -709,7 +699,6 @@
         <span class="n">type_hints</span> <span class="o">=</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">docstrings</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_docstrings</span><span class="p">()</span>
 
-        <span class="c1"># pyrefly: ignore [bad-argument-type]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span>
             <span class="n">field_type</span> <span class="o">=</span> <span class="n">_unwrap_optional</span><span class="p">(</span><span class="n">type_hints</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
@@ -871,7 +860,10 @@
         <span class="c1"># pyre-fixme: Generic cfg type passed to resolve</span>
         <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">workspace</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;scheduler `</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="si">}</span><span class="s2">` does not support workspaces&quot;</span>
+                <span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">workspace</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">workspace</span> <span class="o">=</span> <span class="n">Workspace</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">workspace</span><span class="p">)</span>
@@ -1027,7 +1019,8 @@
         <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">role</span><span class="o">.</span><span class="n">resource</span> <span class="o">==</span> <span class="n">NULL_RESOURCE</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;No resource for role: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="si">}</span><span class="s2">. Did you forget to attach resource to the role&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;No resource for role: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (image: </span><span class="si">{</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="si">}</span><span class="s2">).&quot;</span>
+                    <span class="s2">&quot; Did you forget to attach resource to the role&quot;</span>
                 <span class="p">)</span></div>
 
 
