@@ -137,7 +137,7 @@ You'll have to manually specify the directory containing ``.torchxconfig``.
 
 Below is an example
 
-.. doctest:: [runner_config_example]
+::
 
  from torchx.runner import get_runner
  from torchx.runner.config import apply

@@ -207,28 +207,27 @@ def component_args_from_str(
         Usage:
 
         .. doctest::
-            from torchx.specs.api import AppDef
-            from torchx.specs.builders import component_args_from_str
 
-            def example_component_fn(foo: str, *args: str, bar: str = "asdf") -> AppDef:
-                return AppDef(name="example")
+            >>> from torchx.specs.api import AppDef
+            >>> from torchx.specs.builders import component_args_from_str
+            >>> def example_component_fn(foo: str, *args: str, bar: str = "asdf") -> AppDef:
+            ...     return AppDef(name="example")
 
-            # Supports space separated arguments
-            args = ["--foo", "fooval", "--bar", "barval", "arg1", "arg2"]
-            parsed_args = component_args_from_str(example_component_fn, args)
+            supports space separated arguments:
 
-            assert parsed_args.positional_args == {"foo": "fooval"}
-            assert parsed_args.var_args == ["arg1", "arg2"]
-            assert parsed_args.kwargs == {"bar": "barval"}
+            >>> component_args_from_str(
+            ...     example_component_fn,
+            ...     ["--foo", "fooval", "--bar", "barval", "arg1", "arg2"],
+            ... )
+            ComponentArgs(positional_args={'foo': 'fooval'}, var_args=['arg1', 'arg2'], kwargs={'bar': 'barval'})
 
-            # Supports '=' separated arguments
-            args = ["--foo=fooval", "--bar=barval", "arg1", "arg2"]
-            parsed_args = component_args_from_str(example_component_fn, args)
+            and ``=`` separated arguments:
 
-            assert parsed_args.positional_args == {"foo": "fooval"}
-            assert parsed_args.var_args == ["arg1", "arg2"]
-            assert parsed_args.kwargs == {"bar": "barval"}
-
+            >>> component_args_from_str(
+            ...     example_component_fn,
+            ...     ["--foo=fooval", "--bar=barval", "arg1", "arg2"],
+            ... )
+            ComponentArgs(positional_args={'foo': 'fooval'}, var_args=['arg1', 'arg2'], kwargs={'bar': 'barval'})
 
     """
     parsed_args: Namespace = parse_args(
