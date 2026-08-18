@@ -449,6 +449,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
@@ -521,10 +522,13 @@
         <span class="k">return</span> <span class="n">appstate_from_slurm_state</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">job_state</span><span class="p">))</span>
 
 
+<span class="nd">@functools</span><span class="o">.</span><span class="n">cache</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">version</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Uses ``sinfo --version`` to get the slurm version. If the command fails, it</span>
-<span class="sd">    assumes the version is ``slurm 24.05.8``.</span>
+<span class="sd">    assumes the version is ``slurm 24.05.8``. The result is cached for the</span>
+<span class="sd">    lifetime of the process (the cluster&#39;s slurm version does not change</span>
+<span class="sd">    between calls).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">    -------</span>
@@ -537,16 +541,17 @@
     <span class="k">except</span> <span class="p">(</span><span class="n">CalledProcessError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;slurm 24.05.8&quot;</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;Error running: `</span><span class="si">{sinfo_cmd}</span><span class="s2">` to get SLURM version. Are you running outside the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Error running: `</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="si">}</span><span class="s2">` to get SLURM version. Are you running outside the &quot;</span>
             <span class="s2">&quot;cluster&#39;s login or head node? This typically happens when running in `--dryrun`&quot;</span>
             <span class="s2">&quot; mode. Assuming version is `slurm 24.05.8`.&quot;</span><span class="p">,</span>
             <span class="ne">RuntimeWarning</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="c1"># sinfo --version returns in the form &quot;slurm 24.1.0&quot;</span>
-    <span class="n">_</span><span class="p">,</span> <span class="n">version_literal</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">major</span><span class="p">,</span> <span class="n">minor</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">version_literal</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)][:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="c1"># sinfo --version returns in the form &quot;slurm 24.1.0&quot; (tolerate trailing</span>
+    <span class="c1"># tokens like &quot;slurm 24.1.0 rev1&quot;)</span>
+    <span class="n">version_literal</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">major</span><span class="p">,</span> <span class="n">minor</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">version_literal</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]]</span>
 
     <span class="k">return</span> <span class="p">(</span><span class="n">major</span><span class="p">,</span> <span class="n">minor</span><span class="p">)</span>
 
@@ -881,15 +886,18 @@
         <span class="n">job_dir</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">job_dir</span>
         <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">job_dir</span> <span class="ow">or</span> <span class="n">tmpdir</span><span class="p">,</span> <span class="s2">&quot;torchx-sbatch.sh&quot;</span><span class="p">)</span>
+            <span class="c1"># build the final argv locally; appending to `req.cmd` would make</span>
+            <span class="c1"># a retried `schedule(dryrun_info)` pass sbatch two scripts</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">cmd</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">job_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">req</span><span class="o">.</span><span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--chdir=</span><span class="si">{</span><span class="n">job_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
-            <span class="n">req</span><span class="o">.</span><span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+                <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--chdir=</span><span class="si">{</span><span class="n">job_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+            <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
             <span class="n">script</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">materialize</span><span class="p">()</span>
 
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
 
-            <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">job_id</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="n">job_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1078,6 +1086,73 @@
             <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_squeue_pending_hostname</span><span class="p">(</span>
+        <span class="n">job</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">job_resources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hostname of a pending job across the squeue format generations.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">job_resources</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># SLURM 24.11.5+ returns job_resources=None for pending jobs</span>
+            <span class="c1"># (issue #1101): check top-level fields</span>
+            <span class="k">return</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduled_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="c1"># NOTE: torchx launched jobs point to exactly one host; otherwise,</span>
+        <span class="c1"># scheduled_nodes could be a node list expression</span>
+        <span class="c1"># (eg. &#39;slurm-compute-node[0-20,21,45-47]&#39;)</span>
+        <span class="n">hostname</span> <span class="o">=</span> <span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduled_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hostname</span> <span class="ow">and</span> <span class="s2">&quot;nodes&quot;</span> <span class="ow">in</span> <span class="n">job_resources</span><span class="p">:</span>
+            <span class="n">nodes_info</span> <span class="o">=</span> <span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_info</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">hostname</span> <span class="o">=</span> <span class="n">nodes_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hostname</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_squeue_allocated_nodes</span><span class="p">(</span>
+        <span class="n">job_resources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Resource</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalizes the three squeue node-allocation formats to</span>
+<span class="sd">        ``(hostname, resource)`` pairs (resource ``None`` when the format</span>
+<span class="sd">        carries no per-node resource data).&quot;&quot;&quot;</span>
+        <span class="n">nodes_data</span> <span class="o">=</span> <span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">nodes_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allocation&quot;</span><span class="p">),</span> <span class="nb">list</span>
+        <span class="p">):</span>
+            <span class="c1"># SLURM 24.11+ format: nodes.allocation is a list</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="p">(</span>
+                    <span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                    <span class="n">Resource</span><span class="p">(</span>
+                        <span class="n">cpu</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;cpus&quot;</span><span class="p">][</span><span class="s2">&quot;used&quot;</span><span class="p">]),</span>
+                        <span class="n">memMB</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;memory&quot;</span><span class="p">][</span><span class="s2">&quot;allocated&quot;</span><span class="p">])</span> <span class="o">//</span> <span class="mi">1024</span><span class="p">,</span>
+                        <span class="n">gpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">nodes_data</span><span class="p">[</span><span class="s2">&quot;allocation&quot;</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;allocated_nodes&quot;</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># Legacy format: allocated_nodes is a list</span>
+            <span class="c1"># NOTE: we expect resource specs for all the nodes to be the same</span>
+            <span class="c1"># NOTE: use allocated (not used/requested) memory since users may</span>
+            <span class="c1">#  only specify --cpu, in which case slurm uses the (system)</span>
+            <span class="c1">#  configured {mem-per-cpu} * {cpus} to allocate memory.</span>
+            <span class="c1"># NOTE: getting gpus is tricky because it modeled as a</span>
+            <span class="c1">#  trackable-resource or not configured at all</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="p">(</span>
+                    <span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;nodename&quot;</span><span class="p">],</span>
+                    <span class="n">Resource</span><span class="p">(</span>
+                        <span class="n">cpu</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;cpus_used&quot;</span><span class="p">]),</span>
+                        <span class="n">memMB</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;memory_allocated&quot;</span><span class="p">]),</span>
+                        <span class="n">gpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">job_resources</span><span class="p">[</span><span class="s2">&quot;allocated_nodes&quot;</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="c1"># Fallback: use hostname from nodes.list</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="n">nodes_data</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+        <span class="n">hostname</span> <span class="o">=</span> <span class="n">nodes_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">hostname</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_describe_squeue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DescribeAppResponse</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># NOTE: This method contains multiple compatibility checks for different SLURM versions</span>
         <span class="c1"># due to API format changes across versions (20.02, 23.02, 24.05, 24.11+).</span>
@@ -1099,6 +1174,10 @@
         <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">jobs</span><span class="p">:</span>
             <span class="c1"># job name is of the form &quot;{role_name}-{replica_id}&quot;</span>
             <span class="n">role_name</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">replica_id</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rpartition</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">role_name</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">replica_id</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="c1"># not a torchx-launched job; skip it rather than fail the</span>
+                <span class="c1"># whole describe on `int(replica_id)`</span>
+                <span class="k">continue</span>
 
             <span class="n">entrypoint</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span>
             <span class="n">image</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;current_working_directory&quot;</span><span class="p">]</span>
@@ -1121,28 +1200,13 @@
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">AppState</span><span class="o">.</span><span class="n">PENDING</span><span class="p">:</span>
-                <span class="c1"># NOTE: torchx launched jobs points to exactly one host</span>
-                <span class="c1">#  otherwise, scheduled_nodes could be a node list expression (eg. &#39;slurm-compute-node[0-20,21,45-47]&#39;)</span>
-
-                <span class="c1"># SLURM 24.11.5+ returns job_resources=None for pending jobs (issue #1101)</span>
-                <span class="k">if</span> <span class="n">job_resources</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">hostname</span> <span class="o">=</span> <span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduled_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-                    <span class="c1"># If scheduled_nodes not found in job_resources, try nodes.list</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">hostname</span> <span class="ow">and</span> <span class="s2">&quot;nodes&quot;</span> <span class="ow">in</span> <span class="n">job_resources</span><span class="p">:</span>
-                        <span class="n">nodes_info</span> <span class="o">=</span> <span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">{})</span>
-                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_info</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                            <span class="n">hostname</span> <span class="o">=</span> <span class="n">nodes_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># For pending jobs where job_resources is None, check top-level fields</span>
-                    <span class="n">hostname</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduled_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-
                 <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">role_status</span><span class="o">.</span><span class="n">replicas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">ReplicaStatus</span><span class="p">(</span>
                         <span class="nb">id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">replica_id</span><span class="p">),</span>
                         <span class="n">role</span><span class="o">=</span><span class="n">role_name</span><span class="p">,</span>
                         <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
-                        <span class="n">hostname</span><span class="o">=</span><span class="n">hostname</span><span class="p">,</span>
+                        <span class="n">hostname</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_squeue_pending_hostname</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">job_resources</span><span class="p">),</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># state == AppState.RUNNING</span>
@@ -1150,68 +1214,9 @@
                 <span class="c1"># where each replica is a &quot;sub-job&quot; so `allocated_nodes` will always be 1</span>
                 <span class="c1"># but we deal with jobs that have not been launched with torchx</span>
                 <span class="c1"># which can have multiple hosts per sub-job (count them as replicas)</span>
-                <span class="n">nodes_data</span> <span class="o">=</span> <span class="n">job_resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">{})</span>
-
-                <span class="c1"># SLURM 24.11+ changed from allocated_nodes to nodes.allocation structure</span>
-                <span class="k">if</span> <span class="s2">&quot;allocation&quot;</span> <span class="ow">in</span> <span class="n">nodes_data</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
-                    <span class="n">nodes_data</span><span class="p">[</span><span class="s2">&quot;allocation&quot;</span><span class="p">],</span> <span class="nb">list</span>
-                <span class="p">):</span>
-                    <span class="c1"># SLURM 24.11+ format: nodes.allocation is a list</span>
-                    <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">nodes_data</span><span class="p">[</span><span class="s2">&quot;allocation&quot;</span><span class="p">]:</span>
-                        <span class="n">hostname</span> <span class="o">=</span> <span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
-                        <span class="n">cpu</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;cpus&quot;</span><span class="p">][</span><span class="s2">&quot;used&quot;</span><span class="p">])</span>
-                        <span class="n">memMB</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;memory&quot;</span><span class="p">][</span><span class="s2">&quot;allocated&quot;</span><span class="p">])</span> <span class="o">//</span> <span class="mi">1024</span>
-                        <span class="p">)</span>  <span class="c1"># Convert to MB</span>
-
-                        <span class="n">role</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="n">cpu</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="n">memMB</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-                        <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="n">role_status</span><span class="o">.</span><span class="n">replicas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="n">ReplicaStatus</span><span class="p">(</span>
-                                <span class="nb">id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">replica_id</span><span class="p">),</span>
-                                <span class="n">role</span><span class="o">=</span><span class="n">role_name</span><span class="p">,</span>
-                                <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
-                                <span class="n">hostname</span><span class="o">=</span><span class="n">hostname</span><span class="p">,</span>
-                            <span class="p">)</span>
-                        <span class="p">)</span>
-                <span class="k">elif</span> <span class="s2">&quot;allocated_nodes&quot;</span> <span class="ow">in</span> <span class="n">job_resources</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
-                    <span class="n">job_resources</span><span class="p">[</span><span class="s2">&quot;allocated_nodes&quot;</span><span class="p">],</span> <span class="nb">list</span>
-                <span class="p">):</span>
-                    <span class="c1"># Legacy format: allocated_nodes is a list</span>
-                    <span class="k">for</span> <span class="n">node_info</span> <span class="ow">in</span> <span class="n">job_resources</span><span class="p">[</span><span class="s2">&quot;allocated_nodes&quot;</span><span class="p">]:</span>
-                        <span class="c1"># NOTE: we expect resource specs for all the nodes to be the same</span>
-                        <span class="c1"># NOTE: use allocated (not used/requested) memory since</span>
-                        <span class="c1">#  users may only specify --cpu, in which case slurm</span>
-                        <span class="c1">#  uses the (system) configured {mem-per-cpu} * {cpus}</span>
-                        <span class="c1">#  to allocate memory.</span>
-                        <span class="c1"># NOTE: getting gpus is tricky because it modeled as a trackable-resource</span>
-                        <span class="c1">#  or not configured at all (use total-cpu-on-host as proxy for gpus)</span>
-                        <span class="n">cpu</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;cpus_used&quot;</span><span class="p">])</span>
-                        <span class="n">memMB</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;memory_allocated&quot;</span><span class="p">])</span>
-
-                        <span class="n">hostname</span> <span class="o">=</span> <span class="n">node_info</span><span class="p">[</span><span class="s2">&quot;nodename&quot;</span><span class="p">]</span>
-
-                        <span class="n">role</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">cpu</span><span class="o">=</span><span class="n">cpu</span><span class="p">,</span> <span class="n">memMB</span><span class="o">=</span><span class="n">memMB</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-                        <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="n">role_status</span><span class="o">.</span><span class="n">replicas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="n">ReplicaStatus</span><span class="p">(</span>
-                                <span class="nb">id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">replica_id</span><span class="p">),</span>
-                                <span class="n">role</span><span class="o">=</span><span class="n">role_name</span><span class="p">,</span>
-                                <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
-                                <span class="n">hostname</span><span class="o">=</span><span class="n">hostname</span><span class="p">,</span>
-                            <span class="p">)</span>
-                        <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Fallback: use hostname from nodes.list</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                        <span class="n">hostname</span> <span class="o">=</span> <span class="n">nodes_data</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">hostname</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="n">nodes_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;list&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-                            <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-                        <span class="p">)</span>
-
+                <span class="k">for</span> <span class="n">hostname</span><span class="p">,</span> <span class="n">resource</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squeue_allocated_nodes</span><span class="p">(</span><span class="n">job_resources</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">role</span><span class="o">.</span><span class="n">resource</span> <span class="o">=</span> <span class="n">resource</span>
                     <span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="n">role_status</span><span class="o">.</span><span class="n">replicas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                         <span class="n">ReplicaStatus</span><span class="p">(</span>
@@ -1290,12 +1295,23 @@
             <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">output_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
-        <span class="k">return</span> <span class="p">[</span>
-            <span class="n">ListAppResponse</span><span class="p">(</span>
-                <span class="n">app_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;job_id&quot;</span><span class="p">]),</span> <span class="n">state</span><span class="o">=</span><span class="n">SLURM_STATES</span><span class="p">[</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">][</span><span class="s2">&quot;current&quot;</span><span class="p">]]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;jobs&quot;</span><span class="p">]:</span>
+            <span class="c1"># `state.current` changed from str to a list of str in newer</span>
+            <span class="c1"># slurm versions; only the FIRST (primary) state is mapped —</span>
+            <span class="c1"># unlisted (or missing) states map to UNKNOWN</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">][</span><span class="s2">&quot;current&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">current</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ListAppResponse</span><span class="p">(</span>
+                    <span class="n">app_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;job_id&quot;</span><span class="p">]),</span>
+                    <span class="n">state</span><span class="o">=</span><span class="n">appstate_from_slurm_state</span><span class="p">(</span><span class="n">state</span><span class="p">),</span>
+                <span class="p">)</span>
             <span class="p">)</span>
-            <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">output_json</span><span class="p">[</span><span class="s2">&quot;jobs&quot;</span><span class="p">]</span>
-        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">out</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_list_squeue</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ListAppResponse</span><span class="p">]:</span>
         <span class="c1"># if sacct isn&#39;t configured on the cluster, fallback to squeue which</span>
