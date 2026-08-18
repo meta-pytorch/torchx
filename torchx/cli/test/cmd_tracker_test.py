@@ -69,6 +69,15 @@ class CmdTrackerTest(unittest.TestCase):
             parent_run_id=expected_parent_run_id
         )
 
+    def test_lineage_cmd_rejects_cleanly(self) -> None:
+        parser = argparse.ArgumentParser()
+        CmdTracker().add_arguments(parser)
+
+        args = parser.parse_args(["list", "lineage"])
+        # not implemented: rejected via a clean parser error, not a crash
+        with self.assertRaises(SystemExit):
+            args.func(args)
+
     @patch(CMD_TRACKER)
     def test_list_metadata_cmd(self, mock_tracker: MagicMock) -> None:
         mock_tracker.metadata.return_value = {"v1": 1, "v2": "2"}

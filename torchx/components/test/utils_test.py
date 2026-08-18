@@ -15,6 +15,12 @@ class UtilsComponentTest(ComponentTestCase):
     def test_sh(self) -> None:
         self.validate(utils, "sh")
 
+    def test_sh_does_not_mutate_caller_env(self) -> None:
+        env = {"FOO": "bar"}
+        app = utils.sh("echo", "hello", env=env)
+        self.assertEqual({"FOO": "bar"}, env)
+        self.assertIn("LOGLEVEL", app.roles[0].env)
+
     def test_python(self) -> None:
         self.validate(utils, "python")
 

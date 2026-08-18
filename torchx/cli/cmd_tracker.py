@@ -59,23 +59,6 @@ class CmdTracker(SubCommand):
         tabulated_job_ids = [[job_id] for job_id in job_ids]
         print(tabulate(tabulated_job_ids, headers=["JOB ID"]))
 
-    def add_job_lineage_arguments(self, subparser: argparse.ArgumentParser) -> None:
-        group = subparser.add_mutually_exclusive_group()
-        group.add_argument(
-            "--sources-only", action="store_true", help="Limit to sources"
-        )
-        group.add_argument(
-            "--descendants-only", action="store_true", help="Limit to descendants"
-        )
-
-        subparser.add_argument(
-            "--artifact", type=str, help="Limit to specific artifact"
-        )
-        subparser.add_argument("RUN_ID", type=str, help="Job run ID")
-
-    def job_lineage_command(self, args: argparse.Namespace) -> None:
-        raise NotImplementedError("")
-
     def add_metadata_arguments(self, subparser: argparse.ArgumentParser) -> None:
         subparser.add_argument("RUN_ID", type=str, help="Job run ID")
 
@@ -127,9 +110,12 @@ class CmdTracker(SubCommand):
             sub_cmd_subparser.set_defaults(func=func_handler)
             args_handler(sub_cmd_subparser)
 
+        # registered so `list --help` is honest about the subcommand existing,
+        # but it is not implemented yet so reject cleanly instead of crashing
         job_lineage_subparser = list_subcmd_subparsers.add_parser("lineage")
-        job_lineage_subparser.set_defaults(func=self.job_lineage_command)
-        self.add_job_lineage_arguments(job_lineage_subparser)
+        job_lineage_subparser.set_defaults(
+            func=lambda args: job_lineage_subparser.error("lineage is not implemented")
+        )
 
     def run(self, args: argparse.Namespace) -> None:
         # This command defines default func for each tracker subcomand.

@@ -384,13 +384,13 @@ class CmdRun(SubCommand):
     ) -> dict[str, Any]:
         try:
             stdin_data_json = json.load(sys.stdin)
-            if args and args.dryrun:
-                stdin_data_json["dryrun"] = True
             if not isinstance(stdin_data_json, dict):
                 logger.error(
                     "Invalid JSON input for `torchx run` command. Expected a dictionary."
                 )
                 sys.exit(1)
+            if args and args.dryrun:
+                stdin_data_json["dryrun"] = True
             return stdin_data_json
         except (json.JSONDecodeError, EOFError):
             logger.error(
@@ -425,7 +425,6 @@ class CmdRun(SubCommand):
                 # Handle special cases where non-default doesn't mean explicitly set
                 if action.dest == "component_name_and_args" and current_value == []:
                     continue  # Empty list is still default
-                print(f"*********\n {default_value} = {current_value}")
                 conflicting_args.append(f"--{action.dest.replace('_', '-')}")
 
         if conflicting_args:

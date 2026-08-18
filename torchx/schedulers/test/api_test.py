@@ -122,6 +122,40 @@ class SchedulerTest(unittest.TestCase):
         scheduler_mock.submit(app, cfg, workspace="some_workspace")
         self.assertEqual(app.roles[0].image, "some_workspace")
 
+    def test_submit_workspace_unsupported(self) -> None:
+        class NoWorkspaceScheduler(Scheduler[Mapping[str, CfgVal]]):
+            def __init__(self) -> None:
+                super().__init__("mock", "test_session")
+
+            def schedule(self, dryrun_info: AppDryRunInfo[None]) -> str:
+                return "app_id"
+
+            def _submit_dryrun(
+                self, app: AppDef, cfg: Mapping[str, CfgVal]
+            ) -> AppDryRunInfo[None]:
+                return AppDryRunInfo(None, lambda t: "None")
+
+            def describe(self, app_id: str) -> DescribeAppResponse | None:
+                return None
+
+            def list(
+                self, cfg: Mapping[str, CfgVal] | None = None
+            ) -> list[ListAppResponse]:
+                return []
+
+            def _cancel_existing(self, app_id: str) -> None:
+                pass
+
+        app = AppDef(name="test_app", roles=[Role(name="a", image="")])
+        with self.assertRaisesRegex(ValueError, "`mock` does not support workspaces"):
+            NoWorkspaceScheduler().submit(app, cfg={}, workspace="some_workspace")
+
+    def test_validate_error_names_role(self) -> None:
+        scheduler_mock = SchedulerTest.MockScheduler("test_session")
+        app = AppDef(name="test", roles=[Role(name="worker", image="my_image")])
+        with self.assertRaisesRegex(ValueError, "worker"):
+            scheduler_mock._validate(app, "local", cfg={})
+
     def test_submit_dryrun_sets_app_and_cfg(self) -> None:
         app = AppDef(
             name="test_app",
@@ -344,6 +378,21 @@ class StructuredOptsTest(unittest.TestCase):
         self.assertEqual(opts.get("cluster_name"), "test")
         self.assertEqual(opts.get("num_retries"), 3)
         self.assertIsNone(opts.get("nonexistent"))
+
+    def test_get_with_default(self) -> None:
+        """Test get() returns the provided default when key is not found."""
+        opts = SampleOpts(cluster_name="test")
+
+        self.assertEqual(opts.get("nonexistent", "fallback"), "fallback")
+        self.assertEqual(opts.get("cluster_name", "fallback"), "test")
+
+    def test_getitem_does_not_resolve_methods(self) -> None:
+        """Only dataclass fields are cfg keys -- not attributes/methods."""
+        opts = SampleOpts(cluster_name="test")
+
+        with self.assertRaises(KeyError):
+            _ = opts["get"]
+        self.assertNotIn("from_cfg", opts)
 
     def test_get_returns_none_for_none_value(self) -> None:
         """Test get() returns None when field value is explicitly None."""
