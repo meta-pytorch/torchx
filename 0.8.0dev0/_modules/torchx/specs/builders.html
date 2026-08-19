@@ -643,28 +643,27 @@
 <span class="sd">        Usage:</span>
 
 <span class="sd">        .. doctest::</span>
-<span class="sd">            from torchx.specs.api import AppDef</span>
-<span class="sd">            from torchx.specs.builders import component_args_from_str</span>
 
-<span class="sd">            def example_component_fn(foo: str, *args: str, bar: str = &quot;asdf&quot;) -&gt; AppDef:</span>
-<span class="sd">                return AppDef(name=&quot;example&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; from torchx.specs.api import AppDef</span>
+<span class="sd">            &gt;&gt;&gt; from torchx.specs.builders import component_args_from_str</span>
+<span class="sd">            &gt;&gt;&gt; def example_component_fn(foo: str, *args: str, bar: str = &quot;asdf&quot;) -&gt; AppDef:</span>
+<span class="sd">            ...     return AppDef(name=&quot;example&quot;)</span>
 
-<span class="sd">            # Supports space separated arguments</span>
-<span class="sd">            args = [&quot;--foo&quot;, &quot;fooval&quot;, &quot;--bar&quot;, &quot;barval&quot;, &quot;arg1&quot;, &quot;arg2&quot;]</span>
-<span class="sd">            parsed_args = component_args_from_str(example_component_fn, args)</span>
+<span class="sd">            supports space separated arguments:</span>
 
-<span class="sd">            assert parsed_args.positional_args == {&quot;foo&quot;: &quot;fooval&quot;}</span>
-<span class="sd">            assert parsed_args.var_args == [&quot;arg1&quot;, &quot;arg2&quot;]</span>
-<span class="sd">            assert parsed_args.kwargs == {&quot;bar&quot;: &quot;barval&quot;}</span>
+<span class="sd">            &gt;&gt;&gt; component_args_from_str(</span>
+<span class="sd">            ...     example_component_fn,</span>
+<span class="sd">            ...     [&quot;--foo&quot;, &quot;fooval&quot;, &quot;--bar&quot;, &quot;barval&quot;, &quot;arg1&quot;, &quot;arg2&quot;],</span>
+<span class="sd">            ... )</span>
+<span class="sd">            ComponentArgs(positional_args={&#39;foo&#39;: &#39;fooval&#39;}, var_args=[&#39;arg1&#39;, &#39;arg2&#39;], kwargs={&#39;bar&#39;: &#39;barval&#39;})</span>
 
-<span class="sd">            # Supports &#39;=&#39; separated arguments</span>
-<span class="sd">            args = [&quot;--foo=fooval&quot;, &quot;--bar=barval&quot;, &quot;arg1&quot;, &quot;arg2&quot;]</span>
-<span class="sd">            parsed_args = component_args_from_str(example_component_fn, args)</span>
+<span class="sd">            and ``=`` separated arguments:</span>
 
-<span class="sd">            assert parsed_args.positional_args == {&quot;foo&quot;: &quot;fooval&quot;}</span>
-<span class="sd">            assert parsed_args.var_args == [&quot;arg1&quot;, &quot;arg2&quot;]</span>
-<span class="sd">            assert parsed_args.kwargs == {&quot;bar&quot;: &quot;barval&quot;}</span>
-
+<span class="sd">            &gt;&gt;&gt; component_args_from_str(</span>
+<span class="sd">            ...     example_component_fn,</span>
+<span class="sd">            ...     [&quot;--foo=fooval&quot;, &quot;--bar=barval&quot;, &quot;arg1&quot;, &quot;arg2&quot;],</span>
+<span class="sd">            ... )</span>
+<span class="sd">            ComponentArgs(positional_args={&#39;foo&#39;: &#39;fooval&#39;}, var_args=[&#39;arg1&#39;, &#39;arg2&#39;], kwargs={&#39;bar&#39;: &#39;barval&#39;})</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parsed_args</span><span class="p">:</span> <span class="n">Namespace</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">(</span>

@@ -516,11 +516,13 @@
 
 <span class="sd">        &gt;&gt;&gt; from torchx.specs import TORCHX_HOME</span>
 <span class="sd">        &gt;&gt;&gt; import os, pathlib</span>
-<span class="sd">        &gt;&gt;&gt; _ = os.environ.pop(&quot;TORCHX_HOME&quot;, None)  # ensure default</span>
+<span class="sd">        &gt;&gt;&gt; _prev = os.environ.pop(&quot;TORCHX_HOME&quot;, None)  # ensure default</span>
 <span class="sd">        &gt;&gt;&gt; TORCHX_HOME() == pathlib.Path.home() / &quot;.torchx&quot;</span>
 <span class="sd">        True</span>
 <span class="sd">        &gt;&gt;&gt; TORCHX_HOME(&quot;conda-pack-out&quot;) == pathlib.Path.home() / &quot;.torchx&quot; / &quot;conda-pack-out&quot;</span>
 <span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; if _prev is not None:</span>
+<span class="sd">        ...     os.environ[&quot;TORCHX_HOME&quot;] = _prev  # restore caller&#39;s env</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1076,7 +1078,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        name: name of the role</span>
-<span class="sd">        image: software bundle installed on the container (docker image, fbpkg, tar-ball, etc.)</span>
+<span class="sd">        image: software bundle installed on the container (e.g. docker image, tar-ball)</span>
 <span class="sd">        entrypoint: command to invoke inside the container</span>
 <span class="sd">        args: arguments to the entrypoint</span>
 <span class="sd">        env: environment variable mappings</span>
@@ -1778,26 +1780,37 @@
 
 <span class="sd">        .. doctest::</span>
 
-<span class="sd">         opts = runopts()</span>
-<span class="sd">         opts.add(&quot;FOO&quot;, type_=List[str], default=[&quot;a&quot;], help=&quot;an optional list option&quot;)</span>
-<span class="sd">         opts.add(&quot;BAR&quot;, type_=str, required=True, help=&quot;a required str option&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; from torchx.specs.api import runopts</span>
+<span class="sd">            &gt;&gt;&gt; opts = runopts()</span>
+<span class="sd">            &gt;&gt;&gt; opts.add(&quot;FOO&quot;, type_=list[str], default=[&quot;a&quot;], help=&quot;an optional list option&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; opts.add(&quot;BAR&quot;, type_=str, required=True, help=&quot;a required str option&quot;)</span>
 
-<span class="sd">         # required and default options not checked</span>
-<span class="sd">         # method returns strictly parsed cfg from the cfg literal string</span>
-<span class="sd">         opts.cfg_from_str(&quot;&quot;) == {}</span>
+<span class="sd">            required and default options are not checked; the method returns the</span>
+<span class="sd">            strictly parsed cfg from the cfg literal string:</span>
 
-<span class="sd">         # however, unknown options are ignored</span>
-<span class="sd">         # since the value type is unknown hence cannot cast to the correct type</span>
-<span class="sd">         opts.cfg_from_str(&quot;UNKNOWN=VALUE&quot;) == {}</span>
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;&quot;)</span>
+<span class="sd">            {}</span>
 
-<span class="sd">         opts.cfg_from_str(&quot;FOO=v1&quot;) == {&quot;FOO&quot;: &quot;v1&quot;}</span>
+<span class="sd">            unknown options are ignored since the value type is unknown</span>
+<span class="sd">            hence cannot be cast to the correct type:</span>
 
-<span class="sd">         opts.cfg_from_str(&quot;FOO=v1,v2&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;]}</span>
-<span class="sd">         opts.cfg_from_str(&quot;FOO=v1;v2&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;]}</span>
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;UNKNOWN=VALUE&quot;)</span>
+<span class="sd">            {}</span>
 
-<span class="sd">         opts.cfg_from_str(&quot;FOO=v1,v2,BAR=v3&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;], &quot;BAR&quot;: &quot;v3&quot;}</span>
-<span class="sd">         opts.cfg_from_str(&quot;FOO=v1;v2,BAR=v3&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;], &quot;BAR&quot;: &quot;v3&quot;}</span>
-<span class="sd">         opts.cfg_from_str(&quot;FOO=v1;v2;BAR=v3&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;], &quot;BAR&quot;: &quot;v3&quot;}</span>
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1&quot;)</span>
+<span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;]}</span>
+
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1,v2&quot;)</span>
+<span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;]}</span>
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1;v2&quot;)</span>
+<span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;]}</span>
+
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1,v2,BAR=v3&quot;)</span>
+<span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;], &#39;BAR&#39;: &#39;v3&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1;v2,BAR=v3&quot;)</span>
+<span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;], &#39;BAR&#39;: &#39;v3&#39;}</span>
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1;v2;BAR=v3&quot;)</span>
+<span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;], &#39;BAR&#39;: &#39;v3&#39;}</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 

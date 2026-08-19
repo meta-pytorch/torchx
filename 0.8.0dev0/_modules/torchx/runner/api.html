@@ -931,11 +931,10 @@
 
 <span class="sd">        .. doctest::</span>
 
-<span class="sd">            from torchx.runner import get_runner</span>
-
-<span class="sd">            runner = get_runner()</span>
-<span class="sd">            cfg = runner.cfg_from_str(&quot;local_cwd&quot;, &quot;log_dir=/tmp/foobar&quot;, &quot;prepend_cwd=True&quot;)</span>
-<span class="sd">            assert cfg == {&quot;log_dir&quot;: &quot;/tmp/foobar&quot;, &quot;prepend_cwd&quot;: True, &quot;auto_set_cuda_visible_devices&quot;: False}</span>
+<span class="sd">            &gt;&gt;&gt; from torchx.runner import get_runner</span>
+<span class="sd">            &gt;&gt;&gt; runner = get_runner()</span>
+<span class="sd">            &gt;&gt;&gt; runner.cfg_from_str(&quot;local_cwd&quot;, &quot;log_dir=/tmp/foobar&quot;, &quot;prepend_cwd=True&quot;)</span>
+<span class="sd">            {&#39;log_dir&#39;: &#39;/tmp/foobar&#39;, &#39;prepend_cwd&#39;: True}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span>

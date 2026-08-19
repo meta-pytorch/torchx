@@ -502,7 +502,7 @@ via a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> – name of the role</p></li>
-<li><p><strong>image</strong> – software bundle installed on the container (docker image, fbpkg, tar-ball, etc.)</p></li>
+<li><p><strong>image</strong> – software bundle installed on the container (e.g. docker image, tar-ball)</p></li>
 <li><p><strong>entrypoint</strong> – command to invoke inside the container</p></li>
 <li><p><strong>args</strong> – arguments to the entrypoint</p></li>
 <li><p><strong>env</strong> – environment variable mappings</p></li>
@@ -808,26 +808,37 @@ delimiters are used to delimit between cfg kv pairs, this method
 interprets the last (trailing) <code class="docutils literal notranslate"><span class="pre">&quot;,&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;;&quot;</span></code> as the delimiter between
 kv pairs. See example below.</p>
 <p>Examples:</p>
-<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go">opts = runopts()</span>
-<span class="go">opts.add(&quot;FOO&quot;, type_=List[str], default=[&quot;a&quot;], help=&quot;an optional list option&quot;)</span>
-<span class="go">opts.add(&quot;BAR&quot;, type_=str, required=True, help=&quot;a required str option&quot;)</span>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">runopts</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;FOO&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">],</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;an optional list option&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;BAR&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;a required str option&quot;</span><span class="p">)</span>
 
-<span class="go"># required and default options not checked</span>
-<span class="go"># method returns strictly parsed cfg from the cfg literal string</span>
-<span class="go">opts.cfg_from_str(&quot;&quot;) == {}</span>
+<span class="go">required and default options are not checked; the method returns the</span>
+<span class="go">strictly parsed cfg from the cfg literal string:</span>
 
-<span class="go"># however, unknown options are ignored</span>
-<span class="go"># since the value type is unknown hence cannot cast to the correct type</span>
-<span class="go">opts.cfg_from_str(&quot;UNKNOWN=VALUE&quot;) == {}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="go">{}</span>
 
-<span class="go">opts.cfg_from_str(&quot;FOO=v1&quot;) == {&quot;FOO&quot;: &quot;v1&quot;}</span>
+<span class="go">unknown options are ignored since the value type is unknown</span>
+<span class="go">hence cannot be cast to the correct type:</span>
 
-<span class="go">opts.cfg_from_str(&quot;FOO=v1,v2&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;]}</span>
-<span class="go">opts.cfg_from_str(&quot;FOO=v1;v2&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;UNKNOWN=VALUE&quot;</span><span class="p">)</span>
+<span class="go">{}</span>
 
-<span class="go">opts.cfg_from_str(&quot;FOO=v1,v2,BAR=v3&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;], &quot;BAR&quot;: &quot;v3&quot;}</span>
-<span class="go">opts.cfg_from_str(&quot;FOO=v1;v2,BAR=v3&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;], &quot;BAR&quot;: &quot;v3&quot;}</span>
-<span class="go">opts.cfg_from_str(&quot;FOO=v1;v2;BAR=v3&quot;) == {&quot;FOO&quot;: [&quot;v1&quot;, &quot;v2&quot;], &quot;BAR&quot;: &quot;v3&quot;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;FOO=v1&quot;</span><span class="p">)</span>
+<span class="go">{&#39;FOO&#39;: [&#39;v1&#39;]}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;FOO=v1,v2&quot;</span><span class="p">)</span>
+<span class="go">{&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;FOO=v1;v2&quot;</span><span class="p">)</span>
+<span class="go">{&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;]}</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;FOO=v1,v2,BAR=v3&quot;</span><span class="p">)</span>
+<span class="go">{&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;], &#39;BAR&#39;: &#39;v3&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;FOO=v1;v2,BAR=v3&quot;</span><span class="p">)</span>
+<span class="go">{&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;], &#39;BAR&#39;: &#39;v3&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">cfg_from_str</span><span class="p">(</span><span class="s2">&quot;FOO=v1;v2;BAR=v3&quot;</span><span class="p">)</span>
+<span class="go">{&#39;FOO&#39;: [&#39;v1&#39;, &#39;v2&#39;], &#39;BAR&#39;: &#39;v3&#39;}</span>
 </pre></div>
 </div>
 </dd></dl>
