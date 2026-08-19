@@ -24,7 +24,7 @@ class SettingsValueTest(unittest.TestCase):
 
     def test_session_env_var(self) -> None:
         self.assertEqual(
-            settings.TORCHX_INTERNAL_SESSION_ID, "TORCHX_INTERNAL_SESSION_ID"
+            settings.ENV_TORCHX_INTERNAL_SESSION_ID, "TORCHX_INTERNAL_SESSION_ID"
         )
 
     def test_scheduler_env_vars(self) -> None:
@@ -43,6 +43,6 @@ class SettingsBCReexportTest(unittest.TestCase):
 
         self.assertIs(
             session.TORCHX_INTERNAL_SESSION_ID,
-            settings.TORCHX_INTERNAL_SESSION_ID,
+            settings.ENV_TORCHX_INTERNAL_SESSION_ID,
             "session re-export should be the same object",
         )
