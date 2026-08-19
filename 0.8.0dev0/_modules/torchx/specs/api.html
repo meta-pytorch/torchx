@@ -634,6 +634,12 @@
 <span class="c1"># sentinel value used to represent &quot;unset&quot; optional string attributes</span>
 <span class="n">NONE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;NONE&gt;&quot;</span>
 
+<span class="c1"># sentinel value used to represent string attributes whose value could not be</span>
+<span class="c1"># determined -- either not recoverable on read-back (e.g. a scheduler whose</span>
+<span class="c1"># backend cannot round-trip Role.image) or not derivable from what the producer</span>
+<span class="c1"># supplied. Unlike MISSING, this does not claim the attribute was never set.</span>
+<span class="n">UNKNOWN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;UNKNOWN&gt;&quot;</span>
+
 
 <div class="viewcode-block" id="macros">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.macros">[docs]</a>
