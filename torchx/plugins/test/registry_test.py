@@ -22,7 +22,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import patch
 
 from torchx.plugins._registration import register
@@ -835,3 +835,195 @@ class DiscoveryFaultToleranceTest(_RegistryTestBase):
             )
         finally:
             sys.modules.pop("torchx_plugins.broken_ns", None)
+
+
+class DuplicateIdempotenceTest(_RegistryTestBase):
+    """Same-name re-registration semantics: equal values are idempotent,
+    different values keep the duplicate error (fork-drift detection)."""
+
+    @staticmethod
+    def _fake_module(
+        mod_name: str, plugin_name: str, factory: Callable[[], object]
+    ) -> types.ModuleType:
+        factory._plugin_type = PluginType.NAMED_RESOURCE
+        factory._plugin_name = plugin_name
+        factory.__module__ = mod_name
+        factory.__name__ = plugin_name
+        mod = types.ModuleType(mod_name)
+        setattr(mod, plugin_name, factory)
+        return mod
+
+    def test_equal_value_reregistration_is_idempotent(self) -> None:
+        # in-function on purpose: importing torchx.specs runs plugin discovery at import time (eager
+        # _load_named_resources() at module scope); keep it under this test's isolation, not at module import.
+        from torchx.specs.api import Resource
+
+        def factory_a() -> Resource:
+            return Resource(cpu=1, gpu=0, memMB=1024)
+
+        def factory_b() -> Resource:
+            return Resource(cpu=1, gpu=0, memMB=1024)
+
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        discovered: dict[str, Any] = {}
+        mod_a = self._fake_module("portion_a.mod", "t_test", factory_a)
+        mod_b = self._fake_module("portion_b.mod", "t_test", factory_b)
+        reg._collect_plugins_from_module(
+            mod_a, "portion_a.mod", PluginType.NAMED_RESOURCE, discovered
+        )
+        reg._collect_plugins_from_module(
+            mod_b, "portion_b.mod", PluginType.NAMED_RESOURCE, discovered
+        )
+
+        self.assertEqual([], reg.errors, "equal re-registration must record no error")
+        self.assertIs(
+            discovered["t_test"],
+            mod_a.__dict__["t_test"],
+            "first occurrence must be kept",
+        )
+
+    def test_different_value_reregistration_keeps_error(self) -> None:
+        # in-function on purpose: importing torchx.specs runs plugin discovery at import time (eager
+        # _load_named_resources() at module scope); keep it under this test's isolation, not at module import.
+        from torchx.specs.api import Resource
+
+        def factory_a() -> Resource:
+            return Resource(cpu=1, gpu=0, memMB=1024)
+
+        def factory_b() -> Resource:
+            return Resource(cpu=2, gpu=0, memMB=2048)
+
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        discovered: dict[str, Any] = {}
+        reg._collect_plugins_from_module(
+            self._fake_module("portion_a.mod", "t_test", factory_a),
+            "portion_a.mod",
+            PluginType.NAMED_RESOURCE,
+            discovered,
+        )
+        reg._collect_plugins_from_module(
+            self._fake_module("portion_b.mod", "t_test", factory_b),
+            "portion_b.mod",
+            PluginType.NAMED_RESOURCE,
+            discovered,
+        )
+
+        self.assertEqual(
+            1, len(reg.errors), "a DIFFERENT value must keep the duplicate error"
+        )
+        self.assertIn("DIFFERENT value", reg.errors[0].error)
+
+    def test_raising_factory_is_never_equal(self) -> None:
+        # in-function on purpose: importing torchx.specs runs plugin discovery at import time (eager
+        # _load_named_resources() at module scope); keep it under this test's isolation, not at module import.
+        from torchx.specs.api import Resource
+
+        def factory_a() -> Resource:
+            return Resource(cpu=1, gpu=0, memMB=1024)
+
+        def factory_b() -> Resource:
+            raise RuntimeError("cannot materialize")
+
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        discovered: dict[str, Any] = {}
+        reg._collect_plugins_from_module(
+            self._fake_module("portion_a.mod", "t_test", factory_a),
+            "portion_a.mod",
+            PluginType.NAMED_RESOURCE,
+            discovered,
+        )
+        reg._collect_plugins_from_module(
+            self._fake_module("portion_b.mod", "t_test", factory_b),
+            "portion_b.mod",
+            PluginType.NAMED_RESOURCE,
+            discovered,
+        )
+
+        self.assertEqual(
+            1, len(reg.errors), "a raising factory must keep the duplicate error"
+        )
+
+    def test_twin_generated_types_compare_semantically(self) -> None:
+        """Enums regenerated per-distribution (thrift mirrors) defeat `==` by
+        class identity; the normalized comparison must treat equal-valued
+        twins as equal, and an explicit `is_fractional: False` tag as absent."""
+        import enum as _enum
+
+        from torchx.plugins._registration import resource_tags
+
+        # in-function on purpose: importing torchx.specs runs plugin discovery at import time (eager
+        # _load_named_resources() at module scope); keep it under this test's isolation, not at module import.
+        from torchx.specs.api import Resource
+
+        # twin generated modules re-declare the SAME-named enum class; mint
+        # two distinct classes sharing name and values to simulate that
+        def _twin_enum() -> type[_enum.Enum]:
+            class LogicalServerType(_enum.Enum):
+                T1 = 100
+
+            return LogicalServerType
+
+        ServerTypeA: type[_enum.Enum] = _twin_enum()
+        ServerTypeB: type[_enum.Enum] = _twin_enum()
+
+        def factory_a() -> Resource:
+            return Resource(
+                cpu=1,
+                gpu=0,
+                memMB=1024,
+                capabilities={"server_types": [ServerTypeA["T1"]]},
+                tags={"torchx/named_resources.name": "t_test"},
+            )
+
+        def factory_b() -> Resource:
+            return Resource(
+                cpu=1,
+                gpu=0,
+                memMB=1024,
+                capabilities={"server_types": [ServerTypeB["T1"]]},
+                tags={
+                    "torchx/named_resources.name": "t_test",
+                    resource_tags.IS_FRACTIONAL: False,
+                },
+            )
+
+        self.assertNotEqual(
+            factory_a(), factory_b(), "plain == must fail on twin enums (premise)"
+        )
+
+        reg = PluginRegistry(plugin_sources=PluginSource.NAMESPACE_PKG)
+        discovered: dict[str, Any] = {}
+        reg._collect_plugins_from_module(
+            self._fake_module("portion_a.mod", "t_test", factory_a),
+            "portion_a.mod",
+            PluginType.NAMED_RESOURCE,
+            discovered,
+        )
+        reg._collect_plugins_from_module(
+            self._fake_module("portion_b.mod", "t_test", factory_b),
+            "portion_b.mod",
+            PluginType.NAMED_RESOURCE,
+            discovered,
+        )
+
+        self.assertEqual([], reg.errors, "semantically equal twins must be idempotent")
+
+    def test_equal_sets_normalize_equal_regardless_of_insertion_order(self) -> None:
+        """Set iteration order depends on insertion history (`{0, 8}` vs
+        `{8, 0}` collide into the same hash slot), so an unsorted
+        normalization mints false different-value duplicates."""
+        set_a = {0, 8}
+        set_b = {8, 0}
+        self.assertEqual(set_a, set_b, "premise: the sets are equal")
+        self.assertNotEqual(
+            list(set_a), list(set_b), "premise: iteration orders differ"
+        )
+
+        self.assertEqual(
+            PluginRegistry._normalize_value(set_a),
+            PluginRegistry._normalize_value(set_b),
+        )
+        self.assertEqual(
+            PluginRegistry._normalize_value(frozenset(set_a)),
+            PluginRegistry._normalize_value(frozenset(set_b)),
+        )

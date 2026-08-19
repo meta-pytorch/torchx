@@ -127,6 +127,126 @@ class PluginRegistry:
         """
         return f"torchx_plugins.{pt.value.removeprefix('torchx.')}"
 
+    @staticmethod
+    def _normalize_value(v: Any) -> Any:
+        """Structural normalization for cross-distribution value comparison.
+
+        Two portions of the namespace may carry twin GENERATED types (thrift
+        enums/structs regenerated per distribution) whose ``__eq__`` is
+        class-identity-based — semantically identical values compare unequal.
+        Normalize: enums (stdlib Enum AND thrift-python int-subclass enums) by
+        (type name, value), dataclasses and field-iterable structs field-wise,
+        containers recursively, everything else by ``repr``.
+        """
+        if isinstance(v, enum.Enum):
+            return ("enum", type(v).__name__, v.value)
+        if v is None or type(v) in (str, int, float, bool, bytes):
+            return v
+        if isinstance(v, int) and not isinstance(v, bool):
+            # int SUBCLASS: thrift-python enums are int-derived, not enum.Enum
+            return ("enum", type(v).__name__, int(v))
+        if dataclasses.is_dataclass(v) and not isinstance(v, type):
+            return (
+                type(v).__name__,
+                tuple(
+                    (f.name, PluginRegistry._normalize_value(getattr(v, f.name)))
+                    for f in dataclasses.fields(v)
+                ),
+            )
+        if isinstance(v, dict):
+            return tuple(
+                sorted(
+                    (
+                        repr(PluginRegistry._normalize_value(k)),
+                        PluginRegistry._normalize_value(val),
+                    )
+                    for k, val in v.items()
+                )
+            )
+        if isinstance(v, (set, frozenset)):
+            # unordered: equal sets can iterate in different orders (insertion
+            # history), so sort the normalized elements — by repr, like the
+            # dict branch, since they may be heterogeneous/unorderable
+            return tuple(
+                sorted((PluginRegistry._normalize_value(x) for x in v), key=repr)
+            )
+        if isinstance(v, (list, tuple)):
+            return tuple(PluginRegistry._normalize_value(x) for x in v)
+        try:
+            # thrift-python structs iterate as (field_name, value) pairs —
+            # normalize them the same shape as dataclasses
+            pairs = list(v)
+            if pairs and all(
+                isinstance(p, tuple) and len(p) == 2 and isinstance(p[0], str)
+                for p in pairs
+            ):
+                return (
+                    type(v).__name__,
+                    tuple((n, PluginRegistry._normalize_value(x)) for n, x in pairs),
+                )
+        except TypeError:
+            pass
+        return repr(v)
+
+    @staticmethod
+    def _canonical_resource(r: Any) -> Any:
+        """Canonical comparison form of a resource-like value.
+
+        ``Resource.is_fractional()`` treats an ABSENT ``is_fractional`` tag as
+        ``False``, so an explicit ``False`` tag is dropped before comparing —
+        stamping deltas between distributions are not semantic drift.
+        """
+        from torchx.plugins._registration import resource_tags
+
+        tags = dict(r.tags)
+        if not tags.get(resource_tags.IS_FRACTIONAL, False):
+            tags.pop(resource_tags.IS_FRACTIONAL, None)
+        return (
+            r.cpu,
+            r.gpu,
+            r.memMB,
+            PluginRegistry._normalize_value(r.capabilities),
+            PluginRegistry._normalize_value(r.devices),
+            PluginRegistry._normalize_value(tags),
+        )
+
+    @staticmethod
+    def _plugins_equal(a: Any, b: Any, plugin_type: PluginType) -> bool:
+        """Whether two same-name registrations are semantically identical.
+
+        The same callable object is always equal. NAMED_RESOURCE factories
+        are cheap and pure, so their equality is defined by the materialized
+        resource values under structural normalization (see
+        :py:meth:`_normalize_value`); a factory that raises is never equal.
+        Other plugin types (schedulers, trackers) are not safe to invoke at
+        discovery time, so distinct callables are never equal.
+        """
+        if a is b:
+            return True
+        if plugin_type == PluginType.NAMED_RESOURCE:
+            try:
+                va, vb = a(), b()
+                resource_attrs = (
+                    "cpu",
+                    "gpu",
+                    "memMB",
+                    "capabilities",
+                    "devices",
+                    "tags",
+                )
+                if all(hasattr(va, at) for at in resource_attrs) and all(
+                    hasattr(vb, at) for at in resource_attrs
+                ):
+                    return PluginRegistry._canonical_resource(
+                        va
+                    ) == PluginRegistry._canonical_resource(vb)
+                return PluginRegistry._normalize_value(
+                    va
+                ) == PluginRegistry._normalize_value(vb)
+            except Exception:
+                return False
+        return False
+
     def _collect_plugins_from_module(
         self,
         mod: ModuleType,
@@ -169,7 +289,21 @@ class PluginRegistry:
                 )
                 continue
             if plugin_name in discovered:
-                msg = "duplicate — already discovered, keeping first occurrence"
+                if self._plugins_equal(discovered[plugin_name], obj, actual_type):
+                    # same-name re-registration of an EQUAL value is
+                    # idempotent (e.g. two portions of the namespace shipping
+                    # the same resource) — keep the first, record nothing
+                    logger.debug(
+                        "plugin `%s` in `%s` re-registers an equal value"
+                        " — idempotent, keeping first occurrence",
+                        plugin_name,
+                        fqn,
+                    )
+                    continue
+                msg = (
+                    "duplicate — already discovered with a DIFFERENT value,"
+                    " keeping first occurrence"
+                )
                 logger.warning("duplicate plugin `%s` in `%s`", plugin_name, fqn)
                 self._errors.append(
                     RegistrationError(
