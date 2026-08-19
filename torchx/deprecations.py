@@ -14,9 +14,6 @@ paths and :func:`deprecated` for marking functions/classes as deprecated.
 Both emit :py:class:`UserWarning` (not ``DeprecationWarning``) so that
 warnings are always visible to end users — ``DeprecationWarning`` is
 silenced by default outside ``__main__``.
-
-For Meta-internal use (fbsource-specific path resolution and sed commands),
-see :py:mod:`torchx.fb.deprecations` which layers on top of this module.
 """
 
 from __future__ import annotations

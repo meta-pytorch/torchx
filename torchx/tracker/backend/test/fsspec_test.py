@@ -48,7 +48,7 @@ class FsspecTest(unittest.TestCase):
         self.assertIsNotNone(filename)
 
     def test_encode_decode_torchx_run(self) -> None:
-        expected_run_id = "mast://session_id/app_id"
+        expected_run_id = "kubernetes://session_id/app_id"
 
         self.assertEqual(
             _decode_torchx_run_id(_encode_torchx_run_id(expected_run_id)),
