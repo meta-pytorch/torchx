@@ -27,7 +27,7 @@ ENV_TORCHX_JOB_ID: str = "TORCHX_JOB_ID"
 ENV_TORCHXCONFIG: str = "TORCHXCONFIG"
 
 # -- session env vars (previously in torchx.util.session) --
-TORCHX_INTERNAL_SESSION_ID: str = "TORCHX_INTERNAL_SESSION_ID"
+ENV_TORCHX_INTERNAL_SESSION_ID: str = "TORCHX_INTERNAL_SESSION_ID"
 
 # -- image env vars (previously in torchx.schedulers.docker_scheduler) --
 ENV_TORCHX_IMAGE: str = "TORCHX_IMAGE"

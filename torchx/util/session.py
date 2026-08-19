@@ -12,8 +12,8 @@ import uuid
 
 from torchx import settings
 
-# BC re-export — new code should import from torchx.settings
-TORCHX_INTERNAL_SESSION_ID: str = settings.TORCHX_INTERNAL_SESSION_ID
+# Deprecated BC alias — new code should use ``settings.ENV_TORCHX_INTERNAL_SESSION_ID``.
+TORCHX_INTERNAL_SESSION_ID: str = settings.ENV_TORCHX_INTERNAL_SESSION_ID
 
 CURRENT_SESSION_ID: str | None = None
 
@@ -27,7 +27,7 @@ def get_session_id_or_create_new() -> str:
     global CURRENT_SESSION_ID
     if CURRENT_SESSION_ID:
         return CURRENT_SESSION_ID
-    env_session_id = os.getenv(TORCHX_INTERNAL_SESSION_ID)
+    env_session_id = os.getenv(settings.ENV_TORCHX_INTERNAL_SESSION_ID)
     if env_session_id:
         CURRENT_SESSION_ID = env_session_id
         return CURRENT_SESSION_ID
