@@ -186,6 +186,12 @@ MISSING: str = "<MISSING>"
 # sentinel value used to represent "unset" optional string attributes
 NONE: str = "<NONE>"
 
+# sentinel value used to represent string attributes whose value could not be
+# determined -- either not recoverable on read-back (e.g. a scheduler whose
+# backend cannot round-trip Role.image) or not derivable from what the producer
+# supplied. Unlike MISSING, this does not claim the attribute was never set.
+UNKNOWN: str = "<UNKNOWN>"
+
 
 class macros:
     """

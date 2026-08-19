@@ -21,6 +21,7 @@ from typing import cast, Dict, List, Mapping, Union
 from unittest import mock
 from unittest.mock import MagicMock
 
+from torchx import specs
 from torchx.specs import named_resources, named_resources_aws, resource
 from torchx.specs.api import (
     _OVERRIDES_LOCK_KEY,
@@ -48,6 +49,7 @@ from torchx.specs.api import (
     runopt,
     runopts,
     TORCHX_HOME,
+    UNKNOWN,
     Workspace,
 )
 from torchx.test.fixtures import TestWithTmpDir
@@ -612,6 +614,14 @@ class ResourceTest(unittest.TestCase):
         h = "aws_t3.medium"
         self.assertEqual(named_resources[h], resource(h=h))
         self.assertEqual(named_resources[h], resource(cpu=16, gpu=4, h="aws_t3.medium"))
+
+
+class SentinelsTest(unittest.TestCase):
+    def test_unknown(self) -> None:
+        # the literal is the contract: schedulers that cannot read an attribute
+        # back write it directly, without importing torchx
+        self.assertEqual("<UNKNOWN>", UNKNOWN)
+        self.assertEqual(UNKNOWN, specs.UNKNOWN)
 
 
 class RoleBuilderTest(unittest.TestCase):
