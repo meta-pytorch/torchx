@@ -569,6 +569,126 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;torchx_plugins.</span><span class="si">{</span><span class="n">pt</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s1">&#39;torchx.&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_value</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Structural normalization for cross-distribution value comparison.</span>
+
+<span class="sd">        Two portions of the namespace may carry twin GENERATED types (thrift</span>
+<span class="sd">        enums/structs regenerated per distribution) whose ``__eq__`` is</span>
+<span class="sd">        class-identity-based — semantically identical values compare unequal.</span>
+<span class="sd">        Normalize: enums (stdlib Enum AND thrift-python int-subclass enums) by</span>
+<span class="sd">        (type name, value), dataclasses and field-iterable structs field-wise,</span>
+<span class="sd">        containers recursively, everything else by ``repr``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;enum&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="c1"># int SUBCLASS: thrift-python enums are int-derived, not enum.Enum</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;enum&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)))</span>
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="nb">sorted</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="nb">repr</span><span class="p">(</span><span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">k</span><span class="p">)),</span>
+                        <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">val</span><span class="p">),</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">set</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">)):</span>
+            <span class="c1"># unordered: equal sets can iterate in different orders (insertion</span>
+            <span class="c1"># history), so sort the normalized elements — by repr, like the</span>
+            <span class="c1"># dict branch, since they may be heterogeneous/unorderable</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="nb">sorted</span><span class="p">((</span><span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="nb">repr</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># thrift-python structs iterate as (field_name, value) pairs —</span>
+            <span class="c1"># normalize them the same shape as dataclasses</span>
+            <span class="n">pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pairs</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pairs</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="p">(</span>
+                    <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                    <span class="nb">tuple</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">),</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_canonical_resource</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Canonical comparison form of a resource-like value.</span>
+
+<span class="sd">        ``Resource.is_fractional()`` treats an ABSENT ``is_fractional`` tag as</span>
+<span class="sd">        ``False``, so an explicit ``False`` tag is dropped before comparing —</span>
+<span class="sd">        stamping deltas between distributions are not semantic drift.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins._registration</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_tags</span>
+
+        <span class="n">tags</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">IS_FRACTIONAL</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">tags</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">IS_FRACTIONAL</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">cpu</span><span class="p">,</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">gpu</span><span class="p">,</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">memMB</span><span class="p">,</span>
+            <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">capabilities</span><span class="p">),</span>
+            <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">devices</span><span class="p">),</span>
+            <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">tags</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_plugins_equal</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">plugin_type</span><span class="p">:</span> <span class="n">PluginType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether two same-name registrations are semantically identical.</span>
+
+<span class="sd">        The same callable object is always equal. NAMED_RESOURCE factories</span>
+<span class="sd">        are cheap and pure, so their equality is defined by the materialized</span>
+<span class="sd">        resource values under structural normalization (see</span>
+<span class="sd">        :py:meth:`_normalize_value`); a factory that raises is never equal.</span>
+<span class="sd">        Other plugin types (schedulers, trackers) are not safe to invoke at</span>
+<span class="sd">        discovery time, so distinct callables are never equal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">plugin_type</span> <span class="o">==</span> <span class="n">PluginType</span><span class="o">.</span><span class="n">NAMED_RESOURCE</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">va</span><span class="p">,</span> <span class="n">vb</span> <span class="o">=</span> <span class="n">a</span><span class="p">(),</span> <span class="n">b</span><span class="p">()</span>
+                <span class="n">resource_attrs</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;gpu&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;memMB&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;capabilities&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;devices&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;tags&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">at</span><span class="p">)</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">resource_attrs</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">hasattr</span><span class="p">(</span><span class="n">vb</span><span class="p">,</span> <span class="n">at</span><span class="p">)</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">resource_attrs</span>
+                <span class="p">):</span>
+                    <span class="k">return</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_canonical_resource</span><span class="p">(</span>
+                        <span class="n">va</span>
+                    <span class="p">)</span> <span class="o">==</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_canonical_resource</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span>
+                    <span class="n">va</span>
+                <span class="p">)</span> <span class="o">==</span> <span class="n">PluginRegistry</span><span class="o">.</span><span class="n">_normalize_value</span><span class="p">(</span><span class="n">vb</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_collect_plugins_from_module</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">mod</span><span class="p">:</span> <span class="n">ModuleType</span><span class="p">,</span>
@@ -611,7 +731,21 @@
                 <span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">plugin_name</span> <span class="ow">in</span> <span class="n">discovered</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;duplicate — already discovered, keeping first occurrence&quot;</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plugins_equal</span><span class="p">(</span><span class="n">discovered</span><span class="p">[</span><span class="n">plugin_name</span><span class="p">],</span> <span class="n">obj</span><span class="p">,</span> <span class="n">actual_type</span><span class="p">):</span>
+                    <span class="c1"># same-name re-registration of an EQUAL value is</span>
+                    <span class="c1"># idempotent (e.g. two portions of the namespace shipping</span>
+                    <span class="c1"># the same resource) — keep the first, record nothing</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;plugin `</span><span class="si">%s</span><span class="s2">` in `</span><span class="si">%s</span><span class="s2">` re-registers an equal value&quot;</span>
+                        <span class="s2">&quot; — idempotent, keeping first occurrence&quot;</span><span class="p">,</span>
+                        <span class="n">plugin_name</span><span class="p">,</span>
+                        <span class="n">fqn</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;duplicate — already discovered with a DIFFERENT value,&quot;</span>
+                    <span class="s2">&quot; keeping first occurrence&quot;</span>
+                <span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;duplicate plugin `</span><span class="si">%s</span><span class="s2">` in `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">plugin_name</span><span class="p">,</span> <span class="n">fqn</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">RegistrationError</span><span class="p">(</span>
