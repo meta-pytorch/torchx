@@ -80,11 +80,13 @@ def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
 
         >>> from torchx.specs import TORCHX_HOME
         >>> import os, pathlib
-        >>> _ = os.environ.pop("TORCHX_HOME", None)  # ensure default
+        >>> _prev = os.environ.pop("TORCHX_HOME", None)  # ensure default
         >>> TORCHX_HOME() == pathlib.Path.home() / ".torchx"
         True
         >>> TORCHX_HOME("conda-pack-out") == pathlib.Path.home() / ".torchx" / "conda-pack-out"
         True
+        >>> if _prev is not None:
+        ...     os.environ["TORCHX_HOME"] = _prev  # restore caller's env
 
     """
 
@@ -1251,26 +1253,37 @@ class runopts:
 
         .. doctest::
 
-         opts = runopts()
-         opts.add("FOO", type_=List[str], default=["a"], help="an optional list option")
-         opts.add("BAR", type_=str, required=True, help="a required str option")
+            >>> from torchx.specs.api import runopts
+            >>> opts = runopts()
+            >>> opts.add("FOO", type_=list[str], default=["a"], help="an optional list option")
+            >>> opts.add("BAR", type_=str, required=True, help="a required str option")
 
-         # required and default options not checked
-         # method returns strictly parsed cfg from the cfg literal string
-         opts.cfg_from_str("") == {}
+            required and default options are not checked; the method returns the
+            strictly parsed cfg from the cfg literal string:
 
-         # however, unknown options are ignored
-         # since the value type is unknown hence cannot cast to the correct type
-         opts.cfg_from_str("UNKNOWN=VALUE") == {}
+            >>> opts.cfg_from_str("")
+            {}
 
-         opts.cfg_from_str("FOO=v1") == {"FOO": "v1"}
+            unknown options are ignored since the value type is unknown
+            hence cannot be cast to the correct type:
 
-         opts.cfg_from_str("FOO=v1,v2") == {"FOO": ["v1", "v2"]}
-         opts.cfg_from_str("FOO=v1;v2") == {"FOO": ["v1", "v2"]}
+            >>> opts.cfg_from_str("UNKNOWN=VALUE")
+            {}
 
-         opts.cfg_from_str("FOO=v1,v2,BAR=v3") == {"FOO": ["v1", "v2"], "BAR": "v3"}
-         opts.cfg_from_str("FOO=v1;v2,BAR=v3") == {"FOO": ["v1", "v2"], "BAR": "v3"}
-         opts.cfg_from_str("FOO=v1;v2;BAR=v3") == {"FOO": ["v1", "v2"], "BAR": "v3"}
+            >>> opts.cfg_from_str("FOO=v1")
+            {'FOO': ['v1']}
+
+            >>> opts.cfg_from_str("FOO=v1,v2")
+            {'FOO': ['v1', 'v2']}
+            >>> opts.cfg_from_str("FOO=v1;v2")
+            {'FOO': ['v1', 'v2']}
+
+            >>> opts.cfg_from_str("FOO=v1,v2,BAR=v3")
+            {'FOO': ['v1', 'v2'], 'BAR': 'v3'}
+            >>> opts.cfg_from_str("FOO=v1;v2,BAR=v3")
+            {'FOO': ['v1', 'v2'], 'BAR': 'v3'}
+            >>> opts.cfg_from_str("FOO=v1;v2;BAR=v3")
+            {'FOO': ['v1', 'v2'], 'BAR': 'v3'}
 
         """
 
