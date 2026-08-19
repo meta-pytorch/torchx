@@ -34,6 +34,6 @@ def ddp(
         resource=specs.Resource(cpu=1, gpu=0, memMB=1),
     )
 
-    # get app name from cli or extract from fbpkg. Note that fbpkg name can has "."
-    # but not allowed in app name.
+    # get app name from cli or derive it from the image. Note that image names
+    # may contain "." which is not allowed in app names.
     return specs.AppDef(name, roles=[ddp_role])

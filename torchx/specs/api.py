@@ -592,7 +592,7 @@ class Role:
 
     Args:
         name: name of the role
-        image: software bundle installed on the container (docker image, fbpkg, tar-ball, etc.)
+        image: software bundle installed on the container (e.g. docker image, tar-ball)
         entrypoint: command to invoke inside the container
         args: arguments to the entrypoint
         env: environment variable mappings

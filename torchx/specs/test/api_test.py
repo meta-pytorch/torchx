@@ -966,17 +966,17 @@ class RoleBuilderTest(unittest.TestCase):
             return value
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            launcher_fbpkg_future: concurrent.futures.Future = executor.submit(
+            launcher_image_future: concurrent.futures.Future = executor.submit(
                 delay, ("value1", "value2"), 2
             )
 
         def get_image() -> str:
-            concurrent.futures.wait([launcher_fbpkg_future], 3)
-            return launcher_fbpkg_future.result()[0]
+            concurrent.futures.wait([launcher_image_future], 3)
+            return launcher_image_future.result()[0]
 
         def get_entrypoint() -> str:
-            concurrent.futures.wait([launcher_fbpkg_future], 3)
-            return launcher_fbpkg_future.result()[1]
+            concurrent.futures.wait([launcher_image_future], 3)
+            return launcher_image_future.result()[1]
 
         default = Role(
             "foobar",
