@@ -35,9 +35,7 @@ ID_FORMAT = "SCHEDULER://[SESSION_NAME]/APP_ID/[ROLE_NAME/[REPLICA_IDS,...]]"
 
 def validate(job_identifier: str) -> None:
     if not re.match(r"^\w+://[^/]*/[^/]+(/[^/]+(/(\d+,?)+)?)?$", job_identifier):
-        logger.error(
-            f"{job_identifier} is not of the form {ID_FORMAT}",
-        )
+        logger.error("`%s` is not of the form %s", job_identifier, ID_FORMAT)
         sys.exit(1)
 
 
@@ -136,8 +134,10 @@ def get_logs(
             )
 
             logger.error(
-                f"No role [{role_name}] found for app: {app.name}."
-                f" Did you mean one of the following:\n{valid_ids}",
+                "no role `%s` found for app `%s`, did you mean one of the following:\n%s",
+                role_name,
+                app.name,
+                valid_ids,
             )
             sys.exit(1)
 

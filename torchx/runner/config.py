@@ -337,7 +337,7 @@ def apply(
     for configfile in find_configs(dirs):
         with open(configfile, "r") as f:
             load(scheduler, f, cfg)
-            log.info(f"loaded configs from {configfile}")
+            log.info("loaded configs from `%s`", configfile)
 
 
 def load_sections(
@@ -418,7 +418,11 @@ def load_sections(
                 for key, value in config.items(section_name):
                     if key not in section:
                         log.debug(
-                            f"Loaded config: {prefix}.{key}={value} from {configfile}"
+                            "loaded config: %s.%s=%s from `%s`",
+                            prefix,
+                            key,
+                            value,
+                            configfile,
                         )
                         section[key] = value
 
@@ -542,9 +546,13 @@ def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
 
                 if opt is None:
                     log.warning(
-                        f"`{name} = {value}` was declared in the [{section}] section "
-                        f" of the config file but is not a runopt of `{scheduler}` scheduler."
-                        f" Remove the entry from the config file to no longer see this warning"
+                        "`%s = %s` was declared in the [%s] section"
+                        " of the config file but is not a runopt of `%s` scheduler,"
+                        " remove the entry from the config file to no longer see this warning",
+                        name,
+                        value,
+                        section,
+                        scheduler,
                     )
                 else:
                     # delegate casting to the runopt itself so configfile

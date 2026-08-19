@@ -36,7 +36,7 @@ def _check_specified_once(namespace: Namespace, option_string: str | None) -> No
         _called_args_by_namespace[key] = called_args
         weakref.finalize(namespace, _called_args_by_namespace.pop, key)
     if option_string in called_args:
-        logger.error(f"{option_string} is specified more than once")
+        logger.error("`%s` is specified more than once", option_string)
         sys.exit(1)
     called_args.add(option_string)
 

@@ -39,7 +39,7 @@ class CmdTracker(SubCommand):
     def tracker(self) -> TrackerBase:
         trackers = list(build_trackers(get_configured_trackers()))
         if trackers:
-            logger.info(f"Using `{trackers[0]}` tracker to query data")
+            logger.info("using `%s` tracker to query data", trackers[0])
             return trackers[0]
         else:
             raise RuntimeError(

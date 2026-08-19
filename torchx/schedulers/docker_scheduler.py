@@ -199,11 +199,13 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         for image in images:
             if image.startswith("sha256:"):
                 continue
-            log.info(f"Pulling container image: {image} (this may take a while)")
+            log.info("pulling container image: `%s` (this may take a while)", image)
             try:
                 client.images.pull(image)
             except Exception as e:
-                log.warning(f"failed to pull image {image}, falling back to local: {e}")
+                log.warning(
+                    "failed to pull image `%s`, falling back to local: %s", image, e
+                )
 
         ensure_network(self._docker_client)
 

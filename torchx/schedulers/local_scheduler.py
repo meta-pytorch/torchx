@@ -329,7 +329,7 @@ class _LocalReplica:
         try:
             os.killpg(self.proc.pid, signal.SIGTERM)
         except ProcessLookupError as e:
-            log.debug(f"Process {self.proc.pid} already got terminated")
+            log.debug("process %s already got terminated", self.proc.pid)
 
         # close stdout and stderr log file handles
         if self.stdout:
@@ -482,7 +482,7 @@ class _LocalAppDef:
         with open(os.path.join(self.log_dir, "SUCCESS"), "w") as fp:
             fp.write(info_str)
 
-        log.debug(f"Successfully closed app_id: {self.id}.\n{info_str}")
+        log.debug("successfully closed app_id `%s`\n%s", self.id, info_str)
 
     def __repr__(self) -> str:
         role_to_pid = {}
@@ -654,10 +654,10 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
             # evict LRU finished app from the apps cache
             del self._apps[lru_app_id]
 
-            log.debug(f"evicting app: {lru_app_id}, from local scheduler cache")
+            log.debug("evicting app `%s` from local scheduler cache", lru_app_id)
             return True
         else:
-            log.debug(f"no apps evicted, all {len(self._apps)} apps are running")
+            log.debug("no apps evicted, all %s apps are running", len(self._apps))
             return False
 
     def _get_file_io(self, file: str | None) -> io.FileIO | None:
@@ -693,7 +693,7 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         stdout_, stderr_, combined_ = self._get_replica_output_handles(replica_params)
 
         args_pfmt = pprint.pformat(asdict(replica_params), indent=2, width=80)
-        log.debug(f"Running {role_name} (replica {replica_id}):\n {args_pfmt}")
+        log.debug("running `%s` (replica %s):\n %s", role_name, replica_id, args_pfmt)
         env = self._get_replica_env(replica_params)
 
         proc = self.run_local_job(
@@ -789,7 +789,7 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
                 " To preserve log directory set the `log_dir` cfg option"
             )
 
-        log.info(f"Log directory is: {base_log_dir}")
+        log.info("log directory is: `%s`", base_log_dir)
         return os.path.join(str(base_log_dir), self.session_name, app_id)
 
     def schedule(self, dryrun_info: AppDryRunInfo[PopenRequest]) -> str:
@@ -841,18 +841,18 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         # on //caffe2:torch which slows down builds of //torchx:* rules
         gpu_cmd = "nvidia-smi -L"
         try:
-            log.debug(f"Running {gpu_cmd}")
+            log.debug("running `%s`", gpu_cmd)
             result = subprocess.run(
                 gpu_cmd.split(), capture_output=True, text=True, check=True
             )
-            log.debug(f"Cmd {gpu_cmd} returned: {result}")
+            log.debug("cmd `%s` returned: %s", gpu_cmd, result)
             gpus_info = [gpu_info for gpu_info in result.stdout.split("\n") if gpu_info]
             return len(gpus_info)
         except subprocess.CalledProcessError as e:
-            log.exception(f"Got exception while listing GPUs: {e.stderr}")
+            log.exception("got exception while listing GPUs: %s", e.stderr)
             return 0
         except FileNotFoundError:
-            log.warning(f"`{gpu_cmd}` not found, assuming no GPUs on this host")
+            log.warning("`%s` not found, assuming no GPUs on this host", gpu_cmd)
             return 0
 
     def auto_set_CUDA_VISIBLE_DEVICES(
@@ -921,15 +921,17 @@ set the `auto_set_cuda_visible_devices = True` scheduler runopt
         device_count = self._cuda_device_count()
         if total_requested_gpus > device_count:
             log.warning(
-                f"""\n
+                """\n
 ======================================================================
 Cannot auto-set `CUDA_VISIBLE_DEVICES`
-Available GPUs: {device_count} is less than the
-number of requested GPUs: {total_requested_gpus}."
+Available GPUs: %s is less than the
+number of requested GPUs: %s
 
 Reduce requested GPU resources or use a host with more GPUs
 ======================================================================
-                """
+                """,
+                device_count,
+                total_requested_gpus,
             )
             return
 
@@ -1118,7 +1120,7 @@ Reduce requested GPU resources or use a host with more GPUs
     def close(self) -> None:
         # terminate all apps
         for app_id, app in self._apps.items():
-            log.debug(f"Terminating app: {app_id}")
+            log.debug("terminating app `%s`", app_id)
             app.kill()
         # delete only the log dirs torchx created, never a user-provided log_dir
         for tmp_log_dir in self._tmp_log_dirs:
@@ -1132,7 +1134,9 @@ Reduce requested GPU resources or use a host with more GPUs
             # When the `__del__` method is invoked, we cannot rely on presence of object attributes,
             # More info: https://stackoverflow.com/questions/18058730/python-attributeerror-on-del
             log.warning(
-                f"Exception {e} occurred while trying to clean `LocalScheduler` via `__del__` method"
+                "exception %s occurred while trying to clean `LocalScheduler`"
+                " via `__del__` method",
+                e,
             )
 
 

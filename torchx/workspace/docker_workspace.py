@@ -103,7 +103,9 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
                 self._docker_client.images.pull(role.image)
             except Exception as e:
                 log.warning(
-                    f"failed to pull image {role.image}, falling back to local: {e}"
+                    "failed to pull image `%s`, falling back to local: %s",
+                    role.image,
+                    e,
                 )
             log.info("Building workspace docker image (this may take a while)...")
             build_events = self._docker_client.api.build(
@@ -176,7 +178,7 @@ class DockerWorkspaceMixin(WorkspaceMixin[dict[str, tuple[str, str]]]):
 
         client = self._docker_client
         for local, (repo, tag) in images_to_push.items():
-            log.info(f"pushing image {repo}:{tag}...")
+            log.info("pushing image `%s:%s`...", repo, tag)
             img = client.images.get(local)
             img.tag(repo, tag=tag)
             print_push_events(
@@ -245,7 +247,7 @@ def _build_context(img: str, workspace: str) -> IO[bytes]:
 
 def _copy_to_tarfile(workspace: str, tf: tarfile.TarFile) -> None:
     fs, path = fsspec.core.url_to_fs(workspace)
-    log.info(f"Workspace `{workspace}` resolved to filesystem path `{path}`")
+    log.info("workspace `%s` resolved to filesystem path `%s`", workspace, path)
     assert isinstance(path, str), "path must be str"
 
     for dir, dirs, files in walk_workspace(fs, path, ".dockerignore"):
