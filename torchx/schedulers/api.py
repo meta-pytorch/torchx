@@ -452,6 +452,23 @@ class Scheduler(abc.ABC, Generic[T]):
         """Returns app description, or ``None`` if it no longer exists."""
         raise NotImplementedError()
 
+    def describe_native(self, app_id: str) -> Optional[AppDryRunInfo]:
+        """Returns the scheduler-native request of an already-submitted app.
+
+        The read-side twin of :py:meth:`submit_dryrun`: reads the request back
+        from the scheduler, wrapped in the same
+        :py:class:`~torchx.specs.AppDryRunInfo` (same scheduler-specific
+        ``request`` type). Unlike :py:meth:`describe`, which lossily maps the
+        job description onto :py:class:`~torchx.specs.AppDef`, the returned
+        ``request`` preserves scheduler-specific fields with no ``AppDef``
+        equivalent. The ``app``/``cfg`` back-references are populated only
+        where the scheduler retains them.
+
+        Returns ``None`` if this scheduler does not implement native read-back
+        (the default) or if the app no longer exists.
+        """
+        return None
+
     @abc.abstractmethod
     def list(self, cfg: Mapping[str, CfgVal] | None = None) -> List[ListAppResponse]:
         """Lists jobs on this scheduler."""
