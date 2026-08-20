@@ -269,11 +269,18 @@ class Runner:
             info = runner.run(app, "mkube", cfg=cfg, dryrun=True)
             print(info)
 
+        **Does not mutate** *app* -- see :py:meth:`dryrun`, which this delegates
+        to; the workspace build and env injection land on the copy reachable as
+        ``info.app``.
+
         Args:
             dryrun: If ``True``, only validate and render the request
                 without submitting.  Returns :py:class:`~torchx.specs.AppDryRunInfo`.
                 If ``False`` (default), submit and return the
                 :py:data:`~torchx.specs.AppHandle`.
+
+        Raises:
+            ValueError: propagated from :py:meth:`dryrun`.
         """
 
         with log_event(api="run") as ctx:
@@ -311,6 +318,9 @@ class Runner:
 
         .. warning:: Use sparingly. Overwriting many raw scheduler fields may
                      cause your usage to diverge from TorchX's supported API.
+
+        Only ``dryrun_info.request`` is submitted; edits to ``dryrun_info.app``
+        made after :py:meth:`dryrun` returned are **not** re-rendered into it.
         """
         scheduler = none_throws(dryrun_info._scheduler)
         cfg = dryrun_info.cfg
@@ -346,11 +356,45 @@ class Runner:
 
         The returned :py:class:`~torchx.specs.AppDryRunInfo` can be
         ``print()``-ed for inspection or passed to :py:meth:`schedule`.
+
+        **Does not mutate** *app*. The patching this method performs -- building
+        each role's :py:attr:`~torchx.specs.Role.workspace` and repointing
+        ``role.image`` at the built artifact, injecting the ``TORCHX_*`` tracking
+        env vars -- lands on a deep copy, which is returned as
+        :py:attr:`~torchx.specs.AppDryRunInfo.app`. Read the submitted images off
+        that copy, never off the *app* you passed in:
+
+        .. code-block:: python
+
+            app = AppDef(roles=[Role(image="foo:latest", workspace=..., ...)])
+            info = runner.dryrun(app, "kubernetes")
+
+            app.roles[0].image       # "foo:latest" -- unpatched, as authored
+            info.app.roles[0].image  # "foo:<built-workspace-hash>" -- submitted
+
+        ``Role.overrides`` is the one part not copied: the same dict object is
+        shared by the caller's role and the copy, so resolving an override
+        through either is visible to both.
+
+        Two dryruns of the same *app* need not render the same request -- each
+        rebuilds the workspace, and the build may produce a new image. Rendering
+        is reproducible from the returned copy instead:
+
+        .. code-block:: python
+
+            info1 = runner.dryrun(app, "kubernetes", cfg)
+            info2 = runner.dryrun(info1.app, "kubernetes", info1.cfg)
+            assert info1.request == info2.request
+
+        Raises:
+            ValueError: *app* has no roles, or a role has no ``entrypoint`` or
+                a non-positive ``num_replicas``. Schedulers raise from their own
+                ``_validate`` hooks for backend-specific violations.
         """
         # operate on a copy so that the env injection and workspace overwrite
         # below never leak into the caller's AppDef (one AppDef can be
-        # dry-run multiple times); the copy rides in the returned
-        # AppDryRunInfo's `_app`.
+        # dry-run multiple times); the copy is returned as the AppDryRunInfo's
+        # `app`.
         #
         # Role.overrides may already hold non-deepcopyable values (e.g. APF
         # attaches an in-flight fbpkg Future before calling dryrun), so mirror
