@@ -997,9 +997,13 @@ T = TypeVar("T")
 
 
 class AppDryRunInfo(Generic[T]):
-    """Returned by :py:meth:`Scheduler.submit_dryrun <torchx.schedulers.api.Scheduler.submit_dryrun>`.
+    """Wraps a materialized scheduler ``request``.
 
-    Wraps the scheduler ``request`` that *would* have been submitted.
+    Returned by :py:meth:`Scheduler.submit_dryrun
+    <torchx.schedulers.api.Scheduler.submit_dryrun>` (the request that *would*
+    be submitted) and by :py:meth:`Scheduler.describe_native
+    <torchx.schedulers.api.Scheduler.describe_native>` (the request read back
+    from the scheduler for an already-submitted app).
     ``print(info)`` yields a human-readable representation.
     """
 
