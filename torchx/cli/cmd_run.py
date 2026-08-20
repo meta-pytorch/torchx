@@ -323,7 +323,7 @@ class CmdRun(SubCommand):
                         runner, app_handle, log=True, tee_logs=args.tee_logs
                     )
                 else:
-                    logger.info(f"Launched app: {app_handle}")
+                    logger.info("launched app: `%s`", app_handle)
                     app_status = runner.status(app_handle)
                     if app_status:
                         logger.info(app_status.format())
@@ -464,7 +464,7 @@ class CmdRun(SubCommand):
         if not status:
             raise RuntimeError(f"unknown status, wait returned {status}")
 
-        logger.info(f"Job finished: {status.state}")
+        logger.info("job finished: %s", status.state)
 
         if log_thread:
             log_thread.join()

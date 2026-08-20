@@ -550,7 +550,9 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
                 return desc
         except CalledProcessError as e:
             log.info(
-                f"unable to get job info for `{app_id}` with `squeue` ({e.stderr}), trying `sacct`"
+                "unable to get job info for `%s` with `squeue` (%s), trying `sacct`",
+                app_id,
+                e.stderr,
             )
         return self._describe_sacct(app_id)
 

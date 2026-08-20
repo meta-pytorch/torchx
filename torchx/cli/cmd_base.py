@@ -66,7 +66,8 @@ class AppHandleSubCommand(SubCommand):
         """Logs the shared app-not-found error and exits non-zero."""
         scheduler, _, app_id = parse_app_handle(app_handle)
         logger.error(
-            f"AppDef: {app_id},"
-            f" does not exist or has been removed from {scheduler}'s data plane"
+            "AppDef `%s` does not exist or has been removed from `%s`'s data plane",
+            app_id,
+            scheduler,
         )
         sys.exit(1)

@@ -129,7 +129,7 @@ def _extract_tracker_name_and_config_from_environ() -> Mapping[str, str | None]:
 
     tracker_backend_entrypoints = os.environ[settings.ENV_TORCHX_TRACKERS]
     logger.info(
-        f"Trackers: {settings.ENV_TORCHX_TRACKERS}={tracker_backend_entrypoints}"
+        "trackers: %s=%s", settings.ENV_TORCHX_TRACKERS, tracker_backend_entrypoints
     )
 
     entries = {}
@@ -157,13 +157,15 @@ def build_trackers(
         factory = plugin if plugin else load_module(factory_name)
         if not factory or not callable(factory):
             logger.warning(
-                f"no tracker factory `{factory_name}` found in plugins or modules. See https://meta-pytorch.org/torchx/main/tracker.html#module-torchx.tracker"
+                "no tracker factory `%s` found in plugins or modules, see"
+                " https://meta-pytorch.org/torchx/main/tracker.html#module-torchx.tracker",
+                factory_name,
             )
             continue
         if config:
-            logger.info(f"Tracker config found for `{factory_name}` as `{config}`")
+            logger.info("tracker config found for `%s` as `%s`", factory_name, config)
         else:
-            logger.info(f"No tracker config specified for `{factory_name}`")
+            logger.info("no tracker config specified for `%s`", factory_name)
         tracker = factory(config)
         trackers.append(tracker)
     # pyrefly: ignore [bad-return]
@@ -230,7 +232,7 @@ class AppRun:
         trackers = trackers_from_environ()
         if settings.ENV_TORCHX_PARENT_RUN_ID in os.environ:
             parent_run_id = os.environ[settings.ENV_TORCHX_PARENT_RUN_ID]
-            logger.info(f"Tracker parent run ID: '{parent_run_id}'")
+            logger.info("tracker parent run ID: `%s`", parent_run_id)
             for tracker in trackers:
                 tracker.add_source(torchx_job_id, parent_run_id, artifact_name=None)
 

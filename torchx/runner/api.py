@@ -66,8 +66,10 @@ T = TypeVar("T")
 def get_configured_trackers() -> dict[str, str | None]:
     tracker_names = list(get_configs(prefix="torchx", name="tracker").keys())
     if settings.ENV_TORCHX_TRACKERS in os.environ:
-        logger.info(f"Using TORCHX_TRACKERS={tracker_names} as tracker names")
         tracker_names = os.environ[settings.ENV_TORCHX_TRACKERS].split(",")
+        logger.info(
+            "using %s=%s as tracker names", settings.ENV_TORCHX_TRACKERS, tracker_names
+        )
 
     tracker_names_with_config = {}
     for tracker_name in tracker_names:
@@ -77,11 +79,14 @@ def get_configured_trackers() -> dict[str, str | None]:
         if config_env_name in os.environ:
             config_value = os.environ[config_env_name]
             logger.info(
-                f"Using {config_env_name}={config_value} for `{tracker_name}` tracker"
+                "using %s=%s for `%s` tracker",
+                config_env_name,
+                config_value,
+                tracker_name,
             )
 
         tracker_names_with_config[tracker_name] = config_value
-    logger.info(f"Tracker configurations: {tracker_names_with_config}")
+    logger.info("tracker configurations: %s", tracker_names_with_config)
     return tracker_names_with_config
 
 
@@ -374,7 +379,9 @@ class Runner:
         if settings.ENV_TORCHX_PARENT_RUN_ID in os.environ:
             parent_run_id = os.environ[settings.ENV_TORCHX_PARENT_RUN_ID]
             logger.info(
-                f"Using {settings.ENV_TORCHX_PARENT_RUN_ID}={parent_run_id} env variable as tracker parent run id"
+                "using %s=%s env variable as tracker parent run id",
+                settings.ENV_TORCHX_PARENT_RUN_ID,
+                parent_run_id,
             )
 
         configured_trackers = get_configured_trackers()

@@ -67,31 +67,35 @@ class IntegComponentTest:
         runner = get_runner("test-runner")
 
         for app_def in app_defs:
-            log.info(f"Submitting AppDef... (dryrun={dryrun})")
+            log.info("submitting AppDef... (dryrun=%s)", dryrun)
             # get the dryrun info to log the scheduler request
             # then use the schedule (intead of the run API) for job submission
             dryrun_info = runner.dryrun(
                 app_def, scheduler, cfg=cfg, workspace=workspace
             )
-            log.info(f"\nAppDef:\n{dumps(asdict(app_def), indent=4)}")
-            log.info(f"\nScheduler Request:\n{dryrun_info}")
+            log.info("\nAppDef:\n%s", dumps(asdict(app_def), indent=4))
+            log.info("\nScheduler Request:\n%s", dryrun_info)
 
             if not dryrun:
                 app_handle = runner.schedule(dryrun_info)
                 status = runner.status(app_handle)
                 jobs[app_handle] = none_throws(status)
-                log.info(f"Submitted Application ({app_handle})")
+                log.info("submitted application `%s`", app_handle)
             else:
                 log.info(
-                    f"Dryrun, not submitting application to scheduler=`{scheduler}`"
+                    "dryrun, not submitting application to scheduler `%s`", scheduler
                 )
 
         # batch wait for the states
         for app_handle, status in jobs.items():
-            log.info(f"Waiting for {app_handle} to finish...")
+            log.info("waiting for `%s` to finish...", app_handle)
             status = none_throws(runner.wait(app_handle))
             log.info(
-                f"App ({app_handle}) finished with state=`{status.state}` and msg=`{status.msg}` (see application log lines below)"
+                "app `%s` finished with state=`%s` and msg=`%s`"
+                " (see application log lines below)",
+                app_handle,
+                status.state,
+                status.msg,
             )
             jobs[app_handle] = status
 
@@ -108,7 +112,7 @@ class IntegComponentTest:
             handles = group_by_state.setdefault(status.state, [])
             handles.append(app_handle)
 
-        log.info(f"\n{'*'*40}{dumps(group_by_state, indent=4)}\n{'*' * 40}")
+        log.info("\n%s%s\n%s", "*" * 40, dumps(group_by_state, indent=4), "*" * 40)
 
         # assert that all jobs have been successful (jobs not in final state SUCCEEDED are considered a failure)
         num_total = len(jobs)

@@ -1294,7 +1294,11 @@ class runopts:
                 cfg[key] = opt.cast_to_type(val)
             else:
                 logger.warning(
-                    f"{YELLOW_BOLD}Unknown run option passed to scheduler: {key}={val}{RESET}"
+                    "%sunknown run option passed to scheduler: %s=%s%s",
+                    YELLOW_BOLD,
+                    key,
+                    val,
+                    RESET,
                 )
         return cfg
 
