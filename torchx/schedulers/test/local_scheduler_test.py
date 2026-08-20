@@ -853,6 +853,37 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         assert desc_resp is not None
         self.assertEqual(AppState.SUCCEEDED, desc_resp.state)
 
+    def test_describe_native(self) -> None:
+        role = Role(
+            "role1",
+            image=self.test_dir,
+            entrypoint="touch.sh",
+            args=[join(f"{macros.img_root}", "foo.txt")],
+            num_replicas=2,
+        )
+        app = AppDef(name="test_app", roles=[role])
+        cfg = Opts(log_dir=self.test_dir)
+        self.assertIsNone(self.scheduler.describe_native("test_app_0"))
+
+        app_id = self.scheduler.submit(app, cfg)
+        self.wait(app_id)
+
+        info = self.scheduler.describe_native(app_id)
+        assert info is not None
+        request = info.request
+        self.assertEqual(app_id, request.app_id)
+        self.assertEqual(2, len(request.role_params["role1"]))
+        self.assertEqual(app, info.app)
+
+    def test_describe_native_dropped_on_eviction(self) -> None:
+        evicted = _LocalAppDef("evicted", self.test_dir)
+        evicted.set_state(AppState.SUCCEEDED)
+        self.scheduler._apps["evicted"] = evicted
+
+        self.assertTrue(self.scheduler._evict_lru())
+
+        self.assertIsNone(self.scheduler.describe_native("evicted"))
+
     def test_cancel(self) -> None:
         role = Role(
             "role1",

@@ -226,6 +226,56 @@ class SchedulerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             scheduler_mock._validate(app_mock, "local", cfg={})
 
+    def test_describe_native_defaults_to_none(self) -> None:
+        scheduler_mock = SchedulerTest.MockScheduler("test_session")
+        self.assertIsNone(scheduler_mock.describe_native("any_app_id"))
+
+    def test_describe_native_opt_in_round_trips_request(self) -> None:
+        class NativeReadBackScheduler(Scheduler[Mapping[str, CfgVal]]):
+            def __init__(self) -> None:
+                super().__init__("mock", "test_session")
+                self._submitted: dict[str, AppDryRunInfo[str]] = {}
+
+            def schedule(self, dryrun_info: AppDryRunInfo[str]) -> str:
+                app_id = none_throws(dryrun_info.app).name
+                self._submitted[app_id] = dryrun_info
+                return app_id
+
+            def _submit_dryrun(
+                self, app: AppDef, cfg: Mapping[str, CfgVal]
+            ) -> AppDryRunInfo[str]:
+                return AppDryRunInfo(f"native-request-for-{app.name}", str)
+
+            def describe(self, app_id: str) -> DescribeAppResponse | None:
+                return None
+
+            def describe_native(self, app_id: str) -> AppDryRunInfo[str] | None:
+                return self._submitted.get(app_id)
+
+            def list(
+                self, cfg: Mapping[str, CfgVal] | None = None
+            ) -> list[ListAppResponse]:
+                return []
+
+            def _cancel_existing(self, app_id: str) -> None:
+                pass
+
+            def _validate(
+                self, app: AppDef, scheduler: str, cfg: Mapping[str, CfgVal]
+            ) -> None:
+                pass
+
+        scheduler = NativeReadBackScheduler()
+        app = AppDef(
+            name="test_app",
+            roles=[Role(name="sleep", image="", entrypoint="foo.sh")],
+        )
+        app_id = scheduler.submit(app, cfg={})
+
+        info = none_throws(scheduler.describe_native(app_id))
+        self.assertEqual("native-request-for-test_app", info.request)
+        self.assertIsNone(scheduler.describe_native("nonexistent_app_id"))
+
     def test_cancel_not_exists(self) -> None:
         scheduler_mock = SchedulerTest.MockScheduler("test_session")
         with patch.object(scheduler_mock, "_cancel_existing") as cancel_mock:
