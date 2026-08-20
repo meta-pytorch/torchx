@@ -944,6 +944,61 @@ spec:
         with self.assertRaises(ApiException):
             scheduler.describe(app_id)
 
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object")
+    def test_describe_native(self, get_namespaced_custom_object: MagicMock) -> None:
+        resource = {
+            "apiVersion": "batch.volcano.sh/v1alpha1",
+            "kind": "Job",
+            "metadata": {"name": "testid"},
+            "spec": {"queue": "testqueue"},
+        }
+        get_namespaced_custom_object.return_value = resource
+        scheduler = create_scheduler("test")
+
+        info = scheduler.describe_native("testnamespace:testid")
+
+        args, kwargs = get_namespaced_custom_object.call_args
+        self.assertEqual(
+            kwargs,
+            {
+                "group": "batch.volcano.sh",
+                "version": "v1alpha1",
+                "namespace": "testnamespace",
+                "plural": "jobs",
+                "name": "testid",
+            },
+        )
+        assert info is not None
+        self.assertEqual(
+            kubernetes_scheduler.KubernetesJob(images_to_push={}, resource=resource),
+            info.request,
+        )
+
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object")
+    def test_describe_native_not_found(
+        self, get_namespaced_custom_object: MagicMock
+    ) -> None:
+        from kubernetes.client.rest import ApiException
+
+        get_namespaced_custom_object.side_effect = ApiException(
+            status=404, reason="Not Found"
+        )
+        scheduler = create_scheduler("test")
+        self.assertIsNone(scheduler.describe_native("testnamespace:testid"))
+
+    @patch("kubernetes.client.CustomObjectsApi.get_namespaced_custom_object")
+    def test_describe_native_api_exception_other(
+        self, get_namespaced_custom_object: MagicMock
+    ) -> None:
+        from kubernetes.client.rest import ApiException
+
+        get_namespaced_custom_object.side_effect = ApiException(
+            status=500, reason="Internal Server Error"
+        )
+        scheduler = create_scheduler("test")
+        with self.assertRaises(ApiException):
+            scheduler.describe_native("testnamespace:testid")
+
     def test_runopts(self) -> None:
         scheduler = kubernetes_scheduler.create_scheduler("foo")
         runopts = scheduler.run_opts()
