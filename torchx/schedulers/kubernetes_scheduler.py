@@ -1010,6 +1010,29 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             state=app_state,
         )
 
+    def describe_native(self, app_id: str) -> AppDryRunInfo[KubernetesJob] | None:
+        """Reads the live Volcano job resource back from the cluster.
+
+        ``images_to_push`` is empty on read-back: workspace images were
+        already pushed at submit time.
+        """
+        from kubernetes.client.rest import ApiException
+
+        namespace, name = app_id.split(":")
+        try:
+            resource = self._custom_objects_api().get_namespaced_custom_object(
+                group="batch.volcano.sh",
+                version="v1alpha1",
+                namespace=namespace,
+                plural="jobs",
+                name=name,
+            )
+        except ApiException as e:
+            if e.status == 404:
+                return None
+            raise
+        return AppDryRunInfo(KubernetesJob(images_to_push={}, resource=resource), repr)
+
     def log_iter(
         self,
         app_id: str,
