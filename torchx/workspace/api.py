@@ -186,6 +186,24 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         raise NotImplementedError("push is not implemented")
 
 
+def pin_workspace_images(app: AppDef, images: Mapping[Workspace, str]) -> None:
+    """Points each role at its already-built image so submitting *app* skips the rebuild.
+
+    Pairs with :py:meth:`~torchx.runner.Runner.build_workspace`, whose return
+    value *images* is. Mutates *app*: a pinned role gets ``image`` set and
+    ``workspace`` cleared, which is what makes the rebuild a no-op.
+
+    A role whose workspace is absent from *images* is left alone -- it either
+    arrived with a pre-built image (``workspace=None``) that must not be
+    clobbered, or carries a workspace nobody has built yet.
+    """
+    for role in app.roles:
+        image = images.get(role.workspace) if role.workspace else None
+        if image is not None:
+            role.image = image
+            role.workspace = None
+
+
 def _ignore(s: str, patterns: Iterable[str]) -> tuple[int, bool]:
     last_matching_pattern = -1
     match = False

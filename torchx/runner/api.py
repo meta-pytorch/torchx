@@ -39,6 +39,7 @@ from torchx.specs import (
     make_app_handle,
     materialize_appdef,
     parse_app_handle,
+    Role,
     runopts,
     UnknownAppException,
     UnknownSchedulerException,
@@ -343,6 +344,74 @@ class Runner:
 
     def name(self) -> str:
         return self._name
+
+    @overload
+    def build_workspace(
+        self,
+        app_or_role: Role,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
+    ) -> str | None: ...
+
+    @overload
+    def build_workspace(
+        self,
+        app_or_role: AppDef,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
+    ) -> dict[Workspace, str]: ...
+
+    def build_workspace(
+        self,
+        app_or_role: AppDef | Role,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
+    ) -> dict[Workspace, str] | str | None:
+        """Builds the workspaces and returns the images they were built into.
+
+        **Does not mutate** *app_or_role* -- the build runs against a deep copy.
+        Use this to build once and submit the result many times, instead of
+        letting each :py:meth:`run` rebuild:
+
+        .. code-block:: python
+
+            images = runner.build_workspace(app, "kubernetes", cfg)
+            for app in per_region_apps:
+                pin_workspace_images(app, images)
+                runner.run(app, "kubernetes", cfg)
+
+        Given a :py:class:`~torchx.specs.Role`, returns that role's built image,
+        or ``None`` if it has no :py:attr:`~torchx.specs.Role.workspace`. Given
+        an :py:class:`~torchx.specs.AppDef`, returns ``{workspace: image}`` for
+        the roles that have one -- keyed by workspace rather than role name so
+        the result can be pinned onto a *different* ``AppDef`` (the roles that
+        share a workspace are built once, not once each).
+
+        Unlike :py:meth:`dryrun`, this neither validates *app_or_role* nor
+        renders a scheduler request, so it does not fail on request-level
+        problems that are unrelated to building.
+
+        Returns an empty mapping (or ``None``) when *scheduler* has no workspace
+        support -- there is nothing to build.
+        """
+        roles = (
+            copy.deepcopy(app_or_role.roles)
+            if isinstance(app_or_role, AppDef)
+            else [copy.deepcopy(app_or_role)]
+        )
+
+        with log_event("build_workspace", scheduler):
+            sched = self._scheduler(scheduler)
+            if not isinstance(sched, WorkspaceMixin):
+                return None if isinstance(app_or_role, Role) else {}
+            # one call, so roles sharing a workspace hit the shared build cache
+            sched.build_workspaces(roles, sched.run_opts().resolve(cfg or {}))
+
+        if isinstance(app_or_role, Role):
+            return roles[0].image if roles[0].workspace else None
+        return {
+            none_throws(role.workspace): role.image for role in roles if role.workspace
+        }
 
     def dryrun(
         self,
