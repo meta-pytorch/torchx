@@ -63,6 +63,22 @@ When ``workspace=`` is passed to :py:meth:`~torchx.runner.Runner.run` (or
    :py:meth:`~torchx.workspace.WorkspaceMixin.push_images` handle pushing
    the built image to a remote registry.
 
+.. important::
+
+   The role mutated in step 3 belongs to a **copy** of your
+   :py:class:`~torchx.specs.AppDef` that
+   :py:meth:`~torchx.runner.Runner.dryrun` takes before patching -- your own
+   ``AppDef`` still carries the image you authored. To see what was actually
+   submitted, read :py:attr:`~torchx.specs.AppDryRunInfo.app`:
+
+   .. code-block:: python
+
+      info = runner.dryrun(app, "kubernetes", cfg)
+      info.app.roles[0].image  # patched; app.roles[0].image is not
+
+   :py:meth:`~torchx.schedulers.api.Scheduler.submit` takes no such copy and
+   patches the ``AppDef`` you hand it.
+
 .. note::
 
    ``DockerWorkspaceMixin`` uses ``Dockerfile.torchx`` from the workspace root

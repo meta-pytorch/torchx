@@ -7,12 +7,13 @@
 # pyre-strict
 
 import shutil
+import unittest
 from pathlib import Path
 from typing import Mapping
 
-from torchx.specs import CfgVal, Role, Workspace
+from torchx.specs import AppDef, CfgVal, Role, Workspace
 from torchx.test.fixtures import TestWithTmpDir
-from torchx.workspace.api import WorkspaceMixin
+from torchx.workspace.api import pin_workspace_images, WorkspaceMixin
 from typing_extensions import override
 
 IGNORED = "__IGNORED__"
@@ -201,3 +202,35 @@ class CachingWorkspaceTest(TestWithTmpDir):
                 "baz:1": merged_workspace2,
             },
         )
+
+
+class PinWorkspaceImagesTest(unittest.TestCase):
+    @staticmethod
+    def _role(name: str, image: str, workspace: Workspace | None) -> Role:
+        return Role(name=name, image=image, workspace=workspace)
+
+    def test_pins_and_clears_workspace(self) -> None:
+        ws = Workspace.from_str("//ws")
+        app = AppDef("app", roles=[self._role("a", "unbuilt", ws)])
+
+        pin_workspace_images(app, {ws: "built:abc"})
+
+        self.assertEqual("built:abc", app.roles[0].image)
+        self.assertIsNone(app.roles[0].workspace)
+
+    def test_leaves_prebuilt_and_unknown_workspaces_alone(self) -> None:
+        known, unknown = Workspace.from_str("//known"), Workspace.from_str("//unknown")
+        app = AppDef(
+            "app",
+            roles=[
+                self._role("prebuilt", "docker.io/img:1", None),
+                self._role("unknown", "unbuilt", unknown),
+            ],
+        )
+
+        pin_workspace_images(app, {known: "built:abc"})
+
+        self.assertEqual("docker.io/img:1", app.roles[0].image)
+        self.assertIsNone(app.roles[0].workspace)
+        self.assertEqual("unbuilt", app.roles[1].image)
+        self.assertEqual(unknown, app.roles[1].workspace)

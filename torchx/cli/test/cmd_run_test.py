@@ -220,7 +220,7 @@ class CmdRunTest(unittest.TestCase):
 
         app_run_info_stub = AppDryRunInfo("req", lambda x: x)
         req_type_dataclass = dataclasses.make_dataclass("T", [])
-        app_run_info_stub._app = req_type_dataclass()
+        app_run_info_stub.app = req_type_dataclass()
         mock_runner_run.return_value = app_run_info_stub
 
         self.cmd_run.run(args)
