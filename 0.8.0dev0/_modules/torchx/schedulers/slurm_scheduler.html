@@ -1008,7 +1008,9 @@
                 <span class="k">return</span> <span class="n">desc</span>
         <span class="k">except</span> <span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;unable to get job info for `</span><span class="si">{</span><span class="n">app_id</span><span class="si">}</span><span class="s2">` with `squeue` (</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">), trying `sacct`&quot;</span>
+                <span class="s2">&quot;unable to get job info for `</span><span class="si">%s</span><span class="s2">` with `squeue` (</span><span class="si">%s</span><span class="s2">), trying `sacct`&quot;</span><span class="p">,</span>
+                <span class="n">app_id</span><span class="p">,</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_describe_sacct</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span></div>
 

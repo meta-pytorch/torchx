@@ -648,11 +648,13 @@
         <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sha256:&quot;</span><span class="p">):</span>
                 <span class="k">continue</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pulling container image: </span><span class="si">{</span><span class="n">image</span><span class="si">}</span><span class="s2"> (this may take a while)&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;pulling container image: `</span><span class="si">%s</span><span class="s2">` (this may take a while)&quot;</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">client</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;failed to pull image </span><span class="si">{</span><span class="n">image</span><span class="si">}</span><span class="s2">, falling back to local: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;failed to pull image `</span><span class="si">%s</span><span class="s2">`, falling back to local: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">e</span>
+                <span class="p">)</span>
 
         <span class="n">ensure_network</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_docker_client</span><span class="p">)</span>
 

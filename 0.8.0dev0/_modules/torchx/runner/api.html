@@ -500,8 +500,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">get_configured_trackers</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
     <span class="n">tracker_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">get_configs</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;torchx&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;tracker&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_TRACKERS</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using TORCHX_TRACKERS=</span><span class="si">{</span><span class="n">tracker_names</span><span class="si">}</span><span class="s2"> as tracker names&quot;</span><span class="p">)</span>
         <span class="n">tracker_names</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_TRACKERS</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;using </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s</span><span class="s2"> as tracker names&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_TRACKERS</span><span class="p">,</span> <span class="n">tracker_names</span>
+        <span class="p">)</span>
 
     <span class="n">tracker_names_with_config</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">tracker_name</span> <span class="ow">in</span> <span class="n">tracker_names</span><span class="p">:</span>
@@ -511,11 +513,14 @@
         <span class="k">if</span> <span class="n">config_env_name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
             <span class="n">config_value</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">config_env_name</span><span class="p">]</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">config_env_name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">config_value</span><span class="si">}</span><span class="s2"> for `</span><span class="si">{</span><span class="n">tracker_name</span><span class="si">}</span><span class="s2">` tracker&quot;</span>
+                <span class="s2">&quot;using </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s</span><span class="s2"> for `</span><span class="si">%s</span><span class="s2">` tracker&quot;</span><span class="p">,</span>
+                <span class="n">config_env_name</span><span class="p">,</span>
+                <span class="n">config_value</span><span class="p">,</span>
+                <span class="n">tracker_name</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="n">tracker_names_with_config</span><span class="p">[</span><span class="n">tracker_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">config_value</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tracker configurations: </span><span class="si">{</span><span class="n">tracker_names_with_config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;tracker configurations: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">tracker_names_with_config</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tracker_names_with_config</span>
 
 
@@ -827,7 +832,9 @@
         <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_PARENT_RUN_ID</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
             <span class="n">parent_run_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_PARENT_RUN_ID</span><span class="p">]</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_PARENT_RUN_ID</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">parent_run_id</span><span class="si">}</span><span class="s2"> env variable as tracker parent run id&quot;</span>
+                <span class="s2">&quot;using </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s</span><span class="s2"> env variable as tracker parent run id&quot;</span><span class="p">,</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">ENV_TORCHX_PARENT_RUN_ID</span><span class="p">,</span>
+                <span class="n">parent_run_id</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="n">configured_trackers</span> <span class="o">=</span> <span class="n">get_configured_trackers</span><span class="p">()</span>

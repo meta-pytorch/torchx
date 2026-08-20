@@ -776,7 +776,7 @@
     <span class="k">for</span> <span class="n">configfile</span> <span class="ow">in</span> <span class="n">find_configs</span><span class="p">(</span><span class="n">dirs</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">configfile</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">load</span><span class="p">(</span><span class="n">scheduler</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loaded configs from </span><span class="si">{</span><span class="n">configfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;loaded configs from `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">configfile</span><span class="p">)</span></div>
 
 
 
@@ -860,7 +860,11 @@
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section_name</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">section</span><span class="p">:</span>
                         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Loaded config: </span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">configfile</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="s2">&quot;loaded config: </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">=</span><span class="si">%s</span><span class="s2"> from `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span>
+                            <span class="n">prefix</span><span class="p">,</span>
+                            <span class="n">key</span><span class="p">,</span>
+                            <span class="n">value</span><span class="p">,</span>
+                            <span class="n">configfile</span><span class="p">,</span>
                         <span class="p">)</span>
                         <span class="n">section</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -996,9 +1000,13 @@
 
                 <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">` was declared in the [</span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">] section &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot; of the config file but is not a runopt of `</span><span class="si">{</span><span class="n">scheduler</span><span class="si">}</span><span class="s2">` scheduler.&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot; Remove the entry from the config file to no longer see this warning&quot;</span>
+                        <span class="s2">&quot;`</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">` was declared in the [</span><span class="si">%s</span><span class="s2">] section&quot;</span>
+                        <span class="s2">&quot; of the config file but is not a runopt of `</span><span class="si">%s</span><span class="s2">` scheduler,&quot;</span>
+                        <span class="s2">&quot; remove the entry from the config file to no longer see this warning&quot;</span><span class="p">,</span>
+                        <span class="n">name</span><span class="p">,</span>
+                        <span class="n">value</span><span class="p">,</span>
+                        <span class="n">section</span><span class="p">,</span>
+                        <span class="n">scheduler</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># delegate casting to the runopt itself so configfile</span>

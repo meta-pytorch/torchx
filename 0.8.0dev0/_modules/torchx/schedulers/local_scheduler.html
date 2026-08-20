@@ -813,7 +813,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">killpg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ProcessLookupError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="si">}</span><span class="s2"> already got terminated&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;process </span><span class="si">%s</span><span class="s2"> already got terminated&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">)</span>
 
         <span class="c1"># close stdout and stderr log file handles</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
@@ -966,7 +966,7 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span><span class="p">,</span> <span class="s2">&quot;SUCCESS&quot;</span><span class="p">),</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
             <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">info_str</span><span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully closed app_id: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="si">{</span><span class="n">info_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;successfully closed app_id `</span><span class="si">%s</span><span class="s2">`</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">info_str</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">role_to_pid</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1143,10 +1143,10 @@
             <span class="c1"># evict LRU finished app from the apps cache</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">[</span><span class="n">lru_app_id</span><span class="p">]</span>
 
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;evicting app: </span><span class="si">{</span><span class="n">lru_app_id</span><span class="si">}</span><span class="s2">, from local scheduler cache&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;evicting app `</span><span class="si">%s</span><span class="s2">` from local scheduler cache&quot;</span><span class="p">,</span> <span class="n">lru_app_id</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no apps evicted, all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">)</span><span class="si">}</span><span class="s2"> apps are running&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;no apps evicted, all </span><span class="si">%s</span><span class="s2"> apps are running&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">))</span>
             <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_file_io</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">io</span><span class="o">.</span><span class="n">FileIO</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -1182,7 +1182,7 @@
         <span class="n">stdout_</span><span class="p">,</span> <span class="n">stderr_</span><span class="p">,</span> <span class="n">combined_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_replica_output_handles</span><span class="p">(</span><span class="n">replica_params</span><span class="p">)</span>
 
         <span class="n">args_pfmt</span> <span class="o">=</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">asdict</span><span class="p">(</span><span class="n">replica_params</span><span class="p">),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running </span><span class="si">{</span><span class="n">role_name</span><span class="si">}</span><span class="s2"> (replica </span><span class="si">{</span><span class="n">replica_id</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">args_pfmt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;running `</span><span class="si">%s</span><span class="s2">` (replica </span><span class="si">%s</span><span class="s2">):</span><span class="se">\n</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">role_name</span><span class="p">,</span> <span class="n">replica_id</span><span class="p">,</span> <span class="n">args_pfmt</span><span class="p">)</span>
         <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_replica_env</span><span class="p">(</span><span class="n">replica_params</span><span class="p">)</span>
 
         <span class="n">proc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_local_job</span><span class="p">(</span>
@@ -1278,7 +1278,7 @@
                 <span class="s2">&quot; To preserve log directory set the `log_dir` cfg option&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Log directory is: </span><span class="si">{</span><span class="n">base_log_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;log directory is: `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">base_log_dir</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">base_log_dir</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">session_name</span><span class="p">,</span> <span class="n">app_id</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LocalScheduler.schedule">
@@ -1333,18 +1333,18 @@
         <span class="c1"># on //caffe2:torch which slows down builds of //torchx:* rules</span>
         <span class="n">gpu_cmd</span> <span class="o">=</span> <span class="s2">&quot;nvidia-smi -L&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running </span><span class="si">{</span><span class="n">gpu_cmd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;running `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">gpu_cmd</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
                 <span class="n">gpu_cmd</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cmd </span><span class="si">{</span><span class="n">gpu_cmd</span><span class="si">}</span><span class="s2"> returned: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;cmd `</span><span class="si">%s</span><span class="s2">` returned: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">gpu_cmd</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
             <span class="n">gpus_info</span> <span class="o">=</span> <span class="p">[</span><span class="n">gpu_info</span> <span class="k">for</span> <span class="n">gpu_info</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">gpu_info</span><span class="p">]</span>
             <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">gpus_info</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got exception while listing GPUs: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;got exception while listing GPUs: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">gpu_cmd</span><span class="si">}</span><span class="s2">` not found, assuming no GPUs on this host&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">` not found, assuming no GPUs on this host&quot;</span><span class="p">,</span> <span class="n">gpu_cmd</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="LocalScheduler.auto_set_CUDA_VISIBLE_DEVICES">
@@ -1415,15 +1415,17 @@
         <span class="n">device_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_device_count</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">total_requested_gpus</span> <span class="o">&gt;</span> <span class="n">device_count</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span><span class="se">\n</span>
-<span class="s2">======================================================================</span>
-<span class="s2">Cannot auto-set `CUDA_VISIBLE_DEVICES`</span>
-<span class="s2">Available GPUs: </span><span class="si">{</span><span class="n">device_count</span><span class="si">}</span><span class="s2"> is less than the</span>
-<span class="s2">number of requested GPUs: </span><span class="si">{</span><span class="n">total_requested_gpus</span><span class="si">}</span><span class="s2">.&quot;</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;\n</span>
+<span class="sd">======================================================================</span>
+<span class="sd">Cannot auto-set `CUDA_VISIBLE_DEVICES`</span>
+<span class="sd">Available GPUs: %s is less than the</span>
+<span class="sd">number of requested GPUs: %s</span>
 
-<span class="s2">Reduce requested GPU resources or use a host with more GPUs</span>
-<span class="s2">======================================================================</span>
-<span class="s2">                &quot;&quot;&quot;</span>
+<span class="sd">Reduce requested GPU resources or use a host with more GPUs</span>
+<span class="sd">======================================================================</span>
+<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="n">device_count</span><span class="p">,</span>
+                <span class="n">total_requested_gpus</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span>
 
@@ -1624,7 +1626,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># terminate all apps</span>
         <span class="k">for</span> <span class="n">app_id</span><span class="p">,</span> <span class="n">app</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Terminating app: </span><span class="si">{</span><span class="n">app_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;terminating app `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">app_id</span><span class="p">)</span>
             <span class="n">app</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
         <span class="c1"># delete only the log dirs torchx created, never a user-provided log_dir</span>
         <span class="k">for</span> <span class="n">tmp_log_dir</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tmp_log_dirs</span><span class="p">:</span>
@@ -1639,7 +1641,9 @@
             <span class="c1"># When the `__del__` method is invoked, we cannot rely on presence of object attributes,</span>
             <span class="c1"># More info: https://stackoverflow.com/questions/18058730/python-attributeerror-on-del</span>
             <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Exception </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2"> occurred while trying to clean `LocalScheduler` via `__del__` method&quot;</span>
+                <span class="s2">&quot;exception </span><span class="si">%s</span><span class="s2"> occurred while trying to clean `LocalScheduler`&quot;</span>
+                <span class="s2">&quot; via `__del__` method&quot;</span><span class="p">,</span>
+                <span class="n">e</span><span class="p">,</span>
             <span class="p">)</span></div>
 
 

@@ -509,8 +509,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Logs the shared app-not-found error and exits non-zero.&quot;&quot;&quot;</span>
         <span class="n">scheduler</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="n">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;AppDef: </span><span class="si">{</span><span class="n">app_id</span><span class="si">}</span><span class="s2">,&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; does not exist or has been removed from </span><span class="si">{</span><span class="n">scheduler</span><span class="si">}</span><span class="s2">&#39;s data plane&quot;</span>
+            <span class="s2">&quot;AppDef `</span><span class="si">%s</span><span class="s2">` does not exist or has been removed from `</span><span class="si">%s</span><span class="s2">`&#39;s data plane&quot;</span><span class="p">,</span>
+            <span class="n">app_id</span><span class="p">,</span>
+            <span class="n">scheduler</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>

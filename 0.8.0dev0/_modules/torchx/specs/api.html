@@ -1821,7 +1821,11 @@
                 <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">YELLOW_BOLD</span><span class="si">}</span><span class="s2">Unknown run option passed to scheduler: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">val</span><span class="si">}{</span><span class="n">RESET</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">unknown run option passed to scheduler: </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">YELLOW_BOLD</span><span class="p">,</span>
+                    <span class="n">key</span><span class="p">,</span>
+                    <span class="n">val</span><span class="p">,</span>
+                    <span class="n">RESET</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="k">return</span> <span class="n">cfg</span></div>
 
