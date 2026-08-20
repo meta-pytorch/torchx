@@ -1003,12 +1003,16 @@ class AppDryRunInfo(Generic[T]):
 
     Attributes:
         request: The scheduler-specific submit request.
-        app: The resolved :py:class:`AppDef` ``request`` was rendered from --
-            a patched copy of the caller's (built workspace image, injected
-            env vars), not the caller's own. ``None`` until set by
-            :py:meth:`Runner.dryrun <torchx.runner.Runner.dryrun>` or
+        app: The resolved :py:class:`AppDef` ``request`` was rendered from,
+            patched with the built workspace image and the injected ``TORCHX_*``
+            env vars. ``None`` until set by :py:meth:`Scheduler.submit_dryrun
+            <torchx.schedulers.api.Scheduler.submit_dryrun>`. Whether it is the
+            caller's own ``AppDef`` depends on the entry point: via
+            :py:meth:`Runner.dryrun <torchx.runner.Runner.dryrun>` it is a
+            private copy, leaving the caller's untouched; via
             :py:meth:`Scheduler.submit_dryrun
-            <torchx.schedulers.api.Scheduler.submit_dryrun>`.
+            <torchx.schedulers.api.Scheduler.submit_dryrun>` directly it is the
+            very object passed in.
         cfg: The resolved run config (defaults applied). Empty until set
             alongside ``app``.
     """

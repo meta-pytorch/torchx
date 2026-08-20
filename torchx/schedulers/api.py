@@ -395,7 +395,16 @@ class Scheduler(abc.ABC, Generic[T]):
         cfg: T,
         workspace: str | Workspace | None = None,
     ) -> str:
-        """Submits an app directly. Prefer :py:meth:`~torchx.runner.api.Runner.run` for production use."""
+        """Submits an app directly. Prefer :py:meth:`~torchx.runner.api.Runner.run` for production use.
+
+        **Mutates** *app*: unlike :py:meth:`~torchx.runner.api.Runner.run`, no copy
+        is taken, so the workspace build repoints ``app.roles[*].image`` on the
+        caller's own object.
+
+        Raises:
+            ValueError: *workspace* was passed but this scheduler is not a
+                :py:class:`~torchx.workspace.WorkspaceMixin`.
+        """
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
@@ -420,7 +429,19 @@ class Scheduler(abc.ABC, Generic[T]):
         raise NotImplementedError()
 
     def submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
-        """Returns the scheduler request without submitting."""
+        """Returns the scheduler request without submitting.
+
+        **No copy is taken**: the returned
+        :py:attr:`~torchx.specs.AppDryRunInfo.app` *is* the *app* passed in, and
+        :py:meth:`_submit_dryrun` and each role's ``pre_proc`` may mutate it.
+        Callers wanting their :py:class:`~torchx.specs.AppDef` left alone should
+        go through :py:meth:`~torchx.runner.api.Runner.dryrun`, which copies
+        first.
+
+        :py:attr:`~torchx.specs.AppDryRunInfo.cfg` is *cfg* with this
+        scheduler's :py:meth:`run_opts` defaults applied, so it is not
+        necessarily the mapping that was passed in.
+        """
         # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         # pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg
@@ -435,6 +456,22 @@ class Scheduler(abc.ABC, Generic[T]):
 
     @abc.abstractmethod
     def _submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
+        """Renders *app* into this backend's submit request.
+
+        Implementations receive *cfg* already resolved against
+        :py:meth:`run_opts` and read ``role.image`` as final -- building a
+        role's workspace is never their job. Reached through
+        :py:meth:`~torchx.runner.api.Runner.dryrun`, or through
+        :py:meth:`submit` with a *workspace*, that build has already happened
+        and ``role.image`` points at its result; a caller who invokes
+        :py:meth:`submit_dryrun` directly can still hand over roles whose
+        ``workspace`` was never built.
+
+        Mutating *app* is permitted (the caller owns no copy) but discouraged:
+        prefer rendering into the returned
+        :py:class:`~torchx.specs.AppDryRunInfo`. Do not set its ``app``/``cfg``
+        attributes -- :py:meth:`submit_dryrun` does that.
+        """
         raise NotImplementedError()
 
     def run_opts(self) -> runopts:
