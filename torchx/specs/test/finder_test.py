@@ -437,6 +437,104 @@ def comp(msg: str = "hello") -> AppDef:
 """
 
 
+class ModulePathComponentsTest(unittest.TestCase):
+    """Components are addressable by dotted module path: `pkg.mod:fn` / `pkg.mod.fn`."""
+
+    _COMPONENT = """
+from torchx.specs import AppDef, Role
+
+
+def comp(msg: str = "hello") -> AppDef:
+    \"\"\"Test component
+
+    Args:
+        msg: message
+    \"\"\"
+    return AppDef(msg, roles=[Role(name="worker", image="img", entrypoint="echo")])
+
+
+def invalid_comp(msg) -> AppDef:
+    return AppDef(msg, roles=[Role(name="worker", image="img", entrypoint="echo")])
+"""
+
+    def setUp(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+
+        self.test_dir = Path(tempfile.mkdtemp("torchx_finder_module_path_test"))
+        pkg_dir = self.test_dir / "dottedpkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "comp.py").write_text(self._COMPONENT)
+        (pkg_dir / "broken.py").write_text("import nonexistent_dependency_xyz\n")
+        sys.path.append(str(self.test_dir))
+
+    def tearDown(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+        sys.path.remove(str(self.test_dir))
+        for mod in [
+            m for m in sys.modules if m.startswith(("dottedpkg", "nspkg", "brokenpkg"))
+        ]:
+            del sys.modules[mod]
+        shutil.rmtree(self.test_dir)
+
+    def test_module_colon_function(self) -> None:
+        component = get_component("dottedpkg.comp:comp")
+        self.assertEqual("dottedpkg.comp:comp", component.name)
+        self.assertEqual("dottedpkg.comp", component.fn.__module__)
+        self.assertEqual("hello", component.fn().name)
+
+    def test_dotted_name_without_colon(self) -> None:
+        component = get_component("dottedpkg.comp.comp")
+        self.assertEqual("dottedpkg.comp.comp", component.name)
+        self.assertEqual("hello", component.fn().name)
+
+    def test_registered_components_win_over_module_resolution(self) -> None:
+        from torchx.components.utils import echo
+
+        self.assertIs(echo, get_component("utils.echo").fn)
+
+    def test_module_not_found(self) -> None:
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.no_such_module:comp")
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.no_such_module.comp")
+
+    def test_function_not_in_module(self) -> None:
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.comp:no_such_fn")
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.comp.no_such_fn")
+
+    def test_missing_import_inside_module_is_not_masked(self) -> None:
+        with self.assertRaises(ModuleNotFoundError):
+            get_component("dottedpkg.broken.comp")
+
+    def test_broken_parent_package_is_not_masked(self) -> None:
+        pkg_dir = self.test_dir / "brokenpkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("import nonexistent_dependency_xyz\n")
+        (pkg_dir / "comp.py").write_text(self._COMPONENT)
+        with self.assertRaises(ModuleNotFoundError) as ctx:
+            get_component("brokenpkg.comp.comp")
+        self.assertEqual(
+            "nonexistent_dependency_xyz",
+            ctx.exception.name,
+            "the parent package's own import error must propagate, not be"
+            " misreported as component-not-found",
+        )
+
+    def test_invalid_component_in_module(self) -> None:
+        with self.assertRaises(ComponentValidationException):
+            get_component("dottedpkg.comp:invalid_comp")
+
+    def test_namespace_package_rejected(self) -> None:
+        (self.test_dir / "nspkg").mkdir()
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("nspkg:comp")
+
+
 class GetBuiltinSourceTest(unittest.TestCase):
     def setUp(self) -> None:
         # clear caches to avoid stale plugin registry state from other tests
