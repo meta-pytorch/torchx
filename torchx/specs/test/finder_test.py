@@ -9,6 +9,7 @@
 
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from importlib.metadata import EntryPoints
@@ -242,6 +243,296 @@ to your component (see: https://meta-pytorch.org/torchx/latest/component_best_pr
     def test_get_component_invalid(self) -> None:
         with self.assertRaises(ComponentValidationException):
             get_component(f"{current_file_path()}:invalid_component")
+
+
+class ModuleIdentityLoadingTest(unittest.TestCase):
+    """Component files load as regular modules (not exec'd into the finder's globals)."""
+
+    _PKG_COMPONENT = """
+from torchx.specs import AppDef, Role
+
+from idpkg.helper import ROLE_NAME
+
+
+def comp(msg: str = "hello") -> AppDef:
+    \"\"\"Test component
+
+    Args:
+        msg: message
+    \"\"\"
+    return AppDef(msg, roles=[Role(name=ROLE_NAME, image="img", entrypoint="echo")])
+"""
+
+    _STANDALONE_COMPONENT = """
+from torchx.specs import AppDef, Role
+
+from id_neighbor import ROLE_NAME
+
+
+def comp(msg: str = "hello") -> AppDef:
+    \"\"\"Test component
+
+    Args:
+        msg: message
+    \"\"\"
+    return AppDef(msg, roles=[Role(name=ROLE_NAME, image="img", entrypoint="echo")])
+"""
+
+    _HELPER = 'ROLE_NAME = "sibling"\n'
+
+    def setUp(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+
+        self.test_dir = Path(tempfile.mkdtemp("torchx_finder_module_identity_test"))
+
+        pkg_dir = self.test_dir / "idpkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "helper.py").write_text(self._HELPER)
+        (pkg_dir / "idcomp.py").write_text(self._PKG_COMPONENT)
+
+        standalone_dir = self.test_dir / "standalone"
+        standalone_dir.mkdir()
+        (standalone_dir / "id_neighbor.py").write_text(self._HELPER)
+        (standalone_dir / "id_standalone_comp.py").write_text(
+            self._STANDALONE_COMPONENT
+        )
+
+        self._orig_sys_path = list(sys.path)
+
+    def tearDown(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+        sys.path[:] = self._orig_sys_path
+        for mod in [
+            m
+            for m, loaded in sys.modules.items()
+            if m.startswith(("idpkg", "id_neighbor", "id_standalone_comp"))
+            or str(self.test_dir) in (getattr(loaded, "__file__", None) or "")
+        ]:
+            del sys.modules[mod]
+        shutil.rmtree(self.test_dir)
+
+    def test_package_file_component_imports_siblings(self) -> None:
+        component = get_component(f"{self.test_dir / 'idpkg' / 'idcomp.py'}:comp")
+        app = component.fn()
+        self.assertEqual("sibling", app.roles[0].name)
+
+    def test_package_file_component_has_module_identity(self) -> None:
+        filepath = str(self.test_dir / "idpkg" / "idcomp.py")
+        component = get_component(f"{filepath}:comp")
+        self.assertEqual("idpkg.idcomp", component.fn.__module__)
+        self.assertIn("idpkg.idcomp", sys.modules)
+        self.assertEqual(filepath, sys.modules["idpkg.idcomp"].__file__)
+
+    def test_package_file_component_supports_relative_imports(self) -> None:
+        (self.test_dir / "idpkg" / "relcomp.py").write_text(
+            self._PKG_COMPONENT.replace(
+                "from idpkg.helper import ROLE_NAME",
+                "from .helper import ROLE_NAME",
+            )
+        )
+        component = get_component(f"{self.test_dir / 'idpkg' / 'relcomp.py'}:comp")
+        self.assertEqual(
+            "sibling",
+            component.fn().roles[0].name,
+            "the parent package is imported before the leaf, so relative"
+            " imports inside a package component file must resolve",
+        )
+        self.assertIs(
+            sys.modules["idpkg.relcomp"],
+            sys.modules["idpkg"].relcomp,
+            "the loaded leaf must be set as an attribute on its parent"
+            " package, as a real import would",
+        )
+
+    def test_shadowed_package_root_warns(self) -> None:
+        shadow_root = self.test_dir / "shadow_root"
+        shadow_pkg = shadow_root / "idpkg"
+        shadow_pkg.mkdir(parents=True)
+        (shadow_pkg / "__init__.py").write_text("")
+        (shadow_pkg / "helper.py").write_text('ROLE_NAME = "shadowed"\n')
+        (shadow_pkg / "shadowcomp.py").write_text(self._PKG_COMPONENT)
+        sys.path.insert(0, str(self.test_dir))
+        with self.assertLogs("torchx.specs.finder", level="WARNING") as logs:
+            get_component(f"{shadow_pkg / 'shadowcomp.py'}:comp")
+        self.assertTrue(
+            any("shadows" in line for line in logs.output),
+            "loading a component whose package name resolves to a different"
+            " sys.path root must warn about the shadowing",
+        )
+
+    def test_non_identifier_package_dir_loads_standalone(self) -> None:
+        pkg_dir = self.test_dir / "my-pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "helper.py").write_text(self._HELPER)
+        (pkg_dir / "dashcomp.py").write_text(
+            self._STANDALONE_COMPONENT.replace("id_neighbor", "helper")
+        )
+        component = get_component(f"{pkg_dir / 'dashcomp.py'}:comp")
+        self.assertEqual(
+            "dashcomp",
+            component.fn.__module__,
+            "a package dir that is not a valid identifier cannot appear in a"
+            " dotted name; the file must load standalone under its stem",
+        )
+        self.assertEqual("sibling", component.fn().roles[0].name)
+
+    def test_standalone_file_component_imports_neighbors(self) -> None:
+        filepath = str(self.test_dir / "standalone" / "id_standalone_comp.py")
+        component = get_component(f"{filepath}:comp")
+        self.assertEqual("id_standalone_comp", component.fn.__module__)
+        app = component.fn()
+        self.assertEqual("sibling", app.roles[0].name)
+
+    def test_reload_returns_same_module(self) -> None:
+        filepath = str(self.test_dir / "idpkg" / "idcomp.py")
+        fn1 = get_component(f"{filepath}:comp").fn
+        fn2 = get_component(f"{filepath}:comp").fn
+        self.assertIs(fn1, fn2)
+
+    def test_module_name_collision_gets_unique_name(self) -> None:
+        (self.test_dir / "standalone" / "logging.py").write_text(
+            self._STANDALONE_COMPONENT
+        )
+        import logging as stdlib_logging
+
+        filepath = str(self.test_dir / "standalone" / "logging.py")
+        component = get_component(f"{filepath}:comp")
+        self.assertEqual("logging_1", component.fn.__module__)
+        self.assertIs(stdlib_logging, sys.modules["logging"])
+
+    def test_virtual_file_execs_into_synthetic_module(self) -> None:
+        filepath = str(self.test_dir / "does_not_exist.py")
+        with (
+            patch(
+                "torchx.specs.finder.read_conf_file",
+                return_value=self._HELPER + VIRTUAL_COMPONENT_SRC,
+            ),
+            patch(
+                "torchx.specs.file_linter.read_conf_file",
+                return_value=self._HELPER + VIRTUAL_COMPONENT_SRC,
+            ),
+        ):
+            component = get_component(f"{filepath}:comp")
+        self.assertTrue(component.fn.__module__.startswith("torchx_component_file_"))
+        self.assertEqual(filepath, sys.modules[component.fn.__module__].__file__)
+        app = component.fn()
+        self.assertEqual("sibling", app.roles[0].name)
+
+
+VIRTUAL_COMPONENT_SRC = """
+from torchx.specs import AppDef, Role
+
+
+def comp(msg: str = "hello") -> AppDef:
+    \"\"\"Test component
+
+    Args:
+        msg: message
+    \"\"\"
+    return AppDef(msg, roles=[Role(name=ROLE_NAME, image="img", entrypoint="echo")])
+"""
+
+
+class ModulePathComponentsTest(unittest.TestCase):
+    """Components are addressable by dotted module path: `pkg.mod:fn` / `pkg.mod.fn`."""
+
+    _COMPONENT = """
+from torchx.specs import AppDef, Role
+
+
+def comp(msg: str = "hello") -> AppDef:
+    \"\"\"Test component
+
+    Args:
+        msg: message
+    \"\"\"
+    return AppDef(msg, roles=[Role(name="worker", image="img", entrypoint="echo")])
+
+
+def invalid_comp(msg) -> AppDef:
+    return AppDef(msg, roles=[Role(name="worker", image="img", entrypoint="echo")])
+"""
+
+    def setUp(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+
+        self.test_dir = Path(tempfile.mkdtemp("torchx_finder_module_path_test"))
+        pkg_dir = self.test_dir / "dottedpkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "comp.py").write_text(self._COMPONENT)
+        (pkg_dir / "broken.py").write_text("import nonexistent_dependency_xyz\n")
+        sys.path.append(str(self.test_dir))
+
+    def tearDown(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+        sys.path.remove(str(self.test_dir))
+        for mod in [
+            m for m in sys.modules if m.startswith(("dottedpkg", "nspkg", "brokenpkg"))
+        ]:
+            del sys.modules[mod]
+        shutil.rmtree(self.test_dir)
+
+    def test_module_colon_function(self) -> None:
+        component = get_component("dottedpkg.comp:comp")
+        self.assertEqual("dottedpkg.comp:comp", component.name)
+        self.assertEqual("dottedpkg.comp", component.fn.__module__)
+        self.assertEqual("hello", component.fn().name)
+
+    def test_dotted_name_without_colon(self) -> None:
+        component = get_component("dottedpkg.comp.comp")
+        self.assertEqual("dottedpkg.comp.comp", component.name)
+        self.assertEqual("hello", component.fn().name)
+
+    def test_registered_components_win_over_module_resolution(self) -> None:
+        from torchx.components.utils import echo
+
+        self.assertIs(echo, get_component("utils.echo").fn)
+
+    def test_module_not_found(self) -> None:
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.no_such_module:comp")
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.no_such_module.comp")
+
+    def test_function_not_in_module(self) -> None:
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.comp:no_such_fn")
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("dottedpkg.comp.no_such_fn")
+
+    def test_missing_import_inside_module_is_not_masked(self) -> None:
+        with self.assertRaises(ModuleNotFoundError):
+            get_component("dottedpkg.broken.comp")
+
+    def test_broken_parent_package_is_not_masked(self) -> None:
+        pkg_dir = self.test_dir / "brokenpkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("import nonexistent_dependency_xyz\n")
+        (pkg_dir / "comp.py").write_text(self._COMPONENT)
+        with self.assertRaises(ModuleNotFoundError) as ctx:
+            get_component("brokenpkg.comp.comp")
+        self.assertEqual(
+            "nonexistent_dependency_xyz",
+            ctx.exception.name,
+            "the parent package's own import error must propagate, not be"
+            " misreported as component-not-found",
+        )
+
+    def test_invalid_component_in_module(self) -> None:
+        with self.assertRaises(ComponentValidationException):
+            get_component("dottedpkg.comp:invalid_comp")
+
+    def test_namespace_package_rejected(self) -> None:
+        (self.test_dir / "nspkg").mkdir()
+        with self.assertRaises(ComponentNotFoundException):
+            get_component("nspkg:comp")
 
 
 class GetBuiltinSourceTest(unittest.TestCase):
