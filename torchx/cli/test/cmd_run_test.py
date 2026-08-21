@@ -10,9 +10,11 @@
 import argparse
 import dataclasses
 import io
+import json
 import os
 import shutil
 import signal
+import sys
 import tempfile
 import unittest
 from contextlib import contextmanager
@@ -25,13 +27,14 @@ from torchx.cli.cmd_run import (
     _parse_component_name_and_args,
     CmdBuiltins,
     CmdRun,
+    LOCAL_SCHEDULER_WARNING_MSG,
     torchx_run_args_from_argparse,
     torchx_run_args_from_json,
     TorchXRunArgs,
 )
 from torchx.schedulers.local_scheduler import SignalException
 from torchx.settings import ENV_TORCHXCONFIG
-from torchx.specs import AppDryRunInfo, CfgVal
+from torchx.specs import AppDryRunInfo, AppState, CfgVal
 
 
 @contextmanager
@@ -440,6 +443,176 @@ component = custom.echo
         args = self.parser.parse_args(["--stdin", "--scheduler", default_scheduler])
         # Should not raise any exception since it's the same as default
         self.cmd_run.verify_no_extra_args(args)
+
+    def test_run_inner_local_scheduler_warns_deprecation(self) -> None:
+        runner = MagicMock()
+        dryrun_info_stub = AppDryRunInfo("req", lambda x: x)
+        dryrun_info_stub._app = dataclasses.make_dataclass("T", [])()
+        runner.dryrun_component.return_value = dryrun_info_stub
+        run_args = TorchXRunArgs(
+            component_name="utils.echo",
+            scheduler="local",
+            scheduler_args={},
+            dryrun=True,
+        )
+
+        with patch("torchx.cli.cmd_run.config.apply"):
+            with self.assertLogs("torchx.cli.cmd_run", level="WARNING") as logs:
+                self.cmd_run._run_inner(runner, run_args)
+        self.assertTrue(
+            any(LOCAL_SCHEDULER_WARNING_MSG in line for line in logs.output),
+            msg="`-s local` must warn that the `local` scheduler is deprecated",
+        )
+
+    def test_run_inner_remote_scheduler_logs_status_and_waits(self) -> None:
+        runner = MagicMock()
+        runner.run_component.return_value = "kubernetes://session/app_id"
+        runner.status.return_value.format.return_value = "app status"
+        run_args = TorchXRunArgs(
+            component_name="utils.echo",
+            scheduler="kubernetes",
+            scheduler_args={},
+            wait=True,
+            tee_logs=True,
+        )
+
+        with patch.object(self.cmd_run, "_wait_and_exit") as wait_mock:
+            with self.assertLogs("torchx.cli.cmd_run", level="INFO") as logs:
+                self.cmd_run._run_inner(runner, run_args)
+        self.assertTrue(
+            any("app status" in line for line in logs.output),
+            msg="the status returned by the scheduler must be logged on submit",
+        )
+        wait_mock.assert_called_once_with(
+            runner, "kubernetes://session/app_id", log=False, tee_logs=True
+        )
+
+    def test_run_inner_remote_scheduler_none_status_skips_status_log(self) -> None:
+        runner = MagicMock()
+        runner.run_component.return_value = "kubernetes://session/app_id"
+        runner.status.return_value = None
+        run_args = TorchXRunArgs(
+            component_name="utils.echo",
+            scheduler="kubernetes",
+            scheduler_args={},
+        )
+
+        with patch.object(self.cmd_run, "_wait_and_exit") as wait_mock:
+            with self.assertLogs("torchx.cli.cmd_run", level="INFO") as logs:
+                self.cmd_run._run_inner(runner, run_args)
+        self.assertEqual(
+            1,
+            len(logs.output),
+            msg="a None status must skip the status log; only the launched-app"
+            " line may be emitted",
+        )
+        self.assertIn("launched app", logs.output[0])
+        wait_mock.assert_not_called()
+
+    def test_get_torchx_stdin_args_without_stdin_flag_returns_none(self) -> None:
+        args = self.parser.parse_args(["--scheduler", "local_cwd", "utils.echo"])
+        self.assertIsNone(
+            self.cmd_run._get_torchx_stdin_args(args),
+            msg="without --stdin no stdin payload may be read",
+        )
+
+    def test_get_torchx_stdin_args_reads_stdin_once_and_caches(self) -> None:
+        args = self.parser.parse_args(["--stdin"])
+        with patch("sys.stdin", io.StringIO('{"scheduler": "local_cwd"}')):
+            first = self.cmd_run._get_torchx_stdin_args(args)
+        self.assertEqual({"scheduler": "local_cwd"}, first)
+
+        with patch("sys.stdin", io.StringIO("")):
+            second = self.cmd_run._get_torchx_stdin_args(args)
+        self.assertIs(
+            first,
+            second,
+            msg="repeated calls must serve the cached payload, not re-read stdin"
+            " (re-reading the now-empty stdin would exit(1))",
+        )
+
+    def test_torchx_json_from_stdin_dryrun_flag_injected_into_payload(self) -> None:
+        args = self.parser.parse_args(["--stdin", "--dryrun"])
+        with patch("sys.stdin", io.StringIO('{"scheduler": "local_cwd"}')):
+            data = self.cmd_run.torchx_json_from_stdin(args)
+        self.assertEqual(
+            True,
+            data["dryrun"],
+            msg="--dryrun on the CLI must override the stdin payload's dryrun",
+        )
+
+    def test_torchx_json_from_stdin_without_args_leaves_payload_unmodified(
+        self,
+    ) -> None:
+        with patch("sys.stdin", io.StringIO('{"scheduler": "local_cwd"}')):
+            data = self.cmd_run.torchx_json_from_stdin()
+        self.assertEqual(
+            {"scheduler": "local_cwd"},
+            data,
+            msg="without argparse args the stdin payload must pass through untouched",
+        )
+
+    def test_run_dispatches_stdin_payload(self) -> None:
+        args = self.parser.parse_args(["--stdin"])
+        runner = MagicMock()
+        payload = {
+            "scheduler": "local_cwd",
+            "scheduler_args": {},
+            "component_name": "utils.echo",
+        }
+        with patch("sys.stdin", io.StringIO(json.dumps(payload))):
+            with patch.object(self.cmd_run, "_run_from_stdin_args") as stdin_run_mock:
+                self.cmd_run._run(runner, args)
+        stdin_run_mock.assert_called_once_with(runner, payload)
+
+    def test_wait_and_exit_unknown_status_raises(self) -> None:
+        runner = MagicMock()
+        runner.wait.return_value = None
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unknown status",
+            msg="a None from runner.wait must fail loudly, not exit 0",
+        ):
+            self.cmd_run._wait_and_exit(
+                runner, "kubernetes://session/app_id", log=False
+            )
+
+    def test_wait_and_exit_failed_app_exits_nonzero(self) -> None:
+        runner = MagicMock()
+        runner.wait.return_value.state = AppState.FAILED
+        with self.assertRaises(SystemExit) as cm:
+            self.cmd_run._wait_and_exit(
+                runner, "kubernetes://session/app_id", log=False
+            )
+        self.assertEqual(
+            1,
+            cm.exception.code,
+            msg="a non-SUCCEEDED terminal state must exit 1 so callers see the failure",
+        )
+
+    def test_start_log_thread_tee_logs_enabled(self) -> None:
+        runner = MagicMock()
+        tee_thread = MagicMock()
+        with patch(
+            "torchx.cli.cmd_run.tee_logs", return_value=tee_thread
+        ) as tee_logs_mock:
+            returned = self.cmd_run._start_log_thread(
+                runner, "kubernetes://session/app_id", tee_logs_enabled=True
+            )
+        tee_thread.start.assert_called_once()
+        self.assertIs(
+            tee_thread,
+            returned,
+            msg="--tee_logs must stream through tee_logs, not plain get_logs",
+        )
+        kwargs = tee_logs_mock.call_args.kwargs
+        self.assertIs(sys.stderr, kwargs["dst"])
+        self.assertEqual("kubernetes://session/app_id", kwargs["app_handle"])
+        self.assertIs(runner, kwargs["runner"])
+        self.assertTrue(
+            kwargs["should_tail"],
+            msg="the CLI tee path must tail until the job stops producing logs",
+        )
 
     def test_verify_no_extra_args_stdin_with_default_workspace(self) -> None:
         """Test that using default workspace with stdin doesn't conflict."""
