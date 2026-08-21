@@ -11,24 +11,31 @@ import posixpath
 import sys
 import unittest
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from typing import cast
+from unittest.mock import call, MagicMock, patch
 
 import fsspec
 import torchx
+from docker.errors import APIError, DockerException
+from docker.models.containers import Container
 from docker.types import DeviceRequest, Mount
 from torchx import specs
 from torchx.components.dist import ddp
-from torchx.schedulers.api import ListAppResponse, Stream
+from torchx.schedulers.api import ListAppResponse, Scheduler, Stream
 from torchx.schedulers.docker_scheduler import (
     create_scheduler,
     DockerContainer,
     DockerJob,
     DockerScheduler,
+    ensure_network,
     has_docker,
+    LABEL_APP_ID,
+    LABEL_REPLICA_ID,
+    LABEL_ROLE_NAME,
     Opts,
 )
 from torchx.schedulers.test.local_scheduler_test import LocalSchedulerTestUtil
-from torchx.specs.api import AppDef, AppState, Role
+from torchx.specs.api import AppDef, AppDryRunInfo, AppState, Role
 
 
 def _test_app() -> specs.AppDef:
@@ -60,6 +67,26 @@ def _test_app() -> specs.AppDef:
     )
 
     return specs.AppDef("test", roles=[trainer_role])
+
+
+def _mock_container(
+    status: str = "running",
+    exit_code: int = 0,
+    role: str = "trainer",
+    replica_id: int = 0,
+    app_id: str = "app_id_1",
+) -> MagicMock:
+    container = MagicMock(spec=Container)
+    container.status = status
+    container.wait.return_value = {"StatusCode": exit_code}
+    container.labels = {
+        LABEL_APP_ID: app_id,
+        LABEL_ROLE_NAME: role,
+        LABEL_REPLICA_ID: str(replica_id),
+    }
+    # `name` is reserved in the MagicMock constructor so set it afterwards
+    container.name = f"{app_id}-{role}-{replica_id}"
+    return container
 
 
 class DockerSchedulerTest(unittest.TestCase):
@@ -194,7 +221,9 @@ class DockerSchedulerTest(unittest.TestCase):
         self.assertEqual(want, info_2.request.containers[0].kwargs["devices"])
 
     def test_describe_no_containers(self) -> None:
-        with patch.object(self.scheduler, "_get_containers", return_value=[]):
+        client = MagicMock()
+        client.containers.list.return_value = []
+        with patch.object(DockerScheduler, "_docker_client", client):
             self.assertIsNone(self.scheduler.describe("does-not-exist"))
 
     def test_has_docker_no_docker_module(self) -> None:
@@ -258,6 +287,452 @@ class DockerSchedulerTest(unittest.TestCase):
             assert len(name) < 65
             # Assert match container name rules https://github.com/moby/moby/blob/master/daemon/names/names.go#L6
             self.assertRegex(name, r"[a-zA-Z0-9][a-zA-Z0-9_.-]")
+
+    def test_submit_dryrun_unknown_mount_type_raises(self) -> None:
+        app = _test_app()
+        app.roles[0].mounts = [cast(specs.BindMount, "not-a-mount")]
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "unknown mount type",
+            msg="a mount that is not Bind/Volume/DeviceMount must be rejected",
+        ):
+            self.scheduler.submit_dryrun(app, cfg=Opts())
+
+    def test_submit_dryrun_omits_unset_limits(self) -> None:
+        app = specs.AppDef(
+            "test",
+            roles=[
+                specs.Role(
+                    name="worker",
+                    image="pytorch/torchx:latest",
+                    entrypoint="main",
+                    resource=specs.Resource(cpu=-1, gpu=0, memMB=-1),
+                )
+            ],
+        )
+
+        info = self.scheduler.submit_dryrun(app, cfg=Opts())
+
+        kwargs = info.request.containers[0].kwargs
+        for key in (
+            "restart_policy",
+            "mem_limit",
+            "shm_size",
+            "nano_cpus",
+            "device_requests",
+        ):
+            self.assertNotIn(
+                key,
+                kwargs,
+                msg=f"unset retries/resources must not produce a docker `{key}` constraint",
+            )
+        self.assertEqual(
+            {"TORCHX_RANK0_HOST", "TORCHX_IMAGE"},
+            set(cast(dict[str, str], kwargs["environment"]).keys()),
+            msg="a role without env vars must get exactly the torchx-injected ones",
+        )
+
+    def test_ensure_network_default_client(self) -> None:
+        client = MagicMock()
+        with (
+            patch("docker.from_env", return_value=client) as from_env_ctx,
+            patch("filelock.FileLock"),
+        ):
+            ensure_network()
+        from_env_ctx.assert_called_once_with()
+        client.networks.create.assert_called_once_with(
+            name="torchx", driver="bridge", check_duplicate=True
+        )
+
+    def test_ensure_network_swallows_already_exists(self) -> None:
+        client = MagicMock()
+        client.networks.create.side_effect = APIError("network already exists")
+
+        with patch("filelock.FileLock"):
+            ensure_network(client)
+
+        client.networks.create.assert_called_once()
+
+    def test_ensure_network_raises_other_api_errors(self) -> None:
+        client = MagicMock()
+        client.networks.create.side_effect = APIError("permission denied")
+
+        with (
+            patch("filelock.FileLock"),
+            self.assertRaisesRegex(
+                APIError,
+                "permission denied",
+                msg="only the already-exists race is tolerated; other API errors must propagate",
+            ),
+        ):
+            ensure_network(client)
+
+    def test_schedule_pulls_each_image_once_and_skips_digests(self) -> None:
+        job = DockerJob(
+            app_id="app_id_1",
+            containers=[
+                DockerContainer(
+                    image="sha256:0123", command=["echo"], kwargs={"name": "c0"}
+                ),
+                DockerContainer(
+                    image="pytorch/torchx:latest",
+                    command=["echo"],
+                    kwargs={"name": "c1"},
+                ),
+                DockerContainer(
+                    image="pytorch/torchx:latest",
+                    command=["echo"],
+                    kwargs={"name": "c2"},
+                ),
+            ],
+        )
+        client = MagicMock()
+
+        with (
+            patch.object(DockerScheduler, "_docker_client", client),
+            patch(
+                "torchx.schedulers.docker_scheduler.ensure_network"
+            ) as ensure_network_ctx,
+        ):
+            app_id = self.scheduler.schedule(AppDryRunInfo(job, repr))
+
+        self.assertEqual(
+            "app_id_1", app_id, msg="schedule must return the request's app_id"
+        )
+        client.images.pull.assert_called_once_with("pytorch/torchx:latest")
+        ensure_network_ctx.assert_called_once_with(client)
+        self.assertEqual(
+            [
+                call("sha256:0123", ["echo"], detach=True, name="c0"),
+                call("pytorch/torchx:latest", ["echo"], detach=True, name="c1"),
+                call("pytorch/torchx:latest", ["echo"], detach=True, name="c2"),
+            ],
+            client.containers.run.call_args_list,
+            msg="every container must be started detached with its dryrun kwargs",
+        )
+
+    def test_schedule_pull_failure_falls_back_to_local_image(self) -> None:
+        job = DockerJob(
+            app_id="app_id_1",
+            containers=[
+                DockerContainer(
+                    image="pytorch/torchx:latest", command=["echo"], kwargs={}
+                )
+            ],
+        )
+        client = MagicMock()
+        client.images.pull.side_effect = RuntimeError("registry unreachable")
+
+        with (
+            patch.object(DockerScheduler, "_docker_client", client),
+            patch("torchx.schedulers.docker_scheduler.ensure_network"),
+            self.assertLogs("torchx.schedulers.docker_scheduler", level="WARNING"),
+        ):
+            app_id = self.scheduler.schedule(AppDryRunInfo(job, repr))
+
+        self.assertEqual(
+            "app_id_1", app_id, msg="a failed pull must not abort scheduling"
+        )
+        client.containers.run.assert_called_once()
+
+    def test_has_docker_with_healthy_daemon(self) -> None:
+        with patch("docker.from_env", return_value=MagicMock()):
+            self.assertTrue(
+                has_docker(),
+                msg="an importable docker module with a reachable daemon means docker is available",
+            )
+
+    def test_has_docker_daemon_unreachable(self) -> None:
+        with patch("docker.from_env", side_effect=DockerException("daemon down")):
+            self.assertFalse(
+                has_docker(),
+                msg="an unreachable docker daemon means docker is not available",
+            )
+
+    def test_validate_accepts_role_without_resource(self) -> None:
+        app = _test_app()
+        app.roles[0].resource = specs.NULL_RESOURCE
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "No resource for role",
+            msg="the base Scheduler must reject a role without a resource,"
+            " otherwise this test cannot discriminate the override",
+        ):
+            Scheduler._validate(self.scheduler, app, "local_docker", Opts())
+        self.scheduler._validate(app, "local_docker", Opts())
+
+    def test_describe_queries_docker_by_app_id_label(self) -> None:
+        client = MagicMock()
+        client.containers.list.return_value = [_mock_container()]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            desc = self.scheduler.describe("app_id_1")
+
+        self.assertIsNotNone(
+            desc, msg="a docker listing with containers must yield a description"
+        )
+        client.containers.list.assert_called_once_with(
+            all=True, filters={"label": f"{LABEL_APP_ID}=app_id_1"}
+        )
+
+    def test_log_iter_queries_docker_by_replica_labels(self) -> None:
+        container = _mock_container()
+        container.logs.return_value = b"foo\n"
+        client = MagicMock()
+        client.containers.list.return_value = [container]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            logs = list(self.scheduler.log_iter("app_id_1", "trainer", 0))
+
+        self.assertEqual(
+            ["foo\n"],
+            logs,
+            msg="the sole label-matched container's logs must be returned",
+        )
+        client.containers.list.assert_called_once_with(
+            all=True,
+            filters={
+                "label": [
+                    f"{LABEL_APP_ID}=app_id_1",
+                    f"{LABEL_ROLE_NAME}=trainer",
+                    f"{LABEL_REPLICA_ID}=0",
+                ]
+            },
+        )
+
+    def test_log_iter_no_matching_container_raises(self) -> None:
+        client = MagicMock()
+        client.containers.list.return_value = []
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "failed to find container",
+                msg="a missing replica container must be a hard error",
+            ):
+                self.scheduler.log_iter("app_id_1", "trainer", 0)
+
+    def test_log_iter_ambiguous_container_match_raises(self) -> None:
+        client = MagicMock()
+        client.containers.list.return_value = [_mock_container(), _mock_container()]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "found multiple containers",
+                msg="an ambiguous replica label match must be a hard error",
+            ):
+                self.scheduler.log_iter("app_id_1", "trainer", 0)
+
+    def test_cancel_stops_every_replica_container(self) -> None:
+        containers = [_mock_container(status="running", replica_id=i) for i in range(2)]
+        client = MagicMock()
+        client.containers.list.return_value = containers
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            self.scheduler.cancel("app_id_1")
+
+        for container in containers:
+            container.stop.assert_called_once_with()
+
+    def test_cancel_missing_app_is_noop(self) -> None:
+        client = MagicMock()
+        client.containers.list.return_value = []
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            self.scheduler.cancel("does-not-exist")
+
+        self.assertEqual(
+            1,
+            client.containers.list.call_count,
+            msg="cancel on a nonexistent app must stop after the exists() probe;"
+            " stopping containers would query the docker listing a second time",
+        )
+
+    def test_describe_reports_first_non_terminal_state(self) -> None:
+        containers = [
+            _mock_container(status="exited", exit_code=0, replica_id=0),
+            _mock_container(status="running", replica_id=1),
+        ]
+
+        client = MagicMock()
+        client.containers.list.return_value = containers
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            desc = self.scheduler.describe("app_id_1")
+
+        assert desc is not None, "an app with containers must have a description"
+        self.assertEqual(
+            AppState.RUNNING,
+            desc.state,
+            msg="an app with a non-terminal replica must report that replica's state",
+        )
+        self.assertEqual(
+            1,
+            len(desc.roles),
+            msg="replicas of one role must collapse into a single Role entry",
+        )
+        self.assertEqual(
+            2,
+            desc.roles[0].num_replicas,
+            msg="the reconstructed Role must count every replica container",
+        )
+        self.assertEqual(
+            [(0, AppState.SUCCEEDED), (1, AppState.RUNNING)],
+            [(r.id, r.state) for r in desc.roles_statuses[0].replicas],
+            msg="per-replica ids and states must be reported in container order",
+        )
+
+    def test_describe_publishes_image_as_str(self) -> None:
+        tagged = _mock_container()
+        tagged.image.tags = ["pytorch/torchx:latest"]
+        untagged = _mock_container()
+        untagged.image.tags = []
+        untagged.image.id = "sha256:0123"
+        gone = _mock_container()
+        gone.image = None
+
+        for container, want, why in (
+            (
+                tagged,
+                "pytorch/torchx:latest",
+                "a tagged image must publish its first repo tag",
+            ),
+            (
+                untagged,
+                "sha256:0123",
+                "an untagged image must fall back to the image id",
+            ),
+            (
+                gone,
+                specs.UNKNOWN,
+                "a deleted image record must publish the UNKNOWN sentinel",
+            ),
+        ):
+            with self.subTest(why=why):
+                client = MagicMock()
+                client.containers.list.return_value = [container]
+                with patch.object(DockerScheduler, "_docker_client", client):
+                    desc = self.scheduler.describe("app_id_1")
+                assert (
+                    desc is not None
+                ), "an app with containers must have a description"
+                self.assertEqual(want, desc.roles[0].image, msg=why)
+
+    def test_describe_all_replicas_succeeded(self) -> None:
+        containers = [
+            _mock_container(status="exited", exit_code=0, replica_id=i)
+            for i in range(2)
+        ]
+
+        client = MagicMock()
+        client.containers.list.return_value = containers
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            desc = self.scheduler.describe("app_id_1")
+
+        assert desc is not None, "an app with containers must have a description"
+        self.assertEqual(
+            AppState.SUCCEEDED,
+            desc.state,
+            msg="the app succeeds only when every replica succeeded",
+        )
+
+    def test_describe_terminal_with_failed_replica(self) -> None:
+        containers = [
+            _mock_container(status="exited", exit_code=0, replica_id=0),
+            _mock_container(status="exited", exit_code=1, replica_id=1),
+        ]
+
+        client = MagicMock()
+        client.containers.list.return_value = containers
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            desc = self.scheduler.describe("app_id_1")
+
+        assert desc is not None, "an app with containers must have a description"
+        self.assertEqual(
+            AppState.FAILED,
+            desc.state,
+            msg="any failed replica must fail the terminal app state",
+        )
+
+    def test_log_iter_splits_byte_payload(self) -> None:
+        container = _mock_container()
+        container.logs.return_value = b"foo\nbar\n"
+
+        client = MagicMock()
+        client.containers.list.return_value = [container]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            logs = list(self.scheduler.log_iter("app_id_1", "trainer", 0))
+
+        self.assertEqual(
+            ["foo\n", "bar\n"],
+            logs,
+            msg="a non-streaming byte payload must be decoded and split into lines",
+        )
+        container.logs.assert_called_once_with(
+            since=None, until=None, stream=False, stderr=True, stdout=True
+        )
+
+    def test_log_iter_empty_payload(self) -> None:
+        container = _mock_container()
+        container.logs.return_value = b""
+
+        client = MagicMock()
+        client.containers.list.return_value = [container]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            logs = list(self.scheduler.log_iter("app_id_1", "trainer", 0))
+
+        self.assertEqual([], logs, msg="an empty log payload must yield no lines")
+
+    def test_log_iter_stream_with_regex(self) -> None:
+        container = _mock_container()
+        container.logs.return_value = iter([b"foo\n", b"bar\n"])
+
+        client = MagicMock()
+        client.containers.list.return_value = [container]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            logs = list(
+                self.scheduler.log_iter(
+                    "app_id_1",
+                    "trainer",
+                    0,
+                    regex="bar",
+                    should_tail=True,
+                    streams=Stream.STDOUT,
+                )
+            )
+
+        self.assertEqual(
+            ["bar\n"],
+            logs,
+            msg="streamed byte chunks must be decoded and regex-filtered",
+        )
+        container.logs.assert_called_once_with(
+            since=None, until=None, stream=True, stderr=False, stdout=True
+        )
+
+    def test_list_dedupes_replicas_of_same_app(self) -> None:
+        client = MagicMock()
+        client.containers.list.return_value = [
+            _mock_container(status="running", replica_id=0),
+            _mock_container(status="running", replica_id=1),
+        ]
+
+        with patch.object(DockerScheduler, "_docker_client", client):
+            apps = self.scheduler.list()
+
+        self.assertEqual(
+            [ListAppResponse(app_id="app_id_1", state=AppState.RUNNING)],
+            apps,
+            msg="containers sharing an app-id must dedupe to one ListAppResponse",
+        )
 
 
 if has_docker():
