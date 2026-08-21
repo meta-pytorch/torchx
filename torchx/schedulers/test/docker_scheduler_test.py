@@ -585,6 +585,42 @@ class DockerSchedulerTest(unittest.TestCase):
             msg="per-replica ids and states must be reported in container order",
         )
 
+    def test_describe_publishes_image_as_str(self) -> None:
+        tagged = _mock_container()
+        tagged.image.tags = ["pytorch/torchx:latest"]
+        untagged = _mock_container()
+        untagged.image.tags = []
+        untagged.image.id = "sha256:0123"
+        gone = _mock_container()
+        gone.image = None
+
+        for container, want, why in (
+            (
+                tagged,
+                "pytorch/torchx:latest",
+                "a tagged image must publish its first repo tag",
+            ),
+            (
+                untagged,
+                "sha256:0123",
+                "an untagged image must fall back to the image id",
+            ),
+            (
+                gone,
+                specs.UNKNOWN,
+                "a deleted image record must publish the UNKNOWN sentinel",
+            ),
+        ):
+            with self.subTest(why=why):
+                client = MagicMock()
+                client.containers.list.return_value = [container]
+                with patch.object(DockerScheduler, "_docker_client", client):
+                    desc = self.scheduler.describe("app_id_1")
+                assert (
+                    desc is not None
+                ), "an app with containers must have a description"
+                self.assertEqual(want, desc.roles[0].image, msg=why)
+
     def test_describe_all_replicas_succeeded(self) -> None:
         containers = [
             _mock_container(status="exited", exit_code=0, replica_id=i)
