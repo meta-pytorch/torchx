@@ -31,7 +31,14 @@ from torchx.schedulers.api import (
     StructuredOpts,
 )
 from torchx.settings import ENV_TORCHXCONFIG
-from torchx.specs import AppDef, AppDryRunInfo, CfgVal, runopts, Workspace
+from torchx.specs import (
+    AppDef,
+    AppDryRunInfo,
+    CfgVal,
+    InvalidRunConfigException,
+    runopts,
+    Workspace,
+)
 from torchx.test.fixtures import TestWithTmpDir
 
 
@@ -425,6 +432,69 @@ bFalse = off
         self.assertEqual(True, cfg["bTrue"], "yes must load as True")
         self.assertEqual(False, cfg["bFalse"], "off must load as False")
 
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_canonicalizes_camelcase_keys(self, _) -> None:
+        """A camelCase spelling in the config file loads under the registered key."""
+        config = """#
+[test]
+lTyping = a;b
+"""
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+        self.assertEqual(["a", "b"], cfg["l_typing"])
+        self.assertNotIn("lTyping", cfg)
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_no_override_across_spellings(self, _) -> None:
+        """A cfg value under the registered key is not overridden by a
+        camelCase spelling of the same opt in the config file."""
+        config = """#
+[test]
+lTyping = a;b
+"""
+        cfg: dict[str, CfgVal] = {"l_typing": ["x"]}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+        self.assertEqual(["x"], cfg["l_typing"])
+        self.assertNotIn("lTyping", cfg)
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_conflicting_spellings_raise(self, _) -> None:
+        """Two spellings of one opt with different values must raise instead of
+        letting file order decide which value wins."""
+        config = """#
+[test]
+l_typing = a;b
+lTyping = c;d
+"""
+        with self.assertRaises(InvalidRunConfigException):
+            load(scheduler="test", f=StringIO(config), cfg={})
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_agreeing_spellings_keep_first(self, _) -> None:
+        """Two spellings of one opt with the same value load once, under the
+        registered key (mirrors `runopts.resolve` conflict semantics)."""
+        config = """#
+[test]
+l_typing = a;b
+lTyping = a;b
+"""
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+        self.assertEqual(["a", "b"], cfg["l_typing"])
+        self.assertNotIn("lTyping", cfg)
+
     def test_no_override_load(self) -> None:
         cfg: dict[str, CfgVal] = {"log_dir": "/foo/bar", "debug": 1}
 
@@ -508,6 +578,21 @@ bFalse = off
         # to run, we don't want that)
 
         self.assertEqual("option_that_exists", cfg.get("s"))
+
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_unknown_key_with_none_value_is_skipped(self, _) -> None:
+        """An unknown key must be skipped even when its value is the `None`
+        literal (it previously leaked into cfg through the None shortcut)."""
+        config = """#
+[test]
+a_run_opt_that = None
+"""
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+        self.assertNotIn("a_run_opt_that", cfg)
 
     def test_load_no_section(self) -> None:
         cfg = {}

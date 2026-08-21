@@ -67,9 +67,6 @@ _RPC_ERROR_MESSAGE_RE: Pattern[str] = re.compile(
 #     (most recent call first):
 _EMBEDDED_ERROR_MESSAGE_RE: Pattern[str] = re.compile(r"(?P<msg>.+)\nException.*")
 
-YELLOW_BOLD = "\033[1;33m"
-RESET = "\033[0m"
-
 
 def TORCHX_HOME(*subdir_paths: str) -> pathlib.Path:
     """
@@ -1165,38 +1162,75 @@ class runopts:
             else:
                 return False
 
+    def _valid_options(self) -> str:
+        return ", ".join(sorted(self._opts)) if self._opts else "(none declared)"
+
+    def canonical_key(self, name: str) -> str | None:
+        """Returns the registered key that ``name`` spells, or ``None`` if unknown.
+
+        ``name`` may be the registered key itself or its camelCase alias
+        (e.g. ``"clusterName"`` canonicalizes to a registered ``"cluster_name"``).
+        """
+        if name in self._opts:
+            return name
+        snake = cases.camel_to_snake(name)
+        if snake != name and snake in self._opts:
+            return snake
+        return None
+
     def get(self, name: str) -> runopt | None:
         """Returns the registered option, or ``None``.
 
         Accepts camelCase names (e.g. ``"clusterName"`` resolves ``"cluster_name"``).
         """
-        # _opts maps names to runopt instances (never None), so a None
-        # result unambiguously means the key does not exist.
-        result = self._opts.get(name)
-        if result is None:
-            snake = cases.camel_to_snake(name)
-            if snake != name:
-                result = self._opts.get(snake)
-        return result
+        key = self.canonical_key(name)
+        return self._opts[key] if key is not None else None
 
-    def resolve(self, cfg: Mapping[str, CfgVal]) -> dict[str, CfgVal]:
+    def resolve(
+        self, cfg: Mapping[str, CfgVal], *, ignore_unknown: bool = False
+    ) -> dict[str, CfgVal]:
         """Validates ``cfg`` against registered options, filling defaults.
 
-        Raises :py:class:`InvalidRunConfigException` for missing required options
-        or type mismatches. Accepts camelCase keys.
+        Raises :py:class:`InvalidRunConfigException` for unknown keys, missing
+        required options, or type mismatches. Accepts camelCase aliases of
+        registered keys and canonicalizes them, so the returned cfg holds
+        exactly one spelling per option: the registered one. Passing an option
+        under two spellings with conflicting values raises
+        :py:class:`InvalidRunConfigException`.
+
+        Pass ``ignore_unknown=True`` to let unknown keys pass through
+        unvalidated instead of raising — for facade schedulers that hand the
+        resolved cfg to a backend declaring its own options.
         """
 
-        resolved_cfg: dict[str, CfgVal] = {**cfg}
+        resolved_cfg: dict[str, CfgVal] = {}
+        given_spelling: dict[str, str] = {}  # canonical key -> spelling in cfg
+
+        for given_key, val in cfg.items():
+            cfg_key = self.canonical_key(given_key)
+            if cfg_key is None:
+                if not ignore_unknown:
+                    raise InvalidRunConfigException(
+                        f"Unknown run option `{given_key}`."
+                        f" Valid options are: {self._valid_options()}",
+                        given_key,
+                        cfg,
+                    )
+                resolved_cfg[given_key] = val
+                continue
+            if cfg_key in given_spelling and resolved_cfg[cfg_key] != val:
+                raise InvalidRunConfigException(
+                    f"Run option `{cfg_key}` was passed under two spellings"
+                    f" (`{given_spelling[cfg_key]}` and `{given_key}`) with"
+                    f" conflicting values. Pass it once, as `{cfg_key}`",
+                    cfg_key,
+                    cfg,
+                )
+            given_spelling.setdefault(cfg_key, given_key)
+            resolved_cfg[cfg_key] = val
 
         for cfg_key, runopt in self._opts.items():
             val = resolved_cfg.get(cfg_key)
-
-            # Fallback: try camelCase version of the registered key in cfg
-            if val is None and cfg_key not in resolved_cfg:
-                camel_key = cases.snake_to_camel(cfg_key)
-                if camel_key != cfg_key and camel_key in resolved_cfg:
-                    val = resolved_cfg.pop(camel_key)
-                    resolved_cfg[cfg_key] = val
 
             # check required opt
             if runopt.is_required and val is None:
@@ -1224,8 +1258,8 @@ class runopts:
         """
         Parses scheduler ``cfg`` from a string literal and returns
         a cfg map where the cfg values have been cast into the appropriate
-        types as specified by this runopts object. Unknown keys are ignored
-        and not returned in the resulting map.
+        types as specified by this runopts object. Unknown keys raise
+        :py:class:`InvalidRunConfigException` naming the valid options.
 
         .. note:: Unlike the method ``resolve``, this method does NOT resolve
                   default options or check that the required options are actually
@@ -1264,12 +1298,6 @@ class runopts:
             >>> opts.cfg_from_str("")
             {}
 
-            unknown options are ignored since the value type is unknown
-            hence cannot be cast to the correct type:
-
-            >>> opts.cfg_from_str("UNKNOWN=VALUE")
-            {}
-
             >>> opts.cfg_from_str("FOO=v1")
             {'FOO': ['v1']}
 
@@ -1288,40 +1316,71 @@ class runopts:
         """
 
         cfg: dict[str, CfgVal] = {}
-        for key, val in to_dict(cfg_str).items():
-            opt = self.get(key)
-            if opt:
-                cfg[key] = opt.cast_to_type(val)
-            else:
-                logger.warning(
-                    "%sunknown run option passed to scheduler: %s=%s%s",
-                    YELLOW_BOLD,
+        given_spelling: dict[str, str] = {}
+        cfg_dict = to_dict(cfg_str)
+        for key, val in cfg_dict.items():
+            cfg_key = self.canonical_key(key)
+            if cfg_key is None:
+                raise InvalidRunConfigException(
+                    f"Unknown run option `{key}`."
+                    f" Valid options are: {self._valid_options()}",
                     key,
-                    val,
-                    RESET,
+                    cfg_dict,
                 )
+            cast_val = self._opts[cfg_key].cast_to_type(val)
+            if cfg_key in given_spelling and cfg[cfg_key] != cast_val:
+                raise InvalidRunConfigException(
+                    f"Run option `{cfg_key}` was passed under two spellings"
+                    f" (`{given_spelling[cfg_key]}` and `{key}`) with"
+                    f" conflicting values. Pass it once, as `{cfg_key}`",
+                    cfg_key,
+                    cfg_dict,
+                )
+            given_spelling.setdefault(cfg_key, key)
+            cfg[cfg_key] = cast_val
         return cfg
 
     def cfg_from_json_repr(self, json_repr: str) -> dict[str, CfgVal]:
         """
         Converts the given dict to a valid cfg for this ``runopts`` object.
+
+        Unknown keys raise :py:class:`InvalidRunConfigException` naming the
+        valid options.
         """
         cfg: dict[str, CfgVal] = {}
+        given_spelling: dict[str, str] = {}
         cfg_dict = json.loads(json_repr)
         for key, val in cfg_dict.items():
-            opt = self.get(key)
-            if opt:
-                # Optional runopt cfg values default their value to None,
-                # but use `_type` to specify their type when provided.
-                # Make sure not to treat None's as lists/dictionaries
-                if val is None:
-                    cfg[key] = val
-                elif opt.is_type_list_of_str:
-                    cfg[key] = [str(v) for v in val]
-                elif opt.is_type_dict_of_str:
-                    cfg[key] = {str(k): str(v) for k, v in val.items()}
-                else:
-                    cfg[key] = val
+            cfg_key = self.canonical_key(key)
+            if cfg_key is None:
+                raise InvalidRunConfigException(
+                    f"Unknown run option `{key}`."
+                    f" Valid options are: {self._valid_options()}",
+                    key,
+                    cfg_dict,
+                )
+            opt = self._opts[cfg_key]
+            # Optional runopt cfg values default their value to None,
+            # but use `_type` to specify their type when provided.
+            # Make sure not to treat None's as lists/dictionaries
+            if val is None:
+                cast_val: CfgVal = val
+            elif opt.is_type_list_of_str:
+                cast_val = [str(v) for v in val]
+            elif opt.is_type_dict_of_str:
+                cast_val = {str(k): str(v) for k, v in val.items()}
+            else:
+                cast_val = val
+            if cfg_key in given_spelling and cfg[cfg_key] != cast_val:
+                raise InvalidRunConfigException(
+                    f"Run option `{cfg_key}` was passed under two spellings"
+                    f" (`{given_spelling[cfg_key]}` and `{key}`) with"
+                    f" conflicting values. Pass it once, as `{cfg_key}`",
+                    cfg_key,
+                    cfg_dict,
+                )
+            given_spelling.setdefault(cfg_key, key)
+            cfg[cfg_key] = cast_val
         return cfg
 
     def add(
