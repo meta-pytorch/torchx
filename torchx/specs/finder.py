@@ -7,6 +7,7 @@
 # pyre-strict
 
 import abc
+import functools
 import hashlib
 import importlib
 import importlib.util
@@ -21,7 +22,7 @@ from dataclasses import dataclass, replace
 from inspect import getmembers, isfunction
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Generator
+from typing import Callable, cast, Generator, Protocol
 
 from torchx.specs import AppDef
 from torchx.specs.file_linter import (
@@ -447,13 +448,37 @@ def _load_file_as_module(filepath: str) -> ModuleType:
         return module
 
 
+class _Buildable(Protocol):
+    def build(self) -> AppDef: ...
+
+
+def _component_fn_from_class(cls: Callable[..., _Buildable]) -> Callable[..., AppDef]:
+    """
+    Adapts a class-based component (a class whose constructor params are the
+    component's args and whose ``build(self) -> AppDef`` produces the app) into
+    a component function. ``functools.wraps`` carries the class's signature,
+    docstring, and identity so arg parsing and help rendering see the class.
+    """
+
+    @functools.wraps(cls, updated=())
+    def component_fn(*args: object, **kwargs: object) -> AppDef:
+        return cls(*args, **kwargs).build()
+
+    return component_fn
+
+
 class CustomComponentsFinder(ComponentsFinder):
     """
-    Finds a single component addressed as ``PATH:FUNCTION_NAME``, where ``PATH``
+    Finds a single component addressed as ``PATH:NAME``, where ``PATH``
     is either a path to a python file (``path/to/comp.py:fn``) or a dotted
     module path (``pkg.module:fn``). A ``PATH`` that exists as a file wins over
     the module interpretation; the component must be defined in the named
     file/module (not merely imported into it).
+
+    ``NAME`` is a component function or a class implementing the class-based
+    component contract: constructor params are the component's args and
+    ``build(self) -> AppDef`` produces the app (see
+    :py:func:`_component_fn_from_class`).
     """
 
     def __init__(self, filepath: str, function_name: str) -> None:
@@ -510,6 +535,18 @@ class CustomComponentsFinder(ComponentsFinder):
                 f"Function {self._function_name} does not exist in {self._filepath}"
             )
         app_fn = getattr(module, self._function_name)
+        if inspect.isclass(app_fn):
+            if callable(getattr(app_fn, "build", None)):
+                # the callable-`build` check above is the runtime guard for
+                # this narrowing
+                app_fn = _component_fn_from_class(
+                    cast(Callable[..., _Buildable], app_fn)
+                )
+            else:
+                validation_errors.append(
+                    f"Class component `{self._function_name}` must define"
+                    " a `build(self) -> AppDef` method"
+                )
         fn_desc, _ = get_fn_docstring(app_fn)
         return [
             _Component(
