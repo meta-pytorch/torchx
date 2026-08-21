@@ -586,6 +586,26 @@ class Runner:
                     app = AppDef(name=app_id, roles=desc.roles, metadata=desc.metadata)
             return app
 
+    def describe_native(self, app_handle: AppHandle) -> AppDryRunInfo | None:
+        """Reads the scheduler-native request back for an already-submitted app.
+
+        The read-side twin of :py:meth:`dryrun`: same
+        :py:class:`~torchx.specs.AppDryRunInfo` wrapper, same
+        scheduler-specific ``request`` type. Unlike :py:meth:`describe`, the
+        returned ``request`` preserves scheduler-specific fields that have no
+        :py:class:`~torchx.specs.AppDef` equivalent. Returns ``None`` if the
+        scheduler does not support native read-back or the app no longer
+        exists.
+        """
+        scheduler, scheduler_backend, app_id = self._scheduler_app_id(
+            app_handle, check_session=False
+        )
+        with log_event("describe_native", scheduler_backend, app_id):
+            info = scheduler.describe_native(app_id)
+            if info is not None:
+                info._scheduler = scheduler_backend
+            return info
+
     def log_lines(
         self,
         app_handle: AppHandle,

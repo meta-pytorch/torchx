@@ -665,6 +665,39 @@ class RunnerTest(TestWithTmpDir):
             # unknown app should return None
             self.assertIsNone(runner.describe("local_dir://session1/unknown_app"))
 
+    def test_describe_native(self, _: MagicMock) -> None:
+        with self.get_runner() as runner:
+            role = Role(
+                name="sleep",
+                image=str(self.tmpdir),
+                resource=resource.SMALL,
+                entrypoint="sleep",
+                args=["1"],
+            )
+            app = AppDef("sleeper", roles=[role])
+
+            app_handle = runner.run(app, scheduler="local_dir", cfg=self.cfg)
+            info = none_throws(runner.describe_native(app_handle))
+
+            _scheduler, _session_name, app_id = parse_app_handle(app_handle)
+            self.assertEqual(app_id, info.request.app_id)
+            self.assertEqual("local_dir", info._scheduler)
+            self.assertIsNone(
+                runner.describe_native("local_dir://test_session/unknown_app")
+            )
+
+    def test_describe_native_unsupported_scheduler(self, _: MagicMock) -> None:
+        mock_scheduler = MagicMock(spec=Scheduler)
+        mock_scheduler.describe_native.return_value = None
+
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={
+                "mock": cast(SchedulerFactory, lambda name, **kwargs: mock_scheduler)
+            },
+        ) as runner:
+            self.assertIsNone(runner.describe_native("mock://test_session/some_app_id"))
+
     def test_status(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             role = Role(

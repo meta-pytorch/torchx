@@ -356,7 +356,12 @@ class _LocalAppDef:
     process and has a pid.
     """
 
-    def __init__(self, id: str, log_dir: str) -> None:
+    def __init__(
+        self,
+        id: str,
+        log_dir: str,
+        dryrun_info: "AppDryRunInfo[PopenRequest] | None" = None,
+    ) -> None:
         self.id = id
         # opts.log_dir/<session_name>/<app_id> or /tmp/torchx/<session_name>/<app_id>
         self.log_dir = log_dir
@@ -365,6 +370,7 @@ class _LocalAppDef:
         self.state: AppState = AppState.PENDING
         # time (in seconds since epoch) when the last set_state method() was called
         self.last_updated: float = -1
+        self.dryrun_info = dryrun_info
 
     def add_replica(self, role_name: str, replica: _LocalReplica) -> None:
         procs = self.role_replicas.setdefault(role_name, [])
@@ -807,7 +813,7 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         ), "no app_id collisions expected since uuid4 suffix is used"
 
         os.makedirs(app_log_dir)
-        local_app = _LocalAppDef(app_id, app_log_dir)
+        local_app = _LocalAppDef(app_id, app_log_dir, dryrun_info)
 
         for role_name in request.role_params.keys():
             role_params = request.role_params[role_name]
@@ -1067,6 +1073,12 @@ Reduce requested GPU resources or use a host with more GPUs
         resp.num_restarts = 0
         resp.ui_url = f"file://{local_app.log_dir}"
         return resp
+
+    def describe_native(self, app_id: str) -> "AppDryRunInfo[PopenRequest] | None":
+        """The retained request lives exactly as long as the app's cache
+        entry -- LRU eviction drops it."""
+        local_app = self._apps.get(app_id)
+        return local_app.dryrun_info if local_app else None
 
     def log_iter(
         self,
