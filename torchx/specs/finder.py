@@ -7,12 +7,16 @@
 # pyre-strict
 
 import abc
-import copy
+import hashlib
 import importlib
+import importlib.util
 import inspect
 import logging
 import os
 import pkgutil
+import re
+import sys
+import threading
 from dataclasses import dataclass
 from inspect import getmembers, isfunction
 from pathlib import Path
@@ -263,6 +267,176 @@ class ModuleComponentsFinder(ComponentsFinder):
         return component_defs
 
 
+def _package_identity(filepath: str) -> tuple[str, str] | None:
+    """
+    Derives the dotted module name of the python file at ``filepath`` from its
+    enclosing package (the chain of parent directories carrying ``__init__.py``).
+
+    Returns:
+        ``(module_name, sys_path_root)`` where ``sys_path_root`` is the directory
+        that must be on ``sys.path`` for ``module_name`` (and absolute imports of
+        the file's package siblings) to be importable.
+        ``None`` if ``filepath`` is not part of a package. A dir or stem whose
+        name is not a valid identifier cannot appear in a dotted import, so it
+        bounds the walk.
+    """
+    stem = Path(filepath).stem
+    if not stem.isidentifier():
+        return None
+    directory = os.path.dirname(filepath)
+    parts = [stem]
+    while os.path.isfile(os.path.join(directory, "__init__.py")):
+        basename = os.path.basename(directory)
+        if not basename.isidentifier():
+            break
+        parent = os.path.dirname(directory)
+        parts.append(basename)
+        if parent == directory:
+            break
+        directory = parent
+    if len(parts) == 1:
+        return None
+    return ".".join(reversed(parts)), directory
+
+
+def _is_same_file(path1: str, path2: str) -> bool:
+    try:
+        return os.path.samefile(path1, path2)
+    except OSError:
+        return False
+
+
+# RLock: a loading component file can itself trigger a same-thread load
+_LOAD_LOCK = threading.RLock()
+
+
+def _exec_src_as_module(filepath: str) -> ModuleType:
+    """
+    Loads a component file that does not exist on the local filesystem but whose
+    source is resolvable through ``read_conf_file`` (e.g. served by a
+    ``torchx.file`` entrypoint) by exec-ing the source into a synthetic module.
+    """
+    abspath = os.path.abspath(filepath)
+    # the path digest disambiguates distinct paths that collapse to the same
+    # name under the non-word substitution (`/a/b-c.py` vs `/a/b_c.py`)
+    modname = (
+        "torchx_component_file_"
+        + re.sub(r"\W", "_", abspath).strip("_")
+        + "_"
+        + hashlib.blake2b(abspath.encode(), digest_size=4).hexdigest()
+    )
+    with _LOAD_LOCK:
+        existing = sys.modules.get(modname)
+        if existing is not None:
+            return existing
+
+        file_source = read_conf_file(filepath)
+        module = ModuleType(modname)
+        module.__file__ = abspath
+        sys.modules[modname] = module
+        try:
+            exec(compile(file_source, abspath, "exec"), module.__dict__)  # noqa: P204
+        except BaseException:
+            sys.modules.pop(modname, None)
+            raise
+        return module
+
+
+def _load_file_as_module(filepath: str) -> ModuleType:
+    """
+    Loads the python file at ``filepath`` as a regular module, mirroring how the
+    interpreter itself would load it:
+
+    #. a file inside a package (parent dirs carry ``__init__.py``) loads under
+       its dotted module name with the package root's parent dir appended to
+       ``sys.path`` (as with ``python -m pkg.mod``), so absolute imports of the
+       file's package siblings resolve;
+    #. a standalone file loads under its stem with its directory appended to
+       ``sys.path`` (as with ``python file.py``), so imports of neighboring
+       modules resolve;
+    #. a path not present on the local filesystem falls back to
+       :py:func:`_exec_src_as_module`.
+
+    The module is registered in ``sys.modules``, so functions and classes it
+    defines carry their real ``__module__`` (instead of the finder's) and
+    machinery that resolves ``sys.modules[obj.__module__]`` (``typing``,
+    ``dataclasses``, ``pickle``) works on them. For a package file the parent
+    package is imported first (as a real import would), so relative imports
+    inside the component file resolve; if the package name is shadowed by a
+    different root earlier on ``sys.path``, a warning names both roots.
+    Loading the same file again returns the already-loaded module.
+
+    Limitation: when the derived module name is taken by a DIFFERENT file
+    (e.g. the same dotted name reachable from another ``sys.path`` root), the
+    module loads under a ``_<n>``-suffixed name. That name resolves through
+    ``sys.modules`` but is not importable by the import system, so
+    re-resolution that round-trips through an import (e.g. unpickling in a
+    fresh process) does not work for such modules.
+    """
+    abspath = os.path.abspath(filepath)
+    if not os.path.isfile(abspath):
+        return _exec_src_as_module(filepath)
+
+    identity = _package_identity(abspath)
+    if identity:
+        modname, sys_path_root = identity
+    else:
+        modname, sys_path_root = Path(abspath).stem, os.path.dirname(abspath)
+
+    base_modname = modname
+    with _LOAD_LOCK:
+        collision = 0
+        while (existing := sys.modules.get(modname)) is not None:
+            existing_file = getattr(existing, "__file__", None)
+            if existing_file and _is_same_file(existing_file, abspath):
+                return existing
+            collision += 1
+            modname = f"{base_modname}_{collision}"
+
+        spec = importlib.util.spec_from_file_location(modname, abspath)
+        if spec is None or spec.loader is None:
+            raise ComponentNotFoundException(
+                f"cannot create a module spec for `{abspath}`;"
+                " make sure the file is a regular python source file"
+            )
+        loader = spec.loader
+        module = importlib.util.module_from_spec(spec)
+
+        appended_sys_path = sys_path_root not in sys.path
+        if appended_sys_path:
+            sys.path.append(sys_path_root)
+        parent_name, _, leaf_name = modname.rpartition(".")
+        parent: ModuleType | None = None
+        sys.modules[modname] = module
+        try:
+            if parent_name:
+                parent = importlib.import_module(parent_name)
+                parent_dir = os.path.dirname(getattr(parent, "__file__", "") or "")
+                if parent_dir and not _is_same_file(
+                    parent_dir, os.path.dirname(abspath)
+                ):
+                    logger.warning(
+                        "package `%s` resolves to `%s` (earlier on sys.path),"
+                        " which shadows this component file's own package root"
+                        " `%s`; sibling imports inside `%s` will resolve"
+                        " against the shadowing package",
+                        parent_name,
+                        parent_dir,
+                        os.path.dirname(abspath),
+                        abspath,
+                    )
+                    parent = None
+            loader.exec_module(module)
+        except BaseException:
+            sys.modules.pop(modname, None)
+            if appended_sys_path and sys_path_root in sys.path:
+                sys.path.remove(sys_path_root)
+            raise
+        if parent is not None:
+            setattr(parent, leaf_name, module)
+        return module
+
+
 class CustomComponentsFinder(ComponentsFinder):
     def __init__(self, filepath: str, function_name: str) -> None:
         self._filepath = filepath
@@ -284,16 +458,12 @@ class CustomComponentsFinder(ComponentsFinder):
             self._filepath, self._function_name, validators
         )
 
-        file_source = read_conf_file(self._filepath)
-        namespace = copy.copy(globals())
-        # so that __file__ used inside the component points to the correct file
-        namespace["__file__"] = os.path.abspath(self._filepath)
-        exec(file_source, namespace)  # noqa: P204
-        if self._function_name not in namespace:
+        module = _load_file_as_module(self._filepath)
+        if self._function_name not in vars(module):
             raise ComponentNotFoundException(
                 f"Function {self._function_name} does not exist in file {self._filepath}"
             )
-        app_fn = namespace[self._function_name]
+        app_fn = getattr(module, self._function_name)
         fn_desc, _ = get_fn_docstring(app_fn)
         return [
             _Component(
