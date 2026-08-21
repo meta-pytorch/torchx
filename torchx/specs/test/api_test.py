@@ -1196,6 +1196,56 @@ class RunConfigTest(unittest.TestCase):
         self.assertEqual("foobar", resolved.get("run_as"))
         self.assertEqual(10, resolved.get("priority"), "default should be filled")
 
+    def test_runopts_resolve_camelcase_canonicalized(self) -> None:
+        """resolve() returns only the registered spelling, never the alias."""
+        opts = self.get_runopts()
+        resolved = opts.resolve({"runAs": "foobar", "clusterId": "c1"})
+        self.assertNotIn("runAs", resolved)
+        self.assertNotIn("clusterId", resolved)
+        self.assertEqual("foobar", resolved["run_as"])
+        self.assertEqual("c1", resolved["cluster_id"])
+
+    def test_runopts_resolve_conflicting_spellings_raise(self) -> None:
+        """resolve() raises when an opt is passed under two spellings with
+        different values instead of silently preferring one."""
+        opts = self.get_runopts()
+        with self.assertRaisesRegex(InvalidRunConfigException, "run_as.*two spellings"):
+            opts.resolve({"run_as": "alice", "runAs": "bob"})
+
+    def test_runopts_resolve_equal_spellings_collapse(self) -> None:
+        """resolve() collapses two spellings of an opt with equal values into
+        the registered spelling."""
+        opts = self.get_runopts()
+        resolved = opts.resolve({"run_as": "alice", "runAs": "alice"})
+        self.assertEqual("alice", resolved["run_as"])
+        self.assertNotIn("runAs", resolved)
+
+    def test_cfg_from_str_canonicalizes_camelcase(self) -> None:
+        """cfg_from_str() keys the parsed value by the registered spelling."""
+        opts = self.get_runopts()
+        self.assertDictEqual({"run_as": "alice"}, opts.cfg_from_str("runAs=alice"))
+
+    def test_cfg_from_str_conflicting_spellings_raise(self) -> None:
+        """cfg_from_str() raises when an opt is passed under two spellings
+        with different values."""
+        opts = self.get_runopts()
+        with self.assertRaisesRegex(InvalidRunConfigException, "run_as.*two spellings"):
+            opts.cfg_from_str("run_as=alice,runAs=bob")
+
+    def test_cfg_from_json_repr_canonicalizes_camelcase(self) -> None:
+        """cfg_from_json_repr() keys the parsed value by the registered spelling."""
+        opts = self.get_runopts()
+        self.assertDictEqual(
+            {"run_as": "alice"}, opts.cfg_from_json_repr('{"runAs": "alice"}')
+        )
+
+    def test_cfg_from_json_repr_conflicting_spellings_raise(self) -> None:
+        """cfg_from_json_repr() raises when an opt is passed under two
+        spellings with different values."""
+        opts = self.get_runopts()
+        with self.assertRaisesRegex(InvalidRunConfigException, "run_as.*two spellings"):
+            opts.cfg_from_json_repr('{"run_as": "alice", "runAs": "bob"}')
+
     def test_cfg_from_str(self) -> None:
         opts = runopts()
         opts.add("K", type_=List[str], help="a list opt", default=[])
