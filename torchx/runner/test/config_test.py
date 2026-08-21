@@ -579,6 +579,21 @@ lTyping = a;b
 
         self.assertEqual("option_that_exists", cfg.get("s"))
 
+    @patch(
+        TORCHX_GET_SCHEDULER_FACTORIES,
+        return_value={"test": TestScheduler},
+    )
+    def test_load_unknown_key_with_none_value_is_skipped(self, _) -> None:
+        """An unknown key must be skipped even when its value is the `None`
+        literal (it previously leaked into cfg through the None shortcut)."""
+        config = """#
+[test]
+a_run_opt_that = None
+"""
+        cfg: dict[str, CfgVal] = {}
+        load(scheduler="test", f=StringIO(config), cfg=cfg)
+        self.assertNotIn("a_run_opt_that", cfg)
+
     def test_load_no_section(self) -> None:
         cfg = {}
         load(
