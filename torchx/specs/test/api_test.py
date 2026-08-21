@@ -10,12 +10,13 @@
 import asyncio
 import concurrent
 import copy
+import json
 import os
 import tempfile
 import threading
 import time
 import unittest
-from dataclasses import asdict
+from dataclasses import asdict, FrozenInstanceError
 from pathlib import Path
 from typing import cast, Dict, List, Mapping, Union
 from unittest import mock
@@ -40,6 +41,8 @@ from torchx.specs.api import (
     MalformedAppHandleException,
     MISSING,
     NULL_RESOURCE,
+    Package,
+    PackageKind,
     parse_app_handle,
     ReplicaStatus,
     Resource,
@@ -50,6 +53,7 @@ from torchx.specs.api import (
     runopts,
     TORCHX_HOME,
     UNKNOWN,
+    validate_packages,
     Workspace,
 )
 from torchx.test.fixtures import TestWithTmpDir
@@ -622,6 +626,111 @@ class SentinelsTest(unittest.TestCase):
         # back write it directly, without importing torchx
         self.assertEqual("<UNKNOWN>", UNKNOWN)
         self.assertEqual(UNKNOWN, specs.UNKNOWN)
+
+
+class PackageTest(unittest.TestCase):
+    def test_defaults(self) -> None:
+        pkg = Package(name="profiler")
+        self.assertEqual("", pkg.version)
+        self.assertEqual(PackageKind.ADDON, pkg.kind)
+
+    def test_canonical_str(self) -> None:
+        self.assertEqual("my_env:1", str(Package(name="my_env", version="1")))
+        self.assertEqual("profiler", str(Package(name="profiler")))
+
+    def test_immutable(self) -> None:
+        pkg = Package(name="profiler")
+        for attr, value in [
+            ("name", "other"),
+            ("version", "9"),
+            ("kind", PackageKind.ENV),
+        ]:
+            with self.subTest(attr=attr):
+                with self.assertRaises(FrozenInstanceError):
+                    setattr(pkg, attr, value)
+
+    def test_invalid_name_or_version(self) -> None:
+        for name, version in [
+            ("", ""),
+            ("foo bar", ""),
+            ("foo;bar", ""),
+            ("foo:1", ""),
+            ("foo", "1 2"),
+            ("foo", "1;2"),
+            ("foo", "1:2"),
+        ]:
+            with self.subTest(name=name, version=version):
+                with self.assertRaises(ValueError):
+                    Package(name=name, version=version)
+
+    def test_validate_packages(self) -> None:
+        validate_packages([])
+        validate_packages(
+            [
+                Package(name="my_env", version="1", kind=PackageKind.ENV),
+                Package(name="profiler"),
+                Package(name="tracer", version="2"),
+            ]
+        )
+
+    def test_validate_packages_duplicate_names(self) -> None:
+        with self.assertRaisesRegex(ValueError, "duplicate package names"):
+            validate_packages([Package(name="a"), Package(name="a", version="1")])
+
+    def test_validate_packages_reports_each_duplicate_once(self) -> None:
+        with self.assertRaisesRegex(ValueError, r"\['a', 'b'\]"):
+            validate_packages(
+                [
+                    Package(name="a"),
+                    Package(name="a", version="1"),
+                    Package(name="a", version="2"),
+                    Package(name="b"),
+                    Package(name="b", version="1"),
+                ]
+            )
+
+    def test_validate_packages_multiple_env(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at most one environment"):
+            validate_packages(
+                [
+                    Package(name="a", kind=PackageKind.ENV),
+                    Package(name="b", kind=PackageKind.ENV),
+                ]
+            )
+
+    def test_role_packages_default_empty(self) -> None:
+        self.assertEqual([], Role("foobar", "torch").packages)
+
+    def test_role_validates_packages_on_construction(self) -> None:
+        with self.assertRaisesRegex(ValueError, "duplicate package names"):
+            Role("foobar", "torch", packages=[Package(name="a"), Package(name="a")])
+
+    def test_role_packages_asdict_json_round_trip(self) -> None:
+        role = Role(
+            "trainer",
+            image="torch",
+            packages=[
+                Package(name="my_env", version="1", kind=PackageKind.ENV),
+                Package(name="profiler"),
+            ],
+        )
+        role_dict = json.loads(json.dumps(asdict(role)))
+        self.assertEqual(
+            [
+                {"name": "my_env", "version": "1", "kind": "env"},
+                {"name": "profiler", "version": "", "kind": "addon"},
+            ],
+            role_dict["packages"],
+        )
+        self.assertEqual(
+            role.packages,
+            [
+                Package(
+                    name=p["name"], version=p["version"], kind=PackageKind(p["kind"])
+                )
+                for p in role_dict["packages"]
+            ],
+        )
 
 
 class RoleBuilderTest(unittest.TestCase):
