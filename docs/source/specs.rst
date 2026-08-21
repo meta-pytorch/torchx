@@ -39,6 +39,17 @@ Workspace
 .. autoclass:: Workspace
    :members:
 
+Packages
+------------
+
+.. autoclass:: Package
+   :members:
+
+.. autoclass:: PackageKind
+   :members:
+
+.. autofunction:: validate_packages
+
 Macros
 ------------
 
