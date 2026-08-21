@@ -10,6 +10,7 @@
 import argparse
 import dataclasses
 import io
+import json
 import os
 import shutil
 import signal
@@ -31,7 +32,7 @@ from torchx.cli.cmd_run import (
 )
 from torchx.schedulers.local_scheduler import SignalException
 from torchx.settings import ENV_TORCHXCONFIG
-from torchx.specs import AppDryRunInfo, CfgVal
+from torchx.specs import AppDryRunInfo, AppState, AppStatus, CfgVal
 
 
 @contextmanager
@@ -228,6 +229,97 @@ class CmdRunTest(unittest.TestCase):
         # compatible with python 3.7
         call_kwargs = mock_runner_run.call_args[-1]
         self.assertEqual(call_kwargs["parent_run_id"], "experiment_1")
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_dryrun_json(self, stdout: io.StringIO) -> None:
+        args = self.parser.parse_args(
+            [
+                "--dryrun",
+                "--json",
+                "--scheduler",
+                "local_cwd",
+                "utils.echo",
+                "--image",
+                "/tmp",
+            ]
+        )
+        self.cmd_run.run(args)
+
+        dryrun_json = json.loads(stdout.getvalue())
+        self.assertEqual(dryrun_json["scheduler"], "local_cwd")
+        self.assertEqual(dryrun_json["app"]["name"], "echo")
+        self.assertEqual(len(dryrun_json["app"]["roles"]), 1)
+        self.assertIsInstance(dryrun_json["cfg"], dict)
+        self.assertIn("request", dryrun_json)
+
+    def _mock_runner(self, app_status: AppStatus | None) -> MagicMock:
+        runner = MagicMock()
+        runner.run_component.return_value = "kubernetes://test_session/app_id_1234"
+        runner.status.return_value = app_status
+        runner.wait.return_value = app_status
+        return runner
+
+    def _submit_args(self, wait: bool = False) -> TorchXRunArgs:
+        return TorchXRunArgs(
+            component_name="utils.echo",
+            scheduler="kubernetes",
+            scheduler_args={},
+            wait=wait,
+        )
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_json(self, stdout: io.StringIO) -> None:
+        app_status = AppStatus(
+            state=AppState.RUNNING, ui_url="https://scheduler.example.com/app_id_1234"
+        )
+        self.cmd_run._run_inner(
+            self._mock_runner(app_status), self._submit_args(), json_output=True
+        )
+
+        self.assertEqual(
+            json.loads(stdout.getvalue()),
+            {
+                "handle": "kubernetes://test_session/app_id_1234",
+                "app_id": "app_id_1234",
+                "scheduler": "kubernetes",
+                "state": "RUNNING",
+                "ui_url": "https://scheduler.example.com/app_id_1234",
+            },
+        )
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_json_no_status(self, stdout: io.StringIO) -> None:
+        self.cmd_run._run_inner(
+            self._mock_runner(None), self._submit_args(), json_output=True
+        )
+
+        run_json = json.loads(stdout.getvalue())
+        self.assertIsNone(run_json["state"])
+        self.assertIsNone(run_json["ui_url"])
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_json_wait_failed_exits_nonzero(
+        self, stdout: io.StringIO
+    ) -> None:
+        app_status = AppStatus(state=AppState.FAILED)
+        with self.assertRaises(SystemExit) as cm:
+            self.cmd_run._run_inner(
+                self._mock_runner(app_status),
+                self._submit_args(wait=True),
+                json_output=True,
+            )
+
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(json.loads(stdout.getvalue())["state"], "FAILED")
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_human_output_unchanged(self, stdout: io.StringIO) -> None:
+        app_status = AppStatus(state=AppState.RUNNING)
+        self.cmd_run._run_inner(
+            self._mock_runner(app_status), self._submit_args(), json_output=False
+        )
+
+        self.assertEqual(stdout.getvalue(), "kubernetes://test_session/app_id_1234\n")
 
     def test_parse_component_name_and_args_no_default(self) -> None:
         # set dirs to test tmpdir so tests don't accidentally pick up user's $HOME/.torchxconfig

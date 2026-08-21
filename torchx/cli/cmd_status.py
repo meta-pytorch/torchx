@@ -13,6 +13,7 @@ import logging
 
 from torchx.cli.cmd_base import AppHandleSubCommand
 from torchx.runner import Runner
+from torchx.specs.api import AppStatus, parse_app_handle
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -35,6 +36,16 @@ def parse_list_arg(arg: str) -> list[str] | None:
 
 
 class CmdStatus(AppHandleSubCommand):
+    """``torchx status`` -- prints the status of an app.
+
+    With ``--json`` stdout carries exactly one JSON object with a stable
+    schema (keys are only ever added): ``{"handle": str, "app_id": str,
+    "scheduler": str, "state": str, "num_restarts": int, "roles": list,
+    "msg": str, "structured_error_msg": str, "url": str | None,
+    "ui_url": str | None}``. ``url`` and ``ui_url`` carry the same value;
+    ``ui_url`` is the canonical name.
+    """
+
     def add_arguments(self, subparser: argparse.ArgumentParser) -> None:
         super().add_arguments(subparser)
         subparser.add_argument(
@@ -43,15 +54,28 @@ class CmdStatus(AppHandleSubCommand):
         subparser.add_argument(
             "--json",
             action="store_true",
-            help="output the status in JSON format",
+            help="output the status as a single machine-readable JSON object"
+            " (see the command docstring for the schema)",
         )
 
     def run_with_runner(self, args: argparse.Namespace, runner: Runner) -> None:
-        app_status = runner.status(args.app_handle)
+        self.print_status(args, runner.status(args.app_handle))
+
+    def print_status(
+        self, args: argparse.Namespace, app_status: AppStatus | None
+    ) -> None:
         filter_roles = parse_list_arg(args.roles)
         if app_status:
             if args.json:
-                print(json.dumps(app_status.to_json(filter_roles)))
+                scheduler, _, app_id = parse_app_handle(args.app_handle)
+                status_json = {
+                    **app_status.to_json(filter_roles),
+                    "handle": args.app_handle,
+                    "app_id": app_id,
+                    "scheduler": scheduler,
+                    "ui_url": app_status.ui_url,
+                }
+                print(json.dumps(status_json))
             else:
                 print(app_status.format(filter_roles))
         else:
