@@ -1466,6 +1466,32 @@
         <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="KubernetesScheduler.describe_native">
+<a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.describe_native">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe_native</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the live Volcano job resource back from the cluster.</span>
+
+<span class="sd">        ``images_to_push`` is empty on read-back: workspace images were</span>
+<span class="sd">        already pushed at submit time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes.client.rest</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApiException</span>
+
+        <span class="n">namespace</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">app_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_objects_api</span><span class="p">()</span><span class="o">.</span><span class="n">get_namespaced_custom_object</span><span class="p">(</span>
+                <span class="n">group</span><span class="o">=</span><span class="s2">&quot;batch.volcano.sh&quot;</span><span class="p">,</span>
+                <span class="n">version</span><span class="o">=</span><span class="s2">&quot;v1alpha1&quot;</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span>
+                <span class="n">plural</span><span class="o">=</span><span class="s2">&quot;jobs&quot;</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApiException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">raise</span>
+        <span class="k">return</span> <span class="n">AppDryRunInfo</span><span class="p">(</span><span class="n">KubernetesJob</span><span class="p">(</span><span class="n">images_to_push</span><span class="o">=</span><span class="p">{},</span> <span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">),</span> <span class="nb">repr</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="KubernetesScheduler.log_iter">
 <a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.log_iter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_iter</span><span class="p">(</span>
