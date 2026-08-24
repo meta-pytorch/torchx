@@ -29,6 +29,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -437,6 +438,115 @@ class Workspace:
             )
 
 
+class PackageKind(str, Enum):
+    """The function a :py:class:`Package` serves on the worker.
+
+    1. ENV: the environment/base package — provides the runtime (e.g. a conda
+             env or interpreter) that the role's ``entrypoint`` runs in.
+             At most one per role.
+    2. ADDON: an auxiliary package materialized alongside the environment
+              (tools, sidecars, extra libraries).
+    """
+
+    ENV = "env"
+    ADDON = "addon"
+
+
+@dataclass(frozen=True)
+class Package:
+    """A single software artifact to materialize on a :py:class:`Role`'s workers.
+
+    ``Role.packages`` is the typed replacement for encoding multi-package
+    artifacts into ``Role.image`` as a delimiter-joined string — an
+    order-dependent side-channel where readers split the string and treat a
+    distinguished position as the environment package.
+
+    Contract:
+
+    * **Producers** (components, workspaces) maintain :py:attr:`Role.packages`
+      as a name-keyed set: at most one entry per ``name`` and at most one
+      entry with ``kind=PackageKind.ENV``. Enforced by
+      :py:func:`validate_packages`, which raises — entries are never silently
+      dropped, deduplicated, or truncated.
+    * **Consumers** (schedulers): single-image schedulers ignore ``packages``;
+      ``Role.image`` remains authoritative for them. Schedulers that support
+      multi-package artifacts read ``packages`` when non-empty and may, during
+      the transition, fall back to parsing a legacy joined ``image`` string
+      only when ``packages`` is empty. Core never derives ``image`` from
+      ``packages``; that mapping is scheduler-specific.
+
+    .. doctest::
+
+        >>> from torchx.specs import Package, PackageKind
+        >>> str(Package(name="my_env", version="1", kind=PackageKind.ENV))
+        'my_env:1'
+        >>> str(Package(name="profiler"))  # unpinned addon
+        'profiler'
+
+    Args:
+        name: package name; unique within a role's ``packages``
+        version: version/tag/id pin; empty means unpinned (the consumer's
+            default resolution applies)
+        kind: the package's function on the worker (see :py:class:`PackageKind`)
+    """
+
+    name: str
+    version: str = ""
+    kind: PackageKind = PackageKind.ADDON
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("package `name` must be non-empty")
+        if ":" in self.name:
+            raise ValueError(
+                f"package name {self.name!r} must not contain `:`;"
+                " pass the pin via `version` instead"
+            )
+        if ":" in self.version:
+            raise ValueError(
+                f"package version {self.version!r} must not contain `:`;"
+                " it is the name/version separator in the canonical form"
+            )
+        for attr, value in (("name", self.name), ("version", self.version)):
+            if any(c.isspace() for c in value) or ";" in value:
+                raise ValueError(
+                    f"package {attr} {value!r} must not contain whitespace or `;`"
+                )
+
+    def __str__(self) -> str:
+        """Canonical identifier — a bare name when no version is pinned."""
+        return f"{self.name}:{self.version}" if self.version else self.name
+
+
+def validate_packages(packages: Iterable[Package]) -> None:
+    """Validates the :py:class:`Role.packages <Role>` invariants.
+
+    Raises ``ValueError`` when a package name appears more than once or more
+    than one package has ``kind=PackageKind.ENV``. Called on ``Role``
+    construction; callers that mutate ``role.packages`` afterwards (and
+    schedulers, before consuming it) should re-validate.
+    """
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    env_packages: list[str] = []
+    for pkg in packages:
+        if pkg.name in seen and pkg.name not in duplicates:
+            duplicates.append(pkg.name)
+        seen.add(pkg.name)
+        if pkg.kind == PackageKind.ENV:
+            env_packages.append(pkg.name)
+    if duplicates:
+        raise ValueError(
+            f"duplicate package names: {duplicates}; a role's packages are"
+            " a name-keyed set — replace the existing entry instead"
+        )
+    if len(env_packages) > 1:
+        raise ValueError(
+            f"multiple `{PackageKind.ENV}` packages: {env_packages};"
+            " a role can have at most one environment package"
+        )
+
+
 # sentinel distinguishing "no override registered" from a legitimate None value
 _NO_OVERRIDE: object = object()
 
@@ -608,6 +718,10 @@ class Role:
         workspace: local project directories to mirror on the remote job.
             The ``workspace`` argument on :py:class:`~torchx.runner.api.Runner`
             APIs overrides this on ``roles[0]``.
+        packages: typed multi-package artifact set (name-keyed, at most one
+            :py:attr:`PackageKind.ENV` entry). ``image`` remains authoritative
+            for single-image schedulers. See :py:class:`Package` for the
+            producer/consumer contract and the transition rule.
     """
 
     name: str
@@ -624,12 +738,16 @@ class Role:
     metadata: dict[str, Any] = field(default_factory=dict)
     mounts: list[BindMount | VolumeMount | DeviceMount] = field(default_factory=list)
     workspace: Workspace | None = None
+    packages: list[Package] = field(default_factory=list)
 
     # Deprecated — do not set. Kept while the APF launcher still produces
     # lazy overrides at runtime (apf/launcher/torchx_utils.py sets
     # `role.overrides` from `PkgInfo.lazy_overrides`); removal tracked in
     # T237753541.
     overrides: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        validate_packages(self.packages)
 
     # pyre-ignore
     def __getattribute__(self, attrname: str) -> Any:
