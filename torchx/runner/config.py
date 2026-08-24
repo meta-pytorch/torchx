@@ -557,11 +557,7 @@ def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
                 # DO NOT OVERRIDE existing configs
                 continue
 
-            if value == _NONE:
-                # should map to None (not str 'None')
-                # this also handles empty or None lists
-                cfg[key] = None
-            elif opt is None:
+            if opt is None:
                 log.warning(
                     "`%s = %s` was declared in the [%s] section"
                     " of the config file but is not a runopt of `%s` scheduler,"
@@ -571,6 +567,10 @@ def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
                     section,
                     scheduler,
                 )
+            elif value == _NONE:
+                # should map to None (not str 'None')
+                # this also handles empty or None lists
+                cfg[key] = None
             else:
                 # delegate casting to the runopt itself so configfile
                 # values parse exactly like CLI `-cfg` values

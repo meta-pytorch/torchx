@@ -1164,17 +1164,31 @@ class RunConfigTest(unittest.TestCase):
         with self.assertRaises(InvalidRunConfigException):
             opts.resolve(cfg)
 
-    def test_runopts_resolve_unioned(self) -> None:
-        # runconfigs is a union of all run opts for all schedulers
-        # make sure  opts resolves run configs that have more
-        # configs than it knows about
+    def test_runopts_resolve_unknown_key_raises(self) -> None:
+        """resolve() rejects keys the scheduler does not declare, naming the
+        key and the valid options."""
         opts = self.get_runopts()
         cfg = {
             "run_as": "foobar",
             "some_other_opt": "baz",
         }
 
-        resolved = opts.resolve(cfg)
+        with self.assertRaisesRegex(
+            InvalidRunConfigException,
+            "Unknown run option `some_other_opt`.*cluster_id, priority, run_as",
+        ):
+            opts.resolve(cfg)
+
+    def test_runopts_resolve_ignore_unknown_passes_through(self) -> None:
+        """resolve(ignore_unknown=True) keeps the lenient union behavior for
+        facade schedulers that hand cfg to a backend with its own options."""
+        opts = self.get_runopts()
+        cfg = {
+            "run_as": "foobar",
+            "some_other_opt": "baz",
+        }
+
+        resolved = opts.resolve(cfg, ignore_unknown=True)
         self.assertEqual("foobar", resolved.get("run_as"))
         self.assertEqual(10, resolved.get("priority"))
         self.assertIsNone(resolved.get("cluster_id"))
@@ -1253,9 +1267,7 @@ class RunConfigTest(unittest.TestCase):
         opts.add("E", type_=Dict[str, str], help="a dict opt", default=[])
 
         self.assertDictEqual({}, opts.cfg_from_str(""))
-        self.assertDictEqual({}, opts.cfg_from_str("UNKWN=b"))
         self.assertDictEqual({"K": ["a"], "J": "b"}, opts.cfg_from_str("K=a,J=b"))
-        self.assertDictEqual({"K": ["a"]}, opts.cfg_from_str("K=a,UNKWN=b"))
         self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b"))
         self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a;b"))
         self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b"))
@@ -1273,11 +1285,32 @@ class RunConfigTest(unittest.TestCase):
             {"K": ["a", "b"], "J": "d"}, opts.cfg_from_str("K=a;b;J=d")
         )
         self.assertDictEqual(
-            {"K": ["a"], "J": "d"}, opts.cfg_from_str("J=d,K=a,UNKWN=e")
-        )
-        self.assertDictEqual(
             {"E": {"f": "b", "F": "B"}}, opts.cfg_from_str("E=f:b,F:B")
         )
+
+    def test_cfg_from_str_unknown_key_raises(self) -> None:
+        """cfg_from_str() rejects keys the scheduler does not declare instead
+        of silently dropping them."""
+        opts = runopts()
+        opts.add("K", type_=List[str], help="a list opt", default=[])
+        opts.add("J", type_=str, help="a str opt", required=True)
+
+        for cfg_str in ("UNKWN=b", "K=a,UNKWN=b", "J=d,K=a,UNKWN=e"):
+            with self.assertRaisesRegex(
+                InvalidRunConfigException,
+                "Unknown run option `UNKWN`.*Valid options are: J, K",
+            ):
+                opts.cfg_from_str(cfg_str)
+
+    def test_cfg_from_json_repr_unknown_key_raises(self) -> None:
+        """cfg_from_json_repr() rejects keys the scheduler does not declare
+        instead of silently dropping them."""
+        opts = self.get_runopts()
+        with self.assertRaisesRegex(
+            InvalidRunConfigException,
+            "Unknown run option `UNKWN`.*Valid options are: cluster_id, priority, run_as",
+        ):
+            opts.cfg_from_json_repr('{"run_as": "alice", "UNKWN": "b"}')
 
     def test_cfg_from_str_builtin_generic_types(self) -> None:
         # basically a repeat of "test_cfg_from_str()" but with
@@ -1288,9 +1321,7 @@ class RunConfigTest(unittest.TestCase):
         opts.add("E", type_=dict[str, str], help="a dict opt", default=[])
 
         self.assertDictEqual({}, opts.cfg_from_str(""))
-        self.assertDictEqual({}, opts.cfg_from_str("UNKWN=b"))
         self.assertDictEqual({"K": ["a"], "J": "b"}, opts.cfg_from_str("K=a,J=b"))
-        self.assertDictEqual({"K": ["a"]}, opts.cfg_from_str("K=a,UNKWN=b"))
         self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b"))
         self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a;b"))
         self.assertDictEqual({"K": ["a", "b"]}, opts.cfg_from_str("K=a,b"))
@@ -1306,9 +1337,6 @@ class RunConfigTest(unittest.TestCase):
         )
         self.assertDictEqual(
             {"K": ["a", "b"], "J": "d"}, opts.cfg_from_str("K=a;b;J=d")
-        )
-        self.assertDictEqual(
-            {"K": ["a"], "J": "d"}, opts.cfg_from_str("J=d,K=a,UNKWN=e")
         )
         self.assertDictEqual(
             {"E": {"f": "b", "F": "B"}}, opts.cfg_from_str("E=f:b,F:B")
