@@ -840,7 +840,12 @@
 <span class="sd">    process and has a pid.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">dryrun_info</span><span class="p">:</span> <span class="s2">&quot;AppDryRunInfo[PopenRequest] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
         <span class="c1"># opts.log_dir/&lt;session_name&gt;/&lt;app_id&gt; or /tmp/torchx/&lt;session_name&gt;/&lt;app_id&gt;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span> <span class="o">=</span> <span class="n">log_dir</span>
@@ -849,6 +854,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">:</span> <span class="n">AppState</span> <span class="o">=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">PENDING</span>
         <span class="c1"># time (in seconds since epoch) when the last set_state method() was called</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_updated</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_info</span> <span class="o">=</span> <span class="n">dryrun_info</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">add_replica</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">replica</span><span class="p">:</span> <span class="n">_LocalReplica</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">procs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">role_replicas</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">role_name</span><span class="p">,</span> <span class="p">[])</span>
@@ -1298,7 +1304,7 @@
         <span class="p">),</span> <span class="s2">&quot;no app_id collisions expected since uuid4 suffix is used&quot;</span>
 
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">app_log_dir</span><span class="p">)</span>
-        <span class="n">local_app</span> <span class="o">=</span> <span class="n">_LocalAppDef</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">app_log_dir</span><span class="p">)</span>
+        <span class="n">local_app</span> <span class="o">=</span> <span class="n">_LocalAppDef</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">app_log_dir</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">role_name</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">role_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">role_params</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">role_params</span><span class="p">[</span><span class="n">role_name</span><span class="p">]</span>
@@ -1564,6 +1570,15 @@
         <span class="n">resp</span><span class="o">.</span><span class="n">num_restarts</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">resp</span><span class="o">.</span><span class="n">ui_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;file://</span><span class="si">{</span><span class="n">local_app</span><span class="o">.</span><span class="n">log_dir</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="n">resp</span></div>
+
+
+<div class="viewcode-block" id="LocalScheduler.describe_native">
+<a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.describe_native">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe_native</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AppDryRunInfo[PopenRequest] | None&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The retained request lives exactly as long as the app&#39;s cache</span>
+<span class="sd">        entry -- LRU eviction drops it.&quot;&quot;&quot;</span>
+        <span class="n">local_app</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">local_app</span><span class="o">.</span><span class="n">dryrun_info</span> <span class="k">if</span> <span class="n">local_app</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="LocalScheduler.log_iter">
