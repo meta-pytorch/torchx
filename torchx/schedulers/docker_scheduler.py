@@ -42,6 +42,7 @@ from torchx.specs.api import (
     Role,
     RoleStatus,
     runopts,
+    UNKNOWN,
     VolumeMount,
 )
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
@@ -414,10 +415,16 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             replica_id = container.labels[LABEL_REPLICA_ID]
 
             if role not in roles:
+                # docker-py returns None once the image record is deleted
+                image = container.image
+                if image is None:
+                    image_name = UNKNOWN
+                else:
+                    image_name = image.tags[0] if image.tags else image.id
                 roles[role] = Role(
                     name=role,
                     num_replicas=0,
-                    image=container.image,
+                    image=image_name,
                 )
                 roles_statuses[role] = RoleStatus(role, [])
             roles[role].num_replicas += 1
