@@ -1504,9 +1504,13 @@
 <div class="viewcode-block" id="AppDryRunInfo">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDryRunInfo">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returned by :py:meth:`Scheduler.submit_dryrun &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wraps a materialized scheduler ``request``.</span>
 
-<span class="sd">    Wraps the scheduler ``request`` that *would* have been submitted.</span>
+<span class="sd">    Returned by :py:meth:`Scheduler.submit_dryrun</span>
+<span class="sd">    &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;` (the request that *would*</span>
+<span class="sd">    be submitted) and by :py:meth:`Scheduler.describe_native</span>
+<span class="sd">    &lt;torchx.schedulers.api.Scheduler.describe_native&gt;` (the request read back</span>
+<span class="sd">    from the scheduler for an already-submitted app).</span>
 <span class="sd">    ``print(info)`` yields a human-readable representation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 

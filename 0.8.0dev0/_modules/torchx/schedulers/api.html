@@ -926,6 +926,26 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="Scheduler.describe_native">
+<a class="viewcode-back" href="../../../schedulers.html#torchx.schedulers.api.Scheduler.describe_native">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe_native</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AppDryRunInfo</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the scheduler-native request of an already-submitted app.</span>
+
+<span class="sd">        The read-side twin of :py:meth:`submit_dryrun`: reads the request back</span>
+<span class="sd">        from the scheduler, wrapped in the same</span>
+<span class="sd">        :py:class:`~torchx.specs.AppDryRunInfo` (same scheduler-specific</span>
+<span class="sd">        ``request`` type). Unlike :py:meth:`describe`, which lossily maps the</span>
+<span class="sd">        job description onto :py:class:`~torchx.specs.AppDef`, the returned</span>
+<span class="sd">        ``request`` preserves scheduler-specific fields with no ``AppDef``</span>
+<span class="sd">        equivalent. The ``app``/``cfg`` back-references are populated only</span>
+<span class="sd">        where the scheduler retains them.</span>
+
+<span class="sd">        Returns ``None`` if this scheduler does not implement native read-back</span>
+<span class="sd">        (the default) or if the app no longer exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
 <div class="viewcode-block" id="Scheduler.list">
 <a class="viewcode-back" href="../../../schedulers.html#torchx.schedulers.api.Scheduler.list">[docs]</a>
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
