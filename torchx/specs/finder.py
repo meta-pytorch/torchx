@@ -365,47 +365,20 @@ def _exec_src_as_module(filepath: str) -> ModuleType:
         return module
 
 
-def _load_file_as_module(filepath: str) -> ModuleType:
+def _load_module_from_file(
+    abspath: str, modname: str, sys_path_root: str
+) -> ModuleType:
     """
-    Loads the python file at ``filepath`` as a regular module, mirroring how the
-    interpreter itself would load it:
-
-    #. a file inside a package (parent dirs carry ``__init__.py``) loads under
-       its dotted module name with the package root's parent dir appended to
-       ``sys.path`` (as with ``python -m pkg.mod``), so absolute imports of the
-       file's package siblings resolve;
-    #. a standalone file loads under its stem with its directory appended to
-       ``sys.path`` (as with ``python file.py``), so imports of neighboring
-       modules resolve;
-    #. a path not present on the local filesystem falls back to
-       :py:func:`_exec_src_as_module`.
-
-    The module is registered in ``sys.modules``, so functions and classes it
-    defines carry their real ``__module__`` (instead of the finder's) and
-    machinery that resolves ``sys.modules[obj.__module__]`` (``typing``,
-    ``dataclasses``, ``pickle``) works on them. For a package file the parent
-    package is imported first (as a real import would), so relative imports
-    inside the component file resolve; if the package name is shadowed by a
-    different root earlier on ``sys.path``, a warning names both roots.
-    Loading the same file again returns the already-loaded module.
-
-    Limitation: when the derived module name is taken by a DIFFERENT file
-    (e.g. the same dotted name reachable from another ``sys.path`` root), the
-    module loads under a ``_<n>``-suffixed name. That name resolves through
-    ``sys.modules`` but is not importable by the import system, so
-    re-resolution that round-trips through an import (e.g. unpickling in a
-    fresh process) does not work for such modules.
+    Loads the file at ``abspath`` as module ``modname`` with ``sys_path_root``
+    appended to ``sys.path``. When ``modname`` is dotted, its parent package is
+    imported first (as a real import would), so relative imports inside the
+    file resolve; if the package name is shadowed by a different root earlier
+    on ``sys.path``, a warning names both roots. On failure the ``sys.modules``
+    and ``sys.path`` mutations are rolled back; on success ``sys_path_root``
+    intentionally stays on ``sys.path``. Loading the same file again returns
+    the already-loaded module; a name taken by a DIFFERENT file loads under a
+    ``_<n>``-suffixed name.
     """
-    abspath = os.path.abspath(filepath)
-    if not os.path.isfile(abspath):
-        return _exec_src_as_module(filepath)
-
-    identity = _package_identity(abspath)
-    if identity:
-        modname, sys_path_root = identity
-    else:
-        modname, sys_path_root = Path(abspath).stem, os.path.dirname(abspath)
-
     base_modname = modname
     with _LOAD_LOCK:
         collision = 0
@@ -458,6 +431,66 @@ def _load_file_as_module(filepath: str) -> ModuleType:
         if parent is not None:
             setattr(parent, leaf_name, module)
         return module
+
+
+def _load_file_as_module(filepath: str) -> ModuleType:
+    """
+    Loads the python file at ``filepath`` as a regular module, mirroring how the
+    interpreter itself would load it:
+
+    #. a file inside a package (parent dirs carry ``__init__.py``) loads under
+       its dotted module name with the package root's parent dir appended to
+       ``sys.path`` (as with ``python -m pkg.mod``), so absolute imports of the
+       file's package siblings resolve;
+    #. a standalone file loads under its stem with its directory appended to
+       ``sys.path`` (as with ``python file.py``), so imports of neighboring
+       modules resolve;
+    #. a path not present on the local filesystem falls back to
+       :py:func:`_exec_src_as_module`.
+
+    A package file whose parent package is not importable in this process
+    (e.g. a PAR that bundles the file but not the enclosing subpackage) falls
+    back to the standalone load in (2): the derived package identity is only a
+    naming hint, so an absent parent package must not fail the load. A missing
+    import *inside* the file still propagates.
+
+    The module is registered in ``sys.modules``, so functions and classes it
+    defines carry their real ``__module__`` (instead of the finder's) and
+    machinery that resolves ``sys.modules[obj.__module__]`` (``typing``,
+    ``dataclasses``, ``pickle``) works on them. For a package file the parent
+    package is imported first (as a real import would), so relative imports
+    inside the component file resolve; if the package name is shadowed by a
+    different root earlier on ``sys.path``, a warning names both roots.
+    Loading the same file again returns the already-loaded module.
+
+    Limitation: when the derived module name is taken by a DIFFERENT file
+    (e.g. the same dotted name reachable from another ``sys.path`` root), the
+    module loads under a ``_<n>``-suffixed name. That name resolves through
+    ``sys.modules`` but is not importable by the import system, so
+    re-resolution that round-trips through an import (e.g. unpickling in a
+    fresh process) does not work for such modules.
+    """
+    abspath = os.path.abspath(filepath)
+    if not os.path.isfile(abspath):
+        return _exec_src_as_module(filepath)
+
+    identity = _package_identity(abspath)
+    if identity:
+        modname, sys_path_root = identity
+        try:
+            return _load_module_from_file(abspath, modname, sys_path_root)
+        except ModuleNotFoundError as e:
+            parent_name = modname.rpartition(".")[0]
+            if not _names_missing_module(parent_name, e):
+                raise
+            logger.debug(
+                "package `%s` of component file `%s` is not importable in this"
+                " process; loading the file standalone under its stem",
+                parent_name,
+                abspath,
+            )
+
+    return _load_module_from_file(abspath, Path(abspath).stem, os.path.dirname(abspath))
 
 
 class _Buildable(Protocol):

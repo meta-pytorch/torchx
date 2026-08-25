@@ -380,6 +380,27 @@ def comp(msg: str = "hello") -> AppDef:
         )
         self.assertEqual("sibling", component.fn().roles[0].name)
 
+    def test_uninmportable_package_loads_standalone(self) -> None:
+        # a component file physically under a package tree whose top-level
+        # package (`torchx`) is already imported from a different location
+        # (as a PAR does when it bundles the file but not the enclosing
+        # subpackage): the parent package is not importable, so the file must
+        # fall back to loading standalone under its stem instead of failing.
+        shadow_sub = self.test_dir / "torchx" / "shadowsub"
+        shadow_sub.mkdir(parents=True)
+        (self.test_dir / "torchx" / "__init__.py").write_text("")
+        (shadow_sub / "__init__.py").write_text("")
+        (shadow_sub / "id_neighbor.py").write_text(self._HELPER)
+        (shadow_sub / "shadowleaf.py").write_text(self._STANDALONE_COMPONENT)
+        component = get_component(f"{shadow_sub / 'shadowleaf.py'}:comp")
+        self.assertEqual(
+            "shadowleaf",
+            component.fn.__module__,
+            "a file whose derived parent package is not importable in this"
+            " process must load standalone under its stem",
+        )
+        self.assertEqual("sibling", component.fn().roles[0].name)
+
     def test_standalone_file_component_imports_neighbors(self) -> None:
         filepath = str(self.test_dir / "standalone" / "id_standalone_comp.py")
         component = get_component(f"{filepath}:comp")
