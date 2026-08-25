@@ -535,6 +535,127 @@ def invalid_comp(msg) -> AppDef:
             get_component("nspkg:comp")
 
 
+class ClassComponentTest(unittest.TestCase):
+    """A class with constructor params + `build(self) -> AppDef` is a component."""
+
+    _BASE = """
+from dataclasses import dataclass
+
+
+@dataclass(kw_only=True)
+class Base:
+    image: str = "default_img"
+"""
+
+    _COMPONENT = """
+import functools
+from dataclasses import dataclass
+
+from torchx.specs import AppDef, Role
+
+from clsbase.base import Base
+
+
+@dataclass(kw_only=True)
+class ClassComp(Base):
+    \"\"\"Class component
+
+    Args:
+        image: container image
+        msg: message
+    \"\"\"
+
+    msg: str = "hello"
+
+    def build(self) -> AppDef:
+        return AppDef(
+            self.msg, roles=[Role(name="worker", image=self.image, entrypoint="echo")]
+        )
+
+
+class NoBuild:
+    \"\"\"Not a component\"\"\"
+
+
+@dataclass(kw_only=True)
+class BadBuild:
+    \"\"\"Wrong build return annotation\"\"\"
+
+    msg: str = "hello"
+
+    def build(self) -> str:
+        return self.msg
+
+
+@functools.wraps(ClassComp)
+def class_comp(**kwargs) -> AppDef:
+    return ClassComp(**kwargs).build()
+"""
+
+    def setUp(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+
+        self.test_dir = Path(tempfile.mkdtemp("torchx_finder_class_component_test"))
+        pkg_dir = self.test_dir / "clsbase"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+        (pkg_dir / "base.py").write_text(self._BASE)
+        (pkg_dir / "comp.py").write_text(self._COMPONENT)
+        sys.path.append(str(self.test_dir))
+
+    def tearDown(self) -> None:
+        finder._components = None
+        registry.cache_clear()
+        if str(self.test_dir) in sys.path:
+            sys.path.remove(str(self.test_dir))
+        for mod in [m for m in sys.modules if m.startswith("clsbase")]:
+            del sys.modules[mod]
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def test_class_component_from_file(self) -> None:
+        filepath = str(self.test_dir / "clsbase" / "comp.py")
+        component = get_component(f"{filepath}:ClassComp")
+        self.assertListEqual([], component.validation_errors)
+        self.assertEqual("Class component", component.description)
+
+        from torchx.specs.builders import materialize_appdef
+
+        app = materialize_appdef(component.fn, ["--msg", "x", "--image", "img2"])
+        self.assertEqual("x", app.name)
+        self.assertEqual("img2", app.roles[0].image)
+
+    def test_class_component_inherited_field_default(self) -> None:
+        from torchx.specs.builders import materialize_appdef
+
+        component = get_component("clsbase.comp:ClassComp")
+        app = materialize_appdef(component.fn, [])
+        self.assertEqual("default_img", app.roles[0].image)
+
+    def test_class_component_from_module_path(self) -> None:
+        component = get_component("clsbase.comp.ClassComp")
+        self.assertEqual("hello", component.fn().name)
+
+    def test_class_without_build_is_invalid(self) -> None:
+        with self.assertRaisesRegex(
+            ComponentValidationException, "must define a `build"
+        ):
+            get_component("clsbase.comp:NoBuild")
+
+    def test_class_with_wrong_build_return_annotation_is_invalid(self) -> None:
+        with self.assertRaisesRegex(
+            ComponentValidationException, "incorrect return annotation"
+        ):
+            get_component("clsbase.comp:BadBuild")
+
+    def test_wrapped_class_function_pattern(self) -> None:
+        from torchx.specs.builders import materialize_appdef
+
+        component = get_component("clsbase.comp:class_comp")
+        app = materialize_appdef(component.fn, ["--msg", "y"])
+        self.assertEqual("y", app.name)
+
+
 class GetBuiltinSourceTest(unittest.TestCase):
     def setUp(self) -> None:
         # clear caches to avoid stale plugin registry state from other tests

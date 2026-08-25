@@ -161,6 +161,30 @@ def _test_single_element_tuple_type(arg0: tuple[str]) -> AppDef:
     return IGNORED
 
 
+class _TestClassComponent:
+    """
+    Test class component
+
+    Args:
+        msg: msg desc
+    """
+
+    def __init__(self, msg: str) -> None:
+        self.msg = msg
+
+    def build(self) -> AppDef:
+        return IGNORED
+
+
+class _TestClassComponentBadBuildReturn:
+    def build(self) -> str:
+        return "not an AppDef"
+
+
+class _TestClassComponentInheritedBuild(_TestClassComponent):
+    pass
+
+
 def current_file_path() -> str:
     return os.path.join(os.path.dirname(__file__), __file__)
 
@@ -216,6 +240,23 @@ class SpecsFileValidatorTest(unittest.TestCase):
             self._path, "_test_invalid_fn_with_varags_and_kwargs", []
         )
         self.assertEqual(0, len(linter_errors))
+
+    def test_validate_class_component(self) -> None:
+        linter_errors = validate(self._path, "_TestClassComponent")
+        self.assertListEqual([], linter_errors)
+
+    def test_validate_class_component_bad_build_return(self) -> None:
+        linter_errors = validate(self._path, "_TestClassComponentBadBuildReturn")
+        self.assertEqual(1, len(linter_errors))
+        expected_desc = (
+            "Function: build has incorrect return annotation, "
+            "supported annotation: AppDef"
+        )
+        self.assertEqual(expected_desc, linter_errors[0].description)
+
+    def test_validate_class_component_inherited_build(self) -> None:
+        linter_errors = validate(self._path, "_TestClassComponentInheritedBuild")
+        self.assertListEqual([], linter_errors)
 
     def test_validate_empty_fn(self) -> None:
         linter_errors = validate(self._path, "_test_empty_fn")
