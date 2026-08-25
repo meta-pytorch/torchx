@@ -1008,11 +1008,20 @@ class AppDryRunInfo(Generic[T]):
     Attributes:
         request: The scheduler-specific submit request.
         app: The resolved :py:class:`AppDef` ``request`` was rendered from.
-            ``None`` until set by :py:meth:`Runner.dryrun
-            <torchx.runner.Runner.dryrun>` or :py:meth:`Scheduler.submit_dryrun
-            <torchx.schedulers.api.Scheduler.submit_dryrun>`.
+            ``None`` until set by :py:meth:`Scheduler.submit_dryrun
+            <torchx.schedulers.api.Scheduler.submit_dryrun>`. What it carries
+            depends on the entry point: via :py:meth:`Runner.dryrun
+            <torchx.runner.Runner.dryrun>` it is a private copy, patched with
+            the built workspace image and the injected ``TORCHX_*`` env vars,
+            leaving the caller's own untouched; via
+            :py:meth:`Scheduler.submit_dryrun
+            <torchx.schedulers.api.Scheduler.submit_dryrun>` directly it is the
+            very object passed in, with neither step applied.
         cfg: The resolved run config (defaults applied). Empty until set
-            alongside ``app``.
+            alongside ``app``. Not a copy either: it is the same mapping the
+            scheduler was handed, so mutating it in place reaches whatever the
+            scheduler retained. The ``Mapping`` annotation is the only thing
+            saying not to.
     """
 
     def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
