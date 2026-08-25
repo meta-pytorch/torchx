@@ -795,6 +795,21 @@
         <span class="k">for</span> <span class="n">validator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validators</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">linter_errors</span> <span class="o">+=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">visit_ClassDef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">ast</span><span class="o">.</span><span class="n">ClassDef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Accepts a class as the component (``cls(**args).build()`` is the</span>
+<span class="sd">        component function — see ``torchx.specs.finder``). Statically only the</span>
+<span class="sd">        return annotation of a ``build`` defined in the class body is checked;</span>
+<span class="sd">        ``build`` may be inherited, in which case the finder validates its</span>
+<span class="sd">        presence at load time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">component_function_name</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visited_function</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">stmt</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">FunctionDef</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stmt</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;build&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">linter_errors</span> <span class="o">+=</span> <span class="n">ReturnTypeValidator</span><span class="p">(</span><span class="s2">&quot;AppDef&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="validate">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.file_linter.validate">[docs]</a>
