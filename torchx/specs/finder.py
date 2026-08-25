@@ -17,7 +17,7 @@ import pkgutil
 import re
 import sys
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from inspect import getmembers, isfunction
 from pathlib import Path
 from types import ModuleType
@@ -310,6 +310,28 @@ def _is_same_file(path1: str, path2: str) -> bool:
 _LOAD_LOCK = threading.RLock()
 
 
+def _is_module_path(path: str) -> bool:
+    """
+    Whether ``path`` reads as a dotted module path (``foo.bar.baz``) rather
+    than a file path. A ``.py`` suffix or a path separator makes it a file path.
+    """
+    return not path.endswith(".py") and all(
+        part.isidentifier() for part in path.split(".")
+    )
+
+
+def _names_missing_module(module_path: str, e: ModuleNotFoundError) -> bool:
+    """
+    Whether ``e`` reports ``module_path`` itself (or one of its ancestor
+    packages) as missing, as opposed to an import failing *inside* an
+    existing module (which is the caller's bug and must propagate as-is).
+    """
+    missing = e.name
+    return bool(missing) and (
+        module_path == missing or module_path.startswith(f"{missing}.")
+    )
+
+
 def _exec_src_as_module(filepath: str) -> ModuleType:
     """
     Loads a component file that does not exist on the local filesystem but whose
@@ -438,6 +460,14 @@ def _load_file_as_module(filepath: str) -> ModuleType:
 
 
 class CustomComponentsFinder(ComponentsFinder):
+    """
+    Finds a single component addressed as ``PATH:FUNCTION_NAME``, where ``PATH``
+    is either a path to a python file (``path/to/comp.py:fn``) or a dotted
+    module path (``pkg.module:fn``). A ``PATH`` that exists as a file wins over
+    the module interpretation; the component must be defined in the named
+    file/module (not merely imported into it).
+    """
+
     def __init__(self, filepath: str, function_name: str) -> None:
         self._filepath = filepath
         self._function_name = function_name
@@ -451,17 +481,41 @@ class CustomComponentsFinder(ComponentsFinder):
         linter_errors = validate(path, function_name, validators)
         return [linter_error.description for linter_error in linter_errors]
 
+    def _load(self) -> tuple[ModuleType, str]:
+        """Loads the addressed file/module; returns it with its validation path.
+
+        A missing target module raises :py:class:`ComponentNotFoundException`;
+        a missing import *inside* an existing module propagates as-is.
+        """
+        if not os.path.isfile(self._filepath) and _is_module_path(self._filepath):
+            try:
+                module = importlib.import_module(self._filepath)
+            except ModuleNotFoundError as e:
+                if _names_missing_module(self._filepath, e):
+                    raise ComponentNotFoundException(
+                        f"Module `{self._filepath}` not found on the python path"
+                    ) from e
+                raise
+            module_file = module.__file__
+            if module_file is None:
+                raise ComponentNotFoundException(
+                    f"`{self._filepath}` is a namespace package, not a module;"
+                    " components must be addressed by the module that defines them"
+                )
+            return module, module_file
+        return _load_file_as_module(self._filepath), self._filepath
+
     def find(
         self, validators: list[ComponentFunctionValidator] | None
     ) -> list[_Component]:
+        module, validation_path = self._load()
         validation_errors = self._get_validation_errors(
-            self._filepath, self._function_name, validators
+            validation_path, self._function_name, validators
         )
 
-        module = _load_file_as_module(self._filepath)
         if self._function_name not in vars(module):
             raise ComponentNotFoundException(
-                f"Function {self._function_name} does not exist in file {self._filepath}"
+                f"Function {self._function_name} does not exist in {self._filepath}"
             )
         app_fn = getattr(module, self._function_name)
         fn_desc, _ = get_fn_docstring(app_fn)
@@ -552,6 +606,33 @@ def _find_custom_components(
     return {component.name: component for component in components}
 
 
+def _find_module_components(
+    name: str, validators: list[ComponentFunctionValidator] | None
+) -> dict[str, _Component] | None:
+    """
+    Resolves a colon-less dotted ``name`` (``pkg.module.fn``) as the component
+    function ``fn`` in module ``pkg.module``. Returns ``None`` only when
+    ``name`` does not read as a dotted path or the module does not exist; a
+    module that exists but lacks ``fn``, a namespace-package target, and a
+    missing import *inside* an existing module all raise with their specific
+    error (matching what the colon form ``pkg.module:fn`` reports).
+    """
+    module_path, _, function_name = name.rpartition(".")
+    if not module_path or not _is_module_path(module_path):
+        return None
+    try:
+        if importlib.util.find_spec(module_path) is None:
+            return None
+    except ValueError:
+        return None
+    except ModuleNotFoundError as e:
+        if _names_missing_module(module_path, e):
+            return None
+        raise
+    (component,) = CustomComponentsFinder(module_path, function_name).find(validators)
+    return {name: replace(component, name=name)}
+
+
 def get_components(
     validators: list[ComponentFunctionValidator] | None = None,
 ) -> dict[str, _Component]:
@@ -611,7 +692,14 @@ def get_component(
     name: str, validators: list[ComponentFunctionValidator] | None = None
 ) -> _Component:
     """
-    Retrieves components by the provided name.
+    Retrieves components by the provided name, which is one of:
+
+    #. a registered component name (builtin or ``[torchx.components]``
+       entrypoint), e.g. ``utils.echo``
+    #. a path to a python file and a function in it, e.g. ``path/to/comp.py:fn``
+    #. a dotted module path and a function in it, e.g. ``pkg.module:fn``
+       (equivalently ``pkg.module.fn`` when no registered component has
+       that name)
 
     Returns:
         The component with the given ``name``.
@@ -623,11 +711,14 @@ def get_component(
         components = _find_custom_components(name, validators)
     else:
         components = _find_components(validators)
+        if name not in components:
+            components = _find_module_components(name, validators) or components
     if name not in components:
         raise ComponentNotFoundException(
             f"Component `{name}` not found. Please make sure it is one of the "
             "builtins: `torchx builtins`. Or registered via `[torchx.components]` "
-            "entry point (see: https://meta-pytorch.org/torchx/latest/configure.html)"
+            "entry point (see: https://meta-pytorch.org/torchx/latest/configure.html). "
+            "Or addressable as `path/to/file.py:fn` or `pkg.module:fn`"
         )
 
     component = components[name]
