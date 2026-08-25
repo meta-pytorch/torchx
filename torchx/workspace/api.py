@@ -99,7 +99,14 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
 
         .. important::
             Mutates the passed *roles*. May also add env vars (e.g. ``WORKSPACE_DIR``)
-            to ``role.env``.
+            to ``role.env``. ``role.workspace`` is left set, so a role that has
+            been through this method is not distinguishable by inspection from
+            one that has not -- compare ``role.image`` instead.
+
+        Called by :py:meth:`~torchx.runner.api.Runner.dryrun` with the roles of
+        its private copy, so the caller's :py:class:`~torchx.specs.AppDef` is
+        unaffected there; :py:meth:`~torchx.schedulers.api.Scheduler.submit`
+        passes the caller's own roles.
         """
 
         build_cache: dict[object, object] = {}
