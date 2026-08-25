@@ -353,6 +353,21 @@ class ComponentFnVisitor(ast.NodeVisitor):
         for validator in self.validators:
             self.linter_errors += validator.validate(node)
 
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """
+        Accepts a class as the component (``cls(**args).build()`` is the
+        component function — see ``torchx.specs.finder``). Statically only the
+        return annotation of a ``build`` defined in the class body is checked;
+        ``build`` may be inherited, in which case the finder validates its
+        presence at load time.
+        """
+        if node.name != self.component_function_name:
+            return
+        self.visited_function = True
+        for stmt in node.body:
+            if isinstance(stmt, ast.FunctionDef) and stmt.name == "build":
+                self.linter_errors += ReturnTypeValidator("AppDef").validate(stmt)
+
 
 def validate(
     path: str,
