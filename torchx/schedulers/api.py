@@ -429,8 +429,8 @@ class Scheduler(abc.ABC, Generic[T]):
         for role in app.roles:
             dryrun_info = role.pre_proc(self.backend, dryrun_info)
 
-        dryrun_info._app = app
-        dryrun_info._cfg = resolved_cfg
+        dryrun_info.app = app
+        dryrun_info.cfg = resolved_cfg
         return dryrun_info
 
     @abc.abstractmethod
