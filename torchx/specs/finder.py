@@ -311,6 +311,61 @@ def _is_same_file(path1: str, path2: str) -> bool:
 _LOAD_LOCK = threading.RLock()
 
 
+def _module_identity(abspath: str) -> tuple[str, str]:
+    """``(module_name, sys_path_root)``: package identity, else stem + own dir."""
+    identity = _package_identity(abspath)
+    if identity:
+        return identity
+    return Path(abspath).stem, os.path.dirname(abspath)
+
+
+def _existing_or_free_name(
+    base_modname: str, abspath: str
+) -> tuple[ModuleType | None, str]:
+    """
+    Scans ``sys.modules`` for ``base_modname`` (caller holds ``_LOAD_LOCK``).
+
+    Returns:
+        ``(module, name)`` where ``module`` is the already-loaded module when
+        ``base_modname`` (or a collision-suffixed variant) is backed by the
+        same file, else ``None``; ``name`` is the free (collision-suffixed)
+        name to load ``abspath`` under.
+    """
+    modname = base_modname
+    collision = 0
+    while (existing := sys.modules.get(modname)) is not None:
+        existing_file = getattr(existing, "__file__", None)
+        if existing_file and _is_same_file(existing_file, abspath):
+            return existing, modname
+        collision += 1
+        modname = f"{base_modname}_{collision}"
+    return None, modname
+
+
+def _import_parent_package(parent_name: str, abspath: str) -> ModuleType | None:
+    """
+    Imports the component file's parent package (caller holds ``_LOAD_LOCK``)
+    so relative imports inside the file resolve. Returns ``None`` — after a
+    warning naming both roots — when ``parent_name`` resolves to a different
+    root earlier on ``sys.path``, shadowing the file's own package.
+    """
+    parent = importlib.import_module(parent_name)
+    parent_dir = os.path.dirname(getattr(parent, "__file__", "") or "")
+    if parent_dir and not _is_same_file(parent_dir, os.path.dirname(abspath)):
+        logger.warning(
+            "package `%s` resolves to `%s` (earlier on sys.path),"
+            " which shadows this component file's own package root"
+            " `%s`; sibling imports inside `%s` will resolve"
+            " against the shadowing package",
+            parent_name,
+            parent_dir,
+            os.path.dirname(abspath),
+            abspath,
+        )
+        return None
+    return parent
+
+
 def _is_module_path(path: str) -> bool:
     """
     Whether ``path`` reads as a dotted module path (``foo.bar.baz``) rather
@@ -389,6 +444,11 @@ def _load_file_as_module(filepath: str) -> ModuleType:
     different root earlier on ``sys.path``, a warning names both roots.
     Loading the same file again returns the already-loaded module.
 
+    An appended ``sys.path`` root persists after a successful load — like the
+    interpreter's own script-directory entry — so imports the component runs
+    later (e.g. at component-call time) still resolve; at most one entry is
+    appended per distinct root, and a failed load removes what it added.
+
     Limitation: when the derived module name is taken by a DIFFERENT file
     (e.g. the same dotted name reachable from another ``sys.path`` root), the
     module loads under a ``_<n>``-suffixed name. That name resolves through
@@ -400,21 +460,11 @@ def _load_file_as_module(filepath: str) -> ModuleType:
     if not os.path.isfile(abspath):
         return _exec_src_as_module(filepath)
 
-    identity = _package_identity(abspath)
-    if identity:
-        modname, sys_path_root = identity
-    else:
-        modname, sys_path_root = Path(abspath).stem, os.path.dirname(abspath)
-
-    base_modname = modname
+    base_modname, sys_path_root = _module_identity(abspath)
     with _LOAD_LOCK:
-        collision = 0
-        while (existing := sys.modules.get(modname)) is not None:
-            existing_file = getattr(existing, "__file__", None)
-            if existing_file and _is_same_file(existing_file, abspath):
-                return existing
-            collision += 1
-            modname = f"{base_modname}_{collision}"
+        existing, modname = _existing_or_free_name(base_modname, abspath)
+        if existing is not None:
+            return existing
 
         spec = importlib.util.spec_from_file_location(modname, abspath)
         if spec is None or spec.loader is None:
@@ -433,22 +483,7 @@ def _load_file_as_module(filepath: str) -> ModuleType:
         sys.modules[modname] = module
         try:
             if parent_name:
-                parent = importlib.import_module(parent_name)
-                parent_dir = os.path.dirname(getattr(parent, "__file__", "") or "")
-                if parent_dir and not _is_same_file(
-                    parent_dir, os.path.dirname(abspath)
-                ):
-                    logger.warning(
-                        "package `%s` resolves to `%s` (earlier on sys.path),"
-                        " which shadows this component file's own package root"
-                        " `%s`; sibling imports inside `%s` will resolve"
-                        " against the shadowing package",
-                        parent_name,
-                        parent_dir,
-                        os.path.dirname(abspath),
-                        abspath,
-                    )
-                    parent = None
+                parent = _import_parent_package(parent_name, abspath)
             loader.exec_module(module)
         except BaseException:
             sys.modules.pop(modname, None)
