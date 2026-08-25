@@ -22,7 +22,6 @@ from datetime import datetime
 from enum import Enum
 from json import JSONDecodeError
 from string import Template
-from types import MappingProxyType
 from typing import (
     Any,
     Awaitable,
@@ -1005,36 +1004,33 @@ class AppDryRunInfo(Generic[T]):
     <torchx.schedulers.api.Scheduler.describe_native>` (the request read back
     from the scheduler for an already-submitted app).
     ``print(info)`` yields a human-readable representation.
+
+    Attributes:
+        request: The scheduler-specific submit request.
+        app: The resolved :py:class:`AppDef` ``request`` was rendered from.
+            ``None`` until set by :py:meth:`Scheduler.submit_dryrun
+            <torchx.schedulers.api.Scheduler.submit_dryrun>`. What it carries
+            depends on the entry point: via :py:meth:`Runner.dryrun
+            <torchx.runner.Runner.dryrun>` it is a private copy, patched with
+            the built workspace image and the injected ``TORCHX_*`` env vars,
+            leaving the caller's own untouched; via
+            :py:meth:`Scheduler.submit_dryrun
+            <torchx.schedulers.api.Scheduler.submit_dryrun>` directly it is the
+            very object passed in, with neither step applied.
+        cfg: The resolved run config (defaults applied). Empty until set
+            alongside ``app``. Not a copy either: it is the same mapping the
+            scheduler was handed, so mutating it in place reaches whatever the
+            scheduler retained. The ``Mapping`` annotation is the only thing
+            saying not to.
     """
 
     def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
         self.request = request
+        self.app: AppDef | None = None
+        self.cfg: Mapping[str, CfgVal] = {}
+
         self._fmt = fmt
-
-        # back references to the parameters of the dryrun() call that
-        # returned this AppDryRunInfo object; set in Runner.dryrun() and
-        # Scheduler.submit_dryrun() manually rather than through constructor
-        # arguments. Read them via the `app` and `cfg` properties;
-        # `_scheduler` is only meant for Scheduler/Runner implementations.
-        self._app: AppDef | None = None
-        self._cfg: Mapping[str, CfgVal] = {}
         self._scheduler: str | None = None
-
-    @property
-    def app(self) -> AppDef | None:
-        """The :py:class:`AppDef` this dryrun info was created from.
-
-        ``None`` until set by ``Runner.dryrun()`` / ``Scheduler.submit_dryrun()``.
-        """
-        return self._app
-
-    @property
-    def cfg(self) -> Mapping[str, CfgVal]:
-        """Read-only view of the resolved scheduler run config.
-
-        Mutating the returned mapping raises ``TypeError``.
-        """
-        return MappingProxyType(self._cfg)
 
     def __repr__(self) -> str:
         return self._fmt(self.request)

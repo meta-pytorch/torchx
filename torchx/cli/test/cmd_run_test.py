@@ -223,7 +223,7 @@ class CmdRunTest(unittest.TestCase):
 
         app_run_info_stub = AppDryRunInfo("req", lambda x: x)
         req_type_dataclass = dataclasses.make_dataclass("T", [])
-        app_run_info_stub._app = req_type_dataclass()
+        app_run_info_stub.app = req_type_dataclass()
         mock_runner_run.return_value = app_run_info_stub
 
         self.cmd_run.run(args)
@@ -447,7 +447,7 @@ component = custom.echo
     def test_run_inner_local_scheduler_warns_deprecation(self) -> None:
         runner = MagicMock()
         dryrun_info_stub = AppDryRunInfo("req", lambda x: x)
-        dryrun_info_stub._app = dataclasses.make_dataclass("T", [])()
+        dryrun_info_stub.app = dataclasses.make_dataclass("T", [])()
         runner.dryrun_component.return_value = dryrun_info_stub
         run_args = TorchXRunArgs(
             component_name="utils.echo",
