@@ -99,7 +99,14 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
 
         .. important::
             Mutates the passed *roles*. May also add env vars (e.g. ``WORKSPACE_DIR``)
-            to ``role.env``.
+            to ``role.env``. ``role.workspace`` is left set, so a role that has
+            been through this method is not distinguishable by inspection from
+            one that has not -- compare ``role.image`` instead.
+
+        Called by :py:meth:`~torchx.runner.api.Runner.dryrun` with the roles of
+        its private copy, so the caller's :py:class:`~torchx.specs.AppDef` is
+        unaffected there; :py:meth:`~torchx.schedulers.api.Scheduler.submit`
+        passes the caller's own roles.
         """
 
         build_cache: dict[object, object] = {}
@@ -177,6 +184,29 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
     def push_images(self, images_to_push: T) -> None:
         """Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo."""
         raise NotImplementedError("push is not implemented")
+
+
+def pin_workspace_images(
+    app: AppDef, images: Mapping[tuple[str, Workspace], str]
+) -> None:
+    """Points each role at its already-built image so submitting *app* skips the rebuild.
+
+    Pairs with :py:meth:`~torchx.runner.Runner.build_workspace`, whose return
+    value *images* is. Mutates *app*: a pinned role gets ``image`` set and
+    ``workspace`` cleared, which is what makes the rebuild a no-op.
+
+    A role matches on its whole ``(image, workspace)`` pair, since that is what
+    the build ran on: one sharing only the workspace is a different build and is
+    left alone, as is a role with no workspace (it arrived with a pre-built image
+    that must not be clobbered) or one whose pair nobody built.
+    """
+    for role in app.roles:
+        if not role.workspace:
+            continue
+        image = images.get((role.image, role.workspace))
+        if image is not None:
+            role.image = image
+            role.workspace = None
 
 
 def _ignore(s: str, patterns: Iterable[str]) -> tuple[int, bool]:

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import copy
+import dataclasses
 import datetime
 import os
 from contextlib import contextmanager
@@ -42,7 +43,7 @@ from torchx.specs import (
 from torchx.specs.finder import ComponentNotFoundException
 from torchx.test.fixtures import TestWithTmpDir
 from torchx.util.types import none_throws
-from torchx.workspace import WorkspaceMixin
+from torchx.workspace import pin_workspace_images, WorkspaceMixin
 
 GET_SCHEDULER_FACTORIES = "torchx.runner.api.get_scheduler_factories"
 
@@ -58,6 +59,97 @@ SESSION_NAME = "test_session"
 
 def get_full_path(name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "resource", name)
+
+
+class _NoopScheduler(Scheduler[Mapping[str, CfgVal]]):
+    """Concrete `Scheduler` that schedules nothing; no workspace support."""
+
+    def schedule(self, dryrun_info: AppDryRunInfo) -> str:
+        return "app-id"
+
+    def _submit_dryrun(
+        self, app: AppDef, cfg: Mapping[str, CfgVal]
+    ) -> AppDryRunInfo[AppDef]:
+        return AppDryRunInfo(app, str)
+
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
+        return None
+
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
+        return []
+
+    def _cancel_existing(self, app_id: str) -> None:
+        pass
+
+
+class _BuildRecordingScheduler(WorkspaceMixin[None], _NoopScheduler):
+    """Appends each workspace it actually builds to *builds* -- cache hits are not recorded.
+
+    Caches on ``(image, workspace)``, as the real builders do.
+    """
+
+    def __init__(self, builds: list[str]) -> None:
+        super().__init__(backend="ignored", session_name="ignored")
+        self.builds = builds
+        self.built_roles: list[Role] = []
+
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        self.built_roles.append(role)
+        workspace = str(role.workspace)
+        key = (role.image, workspace)
+        if key not in build_cache:
+            self.builds.append(workspace)
+            build_cache[key] = f"built-{len(self.builds)}"
+        role.image = str(build_cache[key])
+
+
+class _EnvWritingScheduler(_BuildRecordingScheduler):
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        workspace = str(role.workspace)
+        super().caching_build_workspace_and_update_role(role, cfg, build_cache)
+        role.env["WORKSPACE_DIR"] = workspace
+
+
+@dataclasses.dataclass
+class _RoleWithExtraField(Role):
+    extra: str = ""
+
+
+class _ExtraFieldWritingScheduler(_BuildRecordingScheduler):
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        super().caching_build_workspace_and_update_role(role, cfg, build_cache)
+        assert isinstance(
+            role, _RoleWithExtraField
+        ), f"this scheduler only builds `_RoleWithExtraField`, got `{type(role)}`"
+        role.extra = "written-by-the-build"
+
+
+class _EnvWritingForOneRoleScheduler(_BuildRecordingScheduler):
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        workspace = str(role.workspace)
+        super().caching_build_workspace_and_update_role(role, cfg, build_cache)
+        if role.name == "b":
+            role.env["WORKSPACE_DIR"] = workspace
 
 
 @patch("torchx.runner.events.record")
@@ -641,6 +733,243 @@ class RunnerTest(TestWithTmpDir):
             self.assertEqual("//foo", roles[0].env["SRC_WORKSPACE"])
             self.assertEqual("bar_new", roles[1].image)
             self.assertEqual("//bar", roles[1].env["SRC_WORKSPACE"])
+
+    @staticmethod
+    def _workspace_runner(builds: list[str]) -> Runner:
+        return Runner(
+            name=SESSION_NAME,
+            scheduler_factories={
+                "builds-img": lambda session_name, **kwargs: _BuildRecordingScheduler(
+                    builds
+                ),
+                "writes-env": lambda session_name, **kwargs: _EnvWritingScheduler(
+                    builds
+                ),
+                "writes-env-for-b": lambda session_name, **kwargs: _EnvWritingForOneRoleScheduler(
+                    builds
+                ),
+                "writes-extra": lambda session_name, **kwargs: _ExtraFieldWritingScheduler(
+                    builds
+                ),
+                "no-workspace": lambda session_name, **kwargs: _NoopScheduler(
+                    backend="ignored", session_name="ignored"
+                ),
+            },
+        )
+
+    @staticmethod
+    def _role(name: str, image: str, workspace: str | None = None) -> Role:
+        return Role(
+            name=name,
+            image=image,
+            resource=resource.SMALL,
+            entrypoint="/bin/true",
+            workspace=Workspace.from_str(workspace) if workspace else None,
+        )
+
+    def test_build_workspace_builds_shared_workspace_once(self, _: MagicMock) -> None:
+        builds: list[str] = []
+        app = AppDef(
+            "ignored",
+            roles=[
+                self._role("a", "foo", "//shared"),
+                self._role("b", "foo", "//shared"),
+                self._role("c", "bar", "//other"),
+                self._role("d", "prebuilt"),
+            ],
+        )
+        with self._workspace_runner(builds) as runner:
+            images = runner.build_workspace(app, "builds-img")
+
+        self.assertEqual(["//shared", "//other"], builds)
+        self.assertEqual(
+            {
+                ("foo", Workspace.from_str("//shared")): "built-1",
+                ("bar", Workspace.from_str("//other")): "built-2",
+            },
+            images,
+        )
+
+    def test_build_workspace_keys_one_workspace_by_each_base_image(
+        self, _: MagicMock
+    ) -> None:
+        builds: list[str] = []
+        app = AppDef(
+            "ignored",
+            roles=[
+                self._role("a", "foo", "//shared"),
+                self._role("b", "bar", "//shared"),
+            ],
+        )
+        with self._workspace_runner(builds) as runner:
+            images = runner.build_workspace(app, "builds-img")
+
+        self.assertEqual(["//shared", "//shared"], builds)
+        self.assertEqual(
+            {
+                ("foo", Workspace.from_str("//shared")): "built-1",
+                ("bar", Workspace.from_str("//shared")): "built-2",
+            },
+            images,
+        )
+
+    def test_build_workspace_pins_each_base_image_to_its_own_build(
+        self, _: MagicMock
+    ) -> None:
+        with self._workspace_runner([]) as runner:
+            images = runner.build_workspace(
+                AppDef(
+                    "ignored",
+                    roles=[
+                        self._role("a", "foo", "//shared"),
+                        self._role("b", "bar", "//shared"),
+                    ],
+                ),
+                "builds-img",
+            )
+            other = AppDef(
+                "other",
+                roles=[
+                    self._role("c", "bar", "//shared"),
+                    self._role("d", "foo", "//shared"),
+                ],
+            )
+            pin_workspace_images(other, images)
+
+        self.assertEqual(["built-2", "built-1"], [r.image for r in other.roles])
+
+    def test_build_workspace_omits_a_build_that_wrote_beyond_the_image(
+        self, _: MagicMock
+    ) -> None:
+        app = AppDef("ignored", roles=[self._role("a", "foo", "//ws")])
+        with self._workspace_runner([]) as runner:
+            with self.assertLogs("torchx.runner.api", level="WARNING") as logs:
+                images = runner.build_workspace(app, "writes-env")
+            self.assertEqual({}, images)
+            self.assertIsNone(
+                runner.build_workspace(self._role("a", "foo", "//ws"), "writes-env")
+            )
+        self.assertIn("changed more than `image`", "".join(logs.output))
+
+    def test_build_workspace_omits_a_build_that_wrote_a_role_subclass_field(
+        self, _: MagicMock
+    ) -> None:
+        role = _RoleWithExtraField(
+            name="a",
+            image="foo",
+            resource=resource.SMALL,
+            entrypoint="/bin/true",
+            workspace=Workspace.from_str("//ws"),
+        )
+        with self._workspace_runner([]) as runner:
+            with self.assertLogs("torchx.runner.api", level="WARNING") as logs:
+                images = runner.build_workspace(
+                    AppDef("ignored", roles=[role]), "writes-extra"
+                )
+            self.assertEqual({}, images)
+        self.assertIn("changed more than `image`", "".join(logs.output))
+
+    def test_build_workspace_omitted_role_still_rebuilds_on_submit(
+        self, _: MagicMock
+    ) -> None:
+        builds: list[str] = []
+        with self._workspace_runner(builds) as runner:
+            images = runner.build_workspace(
+                AppDef("ignored", roles=[self._role("a", "foo", "//ws")]), "writes-env"
+            )
+            other = AppDef("other", roles=[self._role("b", "foo", "//ws")])
+            pin_workspace_images(other, images)
+
+            self.assertEqual(Workspace.from_str("//ws"), other.roles[0].workspace)
+            roles = runner.dryrun(other, "writes-env").request.roles
+
+        self.assertEqual("//ws", roles[0].env["WORKSPACE_DIR"])
+        self.assertEqual(["//ws", "//ws"], builds)
+
+    def test_build_workspace_omits_a_pair_one_of_its_roles_must_rebuild(
+        self, _: MagicMock
+    ) -> None:
+        app = AppDef(
+            "ignored",
+            roles=[self._role("a", "foo", "//ws"), self._role("b", "foo", "//ws")],
+        )
+        with self._workspace_runner([]) as runner:
+            with self.assertLogs("torchx.runner.api", level="WARNING") as logs:
+                images = runner.build_workspace(app, "writes-env-for-b")
+
+        self.assertEqual({}, images)
+        self.assertIn("role `b` cannot reuse its build", "".join(logs.output))
+
+    def test_build_workspace_does_not_mutate_caller(self, _: MagicMock) -> None:
+        app = AppDef("ignored", roles=[self._role("a", "foo", "//ws")])
+        with self._workspace_runner([]) as runner:
+            runner.build_workspace(app, "builds-img")
+
+        self.assertEqual("foo", app.roles[0].image)
+        self.assertEqual(Workspace.from_str("//ws"), app.roles[0].workspace)
+
+    def test_build_workspace_with_non_deepcopyable_overrides(
+        self, _: MagicMock
+    ) -> None:
+        """As in ``dryrun``: ``Role.overrides`` may hold values deepcopy chokes
+        on (an APF fbpkg Future), and the built copy must SHARE the dict."""
+        future: concurrent.futures.Future[str] = concurrent.futures.Future()
+        role = self._role("a", "foo", "//ws")
+        role.overrides = {"fbpkg": future}
+        app = AppDef("ignored", roles=[role])
+        sched = _BuildRecordingScheduler([])
+        with Runner(
+            name=SESSION_NAME,
+            scheduler_factories={"builds-img": lambda session_name, **kwargs: sched},
+        ) as runner:
+            images = runner.build_workspace(app, "builds-img")
+
+        self.assertEqual({("foo", Workspace.from_str("//ws")): "built-1"}, images)
+        self.assertIs(role.overrides, sched.built_roles[0].overrides)
+        self.assertIsNot(role, sched.built_roles[0])
+
+    def test_build_workspace_single_role(self, _: MagicMock) -> None:
+        with self._workspace_runner([]) as runner:
+            self.assertEqual(
+                "built-1",
+                runner.build_workspace(self._role("a", "foo", "//ws"), "builds-img"),
+            )
+            self.assertIsNone(
+                runner.build_workspace(self._role("a", "prebuilt"), "builds-img")
+            )
+
+    def test_build_workspace_scheduler_without_workspace_support(
+        self, _: MagicMock
+    ) -> None:
+        app = AppDef("ignored", roles=[self._role("a", "foo", "//ws")])
+        with self._workspace_runner([]) as runner:
+            self.assertEqual({}, runner.build_workspace(app, "no-workspace"))
+            self.assertIsNone(
+                runner.build_workspace(self._role("a", "foo", "//ws"), "no-workspace")
+            )
+
+    def test_build_workspace_pinned_onto_another_appdef_skips_rebuild(
+        self, _: MagicMock
+    ) -> None:
+        builds: list[str] = []
+        with self._workspace_runner(builds) as runner:
+            images = runner.build_workspace(
+                AppDef("ignored", roles=[self._role("a", "foo", "//ws")]),
+                "builds-img",
+            )
+            other = AppDef(
+                "other",
+                roles=[self._role("b", "foo", "//ws"), self._role("c", "prebuilt")],
+            )
+            pin_workspace_images(other, images)
+
+            self.assertEqual(["//ws"], builds)
+            self.assertEqual("built-1", other.roles[0].image)
+            self.assertIsNone(other.roles[0].workspace)
+            self.assertEqual("prebuilt", other.roles[1].image)
+
+            runner.dryrun(other, "builds-img")
+            self.assertEqual(["//ws"], builds, "pinned role must not rebuild")
 
     def test_describe(self, _: MagicMock) -> None:
         with self.get_runner() as runner:

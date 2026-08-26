@@ -6,7 +6,9 @@
 
 # pyre-strict
 
+import contextlib
 import copy
+import dataclasses
 import json
 import logging
 import os
@@ -17,6 +19,7 @@ from types import TracebackType
 from typing import (
     Any,
     Iterable,
+    Iterator,
     Literal,
     Mapping,
     overload,
@@ -39,6 +42,7 @@ from torchx.specs import (
     make_app_handle,
     materialize_appdef,
     parse_app_handle,
+    Role,
     runopts,
     UnknownAppException,
     UnknownSchedulerException,
@@ -61,6 +65,42 @@ logger: logging.Logger = logging.getLogger(__name__)
 NONE: str = "<NONE>"
 S = TypeVar("S")
 T = TypeVar("T")
+
+
+@contextlib.contextmanager
+def _overrides_detached(roles: list[Role]) -> Iterator[list[dict[str, Any]]]:
+    """Strips ``overrides`` off *roles* for the duration, yielding the dicts.
+
+    ``Role.overrides`` may hold non-deepcopyable values (APF attaches an
+    in-flight fbpkg Future), so a ``deepcopy`` of anything owning a role runs
+    with them detached -- as ``macros.Values.apply`` does. Attach the yielded
+    dicts (the SAME objects) to the copy's roles: resolution writes back in
+    place, so sharing lets whichever owner resolves first serve both.
+    """
+    detached = [role.overrides for role in roles]
+    for role in roles:
+        role.overrides = {}
+    try:
+        yield detached
+    finally:
+        for role, overrides in zip(roles, detached):
+            role.overrides = overrides
+
+
+def _built_only_the_image(authored: Role, built: Role) -> bool:
+    """Whether building *authored*'s workspace changed nothing but ``image``.
+
+    Builders that also write to the role (``env`` pointing at the unpacked
+    workspace, say) produce a build the image alone cannot carry.
+
+    Fields are compared with ``==``, so a field type without value equality
+    can only turn this ``False`` -- costing a rebuild, never a bad pin.
+    """
+    return all(
+        getattr(authored, f.name) == getattr(built, f.name)
+        for f in dataclasses.fields(type(authored))
+        if f.name != "image"
+    )
 
 
 def get_configured_trackers() -> dict[str, str | None]:
@@ -269,11 +309,20 @@ class Runner:
             info = runner.run(app, "mkube", cfg=cfg, dryrun=True)
             print(info)
 
+        **Does not mutate** *app* -- see :py:meth:`dryrun`, which this delegates
+        to. The workspace build and env injection land on an internal deep copy:
+        with ``dryrun=True`` that copy comes back as ``info.app``; with
+        ``dryrun=False`` it is submitted and dropped, and only the
+        :py:data:`~torchx.specs.AppHandle` is returned.
+
         Args:
             dryrun: If ``True``, only validate and render the request
                 without submitting.  Returns :py:class:`~torchx.specs.AppDryRunInfo`.
                 If ``False`` (default), submit and return the
                 :py:data:`~torchx.specs.AppHandle`.
+
+        Raises:
+            ValueError: propagated from :py:meth:`dryrun`.
         """
 
         with log_event(api="run") as ctx:
@@ -311,6 +360,9 @@ class Runner:
 
         .. warning:: Use sparingly. Overwriting many raw scheduler fields may
                      cause your usage to diverge from TorchX's supported API.
+
+        Only ``dryrun_info.request`` is submitted; edits to ``dryrun_info.app``
+        made after :py:meth:`dryrun` returned are **not** re-rendered into it.
         """
         scheduler = none_throws(dryrun_info._scheduler)
         cfg = dryrun_info.cfg
@@ -334,6 +386,112 @@ class Runner:
     def name(self) -> str:
         return self._name
 
+    @overload
+    def build_workspace(
+        self,
+        app_or_role: Role,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
+    ) -> str | None: ...
+
+    @overload
+    def build_workspace(
+        self,
+        app_or_role: AppDef,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
+    ) -> dict[tuple[str, Workspace], str]: ...
+
+    def build_workspace(
+        self,
+        app_or_role: AppDef | Role,
+        scheduler: str,
+        cfg: Mapping[str, CfgVal] | None = None,
+    ) -> dict[tuple[str, Workspace], str] | str | None:
+        """Builds the workspaces and returns the images they were built into.
+
+        **Does not mutate** *app_or_role* -- the build runs against a deep copy.
+        Use this to build once and submit the result many times, instead of
+        letting each :py:meth:`run` rebuild:
+
+        .. code-block:: python
+
+            images = runner.build_workspace(app, "kubernetes", cfg)
+            for app in per_region_apps:
+                pin_workspace_images(app, images)
+                runner.run(app, "kubernetes", cfg)
+
+        Given a :py:class:`~torchx.specs.Role`, returns that role's built image,
+        or ``None`` if it has no :py:attr:`~torchx.specs.Role.workspace`. Given
+        an :py:class:`~torchx.specs.AppDef`, returns ``{(image, workspace): built}``
+        for the roles that have one -- keyed by the pair, not by role name, so the
+        result can be pinned onto a *different* ``AppDef``. A build installs the
+        workspace into ``role.image``, so the base image is half the key: roles
+        sharing a workspace but not an image build to different results, and roles
+        sharing both are built once. Both key halves come from the role as
+        *authored*, which the build does not overwrite. The pair is the widest
+        key correct for every builder, so one that caches more coarsely than the
+        exact image (on the fbpkg name, say) may rebuild where it could have
+        shared -- reuse is missed, never misapplied.
+
+        Only :py:attr:`~torchx.specs.Role.workspace` is read. The deprecated
+        ``workspace=`` argument to :py:meth:`run`/:py:meth:`dryrun` is applied
+        inside ``dryrun``, too late to prebuild here; set the role attribute
+        instead.
+
+        Unlike :py:meth:`dryrun`, this neither validates *app_or_role* nor
+        renders a scheduler request, so it does not fail on request-level
+        problems that are unrelated to building.
+
+        A role is omitted (with a warning) when its build wrote to the role
+        beyond ``image`` -- ``env``, say. Pinning cannot replay those writes, so
+        such a role keeps its workspace and rebuilds on submit. The whole
+        ``(image, workspace)`` pair drops out, not just that role: a pair one
+        role has to rebuild is not reusable for the roles that share it.
+
+        Returns an empty mapping (or ``None``) when *scheduler* has no workspace
+        support -- there is nothing to build.
+        """
+        authored_roles = (
+            app_or_role.roles if isinstance(app_or_role, AppDef) else [app_or_role]
+        )
+        with _overrides_detached(authored_roles) as detached_overrides:
+            roles = copy.deepcopy(authored_roles)
+        for role, overrides in zip(roles, detached_overrides):
+            role.overrides = overrides
+
+        with log_event("build_workspace", scheduler):
+            sched = self._scheduler(scheduler)
+            if not isinstance(sched, WorkspaceMixin):
+                return None if isinstance(app_or_role, Role) else {}
+            # one call, so roles sharing a workspace hit the shared build cache
+            sched.build_workspaces(roles, sched.run_opts().resolve(cfg or {}))
+
+        reusable: dict[tuple[str, Workspace], str] = {}
+        rebuilt: set[tuple[str, Workspace]] = set()
+        for authored, role in zip(authored_roles, roles, strict=True):
+            workspace = authored.workspace
+            if not workspace:
+                continue
+            if not _built_only_the_image(authored, role):
+                logger.warning(
+                    "role `%s` cannot reuse its build: the `%s` workspace builder"
+                    " changed more than `image`, so the workspace has to be rebuilt"
+                    " on each submit",
+                    authored.name,
+                    scheduler,
+                )
+                rebuilt.add((authored.image, workspace))
+                continue
+            reusable[(authored.image, workspace)] = role.image
+        for key in rebuilt:
+            reusable.pop(key, None)
+
+        if isinstance(app_or_role, Role):
+            workspace = app_or_role.workspace
+            return reusable.get((app_or_role.image, workspace)) if workspace else None
+        return reusable
+
     def dryrun(
         self,
         app: AppDef,
@@ -346,26 +504,54 @@ class Runner:
 
         The returned :py:class:`~torchx.specs.AppDryRunInfo` can be
         ``print()``-ed for inspection or passed to :py:meth:`schedule`.
+
+        **Does not mutate** *app*. The patching this method performs -- building
+        each role's :py:attr:`~torchx.specs.Role.workspace` and repointing
+        ``role.image`` at the built artifact, injecting the ``TORCHX_*`` tracking
+        env vars -- lands on a deep copy, which is returned as
+        :py:attr:`~torchx.specs.AppDryRunInfo.app`. Read the submitted images off
+        that copy, never off the *app* you passed in:
+
+        .. code-block:: python
+
+            app = AppDef(roles=[Role(image="foo:latest", workspace=..., ...)])
+            info = runner.dryrun(app, "kubernetes")
+
+            app.roles[0].image       # "foo:latest" -- unpatched, as authored
+            info.app.roles[0].image  # "foo:<built-workspace-hash>" -- submitted
+
+        ``Role.overrides`` is the one part not copied: the same dict object is
+        shared by the caller's role and the copy, so resolving an override
+        through either is visible to both.
+
+        Two dryruns of the same *app* need not render the same request -- each
+        rebuilds the workspace, and the build may produce a new image. Re-running
+        from the returned copy does not skip that build either, because
+        :py:attr:`~torchx.specs.Role.workspace` is left set after one; it only
+        narrows the difference down to the build, since every other patch is
+        already applied. Clear the workspace to render the exact same request:
+
+        .. code-block:: python
+
+            info1 = runner.dryrun(app, "kubernetes", cfg)
+
+            for role in info1.app.roles:
+                role.workspace = None
+
+            info2 = runner.dryrun(info1.app, "kubernetes", info1.cfg)
+            assert info1.request == info2.request
+
+        Raises:
+            ValueError: *app* has no roles, or a role has no ``entrypoint`` or
+                a non-positive ``num_replicas``. Schedulers raise from their own
+                ``_validate`` hooks for backend-specific violations.
         """
         # operate on a copy so that the env injection and workspace overwrite
         # below never leak into the caller's AppDef (one AppDef can be
-        # dry-run multiple times); the copy rides in the returned
-        # AppDryRunInfo's `_app`.
-        #
-        # Role.overrides may already hold non-deepcopyable values (e.g. APF
-        # attaches an in-flight fbpkg Future before calling dryrun), so mirror
-        # the macros.Values.apply pattern: detach overrides, deepcopy, then
-        # attach the SAME dict object to both the original and the copy —
-        # sharing is the intended semantic: resolving an override through
-        # either owner benefits both.
-        detached_overrides = [role.overrides for role in app.roles]
-        for role in app.roles:
-            role.overrides = {}
-        try:
+        # dry-run multiple times); the copy is returned as the AppDryRunInfo's
+        # `app`.
+        with _overrides_detached(app.roles) as detached_overrides:
             app_copy = copy.deepcopy(app)
-        finally:
-            for role, overrides in zip(app.roles, detached_overrides):
-                role.overrides = overrides
         for role_copy, overrides in zip(app_copy.roles, detached_overrides):
             role_copy.overrides = overrides
         app = app_copy
