@@ -893,7 +893,6 @@
             <span class="p">)</span>
             <span class="n">states</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 
-        <span class="n">state</span> <span class="o">=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">UNKNOWN</span>
         <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_terminal</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">state</span> <span class="o">==</span> <span class="n">AppState</span><span class="o">.</span><span class="n">SUCCEEDED</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="p">):</span>
                 <span class="n">state</span> <span class="o">=</span> <span class="n">AppState</span><span class="o">.</span><span class="n">SUCCEEDED</span>
