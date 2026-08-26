@@ -284,6 +284,13 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/stable/", None),
 }
 
+# -- Options for linkcheck builder ------------------------------------------
+
+# slurm.schedmd.com recurringly times out in CI, flaking the Docs Build check.
+linkcheck_ignore = [
+    r"https://slurm\.schedmd\.com/.*",
+]
+
 # -- A patch that prevents Sphinx from cross-referencing ivar tags -------
 # See http://stackoverflow.com/a/41184353/3343043
 
