@@ -441,7 +441,6 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
             )
             states.append(state)
 
-        state = AppState.UNKNOWN
         if all(is_terminal(state) for state in states):
             if all(state == AppState.SUCCEEDED for state in states):
                 state = AppState.SUCCEEDED
