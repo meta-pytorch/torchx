@@ -440,7 +440,9 @@
 
 <span class="c1"># pyre-strict</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -451,6 +453,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">Iterator</span><span class="p">,</span>
     <span class="n">Literal</span><span class="p">,</span>
     <span class="n">Mapping</span><span class="p">,</span>
     <span class="n">overload</span><span class="p">,</span>
@@ -473,6 +476,7 @@
     <span class="n">make_app_handle</span><span class="p">,</span>
     <span class="n">materialize_appdef</span><span class="p">,</span>
     <span class="n">parse_app_handle</span><span class="p">,</span>
+    <span class="n">Role</span><span class="p">,</span>
     <span class="n">runopts</span><span class="p">,</span>
     <span class="n">UnknownAppException</span><span class="p">,</span>
     <span class="n">UnknownSchedulerException</span><span class="p">,</span>
@@ -495,6 +499,42 @@
 <span class="n">NONE</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&lt;NONE&gt;&quot;</span>
 <span class="n">S</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">)</span>
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_overrides_detached</span><span class="p">(</span><span class="n">roles</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Role</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strips ``overrides`` off *roles* for the duration, yielding the dicts.</span>
+
+<span class="sd">    ``Role.overrides`` may hold non-deepcopyable values (APF attaches an</span>
+<span class="sd">    in-flight fbpkg Future), so a ``deepcopy`` of anything owning a role runs</span>
+<span class="sd">    with them detached -- as ``macros.Values.apply`` does. Attach the yielded</span>
+<span class="sd">    dicts (the SAME objects) to the copy&#39;s roles: resolution writes back in</span>
+<span class="sd">    place, so sharing lets whichever owner resolves first serve both.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">detached</span> <span class="o">=</span> <span class="p">[</span><span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">roles</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">roles</span><span class="p">:</span>
+        <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">detached</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">roles</span><span class="p">,</span> <span class="n">detached</span><span class="p">):</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_built_only_the_image</span><span class="p">(</span><span class="n">authored</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span> <span class="n">built</span><span class="p">:</span> <span class="n">Role</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether building *authored*&#39;s workspace changed nothing but ``image``.</span>
+
+<span class="sd">    Builders that also write to the role (``env`` pointing at the unpacked</span>
+<span class="sd">    workspace, say) produce a build the image alone cannot carry.</span>
+
+<span class="sd">    Fields are compared with ``==``, so a field type without value equality</span>
+<span class="sd">    can only turn this ``False`` -- costing a rebuild, never a bad pin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">authored</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">==</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">built</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">authored</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;image&quot;</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_configured_trackers</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
@@ -716,11 +756,20 @@
 <span class="sd">            info = runner.run(app, &quot;mkube&quot;, cfg=cfg, dryrun=True)</span>
 <span class="sd">            print(info)</span>
 
+<span class="sd">        **Does not mutate** *app* -- see :py:meth:`dryrun`, which this delegates</span>
+<span class="sd">        to. The workspace build and env injection land on an internal deep copy:</span>
+<span class="sd">        with ``dryrun=True`` that copy comes back as ``info.app``; with</span>
+<span class="sd">        ``dryrun=False`` it is submitted and dropped, and only the</span>
+<span class="sd">        :py:data:`~torchx.specs.AppHandle` is returned.</span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            dryrun: If ``True``, only validate and render the request</span>
 <span class="sd">                without submitting.  Returns :py:class:`~torchx.specs.AppDryRunInfo`.</span>
 <span class="sd">                If ``False`` (default), submit and return the</span>
 <span class="sd">                :py:data:`~torchx.specs.AppHandle`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: propagated from :py:meth:`dryrun`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="n">api</span><span class="o">=</span><span class="s2">&quot;run&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ctx</span><span class="p">:</span>
@@ -761,6 +810,9 @@
 
 <span class="sd">        .. warning:: Use sparingly. Overwriting many raw scheduler fields may</span>
 <span class="sd">                     cause your usage to diverge from TorchX&#39;s supported API.</span>
+
+<span class="sd">        Only ``dryrun_info.request`` is submitted; edits to ``dryrun_info.app``</span>
+<span class="sd">        made after :py:meth:`dryrun` returned are **not** re-rendered into it.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">scheduler</span> <span class="o">=</span> <span class="n">none_throws</span><span class="p">(</span><span class="n">dryrun_info</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">)</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">cfg</span>
@@ -785,6 +837,115 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app_or_role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app_or_role</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Workspace</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span> <span class="o">...</span>
+
+<div class="viewcode-block" id="Runner.build_workspace">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.build_workspace">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_workspace</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">app_or_role</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span>
+        <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Workspace</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds the workspaces and returns the images they were built into.</span>
+
+<span class="sd">        **Does not mutate** *app_or_role* -- the build runs against a deep copy.</span>
+<span class="sd">        Use this to build once and submit the result many times, instead of</span>
+<span class="sd">        letting each :py:meth:`run` rebuild:</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            images = runner.build_workspace(app, &quot;kubernetes&quot;, cfg)</span>
+<span class="sd">            for app in per_region_apps:</span>
+<span class="sd">                pin_workspace_images(app, images)</span>
+<span class="sd">                runner.run(app, &quot;kubernetes&quot;, cfg)</span>
+
+<span class="sd">        Given a :py:class:`~torchx.specs.Role`, returns that role&#39;s built image,</span>
+<span class="sd">        or ``None`` if it has no :py:attr:`~torchx.specs.Role.workspace`. Given</span>
+<span class="sd">        an :py:class:`~torchx.specs.AppDef`, returns ``{(image, workspace): built}``</span>
+<span class="sd">        for the roles that have one -- keyed by the pair, not by role name, so the</span>
+<span class="sd">        result can be pinned onto a *different* ``AppDef``. A build installs the</span>
+<span class="sd">        workspace into ``role.image``, so the base image is half the key: roles</span>
+<span class="sd">        sharing a workspace but not an image build to different results, and roles</span>
+<span class="sd">        sharing both are built once. Both key halves come from the role as</span>
+<span class="sd">        *authored*, which the build does not overwrite. The pair is the widest</span>
+<span class="sd">        key correct for every builder, so one that caches more coarsely than the</span>
+<span class="sd">        exact image (on the fbpkg name, say) may rebuild where it could have</span>
+<span class="sd">        shared -- reuse is missed, never misapplied.</span>
+
+<span class="sd">        Only :py:attr:`~torchx.specs.Role.workspace` is read. The deprecated</span>
+<span class="sd">        ``workspace=`` argument to :py:meth:`run`/:py:meth:`dryrun` is applied</span>
+<span class="sd">        inside ``dryrun``, too late to prebuild here; set the role attribute</span>
+<span class="sd">        instead.</span>
+
+<span class="sd">        Unlike :py:meth:`dryrun`, this neither validates *app_or_role* nor</span>
+<span class="sd">        renders a scheduler request, so it does not fail on request-level</span>
+<span class="sd">        problems that are unrelated to building.</span>
+
+<span class="sd">        A role is omitted (with a warning) when its build wrote to the role</span>
+<span class="sd">        beyond ``image`` -- ``env``, say. Pinning cannot replay those writes, so</span>
+<span class="sd">        such a role keeps its workspace and rebuilds on submit. The whole</span>
+<span class="sd">        ``(image, workspace)`` pair drops out, not just that role: a pair one</span>
+<span class="sd">        role has to rebuild is not reusable for the roles that share it.</span>
+
+<span class="sd">        Returns an empty mapping (or ``None``) when *scheduler* has no workspace</span>
+<span class="sd">        support -- there is nothing to build.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">authored_roles</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">app_or_role</span><span class="o">.</span><span class="n">roles</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">app_or_role</span><span class="p">,</span> <span class="n">AppDef</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">app_or_role</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">_overrides_detached</span><span class="p">(</span><span class="n">authored_roles</span><span class="p">)</span> <span class="k">as</span> <span class="n">detached_overrides</span><span class="p">:</span>
+            <span class="n">roles</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">authored_roles</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">roles</span><span class="p">,</span> <span class="n">detached_overrides</span><span class="p">):</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
+
+        <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;build_workspace&quot;</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">):</span>
+            <span class="n">sched</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sched</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">app_or_role</span><span class="p">,</span> <span class="n">Role</span><span class="p">)</span> <span class="k">else</span> <span class="p">{}</span>
+            <span class="c1"># one call, so roles sharing a workspace hit the shared build cache</span>
+            <span class="n">sched</span><span class="o">.</span><span class="n">build_workspaces</span><span class="p">(</span><span class="n">roles</span><span class="p">,</span> <span class="n">sched</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span> <span class="ow">or</span> <span class="p">{}))</span>
+
+        <span class="n">reusable</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Workspace</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">rebuilt</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Workspace</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">authored</span><span class="p">,</span> <span class="n">role</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">authored_roles</span><span class="p">,</span> <span class="n">roles</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">workspace</span> <span class="o">=</span> <span class="n">authored</span><span class="o">.</span><span class="n">workspace</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">workspace</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_built_only_the_image</span><span class="p">(</span><span class="n">authored</span><span class="p">,</span> <span class="n">role</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;role `</span><span class="si">%s</span><span class="s2">` cannot reuse its build: the `</span><span class="si">%s</span><span class="s2">` workspace builder&quot;</span>
+                    <span class="s2">&quot; changed more than `image`, so the workspace has to be rebuilt&quot;</span>
+                    <span class="s2">&quot; on each submit&quot;</span><span class="p">,</span>
+                    <span class="n">authored</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">scheduler</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">rebuilt</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">authored</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">workspace</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="n">reusable</span><span class="p">[(</span><span class="n">authored</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">workspace</span><span class="p">)]</span> <span class="o">=</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">rebuilt</span><span class="p">:</span>
+            <span class="n">reusable</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">app_or_role</span><span class="p">,</span> <span class="n">Role</span><span class="p">):</span>
+            <span class="n">workspace</span> <span class="o">=</span> <span class="n">app_or_role</span><span class="o">.</span><span class="n">workspace</span>
+            <span class="k">return</span> <span class="n">reusable</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">app_or_role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">workspace</span><span class="p">))</span> <span class="k">if</span> <span class="n">workspace</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">reusable</span></div>
+
+
 <div class="viewcode-block" id="Runner.dryrun">
 <a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.dryrun">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">dryrun</span><span class="p">(</span>
@@ -799,26 +960,54 @@
 
 <span class="sd">        The returned :py:class:`~torchx.specs.AppDryRunInfo` can be</span>
 <span class="sd">        ``print()``-ed for inspection or passed to :py:meth:`schedule`.</span>
+
+<span class="sd">        **Does not mutate** *app*. The patching this method performs -- building</span>
+<span class="sd">        each role&#39;s :py:attr:`~torchx.specs.Role.workspace` and repointing</span>
+<span class="sd">        ``role.image`` at the built artifact, injecting the ``TORCHX_*`` tracking</span>
+<span class="sd">        env vars -- lands on a deep copy, which is returned as</span>
+<span class="sd">        :py:attr:`~torchx.specs.AppDryRunInfo.app`. Read the submitted images off</span>
+<span class="sd">        that copy, never off the *app* you passed in:</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            app = AppDef(roles=[Role(image=&quot;foo:latest&quot;, workspace=..., ...)])</span>
+<span class="sd">            info = runner.dryrun(app, &quot;kubernetes&quot;)</span>
+
+<span class="sd">            app.roles[0].image       # &quot;foo:latest&quot; -- unpatched, as authored</span>
+<span class="sd">            info.app.roles[0].image  # &quot;foo:&lt;built-workspace-hash&gt;&quot; -- submitted</span>
+
+<span class="sd">        ``Role.overrides`` is the one part not copied: the same dict object is</span>
+<span class="sd">        shared by the caller&#39;s role and the copy, so resolving an override</span>
+<span class="sd">        through either is visible to both.</span>
+
+<span class="sd">        Two dryruns of the same *app* need not render the same request -- each</span>
+<span class="sd">        rebuilds the workspace, and the build may produce a new image. Re-running</span>
+<span class="sd">        from the returned copy does not skip that build either, because</span>
+<span class="sd">        :py:attr:`~torchx.specs.Role.workspace` is left set after one; it only</span>
+<span class="sd">        narrows the difference down to the build, since every other patch is</span>
+<span class="sd">        already applied. Clear the workspace to render the exact same request:</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            info1 = runner.dryrun(app, &quot;kubernetes&quot;, cfg)</span>
+
+<span class="sd">            for role in info1.app.roles:</span>
+<span class="sd">                role.workspace = None</span>
+
+<span class="sd">            info2 = runner.dryrun(info1.app, &quot;kubernetes&quot;, info1.cfg)</span>
+<span class="sd">            assert info1.request == info2.request</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: *app* has no roles, or a role has no ``entrypoint`` or</span>
+<span class="sd">                a non-positive ``num_replicas``. Schedulers raise from their own</span>
+<span class="sd">                ``_validate`` hooks for backend-specific violations.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># operate on a copy so that the env injection and workspace overwrite</span>
         <span class="c1"># below never leak into the caller&#39;s AppDef (one AppDef can be</span>
-        <span class="c1"># dry-run multiple times); the copy rides in the returned</span>
-        <span class="c1"># AppDryRunInfo&#39;s `_app`.</span>
-        <span class="c1">#</span>
-        <span class="c1"># Role.overrides may already hold non-deepcopyable values (e.g. APF</span>
-        <span class="c1"># attaches an in-flight fbpkg Future before calling dryrun), so mirror</span>
-        <span class="c1"># the macros.Values.apply pattern: detach overrides, deepcopy, then</span>
-        <span class="c1"># attach the SAME dict object to both the original and the copy —</span>
-        <span class="c1"># sharing is the intended semantic: resolving an override through</span>
-        <span class="c1"># either owner benefits both.</span>
-        <span class="n">detached_overrides</span> <span class="o">=</span> <span class="p">[</span><span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
-            <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># dry-run multiple times); the copy is returned as the AppDryRunInfo&#39;s</span>
+        <span class="c1"># `app`.</span>
+        <span class="k">with</span> <span class="n">_overrides_detached</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">)</span> <span class="k">as</span> <span class="n">detached_overrides</span><span class="p">:</span>
             <span class="n">app_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">detached_overrides</span><span class="p">):</span>
-                <span class="n">role</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
         <span class="k">for</span> <span class="n">role_copy</span><span class="p">,</span> <span class="n">overrides</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">app_copy</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">detached_overrides</span><span class="p">):</span>
             <span class="n">role_copy</span><span class="o">.</span><span class="n">overrides</span> <span class="o">=</span> <span class="n">overrides</span>
         <span class="n">app</span> <span class="o">=</span> <span class="n">app_copy</span>

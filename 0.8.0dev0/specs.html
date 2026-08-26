@@ -1020,9 +1020,17 @@ from the scheduler for an already-submitted app).
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>request</strong> – The scheduler-specific submit request.</p></li>
 <li><p><strong>app</strong> – The resolved <a class="reference internal" href="#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> <code class="docutils literal notranslate"><span class="pre">request</span></code> was rendered from.
-<code class="docutils literal notranslate"><span class="pre">None</span></code> until set by <a class="reference internal" href="runner.html#torchx.runner.Runner.dryrun" title="torchx.runner.Runner.dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Runner.dryrun</span></code></a> or <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun" title="torchx.schedulers.api.Scheduler.submit_dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun</span></code></a>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">None</span></code> until set by <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun" title="torchx.schedulers.api.Scheduler.submit_dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun</span></code></a>. What it carries
+depends on the entry point: via <a class="reference internal" href="runner.html#torchx.runner.Runner.dryrun" title="torchx.runner.Runner.dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Runner.dryrun</span></code></a> it is a private copy, patched with
+the built workspace image and the injected <code class="docutils literal notranslate"><span class="pre">TORCHX_*</span></code> env vars,
+leaving the caller’s own untouched; via
+<a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun" title="torchx.schedulers.api.Scheduler.submit_dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun</span></code></a> directly it is the
+very object passed in, with neither step applied.</p></li>
 <li><p><strong>cfg</strong> – The resolved run config (defaults applied). Empty until set
-alongside <code class="docutils literal notranslate"><span class="pre">app</span></code>.</p></li>
+alongside <code class="docutils literal notranslate"><span class="pre">app</span></code>. Not a copy either: it is the same mapping the
+scheduler was handed, so mutating it in place reaches whatever the
+scheduler retained. The <code class="docutils literal notranslate"><span class="pre">Mapping</span></code> annotation is the only thing
+saying not to.</p></li>
 </ul>
 </dd>
 </dl>

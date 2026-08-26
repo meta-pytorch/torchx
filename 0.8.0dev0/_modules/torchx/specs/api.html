@@ -1515,11 +1515,20 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        request: The scheduler-specific submit request.</span>
 <span class="sd">        app: The resolved :py:class:`AppDef` ``request`` was rendered from.</span>
-<span class="sd">            ``None`` until set by :py:meth:`Runner.dryrun</span>
-<span class="sd">            &lt;torchx.runner.Runner.dryrun&gt;` or :py:meth:`Scheduler.submit_dryrun</span>
-<span class="sd">            &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`.</span>
+<span class="sd">            ``None`` until set by :py:meth:`Scheduler.submit_dryrun</span>
+<span class="sd">            &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;`. What it carries</span>
+<span class="sd">            depends on the entry point: via :py:meth:`Runner.dryrun</span>
+<span class="sd">            &lt;torchx.runner.Runner.dryrun&gt;` it is a private copy, patched with</span>
+<span class="sd">            the built workspace image and the injected ``TORCHX_*`` env vars,</span>
+<span class="sd">            leaving the caller&#39;s own untouched; via</span>
+<span class="sd">            :py:meth:`Scheduler.submit_dryrun</span>
+<span class="sd">            &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;` directly it is the</span>
+<span class="sd">            very object passed in, with neither step applied.</span>
 <span class="sd">        cfg: The resolved run config (defaults applied). Empty until set</span>
-<span class="sd">            alongside ``app``.</span>
+<span class="sd">            alongside ``app``. Not a copy either: it is the same mapping the</span>
+<span class="sd">            scheduler was handed, so mutating it in place reaches whatever the</span>
+<span class="sd">            scheduler retained. The ``Mapping`` annotation is the only thing</span>
+<span class="sd">            saying not to.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">T</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

@@ -856,7 +856,19 @@
         <span class="n">cfg</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
         <span class="n">workspace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Workspace</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits an app directly. Prefer :py:meth:`~torchx.runner.api.Runner.run` for production use.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submits an app directly. Prefer :py:meth:`~torchx.runner.api.Runner.run` for production use.</span>
+
+<span class="sd">        **Mutates** *app*: unlike :py:meth:`~torchx.runner.api.Runner.run`, no copy</span>
+<span class="sd">        is taken, so every write lands on the caller&#39;s own object. Passing</span>
+<span class="sd">        *workspace* sets ``app.roles[0].workspace`` and repoints</span>
+<span class="sd">        ``app.roles[*].image`` at the build; without it nothing is built, and a</span>
+<span class="sd">        role carrying its own :py:attr:`~torchx.specs.Role.workspace` reaches</span>
+<span class="sd">        :py:meth:`_submit_dryrun` unbuilt.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: *workspace* was passed but this scheduler is not a</span>
+<span class="sd">                :py:class:`~torchx.workspace.WorkspaceMixin`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># pyre-fixme: Generic cfg type passed to resolve</span>
         <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">workspace</span><span class="p">:</span>
@@ -887,7 +899,19 @@
 <div class="viewcode-block" id="Scheduler.submit_dryrun">
 <a class="viewcode-back" href="../../../schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the scheduler request without submitting.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the scheduler request without submitting.</span>
+
+<span class="sd">        **No copy is taken**: the returned</span>
+<span class="sd">        :py:attr:`~torchx.specs.AppDryRunInfo.app` *is* the *app* passed in, and</span>
+<span class="sd">        :py:meth:`_submit_dryrun` and each role&#39;s ``pre_proc`` may mutate it.</span>
+<span class="sd">        Callers wanting their :py:class:`~torchx.specs.AppDef` left alone should</span>
+<span class="sd">        go through :py:meth:`~torchx.runner.api.Runner.dryrun`, which copies</span>
+<span class="sd">        first.</span>
+
+<span class="sd">        :py:attr:`~torchx.specs.AppDryRunInfo.cfg` is *cfg* with this</span>
+<span class="sd">        scheduler&#39;s :py:meth:`run_opts` defaults applied, so it is not</span>
+<span class="sd">        necessarily the mapping that was passed in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># pyre-fixme: Generic cfg type passed to resolve</span>
         <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
         <span class="c1"># pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg</span>
@@ -903,6 +927,22 @@
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Renders *app* into this backend&#39;s submit request.</span>
+
+<span class="sd">        Implementations receive *cfg* already resolved against</span>
+<span class="sd">        :py:meth:`run_opts` and read ``role.image`` as final -- building a</span>
+<span class="sd">        role&#39;s workspace is never their job. Reached through</span>
+<span class="sd">        :py:meth:`~torchx.runner.api.Runner.dryrun`, or through</span>
+<span class="sd">        :py:meth:`submit` with a *workspace*, that build has already happened</span>
+<span class="sd">        and ``role.image`` points at its result; a caller who invokes</span>
+<span class="sd">        :py:meth:`submit_dryrun` directly can still hand over roles whose</span>
+<span class="sd">        ``workspace`` was never built.</span>
+
+<span class="sd">        Mutating *app* is permitted (the caller owns no copy) but discouraged:</span>
+<span class="sd">        prefer rendering into the returned</span>
+<span class="sd">        :py:class:`~torchx.specs.AppDryRunInfo`. Do not set its ``app``/``cfg``</span>
+<span class="sd">        attributes -- :py:meth:`submit_dryrun` does that.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Scheduler.run_opts">

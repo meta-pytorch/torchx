@@ -540,7 +540,14 @@
 
 <span class="sd">        .. important::</span>
 <span class="sd">            Mutates the passed *roles*. May also add env vars (e.g. ``WORKSPACE_DIR``)</span>
-<span class="sd">            to ``role.env``.</span>
+<span class="sd">            to ``role.env``. ``role.workspace`` is left set, so a role that has</span>
+<span class="sd">            been through this method is not distinguishable by inspection from</span>
+<span class="sd">            one that has not -- compare ``role.image`` instead.</span>
+
+<span class="sd">        Called by :py:meth:`~torchx.runner.api.Runner.dryrun` with the roles of</span>
+<span class="sd">        its private copy, so the caller&#39;s :py:class:`~torchx.specs.AppDef` is</span>
+<span class="sd">        unaffected there; :py:meth:`~torchx.schedulers.api.Scheduler.submit`</span>
+<span class="sd">        passes the caller&#39;s own roles.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -632,6 +639,29 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;push is not implemented&quot;</span><span class="p">)</span></div>
 </div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">pin_workspace_images</span><span class="p">(</span>
+    <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Workspace</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Points each role at its already-built image so submitting *app* skips the rebuild.</span>
+
+<span class="sd">    Pairs with :py:meth:`~torchx.runner.Runner.build_workspace`, whose return</span>
+<span class="sd">    value *images* is. Mutates *app*: a pinned role gets ``image`` set and</span>
+<span class="sd">    ``workspace`` cleared, which is what makes the rebuild a no-op.</span>
+
+<span class="sd">    A role matches on its whole ``(image, workspace)`` pair, since that is what</span>
+<span class="sd">    the build ran on: one sharing only the workspace is a different build and is</span>
+<span class="sd">    left alone, as is a role with no workspace (it arrived with a pre-built image</span>
+<span class="sd">    that must not be clobbered) or one whose pair nobody built.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">role</span><span class="o">.</span><span class="n">workspace</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">image</span>
+            <span class="n">role</span><span class="o">.</span><span class="n">workspace</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_ignore</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">patterns</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>

@@ -953,12 +953,33 @@ the iterator blocks until the app reaches a terminal state.</p>
 <dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.submit">
 <span class="sig-name descname"><span class="pre">submit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="specs.html#torchx.specs.Workspace" title="torchx.specs.api.Workspace"><span class="pre">Workspace</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.submit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.submit" title="Link to this definition">¶</a></dt>
 <dd><p>Submits an app directly. Prefer <code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code> for production use.</p>
+<p><strong>Mutates</strong> <em>app</em>: unlike <code class="xref py py-meth docutils literal notranslate"><span class="pre">run()</span></code>, no copy
+is taken, so every write lands on the caller’s own object. Passing
+<em>workspace</em> sets <code class="docutils literal notranslate"><span class="pre">app.roles[0].workspace</span></code> and repoints
+<code class="docutils literal notranslate"><span class="pre">app.roles[*].image</span></code> at the build; without it nothing is built, and a
+role carrying its own <code class="xref py py-attr docutils literal notranslate"><span class="pre">workspace</span></code> reaches
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_submit_dryrun()</span></code> unbuilt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – <em>workspace</em> was passed but this scheduler is not a
+    <a class="reference internal" href="workspace.html#torchx.workspace.WorkspaceMixin" title="torchx.workspace.WorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkspaceMixin</span></code></a>.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="torchx.schedulers.api.Scheduler.submit_dryrun">
 <span class="sig-name descname"><span class="pre">submit_dryrun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.api.AppDef"><span class="pre">AppDef</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">T</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="specs.html#torchx.specs.AppDryRunInfo" title="torchx.specs.api.AppDryRunInfo"><span class="pre">AppDryRunInfo</span></a></span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#Scheduler.submit_dryrun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.api.Scheduler.submit_dryrun" title="Link to this definition">¶</a></dt>
 <dd><p>Returns the scheduler request without submitting.</p>
+<p><strong>No copy is taken</strong>: the returned
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">app</span></code> <em>is</em> the <em>app</em> passed in, and
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_submit_dryrun()</span></code> and each role’s <code class="docutils literal notranslate"><span class="pre">pre_proc</span></code> may mutate it.
+Callers wanting their <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> left alone should
+go through <code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun()</span></code>, which copies
+first.</p>
+<p><code class="xref py py-attr docutils literal notranslate"><span class="pre">cfg</span></code> is <em>cfg</em> with this
+scheduler’s <a class="reference internal" href="#torchx.schedulers.api.Scheduler.run_opts" title="torchx.schedulers.api.Scheduler.run_opts"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_opts()</span></code></a> defaults applied, so it is not
+necessarily the mapping that was passed in.</p>
 </dd></dl>
 
 </dd></dl>

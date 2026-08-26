@@ -497,6 +497,20 @@ reference the patched artifact.</p></li>
 <a class="reference internal" href="#torchx.workspace.WorkspaceMixin.push_images" title="torchx.workspace.WorkspaceMixin.push_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">push_images()</span></code></a> handle pushing
 the built image to a remote registry.</p></li>
 </ol>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The role mutated in step 3 belongs to a <strong>copy</strong> of your
+<a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> that
+<a class="reference internal" href="runner.html#torchx.runner.Runner.dryrun" title="torchx.runner.Runner.dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun()</span></code></a> takes before patching – your own
+<code class="docutils literal notranslate"><span class="pre">AppDef</span></code> still carries the image you authored. To see what was actually
+submitted, read <code class="xref py py-attr docutils literal notranslate"><span class="pre">app</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">info</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+<span class="n">info</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">image</span>  <span class="c1"># patched; app.roles[0].image is not</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit" title="torchx.schedulers.api.Scheduler.submit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">submit()</span></code></a> takes no such copy and
+patches the <code class="docutils literal notranslate"><span class="pre">AppDef</span></code> you hand it.</p>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><code class="docutils literal notranslate"><span class="pre">DockerWorkspaceMixin</span></code> uses <code class="docutils literal notranslate"><span class="pre">Dockerfile.torchx</span></code> from the workspace root
@@ -664,8 +678,14 @@ image or an overlaid diff patch) without a manual image rebuild.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>Mutates the passed <em>roles</em>. May also add env vars (e.g. <code class="docutils literal notranslate"><span class="pre">WORKSPACE_DIR</span></code>)
-to <code class="docutils literal notranslate"><span class="pre">role.env</span></code>.</p>
+to <code class="docutils literal notranslate"><span class="pre">role.env</span></code>. <code class="docutils literal notranslate"><span class="pre">role.workspace</span></code> is left set, so a role that has
+been through this method is not distinguishable by inspection from
+one that has not – compare <code class="docutils literal notranslate"><span class="pre">role.image</span></code> instead.</p>
 </div>
+<p>Called by <code class="xref py py-meth docutils literal notranslate"><span class="pre">dryrun()</span></code> with the roles of
+its private copy, so the caller’s <a class="reference internal" href="specs.html#torchx.specs.AppDef" title="torchx.specs.AppDef"><code class="xref py py-class docutils literal notranslate"><span class="pre">AppDef</span></code></a> is
+unaffected there; <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit" title="torchx.schedulers.api.Scheduler.submit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">submit()</span></code></a>
+passes the caller’s own roles.</p>
 </dd></dl>
 
 <dl class="py method">
