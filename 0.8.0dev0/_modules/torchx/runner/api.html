@@ -1256,6 +1256,29 @@
             <span class="k">return</span> <span class="n">app</span></div>
 
 
+<div class="viewcode-block" id="Runner.describe_native">
+<a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.describe_native">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe_native</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the scheduler-native request back for an already-submitted app.</span>
+
+<span class="sd">        The read-side twin of :py:meth:`dryrun`: same</span>
+<span class="sd">        :py:class:`~torchx.specs.AppDryRunInfo` wrapper, same</span>
+<span class="sd">        scheduler-specific ``request`` type. Unlike :py:meth:`describe`, the</span>
+<span class="sd">        returned ``request`` preserves scheduler-specific fields that have no</span>
+<span class="sd">        :py:class:`~torchx.specs.AppDef` equivalent. Returns ``None`` if the</span>
+<span class="sd">        scheduler does not support native read-back or the app no longer</span>
+<span class="sd">        exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scheduler</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_app_id</span><span class="p">(</span>
+            <span class="n">app_handle</span><span class="p">,</span> <span class="n">check_session</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">log_event</span><span class="p">(</span><span class="s2">&quot;describe_native&quot;</span><span class="p">,</span> <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">app_id</span><span class="p">):</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">describe_native</span><span class="p">(</span><span class="n">app_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">info</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="n">scheduler_backend</span>
+            <span class="k">return</span> <span class="n">info</span></div>
+
+
 <div class="viewcode-block" id="Runner.log_lines">
 <a class="viewcode-back" href="../../../runner.html#torchx.runner.Runner.log_lines">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_lines</span><span class="p">(</span>
