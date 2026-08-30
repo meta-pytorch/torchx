@@ -387,15 +387,28 @@ class StructuredOptsTest(unittest.TestCase):
         self.assertEqual(opts.num_retries, 5)
         self.assertEqual(opts.enable_debug, True)
 
-    def test_from_cfg_snake_case_takes_precedence(self) -> None:
-        """Test that snake_case keys take precedence over camelCase."""
+    def test_from_cfg_conflicting_spellings_raise(self) -> None:
+        """A field passed as both snake_case and camelCase with different
+        values must raise rather than silently prefer one spelling."""
         cfg = {
             "cluster_name": "snake_value",
             "clusterName": "camel_value",
         }
+        with self.assertRaisesRegex(
+            InvalidRunConfigException, "cluster_name.*two spellings"
+        ):
+            SampleOpts.from_cfg(cfg)
+
+    def test_from_cfg_equal_spellings_collapse(self) -> None:
+        """A field passed as both snake_case and camelCase with the same
+        value collapses into the canonical field."""
+        cfg = {
+            "cluster_name": "same_value",
+            "clusterName": "same_value",
+        }
         opts = SampleOpts.from_cfg(cfg)
 
-        self.assertEqual(opts.cluster_name, "snake_value")
+        self.assertEqual(opts.cluster_name, "same_value")
 
     def test_cfg_key_metadata_alias(self) -> None:
         """Field metadata ``cfg_key`` maps external keys that cannot be
