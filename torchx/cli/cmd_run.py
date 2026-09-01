@@ -13,7 +13,14 @@ import os
 import sys
 import threading
 from collections import Counter
-from dataclasses import asdict, dataclass, field, fields, MISSING as DATACLASS_MISSING
+from dataclasses import (
+    asdict,
+    dataclass,
+    field,
+    fields,
+    is_dataclass,
+    MISSING as DATACLASS_MISSING,
+)
 from itertools import groupby
 from pathlib import Path
 from pprint import pformat
@@ -116,6 +123,55 @@ def torchx_run_args_from_argparse(
     )
 
 
+def _run_result_json(
+    app_handle: str, app_status: specs.AppStatus | None
+) -> dict[str, Any]:
+    """Returns the ``torchx run --json`` output.
+
+    Schema (stable, keys are only ever added):
+    ``{"handle": str, "app_id": str, "scheduler": str,
+    "state": str | None, "ui_url": str | None}``.
+    ``state`` and ``ui_url`` are ``None`` when the scheduler did not
+    return a status for the just-submitted app.
+    """
+    scheduler, _, app_id = specs.parse_app_handle(app_handle)
+    return {
+        "handle": app_handle,
+        "app_id": app_id,
+        "scheduler": scheduler,
+        "state": str(app_status.state) if app_status else None,
+        "ui_url": app_status.ui_url if app_status else None,
+    }
+
+
+def _dryrun_info_json(
+    dryrun_info: specs.AppDryRunInfo[object], scheduler: str
+) -> dict[str, Any]:
+    """Returns the ``torchx run --dryrun --json`` output.
+
+    Schema (stable, keys are only ever added):
+    ``{"scheduler": str, "cfg": dict, "app": dict | None, "request": dict | str}``.
+    ``app`` is the materialized :py:class:`~torchx.specs.AppDef` (``None`` when
+    the dryrun info does not carry one) and ``request`` is the scheduler
+    request that would have been submitted -- as a dict when the request
+    object is a dataclass, otherwise the scheduler's human-readable rendering
+    of it as a string.
+    """
+    request = dryrun_info.request
+    request_json: dict[str, object] | str = (
+        asdict(request)
+        if is_dataclass(request) and not isinstance(request, type)
+        else str(dryrun_info)
+    )
+    app = dryrun_info.app
+    return {
+        "scheduler": scheduler,
+        "cfg": dict(dryrun_info.cfg),
+        "app": asdict(app) if app else None,
+        "request": request_json,
+    }
+
+
 def _parse_component_name_and_args(
     component_name_and_args: list[str],
     subparser: argparse.ArgumentParser,
@@ -203,6 +259,14 @@ class CmdBuiltins(SubCommand):
 
 
 class CmdRun(SubCommand):
+    """``torchx run`` -- submits (or dryruns) a component to a scheduler.
+
+    By default prints human-readable output. With ``--json`` stdout carries
+    exactly one JSON object (see :py:func:`_run_result_json` and
+    :py:func:`_dryrun_info_json` for the schemas) and all human narration
+    goes to stderr, so the output can be piped straight into a JSON parser.
+    """
+
     def __init__(self) -> None:
         self._subparser: argparse.ArgumentParser | None = None
         self._stdin_data_json: dict[str, Any] | None = None
@@ -273,11 +337,22 @@ class CmdRun(SubCommand):
             help="Read JSON input from stdin to parse into torchx run args and run the component.",
         )
         subparser.add_argument(
+            "--json",
+            action="store_true",
+            default=False,
+            help="Print a single JSON object to stdout instead of the human-readable"
+            " output (human narration goes to stderr). On submit prints the app handle,"
+            " id, scheduler, state, and ui_url; with --dryrun prints the materialized"
+            " app and scheduler request.",
+        )
+        subparser.add_argument(
             "component_name_and_args",
             nargs=argparse.REMAINDER,
         )
 
-    def _run_inner(self, runner: Runner, args: TorchXRunArgs) -> None:
+    def _run_inner(
+        self, runner: Runner, args: TorchXRunArgs, json_output: bool
+    ) -> None:
         if args.scheduler == "local":
             logger.warning(LOCAL_SCHEDULER_WARNING_MSG)
 
@@ -288,50 +363,10 @@ class CmdRun(SubCommand):
             else args.component_args
         )
         try:
-            workspace = Workspace.from_str(args.workspace) if args.workspace else None
-
             if args.dryrun:
-                dryrun_info = runner.dryrun_component(
-                    args.component_name,
-                    component_args,
-                    args.scheduler,
-                    workspace=workspace,
-                    cfg=args.scheduler_cfg,
-                    parent_run_id=args.parent_run_id,
-                )
-                print(
-                    # pyrefly: ignore [bad-argument-type]
-                    "\n=== APPLICATION ===\n"
-                    f"{pformat(asdict(dryrun_info.app), indent=2, width=80)}"
-                )
-
-                print("\n=== SCHEDULER REQUEST ===\n" f"{dryrun_info}")
+                self._dryrun(runner, args, component_args, json_output)
             else:
-                app_handle = runner.run_component(
-                    args.component_name,
-                    component_args,
-                    args.scheduler,
-                    workspace=args.workspace,
-                    cfg=args.scheduler_cfg,
-                    parent_run_id=args.parent_run_id,
-                )
-                # DO NOT delete this line. It is used by slurm tests to retrieve the app id
-                print(app_handle)
-
-                if args.scheduler.startswith("local"):
-                    self._wait_and_exit(
-                        runner, app_handle, log=True, tee_logs=args.tee_logs
-                    )
-                else:
-                    logger.info("launched app: `%s`", app_handle)
-                    app_status = runner.status(app_handle)
-                    if app_status:
-                        logger.info(app_status.format())
-                    if args.wait or args.log:
-                        self._wait_and_exit(
-                            runner, app_handle, log=args.log, tee_logs=args.tee_logs
-                        )
-
+                self._submit(runner, args, component_args, json_output)
         except (ComponentValidationException, ComponentNotFoundException) as e:
             error_msg = (
                 f"\nFailed to run component `{args.component_name}` got errors: \n {e}"
@@ -350,6 +385,83 @@ class CmdRun(SubCommand):
             logger.error(error_msg)
             sys.exit(1)
 
+    def _dryrun(
+        self,
+        runner: Runner,
+        args: TorchXRunArgs,
+        component_args: dict[str, Any] | list[str],
+        json_output: bool,
+    ) -> None:
+        workspace = Workspace.from_str(args.workspace) if args.workspace else None
+        dryrun_info = runner.dryrun_component(
+            args.component_name,
+            component_args,
+            args.scheduler,
+            workspace=workspace,
+            cfg=args.scheduler_cfg,
+            parent_run_id=args.parent_run_id,
+        )
+        if json_output:
+            print(
+                json.dumps(_dryrun_info_json(dryrun_info, args.scheduler), default=str)
+            )
+        else:
+            print(
+                # pyrefly: ignore [bad-argument-type]
+                "\n=== APPLICATION ===\n"
+                f"{pformat(asdict(dryrun_info.app), indent=2, width=80)}"
+            )
+
+            print("\n=== SCHEDULER REQUEST ===\n" f"{dryrun_info}")
+
+    def _submit(
+        self,
+        runner: Runner,
+        args: TorchXRunArgs,
+        component_args: dict[str, Any] | list[str],
+        json_output: bool,
+    ) -> None:
+        app_handle = runner.run_component(
+            args.component_name,
+            component_args,
+            args.scheduler,
+            workspace=args.workspace,
+            cfg=args.scheduler_cfg,
+            parent_run_id=args.parent_run_id,
+        )
+        logger.info("launched app: `%s`", app_handle)
+        if not json_output:
+            # DO NOT delete this line. It is used by slurm tests to retrieve the app id
+            print(app_handle)
+
+        app_status: specs.AppStatus | None = None
+        waited = False
+        if args.scheduler.startswith("local"):
+            app_status = self._wait(
+                runner, app_handle, log=True, tee_logs=args.tee_logs
+            )
+            waited = True
+        else:
+            app_status = runner.status(app_handle)
+            if app_status:
+                logger.info(app_status.format())
+            if args.wait or args.log:
+                app_status = self._wait(
+                    runner, app_handle, log=args.log, tee_logs=args.tee_logs
+                )
+                waited = True
+
+        if json_output:
+            print(json.dumps(_run_result_json(app_handle, app_status)))
+
+        if waited:
+            final_status = none_throws(app_status)
+            if final_status.state != specs.AppState.SUCCEEDED:
+                logger.error(final_status)
+                sys.exit(1)
+            else:
+                logger.debug(final_status)
+
     def _run_from_cli_args(self, runner: Runner, args: argparse.Namespace) -> None:
         scheduler_opts = runner.scheduler_run_opts(args.scheduler)
         cfg = scheduler_opts.cfg_from_str(args.scheduler_args)
@@ -361,16 +473,18 @@ class CmdRun(SubCommand):
         torchx_run_args = torchx_run_args_from_argparse(
             args, component, component_args, cfg
         )
-        self._run_inner(runner, torchx_run_args)
+        self._run_inner(runner, torchx_run_args, json_output=args.json)
 
-    def _run_from_stdin_args(self, runner: Runner, stdin_data: dict[str, Any]) -> None:
+    def _run_from_stdin_args(
+        self, runner: Runner, stdin_data: dict[str, Any], json_output: bool
+    ) -> None:
         torchx_run_args = torchx_run_args_from_json(stdin_data)
         scheduler_opts = runner.scheduler_run_opts(torchx_run_args.scheduler)
         cfg = scheduler_opts.cfg_from_json_repr(
             json.dumps(torchx_run_args.scheduler_args)
         )
         torchx_run_args.scheduler_cfg = cfg
-        self._run_inner(runner, torchx_run_args)
+        self._run_inner(runner, torchx_run_args, json_output=json_output)
 
     def _get_torchx_stdin_args(self, args: argparse.Namespace) -> dict[str, Any] | None:
         if not args.stdin:
@@ -416,6 +530,8 @@ class CmdRun(SubCommand):
                 continue
             if action.dest == "dryrun":  # Skip dryrun
                 continue
+            if action.dest == "json":  # Skip json (output format, not job config)
+                continue
 
             current_value = getattr(args, action.dest, None)
             default_value = action.default
@@ -438,7 +554,9 @@ class CmdRun(SubCommand):
         if args.stdin:
             stdin_data_json = self._get_torchx_stdin_args(args)
             if stdin_data_json is not None:
-                self._run_from_stdin_args(runner, stdin_data_json)
+                self._run_from_stdin_args(
+                    runner, stdin_data_json, json_output=args.json
+                )
         else:
             self._run_from_cli_args(runner, args)
 
@@ -449,9 +567,9 @@ class CmdRun(SubCommand):
         with get_runner(component_defaults=component_defaults) as runner:
             self._run(runner, args)
 
-    def _wait_and_exit(
+    def _wait(
         self, runner: Runner, app_handle: str, log: bool, tee_logs: bool = False
-    ) -> None:
+    ) -> specs.AppStatus:
         logger.info("Waiting for the app to finish...")
 
         log_thread = (
@@ -469,11 +587,7 @@ class CmdRun(SubCommand):
         if log_thread:
             log_thread.join()
 
-        if status.state != specs.AppState.SUCCEEDED:
-            logger.error(status)
-            sys.exit(1)
-        else:
-            logger.debug(status)
+        return status
 
     def _start_log_thread(
         self, runner: Runner, app_handle: str, tee_logs_enabled: bool = False
