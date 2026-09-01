@@ -34,7 +34,7 @@ from torchx.cli.cmd_run import (
 )
 from torchx.schedulers.local_scheduler import SignalException
 from torchx.settings import ENV_TORCHXCONFIG
-from torchx.specs import AppDryRunInfo, AppState, CfgVal
+from torchx.specs import AppDryRunInfo, AppState, AppStatus, CfgVal
 
 
 @contextmanager
@@ -231,6 +231,97 @@ class CmdRunTest(unittest.TestCase):
         # compatible with python 3.7
         call_kwargs = mock_runner_run.call_args[-1]
         self.assertEqual(call_kwargs["parent_run_id"], "experiment_1")
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_dryrun_json(self, stdout: io.StringIO) -> None:
+        args = self.parser.parse_args(
+            [
+                "--dryrun",
+                "--json",
+                "--scheduler",
+                "local_cwd",
+                "utils.echo",
+                "--image",
+                "/tmp",
+            ]
+        )
+        self.cmd_run.run(args)
+
+        dryrun_json = json.loads(stdout.getvalue())
+        self.assertEqual(dryrun_json["scheduler"], "local_cwd")
+        self.assertEqual(dryrun_json["app"]["name"], "echo")
+        self.assertEqual(len(dryrun_json["app"]["roles"]), 1)
+        self.assertIsInstance(dryrun_json["cfg"], dict)
+        self.assertIn("request", dryrun_json)
+
+    def _mock_runner(self, app_status: AppStatus | None) -> MagicMock:
+        runner = MagicMock()
+        runner.run_component.return_value = "kubernetes://test_session/app_id_1234"
+        runner.status.return_value = app_status
+        runner.wait.return_value = app_status
+        return runner
+
+    def _submit_args(self, wait: bool = False) -> TorchXRunArgs:
+        return TorchXRunArgs(
+            component_name="utils.echo",
+            scheduler="kubernetes",
+            scheduler_args={},
+            wait=wait,
+        )
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_json(self, stdout: io.StringIO) -> None:
+        app_status = AppStatus(
+            state=AppState.RUNNING, ui_url="https://scheduler.example.com/app_id_1234"
+        )
+        self.cmd_run._run_inner(
+            self._mock_runner(app_status), self._submit_args(), json_output=True
+        )
+
+        self.assertEqual(
+            json.loads(stdout.getvalue()),
+            {
+                "handle": "kubernetes://test_session/app_id_1234",
+                "app_id": "app_id_1234",
+                "scheduler": "kubernetes",
+                "state": "RUNNING",
+                "ui_url": "https://scheduler.example.com/app_id_1234",
+            },
+        )
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_json_no_status(self, stdout: io.StringIO) -> None:
+        self.cmd_run._run_inner(
+            self._mock_runner(None), self._submit_args(), json_output=True
+        )
+
+        run_json = json.loads(stdout.getvalue())
+        self.assertIsNone(run_json["state"])
+        self.assertIsNone(run_json["ui_url"])
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_json_wait_failed_exits_nonzero(
+        self, stdout: io.StringIO
+    ) -> None:
+        app_status = AppStatus(state=AppState.FAILED)
+        with self.assertRaises(SystemExit) as cm:
+            self.cmd_run._run_inner(
+                self._mock_runner(app_status),
+                self._submit_args(wait=True),
+                json_output=True,
+            )
+
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(json.loads(stdout.getvalue())["state"], "FAILED")
+
+    @patch("sys.stdout", new_callable=io.StringIO)
+    def test_run_submit_human_output_unchanged(self, stdout: io.StringIO) -> None:
+        app_status = AppStatus(state=AppState.RUNNING)
+        self.cmd_run._run_inner(
+            self._mock_runner(app_status), self._submit_args(), json_output=False
+        )
+
+        self.assertEqual(stdout.getvalue(), "kubernetes://test_session/app_id_1234\n")
 
     def test_parse_component_name_and_args_no_default(self) -> None:
         # set dirs to test tmpdir so tests don't accidentally pick up user's $HOME/.torchxconfig
@@ -458,7 +549,7 @@ component = custom.echo
 
         with patch("torchx.cli.cmd_run.config.apply"):
             with self.assertLogs("torchx.cli.cmd_run", level="WARNING") as logs:
-                self.cmd_run._run_inner(runner, run_args)
+                self.cmd_run._run_inner(runner, run_args, json_output=False)
         self.assertTrue(
             any(LOCAL_SCHEDULER_WARNING_MSG in line for line in logs.output),
             msg="`-s local` must warn that the `local` scheduler is deprecated",
@@ -476,9 +567,10 @@ component = custom.echo
             tee_logs=True,
         )
 
-        with patch.object(self.cmd_run, "_wait_and_exit") as wait_mock:
+        with patch.object(self.cmd_run, "_wait") as wait_mock:
+            wait_mock.return_value.state = AppState.SUCCEEDED
             with self.assertLogs("torchx.cli.cmd_run", level="INFO") as logs:
-                self.cmd_run._run_inner(runner, run_args)
+                self.cmd_run._run_inner(runner, run_args, json_output=False)
         self.assertTrue(
             any("app status" in line for line in logs.output),
             msg="the status returned by the scheduler must be logged on submit",
@@ -497,9 +589,9 @@ component = custom.echo
             scheduler_args={},
         )
 
-        with patch.object(self.cmd_run, "_wait_and_exit") as wait_mock:
+        with patch.object(self.cmd_run, "_wait") as wait_mock:
             with self.assertLogs("torchx.cli.cmd_run", level="INFO") as logs:
-                self.cmd_run._run_inner(runner, run_args)
+                self.cmd_run._run_inner(runner, run_args, json_output=False)
         self.assertEqual(
             1,
             len(logs.output),
@@ -563,9 +655,9 @@ component = custom.echo
         with patch("sys.stdin", io.StringIO(json.dumps(payload))):
             with patch.object(self.cmd_run, "_run_from_stdin_args") as stdin_run_mock:
                 self.cmd_run._run(runner, args)
-        stdin_run_mock.assert_called_once_with(runner, payload)
+        stdin_run_mock.assert_called_once_with(runner, payload, json_output=False)
 
-    def test_wait_and_exit_unknown_status_raises(self) -> None:
+    def test_wait_unknown_status_raises(self) -> None:
         runner = MagicMock()
         runner.wait.return_value = None
         with self.assertRaisesRegex(
@@ -573,17 +665,20 @@ component = custom.echo
             "unknown status",
             msg="a None from runner.wait must fail loudly, not exit 0",
         ):
-            self.cmd_run._wait_and_exit(
-                runner, "kubernetes://session/app_id", log=False
-            )
+            self.cmd_run._wait(runner, "kubernetes://session/app_id", log=False)
 
-    def test_wait_and_exit_failed_app_exits_nonzero(self) -> None:
+    def test_run_wait_failed_app_exits_nonzero(self) -> None:
         runner = MagicMock()
+        runner.run_component.return_value = "kubernetes://session/app_id"
         runner.wait.return_value.state = AppState.FAILED
+        run_args = TorchXRunArgs(
+            component_name="utils.echo",
+            scheduler="kubernetes",
+            scheduler_args={},
+            wait=True,
+        )
         with self.assertRaises(SystemExit) as cm:
-            self.cmd_run._wait_and_exit(
-                runner, "kubernetes://session/app_id", log=False
-            )
+            self.cmd_run._run_inner(runner, run_args, json_output=False)
         self.assertEqual(
             1,
             cm.exception.code,
