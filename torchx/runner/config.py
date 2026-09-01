@@ -166,7 +166,7 @@ from typing import Iterable, TextIO
 
 from torchx import settings
 from torchx.schedulers import get_scheduler_factories, Scheduler
-from torchx.specs import CfgVal, get_type_name
+from torchx.specs import CfgVal, get_type_name, InvalidRunConfigException
 from torchx.specs.api import runopt
 from torchx.util import entrypoints
 
@@ -532,29 +532,44 @@ def load(scheduler: str, f: TextIO, cfg: dict[str, CfgVal]) -> None:
 
     section = f"{scheduler}"
     if config.has_section(section):
+        seen_spelling: dict[str, tuple[str, CfgVal]] = {}
         for name, value in config.items(section):
-            if name in cfg.keys():
-                # DO NOT OVERRIDE existing configs
+            opt = runopts.get(name)
+            key = runopts.canonical_key(name) or name
+
+            if opt is None:
+                log.warning(
+                    "`%s = %s` was declared in the [%s] section"
+                    " of the config file but is not a runopt of `%s` scheduler,"
+                    " remove the entry from the config file to no longer see this warning",
+                    name,
+                    value,
+                    section,
+                    scheduler,
+                )
                 continue
 
-            if value == _NONE:
-                # should map to None (not str 'None')
-                # this also handles empty or None lists
-                cfg[name] = None
-            else:
-                opt = runopts.get(name)
+            if key not in seen_spelling and key in cfg.keys():
+                # DO NOT OVERRIDE existing configs — even file spellings
+                # that conflict with each other are moot and skip unparsed
+                continue
 
-                if opt is None:
-                    log.warning(
-                        "`%s = %s` was declared in the [%s] section"
-                        " of the config file but is not a runopt of `%s` scheduler,"
-                        " remove the entry from the config file to no longer see this warning",
-                        name,
-                        value,
-                        section,
-                        scheduler,
+            # delegate casting to the runopt itself so configfile values
+            # parse exactly like CLI `-cfg` values; `None` (str) maps to None
+            parsed: CfgVal = None if value == _NONE else opt.cast_to_type(value)
+
+            if key in seen_spelling:
+                prev_name, prev_parsed = seen_spelling[key]
+                if prev_parsed != parsed:
+                    raise InvalidRunConfigException(
+                        f"Run option `{key}` was declared in the [{section}]"
+                        f" section under two spellings (`{prev_name}` and"
+                        f" `{name}`) with conflicting values. Keep one,"
+                        f" as `{key}`",
+                        key,
+                        dict(config.items(section)),
                     )
-                else:
-                    # delegate casting to the runopt itself so configfile
-                    # values parse exactly like CLI `-cfg` values
-                    cfg[name] = opt.cast_to_type(value)
+                continue
+            seen_spelling[key] = (name, parsed)
+
+            cfg[key] = parsed
