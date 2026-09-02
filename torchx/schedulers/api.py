@@ -33,6 +33,7 @@ from torchx.specs import (
     AppState,
     cases,
     CfgVal,
+    InvalidRunConfigException,
     NONE,
     NULL_RESOURCE,
     Role,
@@ -125,7 +126,10 @@ class StructuredOpts(Mapping[str, CfgVal]):
         """Create an instance from a raw config dict.
 
         Fields are snake_case but also accept camelCase aliases (e.g.,
-        ``hpc_identity`` can be set via ``hpcIdentity``).
+        ``hpc_identity`` can be set via ``hpcIdentity``). A field passed under
+        two spellings with conflicting values raises
+        :py:class:`~torchx.specs.InvalidRunConfigException`; equal values
+        collapse into one.
         Nested :py:class:`StructuredOpts` fields are reconstructed from
         dot-prefixed keys (e.g., ``k8s.context``).
         """
@@ -148,14 +152,24 @@ class StructuredOpts(Mapping[str, CfgVal]):
                 continue
 
             cfg_key = f.metadata.get("cfg_key", name)
-            if cfg_key in cfg:
-                kwargs[name] = cfg[cfg_key]
-            elif name in cfg:
-                kwargs[name] = cfg[name]
-            else:
-                camel_case = cases.snake_to_camel(name)
-                if camel_case in cfg:
-                    kwargs[name] = cfg[camel_case]
+            spellings = [
+                k
+                for k in dict.fromkeys((cfg_key, name, cases.snake_to_camel(name)))
+                if k in cfg
+            ]
+            if not spellings:
+                continue
+            val = cfg[spellings[0]]
+            for other in spellings[1:]:
+                if cfg[other] != val:
+                    raise InvalidRunConfigException(
+                        f"Run option `{cfg_key}` was passed under two spellings"
+                        f" (`{spellings[0]}` and `{other}`) with conflicting"
+                        f" values. Pass it once, as `{cfg_key}`",
+                        cfg_key,
+                        cfg,
+                    )
+            kwargs[name] = val
         return cls(**kwargs)
 
     # -------------------------------------------------------------------------
