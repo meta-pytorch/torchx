@@ -1022,6 +1022,17 @@ class AppDryRunInfo(Generic[T]):
             scheduler was handed, so mutating it in place reaches whatever the
             scheduler retained. The ``Mapping`` annotation is the only thing
             saying not to.
+        _scheduler: Name of the scheduler this ``request`` belongs to. Set on
+            the way out of :py:meth:`Runner.dryrun
+            <torchx.runner.Runner.dryrun>` and :py:meth:`Runner.describe_native
+            <torchx.runner.Runner.describe_native>`. Stays ``None`` when
+            :py:meth:`Scheduler.submit_dryrun
+            <torchx.schedulers.api.Scheduler.submit_dryrun>` or
+            :py:meth:`Scheduler.describe_native
+            <torchx.schedulers.api.Scheduler.describe_native>` is called
+            directly; :py:meth:`Runner.schedule
+            <torchx.runner.Runner.schedule>` reads it through ``none_throws``,
+            so one built that way fails there rather than at construction.
     """
 
     def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
