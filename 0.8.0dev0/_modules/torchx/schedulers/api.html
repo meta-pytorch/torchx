@@ -469,6 +469,7 @@
     <span class="n">AppState</span><span class="p">,</span>
     <span class="n">cases</span><span class="p">,</span>
     <span class="n">CfgVal</span><span class="p">,</span>
+    <span class="n">InvalidRunConfigException</span><span class="p">,</span>
     <span class="n">NONE</span><span class="p">,</span>
     <span class="n">NULL_RESOURCE</span><span class="p">,</span>
     <span class="n">Role</span><span class="p">,</span>
@@ -565,7 +566,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an instance from a raw config dict.</span>
 
 <span class="sd">        Fields are snake_case but also accept camelCase aliases (e.g.,</span>
-<span class="sd">        ``hpc_identity`` can be set via ``hpcIdentity``).</span>
+<span class="sd">        ``hpc_identity`` can be set via ``hpcIdentity``). A field passed under</span>
+<span class="sd">        two spellings with conflicting values raises</span>
+<span class="sd">        :py:class:`~torchx.specs.InvalidRunConfigException`; equal values</span>
+<span class="sd">        collapse into one.</span>
 <span class="sd">        Nested :py:class:`StructuredOpts` fields are reconstructed from</span>
 <span class="sd">        dot-prefixed keys (e.g., ``k8s.context``).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -588,14 +592,24 @@
                 <span class="k">continue</span>
 
             <span class="n">cfg_key</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cfg_key&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">camel_case</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">camel_case</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
-                    <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">camel_case</span><span class="p">]</span>
+            <span class="n">spellings</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">k</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">((</span><span class="n">cfg_key</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">cases</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cfg</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">spellings</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">spellings</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">spellings</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="k">if</span> <span class="n">cfg</span><span class="p">[</span><span class="n">other</span><span class="p">]</span> <span class="o">!=</span> <span class="n">val</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Run option `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">` was passed under two spellings&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; (`</span><span class="si">{</span><span class="n">spellings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">` and `</span><span class="si">{</span><span class="n">other</span><span class="si">}</span><span class="s2">`) with conflicting&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; values. Pass it once, as `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
+                        <span class="n">cfg_key</span><span class="p">,</span>
+                        <span class="n">cfg</span><span class="p">,</span>
+                    <span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 

@@ -1529,6 +1529,17 @@
 <span class="sd">            scheduler was handed, so mutating it in place reaches whatever the</span>
 <span class="sd">            scheduler retained. The ``Mapping`` annotation is the only thing</span>
 <span class="sd">            saying not to.</span>
+<span class="sd">        _scheduler: Name of the scheduler this ``request`` belongs to. Set on</span>
+<span class="sd">            the way out of :py:meth:`Runner.dryrun</span>
+<span class="sd">            &lt;torchx.runner.Runner.dryrun&gt;` and :py:meth:`Runner.describe_native</span>
+<span class="sd">            &lt;torchx.runner.Runner.describe_native&gt;`. Stays ``None`` when</span>
+<span class="sd">            :py:meth:`Scheduler.submit_dryrun</span>
+<span class="sd">            &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;` or</span>
+<span class="sd">            :py:meth:`Scheduler.describe_native</span>
+<span class="sd">            &lt;torchx.schedulers.api.Scheduler.describe_native&gt;` is called</span>
+<span class="sd">            directly; :py:meth:`Runner.schedule</span>
+<span class="sd">            &lt;torchx.runner.Runner.schedule&gt;` reads it through ``none_throws``,</span>
+<span class="sd">            so one built that way fails there rather than at construction.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">T</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1684,6 +1695,22 @@
                 <span class="k">return</span> <span class="kc">False</span></div>
 
 
+<div class="viewcode-block" id="runopts.canonical_key">
+<a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.canonical_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">canonical_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the registered key that ``name`` spells, or ``None`` if unknown.</span>
+
+<span class="sd">        ``name`` may be the registered key itself or its camelCase alias</span>
+<span class="sd">        (e.g. ``&quot;clusterName&quot;`` canonicalizes to a registered ``&quot;cluster_name&quot;``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">name</span>
+        <span class="n">snake</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">camel_to_snake</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">snake</span> <span class="o">!=</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">snake</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">snake</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
 <div class="viewcode-block" id="runopts.get">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.get">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopt</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -1691,14 +1718,8 @@
 
 <span class="sd">        Accepts camelCase names (e.g. ``&quot;clusterName&quot;`` resolves ``&quot;cluster_name&quot;``).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># _opts maps names to runopt instances (never None), so a None</span>
-        <span class="c1"># result unambiguously means the key does not exist.</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">snake</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">camel_to_snake</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">snake</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">result</span></div>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="runopts.resolve">
@@ -1707,20 +1728,34 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates ``cfg`` against registered options, filling defaults.</span>
 
 <span class="sd">        Raises :py:class:`InvalidRunConfigException` for missing required options</span>
-<span class="sd">        or type mismatches. Accepts camelCase keys.</span>
+<span class="sd">        or type mismatches. Accepts camelCase aliases of registered keys and</span>
+<span class="sd">        canonicalizes them, so the returned cfg holds exactly one spelling per</span>
+<span class="sd">        option: the registered one. Passing an option under two spellings with</span>
+<span class="sd">        conflicting values raises :py:class:`InvalidRunConfigException`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">resolved_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cfg</span><span class="p">}</span>
+        <span class="n">resolved_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">given_spelling</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># canonical key -&gt; spelling in cfg</span>
+
+        <span class="k">for</span> <span class="n">given_key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">cfg_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">given_key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># unknown keys pass through as-is</span>
+                <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">given_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">in</span> <span class="n">given_spelling</span> <span class="ow">and</span> <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">val</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Run option `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">` was passed under two spellings&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; (`</span><span class="si">{</span><span class="n">given_spelling</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span><span class="si">}</span><span class="s2">` and `</span><span class="si">{</span><span class="n">given_key</span><span class="si">}</span><span class="s2">`) with&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; conflicting values. Pass it once, as `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
+                    <span class="n">cfg_key</span><span class="p">,</span>
+                    <span class="n">cfg</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">given_spelling</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">,</span> <span class="n">given_key</span><span class="p">)</span>
+            <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
         <span class="k">for</span> <span class="n">cfg_key</span><span class="p">,</span> <span class="n">runopt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">)</span>
-
-            <span class="c1"># Fallback: try camelCase version of the registered key in cfg</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cfg_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resolved_cfg</span><span class="p">:</span>
-                <span class="n">camel_key</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">snake_to_camel</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">camel_key</span> <span class="o">!=</span> <span class="n">cfg_key</span> <span class="ow">and</span> <span class="n">camel_key</span> <span class="ow">in</span> <span class="n">resolved_cfg</span><span class="p">:</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="n">resolved_cfg</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">camel_key</span><span class="p">)</span>
-                    <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
             <span class="c1"># check required opt</span>
             <span class="k">if</span> <span class="n">runopt</span><span class="o">.</span><span class="n">is_required</span> <span class="ow">and</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1815,11 +1850,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">to_dict</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">opt</span><span class="p">:</span>
-                <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
+        <span class="n">given_spelling</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cfg_dict</span> <span class="o">=</span> <span class="n">to_dict</span><span class="p">(</span><span class="n">cfg_str</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">cfg_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">unknown run option passed to scheduler: </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s%s</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="n">YELLOW_BOLD</span><span class="p">,</span>
@@ -1827,6 +1862,18 @@
                     <span class="n">val</span><span class="p">,</span>
                     <span class="n">RESET</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">cast_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">in</span> <span class="n">given_spelling</span> <span class="ow">and</span> <span class="n">cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cast_val</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Run option `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">` was passed under two spellings&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; (`</span><span class="si">{</span><span class="n">given_spelling</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span><span class="si">}</span><span class="s2">` and `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`) with&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; conflicting values. Pass it once, as `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
+                    <span class="n">cfg_key</span><span class="p">,</span>
+                    <span class="n">cfg_dict</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">given_spelling</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast_val</span>
         <span class="k">return</span> <span class="n">cfg</span></div>
 
 
@@ -1837,21 +1884,34 @@
 <span class="sd">        Converts the given dict to a valid cfg for this ``runopts`` object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">given_spelling</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">cfg_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_repr</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">opt</span><span class="p">:</span>
-                <span class="c1"># Optional runopt cfg values default their value to None,</span>
-                <span class="c1"># but use `_type` to specify their type when provided.</span>
-                <span class="c1"># Make sure not to treat None&#39;s as lists/dictionaries</span>
-                <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
-                <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_list_of_str</span><span class="p">:</span>
-                    <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
-                <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_dict_of_str</span><span class="p">:</span>
-                    <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="n">cfg_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span>
+            <span class="c1"># Optional runopt cfg values default their value to None,</span>
+            <span class="c1"># but use `_type` to specify their type when provided.</span>
+            <span class="c1"># Make sure not to treat None&#39;s as lists/dictionaries</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cast_val</span><span class="p">:</span> <span class="n">CfgVal</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_list_of_str</span><span class="p">:</span>
+                <span class="n">cast_val</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_dict_of_str</span><span class="p">:</span>
+                <span class="n">cast_val</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cast_val</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">in</span> <span class="n">given_spelling</span> <span class="ow">and</span> <span class="n">cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cast_val</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Run option `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">` was passed under two spellings&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; (`</span><span class="si">{</span><span class="n">given_spelling</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span><span class="si">}</span><span class="s2">` and `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`) with&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; conflicting values. Pass it once, as `</span><span class="si">{</span><span class="n">cfg_key</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
+                    <span class="n">cfg_key</span><span class="p">,</span>
+                    <span class="n">cfg_dict</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">given_spelling</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">cfg_key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast_val</span>
         <span class="k">return</span> <span class="n">cfg</span></div>
 
 

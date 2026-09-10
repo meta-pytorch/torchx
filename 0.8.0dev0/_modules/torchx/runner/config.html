@@ -600,7 +600,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_scheduler_factories</span><span class="p">,</span> <span class="n">Scheduler</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">get_type_name</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">get_type_name</span><span class="p">,</span> <span class="n">InvalidRunConfigException</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">runopt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">entrypoints</span>
 
@@ -986,32 +986,47 @@
 
     <span class="n">section</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scheduler</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+        <span class="n">seen_spelling</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="c1"># DO NOT OVERRIDE existing configs</span>
+            <span class="n">opt</span> <span class="o">=</span> <span class="n">runopts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">runopts</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span>
+
+            <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;`</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">` was declared in the [</span><span class="si">%s</span><span class="s2">] section&quot;</span>
+                    <span class="s2">&quot; of the config file but is not a runopt of `</span><span class="si">%s</span><span class="s2">` scheduler,&quot;</span>
+                    <span class="s2">&quot; remove the entry from the config file to no longer see this warning&quot;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">value</span><span class="p">,</span>
+                    <span class="n">section</span><span class="p">,</span>
+                    <span class="n">scheduler</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="k">continue</span>
 
-            <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">_NONE</span><span class="p">:</span>
-                <span class="c1"># should map to None (not str &#39;None&#39;)</span>
-                <span class="c1"># this also handles empty or None lists</span>
-                <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">opt</span> <span class="o">=</span> <span class="n">runopts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen_spelling</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="c1"># DO NOT OVERRIDE existing configs — even file spellings</span>
+                <span class="c1"># that conflict with each other are moot and skip unparsed</span>
+                <span class="k">continue</span>
 
-                <span class="k">if</span> <span class="n">opt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="s2">&quot;`</span><span class="si">%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">` was declared in the [</span><span class="si">%s</span><span class="s2">] section&quot;</span>
-                        <span class="s2">&quot; of the config file but is not a runopt of `</span><span class="si">%s</span><span class="s2">` scheduler,&quot;</span>
-                        <span class="s2">&quot; remove the entry from the config file to no longer see this warning&quot;</span><span class="p">,</span>
-                        <span class="n">name</span><span class="p">,</span>
-                        <span class="n">value</span><span class="p">,</span>
-                        <span class="n">section</span><span class="p">,</span>
-                        <span class="n">scheduler</span><span class="p">,</span>
+            <span class="c1"># delegate casting to the runopt itself so configfile values</span>
+            <span class="c1"># parse exactly like CLI `-cfg` values; `None` (str) maps to None</span>
+            <span class="n">parsed</span><span class="p">:</span> <span class="n">CfgVal</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">_NONE</span> <span class="k">else</span> <span class="n">opt</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">seen_spelling</span><span class="p">:</span>
+                <span class="n">prev_name</span><span class="p">,</span> <span class="n">prev_parsed</span> <span class="o">=</span> <span class="n">seen_spelling</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">prev_parsed</span> <span class="o">!=</span> <span class="n">parsed</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Run option `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` was declared in the [</span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">]&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; section under two spellings (`</span><span class="si">{</span><span class="n">prev_name</span><span class="si">}</span><span class="s2">` and&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; `</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">`) with conflicting values. Keep one,&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; as `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">,</span>
+                        <span class="n">key</span><span class="p">,</span>
+                        <span class="nb">dict</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">)),</span>
                     <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># delegate casting to the runopt itself so configfile</span>
-                    <span class="c1"># values parse exactly like CLI `-cfg` values</span>
-                    <span class="n">cfg</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+                <span class="k">continue</span>
+            <span class="n">seen_spelling</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">parsed</span><span class="p">)</span>
+
+            <span class="n">cfg</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed</span></div>
 
 </pre></div>
 
