@@ -10,6 +10,7 @@
 import asyncio
 import concurrent
 import copy
+import operator
 import os
 import tempfile
 import threading
@@ -1026,6 +1027,50 @@ class AppDefTest(unittest.TestCase):
         app = AppDef(name="test_app", metadata={"test_key": "test_value"})
         self.assertEqual("test_value", app.metadata["test_key"])
         self.assertEqual(None, app.metadata.get("non_existent"))
+
+    def test_get_role(self) -> None:
+        trainer = Role("trainer", "test_image")
+        ps = Role("ps", "test_image")
+        app = AppDef(name="test_app", roles=[trainer, ps])
+
+        self.assertIs(trainer, app.get_role("trainer"), "must return the role itself")
+        self.assertIs(ps, app["ps"], "app[name] must delegate to get_role")
+
+    def test_get_role_first_match_wins_on_duplicate_names(self) -> None:
+        first = Role("trainer", "image_a")
+        second = Role("trainer", "image_b")
+        app = AppDef(name="test_app", roles=[first, second])
+
+        self.assertIs(first, app.get_role("trainer"))
+        self.assertIs(first, app["trainer"])
+
+    def test_get_role_unknown_name_lists_roles(self) -> None:
+        app = AppDef(name="test_app", roles=[Role("trainer", "test_image")])
+
+        with self.assertRaisesRegex(
+            KeyError, "app `test_app` has no role named `ps`; available roles: trainer"
+        ):
+            app.get_role("ps")
+        with self.assertRaisesRegex(KeyError, "no role named `ps`"):
+            app["ps"]
+        with self.assertRaisesRegex(KeyError, "available roles: none"):
+            AppDef(name="empty_app").get_role("ps")
+
+    def test_contains(self) -> None:
+        app = AppDef(name="test_app", roles=[Role("trainer", "test_image")])
+
+        # Use ``in`` directly: Pyre rejects assertIn on an object with only
+        # __contains__.
+        self.assertTrue("trainer" in app)
+        self.assertFalse("ps" in app)
+        self.assertFalse(0 in app)
+
+    def test_lookup_is_by_name_only(self) -> None:
+        app = AppDef(name="test_app", roles=[Role("trainer", "test_image")])
+
+        # callable form: the runtime protocol is under test, not pyre's view of it
+        self.assertRaisesRegex(KeyError, "no role named `0`", operator.getitem, app, 0)
+        self.assertRaisesRegex(TypeError, "not iterable", iter, app)
 
 
 class RunConfigTest(unittest.TestCase):
