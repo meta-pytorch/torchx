@@ -474,6 +474,31 @@ via a <a class="reference internal" href="schedulers.html#torchx.schedulers.api.
 <dd class="field-odd"><p><strong>metadata</strong> – scheduler-specific metadata (treatment varies by scheduler)</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="torchx.specs.AppDef.get_role">
+<span class="sig-name descname"><span class="pre">get_role</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.api.Role"><span class="pre">Role</span></a></span></span><a class="reference internal" href="_modules/torchx/specs/api.html#AppDef.get_role"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.specs.AppDef.get_role" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the first role in <code class="docutils literal notranslate"><span class="pre">roles</span></code> named <code class="docutils literal notranslate"><span class="pre">name</span></code>.</p>
+<p>The returned <a class="reference internal" href="#torchx.specs.Role" title="torchx.specs.Role"><code class="xref py py-class docutils literal notranslate"><span class="pre">Role</span></code></a> is the object held in <code class="docutils literal notranslate"><span class="pre">roles</span></code>, not a
+copy, so edits to it are visible on the app.</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">app</span> <span class="o">=</span> <span class="n">AppDef</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_train&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">roles</span><span class="o">=</span><span class="p">[</span><span class="n">Role</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="n">image</span><span class="o">=</span><span class="s2">&quot;my_image:latest&quot;</span><span class="p">)],</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">app</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;trainer&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">image</span>
+<span class="go">&#39;my_image:latest&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">app</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="n">app</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;trainer&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – no role is named <code class="docutils literal notranslate"><span class="pre">name</span></code>; the message lists the
+    names of the roles the app does have.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1814,7 +1839,10 @@ on how to improve the help message and arguments descriptions will be names of t
               <ul>
 <li><a class="reference internal" href="#">torchx.specs</a><ul>
 <li><a class="reference internal" href="#appdef">AppDef</a><ul>
-<li><a class="reference internal" href="#torchx.specs.AppDef"><code class="docutils literal notranslate"><span class="pre">AppDef</span></code></a></li>
+<li><a class="reference internal" href="#torchx.specs.AppDef"><code class="docutils literal notranslate"><span class="pre">AppDef</span></code></a><ul>
+<li><a class="reference internal" href="#torchx.specs.AppDef.get_role"><code class="docutils literal notranslate"><span class="pre">AppDef.get_role()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#role">Role</a><ul>
