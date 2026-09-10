@@ -26,6 +26,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    ClassVar,
     Dict,
     Generic,
     Iterator,
@@ -698,6 +699,59 @@ class AppDef:
     name: str
     roles: list[Role] = field(default_factory=list)
     metadata: dict[str, str] = field(default_factory=dict)
+
+    def _find_role(self, name: object) -> Role | None:
+        for role in self.roles:
+            if role.name == name:
+                return role
+        return None
+
+    def get_role(self, name: str) -> Role:
+        """Returns the first role in ``roles`` named ``name``.
+
+        The returned :py:class:`Role` is the object held in ``roles``, not a
+        copy, so edits to it are visible on the app.
+
+        .. doctest::
+
+            >>> from torchx.specs import AppDef, Role
+            >>> app = AppDef(
+            ...     name="my_train",
+            ...     roles=[Role(name="trainer", image="my_image:latest")],
+            ... )
+            >>> app.get_role("trainer").image
+            'my_image:latest'
+            >>> app["trainer"] is app.get_role("trainer")
+            True
+
+        Raises:
+            KeyError: no role is named ``name``; the message lists the
+                names of the roles the app does have.
+        """
+        role = self._find_role(name)
+        if role is not None:
+            return role
+        names = ", ".join(role.name for role in self.roles) or "none"
+        raise KeyError(
+            f"app `{self.name}` has no role named `{name}`; available roles: {names}"
+        )
+
+    # Set ``__iter__ = None`` so ``for role in app`` won't use integer ``__getitem__``
+    # ``hasattr(app, "__iter__")`` is True, but iterating raises ``TypeError``.
+    __iter__: ClassVar[None] = None
+
+    def __getitem__(self, name: str) -> Role:
+        """Same as :py:meth:`get_role`; lookup is by role name, never by position."""
+        return self.get_role(name)
+
+    def __contains__(self, name: object) -> bool:
+        """``name in app`` is true when one of the app's roles is named ``name``.
+
+        Passing a :py:class:`Role`, as in ``some_role in app``, always returns
+        ``False``; membership matches role names only, even if that exact role
+        object is present in ``app.roles``.
+        """
+        return self._find_role(name) is not None
 
 
 class AppState(int, Enum):
