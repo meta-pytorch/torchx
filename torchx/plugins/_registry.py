@@ -47,6 +47,7 @@ class PluginType(str, enum.Enum):
     SCHEDULER = "torchx.schedulers"
     NAMED_RESOURCE = "torchx.named_resources"
     TRACKER = "torchx.tracker"
+    EVENT_HANDLER = "torchx.event_handlers"
 
 
 class PluginSource(enum.IntFlag):

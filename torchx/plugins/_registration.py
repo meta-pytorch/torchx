@@ -216,7 +216,8 @@ class register:
             ...
 
     Each :py:class:`PluginType` has a corresponding classmethod:
-    :py:meth:`scheduler`, :py:meth:`tracker`, and :py:meth:`named_resource`.
+    :py:meth:`scheduler`, :py:meth:`tracker`, :py:meth:`named_resource`,
+    and :py:meth:`event_handler`.
 
     The explicit constructor ``register(PluginType.SCHEDULER, name=...)``
     is still supported for advanced use-cases.
@@ -262,6 +263,11 @@ class register:
     def tracker(cls, name: str | None = None) -> register:
         """Register a tracker factory."""
         return cls(PluginType.TRACKER, name=name)
+
+    @classmethod
+    def event_handler(cls, name: str | None = None) -> register:
+        """Register an event :py:class:`logging.Handler` factory, named after its ``destination``."""
+        return cls(PluginType.EVENT_HANDLER, name=name)
 
     @classmethod
     def named_resource(

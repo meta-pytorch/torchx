@@ -419,6 +419,7 @@ tracker:
   - name: mlflow
     module: torchx_plugins.schedulers.mlflow
     error: "is a tracker but is under the scheduler namespace \u2014 use @register.scheduler() or move to `torchx_plugins.tracker`"
+event_handler: []
 errors:
   - module: torchx_plugins.schedulers.airflow
     error: "RuntimeError: cannot reach Airflow REST API at http://localhost:8080"
