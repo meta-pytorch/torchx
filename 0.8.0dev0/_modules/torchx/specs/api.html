@@ -503,6 +503,9 @@
 <span class="c1">#     (most recent call first):</span>
 <span class="n">_EMBEDDED_ERROR_MESSAGE_RE</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?P&lt;msg&gt;.+)\nException.*&quot;</span><span class="p">)</span>
 
+<span class="n">YELLOW_BOLD</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[1;33m&quot;</span>
+<span class="n">RESET</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\033</span><span class="s2">[0m&quot;</span>
+
 
 <span class="k">def</span><span class="w"> </span><span class="nf">TORCHX_HOME</span><span class="p">(</span><span class="o">*</span><span class="n">subdir_paths</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1749,9 +1752,6 @@
                 <span class="k">return</span> <span class="kc">False</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_valid_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">))</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span> <span class="k">else</span> <span class="s2">&quot;(none declared)&quot;</span>
-
 <div class="viewcode-block" id="runopts.canonical_key">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.canonical_key">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">canonical_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -1781,21 +1781,14 @@
 
 <div class="viewcode-block" id="runopts.resolve">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.resolve">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">ignore_unknown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates ``cfg`` against registered options, filling defaults.</span>
 
-<span class="sd">        Raises :py:class:`InvalidRunConfigException` for unknown keys, missing</span>
-<span class="sd">        required options, or type mismatches. Accepts camelCase aliases of</span>
-<span class="sd">        registered keys and canonicalizes them, so the returned cfg holds</span>
-<span class="sd">        exactly one spelling per option: the registered one. Passing an option</span>
-<span class="sd">        under two spellings with conflicting values raises</span>
-<span class="sd">        :py:class:`InvalidRunConfigException`.</span>
-
-<span class="sd">        Pass ``ignore_unknown=True`` to let unknown keys pass through</span>
-<span class="sd">        unvalidated instead of raising — for facade schedulers that hand the</span>
-<span class="sd">        resolved cfg to a backend declaring its own options.</span>
+<span class="sd">        Raises :py:class:`InvalidRunConfigException` for missing required options</span>
+<span class="sd">        or type mismatches. Accepts camelCase aliases of registered keys and</span>
+<span class="sd">        canonicalizes them, so the returned cfg holds exactly one spelling per</span>
+<span class="sd">        option: the registered one. Passing an option under two spellings with</span>
+<span class="sd">        conflicting values raises :py:class:`InvalidRunConfigException`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">resolved_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1804,13 +1797,7 @@
         <span class="k">for</span> <span class="n">given_key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">cfg_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">given_key</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_unknown</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Unknown run option `</span><span class="si">{</span><span class="n">given_key</span><span class="si">}</span><span class="s2">`.&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot; Valid options are: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_valid_options</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">given_key</span><span class="p">,</span>
-                        <span class="n">cfg</span><span class="p">,</span>
-                    <span class="p">)</span>
+                <span class="c1"># unknown keys pass through as-is</span>
                 <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">given_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">in</span> <span class="n">given_spelling</span> <span class="ow">and</span> <span class="n">resolved_cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">val</span><span class="p">:</span>
@@ -1856,8 +1843,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parses scheduler ``cfg`` from a string literal and returns</span>
 <span class="sd">        a cfg map where the cfg values have been cast into the appropriate</span>
-<span class="sd">        types as specified by this runopts object. Unknown keys raise</span>
-<span class="sd">        :py:class:`InvalidRunConfigException` naming the valid options.</span>
+<span class="sd">        types as specified by this runopts object. Unknown keys are ignored</span>
+<span class="sd">        and not returned in the resulting map.</span>
 
 <span class="sd">        .. note:: Unlike the method ``resolve``, this method does NOT resolve</span>
 <span class="sd">                  default options or check that the required options are actually</span>
@@ -1896,6 +1883,12 @@
 <span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;&quot;)</span>
 <span class="sd">            {}</span>
 
+<span class="sd">            unknown options are ignored since the value type is unknown</span>
+<span class="sd">            hence cannot be cast to the correct type:</span>
+
+<span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;UNKNOWN=VALUE&quot;)</span>
+<span class="sd">            {}</span>
+
 <span class="sd">            &gt;&gt;&gt; opts.cfg_from_str(&quot;FOO=v1&quot;)</span>
 <span class="sd">            {&#39;FOO&#39;: [&#39;v1&#39;]}</span>
 
@@ -1919,12 +1912,14 @@
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">cfg_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Unknown run option `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`.&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot; Valid options are: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_valid_options</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">unknown run option passed to scheduler: </span><span class="si">%s</span><span class="s2">=</span><span class="si">%s%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">YELLOW_BOLD</span><span class="p">,</span>
                     <span class="n">key</span><span class="p">,</span>
-                    <span class="n">cfg_dict</span><span class="p">,</span>
+                    <span class="n">val</span><span class="p">,</span>
+                    <span class="n">RESET</span><span class="p">,</span>
                 <span class="p">)</span>
+                <span class="k">continue</span>
             <span class="n">cast_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span><span class="o">.</span><span class="n">cast_to_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">in</span> <span class="n">given_spelling</span> <span class="ow">and</span> <span class="n">cfg</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cast_val</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
@@ -1941,15 +1936,9 @@
 
 <div class="viewcode-block" id="runopts.cfg_from_json_repr">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.runopts.cfg_from_json_repr">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_json_repr</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">json_repr</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ignore_unknown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cfg_from_json_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_repr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts the given dict to a valid cfg for this ``runopts`` object.</span>
-
-<span class="sd">        Unknown keys raise :py:class:`InvalidRunConfigException` naming the</span>
-<span class="sd">        valid options. Pass ``ignore_unknown=True`` to drop unknown keys from</span>
-<span class="sd">        stored cfgs produced before strict validation was introduced.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">given_spelling</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1957,14 +1946,7 @@
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cfg_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">cfg_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">cfg_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">ignore_unknown</span><span class="p">:</span>
-                    <span class="k">continue</span>
-                <span class="k">raise</span> <span class="n">InvalidRunConfigException</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Unknown run option `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`.&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot; Valid options are: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_valid_options</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">key</span><span class="p">,</span>
-                    <span class="n">cfg_dict</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="k">continue</span>
             <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="p">[</span><span class="n">cfg_key</span><span class="p">]</span>
             <span class="c1"># Optional runopt cfg values default their value to None,</span>
             <span class="c1"># but use `_type` to specify their type when provided.</span>
