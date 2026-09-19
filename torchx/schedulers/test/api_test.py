@@ -11,7 +11,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Iterable, Mapping, TypeVar
+from typing import Any, Iterable, Mapping
 from unittest.mock import MagicMock, patch
 
 from torchx.schedulers.api import (
@@ -37,11 +37,9 @@ from torchx.specs.api import (
 from torchx.util.types import none_throws
 from torchx.workspace.api import WorkspaceMixin
 
-T = TypeVar("T")
-
 
 class SchedulerTest(unittest.TestCase):
-    class MockScheduler(Scheduler[T], WorkspaceMixin[None]):
+    class MockScheduler(Scheduler[Mapping[str, CfgVal]], WorkspaceMixin[None]):
         def __init__(self, session_name: str) -> None:
             super().__init__("mock", session_name)
 
@@ -50,7 +48,6 @@ class SchedulerTest(unittest.TestCase):
             assert app is not None
             return app.name
 
-        # pyrefly: ignore [bad-override]
         def _submit_dryrun(
             self,
             app: AppDef,
@@ -475,6 +472,31 @@ class StructuredOptsTest(unittest.TestCase):
         opts = SampleOpts(cluster_name="test")
         self.assertEqual(len(opts), 4)
 
+    def test_from_cfg_keeps_undeclared_options(self) -> None:
+        """A workspace mixin's options are not declared here, yet reach it."""
+        opts = SampleOpts.from_cfg({"cluster_name": "test", "image_repo": "repo"})
+
+        self.assertEqual("repo", opts["image_repo"])
+        self.assertIn("image_repo", opts)
+        self.assertEqual(5, len(opts))
+        self.assertEqual(
+            {
+                "cluster_name": "test",
+                "num_retries": 3,
+                "enable_debug": False,
+                "optional_tag": None,
+                "image_repo": "repo",
+            },
+            dict(opts),
+        )
+
+    def test_extra_cfg_is_not_a_run_option(self) -> None:
+        """The field holding undeclared options is private, not a run option."""
+        opts = SampleOpts(cluster_name="test")
+
+        self.assertNotIn("_extra_cfg", opts)
+        self.assertIsNone(SampleOpts.as_runopts().get("_extra_cfg"))
+
     def test_iter(self) -> None:
         """Test __iter__ yields field names."""
         opts = SampleOpts(cluster_name="test")
@@ -837,3 +859,126 @@ class NestedStructuredOptsTest(unittest.TestCase):
 
         opts = ParentOpts(child_group=ChildOpts(val="custom"))
         self.assertEqual(opts["childGroup.val"], "custom")
+
+
+class TypedCfgScheduler(Scheduler[SampleOpts], WorkspaceMixin[None]):
+    def __init__(self) -> None:
+        super().__init__("typed", "test_session")
+        self.dryrun_cfg: SampleOpts | None = None
+
+    def _run_opts(self) -> runopts:
+        return SampleOpts.as_runopts()
+
+    def workspace_opts(self) -> runopts:
+        opts = runopts()
+        opts.add("image_repo", type_=str, default=None, help="image repository")
+        return opts
+
+    def _submit_dryrun(
+        self, app: AppDef, cfg: SampleOpts
+    ) -> AppDryRunInfo[str, SampleOpts]:
+        self.dryrun_cfg = cfg
+        return AppDryRunInfo(cfg.cluster_name, str)
+
+    def schedule(self, dryrun_info: AppDryRunInfo[str, SampleOpts]) -> str:
+        return dryrun_info.request
+
+    def describe(self, app_id: str) -> DescribeAppResponse | None:
+        return None
+
+    def _cancel_existing(self, app_id: str) -> None:
+        pass
+
+    def log_iter(
+        self,
+        app_id: str,
+        role_name: str,
+        k: int = 0,
+        regex: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        should_tail: bool = False,
+        streams: Stream | None = None,
+    ) -> Iterable[str]:
+        return iter([])
+
+    def list(self, cfg: Mapping[str, CfgVal] | None = None) -> list[ListAppResponse]:
+        return []
+
+    def build_workspace_and_update_role(
+        self, role: Role, workspace: str, cfg: Mapping[str, CfgVal]
+    ) -> None:
+        role.image = workspace
+
+
+class TypedCfgTest(unittest.TestCase):
+    """A ``Scheduler[<StructuredOpts subclass>]`` is handed a typed cfg."""
+
+    def setUp(self) -> None:
+        self.app = AppDef(
+            name="test_app", roles=[Role(name="sleep", image="", entrypoint="foo.sh")]
+        )
+
+    def test_plain_mapping_arrives_typed(self) -> None:
+        scheduler = TypedCfgScheduler()
+
+        info = scheduler.submit_dryrun(self.app, {"cluster_name": "c1"})
+
+        self.assertIsInstance(info.cfg, SampleOpts)
+        self.assertEqual("c1", info.cfg.cluster_name)
+        self.assertEqual(3, info.cfg.num_retries, "defaults are applied")
+        self.assertIs(info.cfg, scheduler.dryrun_cfg)
+
+    def test_opts_type_of_unparameterized_bases(self) -> None:
+        """Bases that name no options class keep the plain-mapping cfg."""
+
+        class AnyScheduler(Scheduler[Any]):
+            pass
+
+        class MappingScheduler(Scheduler[Mapping[str, CfgVal]]):
+            pass
+
+        class Inherited(MappingScheduler):
+            pass
+
+        self.assertIsNone(AnyScheduler._opts_type())
+        self.assertIsNone(MappingScheduler._opts_type())
+        self.assertIsNone(Inherited._opts_type())
+
+    def test_opts_type_found_through_the_mro(self) -> None:
+        class Derived(TypedCfgScheduler):
+            pass
+
+        self.assertIs(SampleOpts, Derived._opts_type())
+
+    def test_already_typed_cfg_is_accepted(self) -> None:
+        scheduler = TypedCfgScheduler()
+
+        info = scheduler.submit_dryrun(self.app, SampleOpts(cluster_name="c1"))
+
+        self.assertIsInstance(info.cfg, SampleOpts)
+        self.assertEqual("c1", info.cfg.cluster_name)
+
+    def test_mixin_options_survive_the_conversion(self) -> None:
+        scheduler = TypedCfgScheduler()
+
+        info = scheduler.submit_dryrun(
+            self.app, {"cluster_name": "c1", "image_repo": "example.com/repo"}
+        )
+
+        self.assertEqual("example.com/repo", info.cfg["image_repo"])
+        self.assertEqual(
+            scheduler.run_opts().resolve(
+                {"cluster_name": "c1", "image_repo": "example.com/repo"}
+            ),
+            dict(info.cfg),
+            "the typed cfg still renders every resolved option",
+        )
+
+    def test_untyped_scheduler_keeps_a_plain_mapping(self) -> None:
+        scheduler = SchedulerTest.MockScheduler("test_session")
+
+        info = scheduler.submit_dryrun(self.app, {"foo": "asdf"})
+
+        self.assertNotIsInstance(info.cfg, StructuredOpts)
+        self.assertEqual({"foo": "asdf"}, dict(info.cfg))

@@ -12,17 +12,20 @@ import inspect
 import re
 import types
 from collections.abc import Iterator, Mapping
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import MISSING, Field, dataclass, field, fields
 from datetime import datetime
 from enum import Enum
 from typing import (
+    Any,
     Generic,
     Iterable,
     List,
     Optional,
     TypeVar,
     Union,
+    cast,
     get_args,
+    get_origin,
     get_type_hints,
 )
 
@@ -75,6 +78,11 @@ def _is_structured_opts(tp: type) -> bool:
         return False
 
 
+def _cfg_fields(cls_or_instance: type[StructuredOpts] | StructuredOpts) -> list[Field]:
+    """Dataclass fields that are run options; underscored ones are private."""
+    return [f for f in fields(cls_or_instance) if not f.name.startswith("_")]
+
+
 @dataclass
 class StructuredOpts(Mapping[str, CfgVal]):
     """Base class for typed scheduler configuration options.
@@ -118,6 +126,15 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     """
 
+    _extra_cfg: dict[str, CfgVal] = field(
+        default_factory=dict, repr=False, compare=False, kw_only=True
+    )
+    """Options :py:meth:`from_cfg` was given that this dataclass does not
+    declare, kept so the round trip is lossless. A scheduler's resolved config
+    also carries the options of any mixin it inherits (e.g.
+    :py:meth:`~torchx.workspace.api.WorkspaceMixin.workspace_opts`), and those
+    stay reachable through the ``Mapping`` interface but are not fields."""
+
     @classmethod
     # pyrefly: ignore [not-a-type]
     def from_cfg(cls, cfg: Mapping[str, CfgVal]) -> Self:
@@ -133,7 +150,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
         """
         type_hints = get_type_hints(cls)
         kwargs = {}
-        for f in fields(cls):
+        for f in _cfg_fields(cls):
             name = f.name
             field_type = _unwrap_optional(type_hints.get(name, str))
 
@@ -168,7 +185,11 @@ class StructuredOpts(Mapping[str, CfgVal]):
                         cfg,
                     )
             kwargs[name] = val
-        return cls(**kwargs)
+        opts = cls(**kwargs)
+        extra = {k: v for k, v in cfg.items() if k not in opts}
+        if extra:
+            opts._extra_cfg = extra
+        return opts
 
     # -------------------------------------------------------------------------
     # Mapping Protocol Methods (for backwards compatibility)
@@ -193,12 +214,14 @@ class StructuredOpts(Mapping[str, CfgVal]):
         snake_key = cases.camel_to_snake(key)
         # only dataclass fields are cfg keys; a plain hasattr() check would
         # also resolve methods (e.g. opts["get"] -> bound method)
-        if snake_key in {f.name for f in fields(self)}:
+        if snake_key in {f.name for f in _cfg_fields(self)}:
             return getattr(self, snake_key)
         # pyrefly: ignore [bad-argument-type]
-        for f in fields(self):
+        for f in _cfg_fields(self):
             if f.metadata.get("cfg_key") == key:
                 return getattr(self, f.name)
+        if key in self._extra_cfg:
+            return self._extra_cfg[key]
         raise KeyError(key) from None
 
     def __len__(self) -> int:
@@ -206,7 +229,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
     def __iter__(self) -> Iterator[str]:
         type_hints = get_type_hints(type(self))
-        for f in fields(self):
+        for f in _cfg_fields(self):
             field_type = _unwrap_optional(type_hints.get(f.name, str))
             if _is_structured_opts(field_type):
                 nested = getattr(self, f.name)
@@ -215,6 +238,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
                         yield f"{f.name}.{nested_key}"
             else:
                 yield f.metadata.get("cfg_key", f.name)
+        yield from self._extra_cfg
 
     def __contains__(self, key: object) -> bool:
         if not isinstance(key, str):
@@ -246,7 +270,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
             docstrings[field_name] = docstring
 
         type_hints = get_type_hints(cls)
-        for f in fields(cls):
+        for f in _cfg_fields(cls):
             field_type = _unwrap_optional(type_hints.get(f.name, str))
             if _is_structured_opts(field_type):
                 for key, doc in field_type.get_docstrings().items():
@@ -267,7 +291,7 @@ class StructuredOpts(Mapping[str, CfgVal]):
         type_hints = get_type_hints(cls)
         docstrings = cls.get_docstrings()
 
-        for f in fields(cls):
+        for f in _cfg_fields(cls):
             name = f.name
             field_type = _unwrap_optional(type_hints.get(name, str))
 
@@ -377,7 +401,7 @@ class ListAppResponse:
         return hash((self.app_id, self.app_handle, self.state))
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Mapping[str, CfgVal])
 
 
 class Scheduler(abc.ABC, Generic[T]):
@@ -386,6 +410,10 @@ class Scheduler(abc.ABC, Generic[T]):
     Implementors must override all ``@abc.abstractmethod`` methods.
     See :py:class:`StructuredOpts` for typed config and
     :py:mod:`torchx.schedulers` for built-in implementations.
+
+    The type argument is the scheduler's config type. Name a
+    :py:class:`StructuredOpts` subclass there and every ``cfg`` this scheduler
+    is handed arrives as that dataclass, already converted.
     """
 
     def __init__(self, backend: str, session_name: str) -> None:
@@ -439,7 +467,25 @@ class Scheduler(abc.ABC, Generic[T]):
         """Submits a previously dry-run request. Returns the app_id."""
         raise NotImplementedError()
 
-    def submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
+    @classmethod
+    def _opts_type(cls) -> type[StructuredOpts] | None:
+        """The :py:class:`StructuredOpts` subclass named in ``Scheduler[...]``, if any."""
+        for klass in cls.__mro__:
+            for base in getattr(klass, "__orig_bases__", ()):
+                if get_origin(base) is Scheduler:
+                    (arg,) = get_args(base)
+                    return arg if _is_structured_opts(arg) else None
+        return None
+
+    def _resolve_cfg(self, cfg: T | Mapping[str, CfgVal]) -> T:
+        """Applies :py:meth:`run_opts` defaults, then converts to the config type."""
+        resolved = self.run_opts().resolve(cfg)
+        opts_type = type(self)._opts_type()
+        if opts_type is None:
+            return cast(T, resolved)
+        return cast(T, opts_type.from_cfg(resolved))
+
+    def submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo[Any, T]:
         """Returns the scheduler request without submitting.
 
         **No copy is taken**: the returned
@@ -450,10 +496,10 @@ class Scheduler(abc.ABC, Generic[T]):
         first.
 
         :py:attr:`~torchx.specs.AppDryRunInfo.cfg` is *cfg* with this
-        scheduler's :py:meth:`run_opts` defaults applied, so it is not
-        necessarily the mapping that was passed in.
+        scheduler's :py:meth:`run_opts` defaults applied and converted to the
+        scheduler's config type, so it is not necessarily what was passed in.
         """
-        resolved_cfg = self.run_opts().resolve(cfg)
+        resolved_cfg = self._resolve_cfg(cfg)
         dryrun_info = self._submit_dryrun(app, resolved_cfg)
 
         for role in app.roles:
@@ -464,7 +510,7 @@ class Scheduler(abc.ABC, Generic[T]):
         return dryrun_info
 
     @abc.abstractmethod
-    def _submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo:
+    def _submit_dryrun(self, app: AppDef, cfg: T) -> AppDryRunInfo[Any, T]:
         """Renders *app* into this backend's submit request.
 
         Implementations receive *cfg* already resolved against

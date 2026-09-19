@@ -355,7 +355,7 @@ fi
 {self.materialize()}"""
 
 
-class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
+class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
     """
     SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects
     that slurm CLI tools are locally installed and job accounting is enabled.
@@ -425,7 +425,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
     def _run_opts(self) -> runopts:
         return SlurmOpts.as_runopts()
 
-    def schedule(self, dryrun_info: AppDryRunInfo[SlurmBatchRequest]) -> str:
+    def schedule(self, dryrun_info: AppDryRunInfo[SlurmBatchRequest, SlurmOpts]) -> str:
         req = dryrun_info.request
         job_dir = req.job_dir
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -481,14 +481,11 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
         return None
 
     def _submit_dryrun(
-        self, app: AppDef, cfg: Mapping[str, CfgVal]
-    ) -> AppDryRunInfo[SlurmBatchRequest]:
-        # Convert to typed opts for attribute access (resolve() passes a raw dict)
-        opts = cfg if isinstance(cfg, SlurmOpts) else SlurmOpts.from_cfg(cfg)
-
+        self, app: AppDef, cfg: SlurmOpts
+    ) -> AppDryRunInfo[SlurmBatchRequest, SlurmOpts]:
         # check if the partition has at least 1GB memory, if we're not sure,
         # default to using memory allocations
-        memmb = self._partition_memmb(opts.partition)
+        memmb = self._partition_memmb(cfg.partition)
         nomem = memmb is not None and memmb <= 1000
 
         replicas = {}
@@ -505,17 +502,17 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
                 replicas[name] = SlurmReplicaRequest.from_role(
                     name,
                     replica_role,
-                    opts,
+                    cfg,
                     nomem=nomem,
                 )
         cmd = ["sbatch", "--parsable"]
 
         # sbatch options that apply once to the whole job
         job_opts = {
-            "comment": opts.comment,
-            "mail-user": opts.mail_user,
-            "mail-type": opts.mail_type,
-            "account": opts.account,
+            "comment": cfg.comment,
+            "mail-user": cfg.mail_user,
+            "mail-type": cfg.mail_type,
+            "account": cfg.account,
         }
         for k, v in job_opts.items():
             if v is not None:
@@ -524,7 +521,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
         req = SlurmBatchRequest(
             cmd=cmd,
             replicas=replicas,
-            job_dir=opts.job_dir,
+            job_dir=cfg.job_dir,
             max_retries=min(role.max_retries for role in app.roles),
         )
 
