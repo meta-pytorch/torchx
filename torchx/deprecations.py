@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 """Platform-agnostic deprecation utilities for TorchX.
 
@@ -69,7 +68,6 @@ _F = TypeVar("_F", bound=Callable[..., object])
 def deprecated(
     *,
     replacement: str | None = None,
-    # pyre-ignore[34]: _F is bound when the returned decorator is called
 ) -> Callable[[_F], _F]:
     """Mark a function or class as deprecated.
 

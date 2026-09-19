@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import asyncio
 import concurrent.futures
@@ -628,7 +627,6 @@ class Role:
     # T237753541.
     overrides: dict[str, Any] = field(default_factory=dict)
 
-    # pyre-ignore
     def __getattribute__(self, attrname: str) -> Any:
         if attrname == "overrides":
             return super().__getattribute__(attrname)
@@ -665,9 +663,7 @@ class Role:
     def pre_proc(
         self,
         scheduler: str,
-        # pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object
         dryrun_info: "AppDryRunInfo",
-        # pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object
     ) -> "AppDryRunInfo":
         """Hook for role-specific scheduler request modifications.
 
@@ -1484,7 +1480,6 @@ class runopts:
     def update(self, other: "runopts") -> None:
         self._opts.update(other._opts)
 
-    # pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType
     def __or__(self, other: "runopts") -> "runopts":
         """Merge two runopts, returning a new runopts.
 

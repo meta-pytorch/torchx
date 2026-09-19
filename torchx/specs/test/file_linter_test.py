@@ -4,8 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
-# pyre-ignore-all-errors[2]
 # arguments untyped in certain functions for testing
 # flake8: noqa: B950
 
@@ -355,7 +353,6 @@ class SpecsFileValidatorTest(unittest.TestCase):
             linter_errors[0].description,
         )
 
-    # pyre-ignore[56]
     @unittest.skipUnless(
         sys.version_info >= (3, 10),
         "typing optional as [type]|None requires python-3.10+",

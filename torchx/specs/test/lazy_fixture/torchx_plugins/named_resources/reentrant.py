@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 """Re-entrancy fixture: a namespace plugin that imports ``torchx.specs`` at
 module top-level. Discovery is triggered from inside ``torchx.specs`` (first

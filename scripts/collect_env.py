@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 # This script uses https://raw.githubusercontent.com/pytorch/pytorch/master/torch/utils/collect_env.py
 # and collects additional information on top of it to output relevant system
@@ -46,7 +45,6 @@ def run(
         # pyrefly: ignore [bad-return]
         return match.group(1)
 
-    # pyre-fixme[7]: Expected `Optional[Tuple[int, bytes, bytes]]` but got
     #  `Tuple[typing.Any, str, str]`.
     return rc, raw_output, raw_err
 

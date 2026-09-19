@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 """
 This contains the TorchX local scheduler which can be used to run TorchX
@@ -1155,14 +1154,12 @@ class LogIterator:
         self,
         app_id: str,
         log_file: str,
-        # pyre-fixme: Scheduler opts
         scheduler: Scheduler,
         should_tail: bool = True,
     ) -> None:
         self._app_id: str = app_id
         self._log_file: str = log_file
         self._log_fp: TextIO | None = None
-        # pyre-fixme: Scheduler opts
         self._scheduler: Scheduler = scheduler
         self._app_finished: bool = not should_tail
 

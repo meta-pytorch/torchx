@@ -4,8 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
-# pyre-ignore-all-errors[56]
 
 """Deliberately mis-registered plugin for testing error surfacing.
 

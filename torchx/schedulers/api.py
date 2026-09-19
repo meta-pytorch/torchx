@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 from __future__ import annotations
 
@@ -53,7 +52,6 @@ DAYS_IN_2_WEEKS = 14
 # =============================================================================
 
 
-# pyre-fixme[24]: Generic type `type` expects 1 type parameter.
 def _unwrap_optional(tp: type) -> type:
     """Strip ``None`` from union types (e.g. ``str | None`` -> ``str``)."""
     args = [a for a in get_args(tp) if a is not types.NoneType]
@@ -63,7 +61,6 @@ def _unwrap_optional(tp: type) -> type:
     return tp
 
 
-# pyre-fixme[24]: Generic type `type` expects 1 type parameter.
 def _is_structured_opts(tp: type) -> bool:
     """Return True if *tp* is a concrete ``StructuredOpts`` subclass."""
     try:
@@ -219,7 +216,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
             else:
                 yield f.metadata.get("cfg_key", f.name)
 
-    # pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]
     def __contains__(self, key: object) -> bool:
         if not isinstance(key, str):
             return False
@@ -312,7 +308,6 @@ class StructuredOpts(Mapping[str, CfgVal]):
 
         return opts
 
-    # pyre-fixme[15]: Inconsistent override - __or__ returns dict, not UnionType
     def __or__(self, other: StructuredOpts) -> dict[str, CfgVal]:
         """Merge two StructuredOpts instances into a cfg dict.
 
@@ -423,7 +418,6 @@ class Scheduler(abc.ABC, Generic[T]):
             ValueError: *workspace* was passed but this scheduler is not a
                 :py:class:`~torchx.workspace.WorkspaceMixin`.
         """
-        # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
         if workspace:
             if not isinstance(self, WorkspaceMixin):
@@ -437,7 +431,6 @@ class Scheduler(abc.ABC, Generic[T]):
             app.roles[0].workspace = workspace
             self.build_workspaces(app.roles, resolved_cfg)
 
-        # pyre-fixme: submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self.submit_dryrun(app, resolved_cfg)
         return self.schedule(dryrun_info)
 
@@ -460,9 +453,7 @@ class Scheduler(abc.ABC, Generic[T]):
         scheduler's :py:meth:`run_opts` defaults applied, so it is not
         necessarily the mapping that was passed in.
         """
-        # pyre-fixme: Generic cfg type passed to resolve
         resolved_cfg = self.run_opts().resolve(cfg)
-        # pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg
         dryrun_info = self._submit_dryrun(app, resolved_cfg)
 
         for role in app.roles:

@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import os
 import shutil
@@ -58,7 +57,6 @@ def _test_component_without_docstring(name: str, role_name: str = "worker") -> A
     )
 
 
-# pyre-ignore[2]
 def invalid_component(name, role_name: str = "worker") -> AppDef:
     return AppDef(
         name, roles=[Role(name=role_name, image="test_image", entrypoint="main.py")]

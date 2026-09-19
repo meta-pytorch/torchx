@@ -4,8 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
-# pyre-ignore-all-errors[3, 2, 16]
 
 """Central plugin discovery, caching, and diagnostics.
 
@@ -113,7 +111,6 @@ class PluginRegistry:
         ),
     ) -> None:
         self._plugin_sources: PluginSource = plugin_sources
-        # pyre-ignore[4]: plugin factories are heterogeneously typed
         self._cache: dict[PluginType, dict[str, Callable[..., Any]]] = {}
         self._errors: list[RegistrationError] = []
 

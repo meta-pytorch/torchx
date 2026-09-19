@@ -14,7 +14,7 @@ Run `uv lock` after changing `pyproject.toml`. Commit both together.
 
 ## Conventions
 
-**Headers**: `# Copyright (c) Meta Platforms, Inc. and affiliates.` + BSD license + `# pyre-strict`.
+**Headers**: `# Copyright (c) Meta Platforms, Inc. and affiliates.` + BSD license.
 
 **Docstrings**: Google Style, Sphinx/Napoleon compatible. Succinct — skip Args/Returns when obvious. Prefer `.. doctest::` over code blocks. Components lead with CLI examples. Dataclasses use `Args:`. Use `:py:class:`/`:py:func:` cross-references.
 

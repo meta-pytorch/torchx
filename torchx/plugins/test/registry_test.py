@@ -4,8 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
-# pyre-ignore-all-errors[6, 13, 16]
 
 """Tests for :py:mod:`torchx.plugins._registry`.
 
@@ -58,7 +56,7 @@ _TEST_PLUGINS_DIRS: list[str] = [
 _BROKEN_ROOT_DIR: str = str(_TEST_DIR / "broken_root")
 
 
-def mock_install_torchx_plugins() -> Any:  # pyre-ignore[3]: returns mock._patch
+def mock_install_torchx_plugins() -> Any:
     """Mock-install the test ``torchx_plugins`` namespace package.
 
     Temporarily prepends four test directories to ``sys.path`` so
