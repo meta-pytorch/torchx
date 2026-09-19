@@ -29,6 +29,7 @@ from torchx.schedulers.slurm_scheduler import (
     create_scheduler,
 )
 from torchx.specs import AppState
+from torchx.workspace.dir_workspace import DirWorkspaceMixin
 
 # Constants for version mocking to help with Pyre type inference
 SLURM_VERSION_24_5 = (24, 5)
@@ -891,8 +892,7 @@ PARTITION,MEMORY
                 with open("sbatch.sh", "w") as f:
                     f.write(script)
                 with open("test.sh", "w") as f:
-                    f.write(
-                        """#!/bin/bash
+                    f.write("""#!/bin/bash
 set -evx
 
 srun () {
@@ -904,8 +904,7 @@ scontrol () {
 }
 
 source sbatch.sh
-                """
-                    )
+                """)
                 return os.WEXITSTATUS(os.system("bash test.sh"))
 
     @patch(
@@ -1295,3 +1294,163 @@ source sbatch.sh
             assert result is not None
             self.assertEqual([], result.roles)
             self.assertEqual(AppState.UNKNOWN, result.state)
+
+
+def workspace_app() -> specs.AppDef:
+    """A role whose args read ``img_root`` and whose workspace is the cwd, plus
+    one prebuilt role with no workspace."""
+    return specs.AppDef(
+        name="foo",
+        roles=[
+            specs.Role(
+                name="a",
+                image="example.com/base:latest",
+                entrypoint="python",
+                args=["train.py", "--root", specs.macros.img_root],
+                workspace=specs.Workspace({".": ""}),
+            ),
+            specs.Role(
+                name="b",
+                image="example.com/prebuilt:1",
+                entrypoint="python",
+                args=["serve.py"],
+            ),
+        ],
+    )
+
+
+def mock_docker_client(image_id: str = "sha256:abc123") -> MagicMock:
+    client = MagicMock()
+    client.api.build.return_value = [{"aux": {"ID": image_id}}]
+    client.images.push.return_value = []
+    return client
+
+
+class SlurmWorkspaceTypeTest(unittest.TestCase):
+    """``workspace_type`` picks the job-dir builder (default) or the container-image builder."""
+
+    def setUp(self) -> None:
+        self.version = patch(
+            "torchx.schedulers.slurm_scheduler.version",
+            return_value=SLURM_VERSION_24_5,
+        )
+        self.version.start()
+        self.addCleanup(self.version.stop)
+        self.partition_memmb = patch.object(
+            SlurmScheduler, "_partition_memmb", return_value=None
+        )
+        self.partition_memmb.start()
+        self.addCleanup(self.partition_memmb.stop)
+
+    def test_dir_is_the_default_builder(self) -> None:
+        scheduler = create_scheduler("foo")
+        name, builder = scheduler.workspace_builder({})
+        self.assertEqual(name, "dir")
+        self.assertIsInstance(builder, DirWorkspaceMixin)
+        opts = scheduler.run_opts()
+        selector = opts.get("workspace_type")
+        self.assertIsNotNone(selector)
+        assert selector is not None  # for the type checker
+        self.assertEqual(selector.default, "dir")
+        for opt in ("job_dir", "image_repo", "quiet"):
+            self.assertIn(opt, opts._opts)
+
+    def test_dir_runs_on_the_host_and_pushes_nothing(self) -> None:
+        client = MagicMock()
+        scheduler = create_scheduler("foo", docker_client=client)
+        info = scheduler.submit_dryrun(workspace_app(), cfg={})
+        req = info.request
+        self.assertEqual(req.images_to_push, ("dir", None))
+        for name in ("a-0", "b-0"):
+            self.assertNotIn("container-image", req.replicas[name].srun_opts)
+        # img_root is the role image, as before
+        self.assertEqual(
+            req.replicas["a-0"].args, ["train.py", "--root", "example.com/base:latest"]
+        )
+        with patch("subprocess.run") as run:
+            run.return_value.stdout = b"1234"
+            self.assertEqual(scheduler.schedule(info), "1234")
+        client.images.push.assert_not_called()
+
+    def test_docker_builds_pushes_and_runs_every_replica_in_its_image(self) -> None:
+        client = mock_docker_client()
+        scheduler = create_scheduler("foo", docker_client=client)
+        cfg = {"workspace_type": "docker", "image_repo": "example.com/repo"}
+        app = workspace_app()
+        with tmp_cwd():
+            with open("train.py", "w") as f:
+                f.write("print('hello')\n")
+            scheduler.build_workspaces(app.roles, scheduler.run_opts().resolve(cfg))
+        self.assertEqual(client.api.build.call_count, 1)
+        self.assertEqual(app.roles[0].image, "sha256:abc123")
+        # a role without a workspace is not rebuilt
+        self.assertEqual(app.roles[1].image, "example.com/prebuilt:1")
+
+        info = scheduler.submit_dryrun(app, cfg=cfg)
+        req = info.request
+        self.assertEqual(
+            req.images_to_push,
+            ("docker", {"sha256:abc123": ("example.com/repo", "abc123")}),
+        )
+        replica = req.replicas["a-0"]
+        self.assertEqual(
+            replica.srun_opts["container-image"], "example.com/repo:abc123"
+        )
+        self.assertIn("--container-image=example.com/repo:abc123", req.materialize())
+        # inside a container img_root is empty, as for local_docker and kubernetes
+        self.assertEqual(replica.args, ["train.py", "--root", ""])
+        # the prebuilt role runs in its own image; only the built one is pushed
+        self.assertEqual(
+            req.replicas["b-0"].srun_opts["container-image"], "example.com/prebuilt:1"
+        )
+
+        with patch("subprocess.run") as run:
+            run.return_value.stdout = b"1234"
+            self.assertEqual(scheduler.schedule(info), "1234")
+        client.images.push.assert_called_once_with(
+            "example.com/repo", tag="abc123", stream=True, decode=True
+        )
+
+    def test_docker_with_job_dir_writes_the_script_there(self) -> None:
+        client = mock_docker_client()
+        scheduler = create_scheduler("foo", docker_client=client)
+        with tmp_cwd(), patch("subprocess.run") as run:
+            with open("train.py", "w") as f:
+                f.write("print('hello')\n")
+            run.return_value.stdout = b"1234"
+            # only the `dir` builder creates job_dir; schedule() must not rely on it
+            scheduler.submit(
+                workspace_app(),
+                cfg={
+                    "job_dir": "dir",
+                    "workspace_type": "docker",
+                    "image_repo": "example.com/repo",
+                },
+                workspace=".",
+            )
+            with open(os.path.join("dir", "torchx-sbatch.sh")) as f:
+                script = f.read()
+            self.assertIn("--container-image=example.com/repo:abc123", script)
+            self.assertIn(("1234", "dir"), _get_job_dirs().items())
+        self.assertIn("--chdir=dir", run.call_args[0][0])
+
+    def test_docker_without_image_repo_is_an_error(self) -> None:
+        client = mock_docker_client()
+        scheduler = create_scheduler("foo", docker_client=client)
+        app = workspace_app()
+        cfg = {"workspace_type": "docker"}
+        with tmp_cwd():
+            with open("train.py", "w") as f:
+                f.write("print('hello')\n")
+            scheduler.build_workspaces(app.roles, scheduler.run_opts().resolve(cfg))
+        with self.assertRaisesRegex(KeyError, "image_repo"):
+            scheduler.submit_dryrun(app, cfg=cfg)
+
+    def test_unknown_workspace_type_lists_the_builders(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "unknown workspace_type `oci`; this scheduler offers: dir, docker",
+        ):
+            create_scheduler("foo").submit_dryrun(
+                simple_app(), cfg={"workspace_type": "oci"}
+            )

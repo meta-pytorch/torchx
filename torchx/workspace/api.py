@@ -176,13 +176,146 @@ class WorkspaceMixin(abc.ABC, Generic[T]):
         """Dry-run the image push: updates *app* with final image names.
 
         Only called for remote jobs. :py:meth:`push_images` must be called
-        with the return value before scheduling.
+        with the return value before scheduling. Leave this method
+        unoverridden when the builder has no push step (its build already
+        put the artifact where the job reads it); :py:class:`MultiWorkspaceMixin`
+        then pushes nothing for it.
         """
         raise NotImplementedError("dryrun_push is not implemented")
 
     def push_images(self, images_to_push: T) -> None:
         """Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo."""
         raise NotImplementedError("push is not implemented")
+
+
+def _has_push_step(builder: WorkspaceMixin[Any]) -> bool:
+    # A builder that leaves the base ``dryrun_push_images`` in place has no
+    # separate push step: its build already put the artifact where the job
+    # reads it (a shared directory, say).
+    return type(builder).dryrun_push_images is not WorkspaceMixin.dryrun_push_images
+
+
+class MultiWorkspaceMixin(WorkspaceMixin[tuple[str, Any]]):
+    """Scheduler mix-in that offers several workspace builders; the
+    ``workspace_type`` run option picks one.
+
+    A scheduler whose backend accepts more than one kind of image (a shared
+    directory and a container image, say) returns one builder per kind from
+    :py:meth:`workspace_builders`. Every :py:class:`WorkspaceMixin` call is
+    forwarded to the builder the run config selects, and
+    :py:meth:`workspace_opts` is the union of the builders' options plus the
+    selector, so ``torchx runopts <scheduler>`` lists them all.
+
+    .. doctest::
+
+        >>> from typing import Any, Mapping
+        >>> from torchx.workspace import MultiWorkspaceMixin, WorkspaceMixin
+        >>> from torchx.workspace.dir_workspace import DirWorkspaceMixin, TmpDirWorkspaceMixin
+        >>> class TwoWaysMixin(MultiWorkspaceMixin):
+        ...     def __init__(self) -> None:
+        ...         self.builders = {"dir": DirWorkspaceMixin(), "tmpdir": TmpDirWorkspaceMixin()}
+        ...     def workspace_builders(self) -> Mapping[str, WorkspaceMixin[Any]]:
+        ...         return self.builders
+        >>> mixin = TwoWaysMixin()
+        >>> mixin.workspace_builder({})[0]              # the first builder is the default
+        'dir'
+        >>> mixin.workspace_builder({"workspace_type": "tmpdir"})[0]
+        'tmpdir'
+        >>> sorted(mixin.workspace_opts()._opts)
+        ['workspace_type']
+
+    The first builder is the default, so adding this mix-in to a scheduler
+    that used one builder changes nothing until a user sets
+    ``workspace_type``.
+    """
+
+    #: the run option that picks the builder
+    WORKSPACE_TYPE_OPT: str = "workspace_type"
+
+    @abc.abstractmethod
+    def workspace_builders(self) -> Mapping[str, WorkspaceMixin[Any]]:
+        """Returns ``{name: builder}``. The first entry is the default.
+
+        Return the same builder instances on every call (build the mapping
+        once, in ``__init__``): the push step looks the builder up again by
+        name and expects the instance that ran the build.
+        """
+        ...
+
+    def workspace_opts(self) -> runopts:
+        """The selector plus the union of every builder's options.
+
+        Two builders declaring the same option name must mean the same thing
+        by it; the later builder's declaration wins.
+        """
+        builders = self.workspace_builders()
+        if not builders:
+            raise ValueError(
+                f"{type(self).__name__}.workspace_builders() returned no builders"
+            )
+        names = list(builders)
+        opts = runopts()
+        opts.add(
+            self.WORKSPACE_TYPE_OPT,
+            type_=str,
+            default=names[0],
+            help=f"which workspace builder patches the image: one of {', '.join(names)}",
+        )
+        for builder in builders.values():
+            opts.update(builder.workspace_opts())
+        return opts
+
+    def workspace_builder(
+        self, cfg: Mapping[str, CfgVal]
+    ) -> tuple[str, WorkspaceMixin[Any]]:
+        """Returns ``(name, builder)`` for ``cfg["workspace_type"]``, or the
+        default builder when the option is unset.
+
+        Raises:
+            ValueError: the requested type is not one this scheduler offers;
+                the message lists the names it does offer.
+        """
+        builders = self.workspace_builders()
+        name = cfg.get(self.WORKSPACE_TYPE_OPT)
+        if name is None:
+            name = next(iter(builders))
+        if not isinstance(name, str) or name not in builders:
+            raise ValueError(
+                f"unknown {self.WORKSPACE_TYPE_OPT} `{name}`;"
+                f" this scheduler offers: {', '.join(builders)}"
+            )
+        return name, builders[name]
+
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        """Builds *role*'s workspace with the selected builder."""
+        _, builder = self.workspace_builder(cfg)
+        builder.caching_build_workspace_and_update_role(role, cfg, build_cache)
+
+    def dryrun_push_images(
+        self, app: AppDef, cfg: Mapping[str, CfgVal]
+    ) -> tuple[str, Any]:
+        """Runs the selected builder's push dry-run.
+
+        Returns ``(name, images)`` so :py:meth:`push_images` can find the
+        same builder again; *images* is ``None`` for a builder with no push
+        step, and :py:meth:`push_images` then pushes nothing.
+        """
+        name, builder = self.workspace_builder(cfg)
+        if not _has_push_step(builder):
+            return name, None
+        return name, builder.dryrun_push_images(app, cfg)
+
+    def push_images(self, images_to_push: tuple[str, Any]) -> None:
+        """Pushes with the builder named by :py:meth:`dryrun_push_images`."""
+        name, images = images_to_push
+        if images is None:
+            return
+        self.workspace_builders()[name].push_images(images)
 
 
 def pin_workspace_images(

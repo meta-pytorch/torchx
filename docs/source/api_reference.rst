@@ -640,6 +640,10 @@ Workspace Plugin
 
 Mix into a scheduler: ``class MyScheduler(MyWorkspaceMixin, Scheduler[...]): ...``
 
+To offer several builders on one scheduler, mix in
+:py:class:`~torchx.workspace.MultiWorkspaceMixin` instead and return them from
+``workspace_builders()``; the ``workspace_type`` run option picks one.
+
 See :doc:`workspace` for the full API.
 
 Tracker Plugin

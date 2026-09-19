@@ -96,10 +96,54 @@ Built-in Mixins
    * - :py:class:`~torchx.workspace.docker_workspace.DockerWorkspaceMixin`
      - Builds a Docker image from a ``Dockerfile.torchx`` in the workspace,
        tags it with a content hash, and pushes to the configured
-       ``image_repo``. Used by ``kubernetes``, ``local_docker``.
+       ``image_repo``. Used by ``kubernetes``, ``local_docker``, and ``slurm``
+       with ``workspace_type=docker``.
    * - :py:class:`~torchx.workspace.dir_workspace.DirWorkspaceMixin`
      - Copies workspace files into a shared job directory on the filesystem.
-       Used by ``slurm``.
+       Used by ``slurm`` (its default).
+   * - :py:class:`~torchx.workspace.MultiWorkspaceMixin`
+     - Offers several builders on one scheduler; the ``workspace_type`` run
+       option picks one. Used by ``slurm``.
+
+Offering More Than One Builder
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A backend that accepts more than one kind of image (a shared directory and a
+container image, say) offers one builder per kind through
+:py:class:`~torchx.workspace.MultiWorkspaceMixin`. The ``workspace_type`` run
+option picks the builder; the first one is the default, so existing
+invocations behave as before.
+
+.. code-block:: python
+
+   from typing import Any, Mapping
+
+   from torchx.schedulers.api import Scheduler
+   from torchx.specs import CfgVal
+   from torchx.workspace import MultiWorkspaceMixin, WorkspaceMixin
+   from torchx.workspace.dir_workspace import DirWorkspaceMixin
+   from torchx.workspace.docker_workspace import DockerWorkspaceMixin
+
+
+   class MyScheduler(MultiWorkspaceMixin, Scheduler[Mapping[str, CfgVal]]):
+       def __init__(self, session_name: str) -> None:
+           super().__init__("my_backend", session_name)
+           self._builders: dict[str, WorkspaceMixin[Any]] = {
+               "dir": DirWorkspaceMixin(),        # the default
+               "docker": DockerWorkspaceMixin(),
+           }
+
+       def workspace_builders(self) -> Mapping[str, WorkspaceMixin[Any]]:
+           return self._builders
+
+``torchx runopts my_backend`` then lists ``workspace_type`` next to every
+builder's own options, and
+``torchx run -s my_backend -cfg workspace_type=docker,image_repo=example.com/repo --workspace . ...``
+builds and pushes an image instead of copying a directory. The ``slurm``
+scheduler ships this way: ``dir`` copies the workspace into ``job_dir`` when
+that option is set;
+``docker`` builds a patched image, pushes it to ``image_repo`` and runs every
+replica through the cluster's container plugin (``srun --container-image``).
 
 Implementing a Custom WorkspaceMixin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -226,6 +270,9 @@ API Reference
 .. currentmodule:: torchx.workspace
 
 .. autoclass:: WorkspaceMixin
+  :members:
+
+.. autoclass:: MultiWorkspaceMixin
   :members:
 
 .. autofunction:: walk_workspace
