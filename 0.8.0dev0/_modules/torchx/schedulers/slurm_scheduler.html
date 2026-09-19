@@ -450,7 +450,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">subprocess</span><span class="w"> </span><span class="kn">import</span> <span class="n">PIPE</span><span class="p">,</span> <span class="n">CalledProcessError</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -476,7 +476,12 @@
     <span class="n">macros</span><span class="p">,</span>
     <span class="n">runopts</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiWorkspaceMixin</span><span class="p">,</span> <span class="n">WorkspaceMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.dir_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DirWorkspaceMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">docker</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerClient</span>
 
 <span class="n">SLURM_JOB_DIRS</span> <span class="o">=</span> <span class="s2">&quot;.torchxslurmjobdirs&quot;</span>
 
@@ -606,9 +611,11 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;What events to mail users on.&quot;&quot;&quot;</span>
 
     <span class="n">job_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The directory to place the job code and outputs. The</span>
-<span class="sd">    directory must not exist and will be created. To enable log</span>
-<span class="sd">    iteration, jobs will be tracked in ``.torchxslurmjobdirs``.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The directory to place the job script, logs and, with the ``dir``</span>
+<span class="sd">    workspace builder (the default), the workspace copy; that builder</span>
+<span class="sd">    requires it not to exist yet, any other case creates it if missing.</span>
+<span class="sd">    To enable log iteration, jobs will be tracked in</span>
+<span class="sd">    ``.torchxslurmjobdirs``.&quot;&quot;&quot;</span>
 
     <span class="n">qos</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Quality of Service (QoS) to assign to the job.&quot;&quot;&quot;</span>
@@ -638,10 +645,13 @@
         <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">SlurmOpts</span><span class="p">,</span>
         <span class="n">nomem</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">container_image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SlurmReplicaRequest&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        ``from_role`` creates a SlurmReplicaRequest for the specific role and</span>
-<span class="sd">        name.</span>
+<span class="sd">        name. *container_image*, when given, is passed to ``srun`` as</span>
+<span class="sd">        ``--container-image`` so the cluster&#39;s container plugin runs the</span>
+<span class="sd">        replica inside it.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sbatch_opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;requeue&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
@@ -680,6 +690,8 @@
             <span class="c1"># kill workers after one exits with an error</span>
             <span class="s2">&quot;kill-on-bad-exit&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
         <span class="p">}</span>
+        <span class="k">if</span> <span class="n">container_image</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">srun_opts</span><span class="p">[</span><span class="s2">&quot;container-image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container_image</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
@@ -736,6 +748,10 @@
     <span class="n">replicas</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SlurmReplicaRequest</span><span class="p">]</span>
     <span class="n">job_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1">#: what :py:meth:`SlurmScheduler.schedule` pushes before ``sbatch``: the</span>
+    <span class="c1">#: ``docker`` workspace builder&#39;s ``(name, images)``; ``None`` when nothing</span>
+    <span class="c1">#: was built into an image</span>
+    <span class="n">images_to_push</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="SlurmBatchRequest.materialize">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmBatchRequest.materialize">[docs]</a>
@@ -799,7 +815,7 @@
 
 <div class="viewcode-block" id="SlurmScheduler">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">SlurmOpts</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">MultiWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">SlurmOpts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects</span>
 <span class="sd">    that slurm CLI tools are locally installed and job accounting is enabled.</span>
@@ -853,8 +869,11 @@
 <span class="sd">                Partial support. SlurmScheduler will return job and replica</span>
 <span class="sd">                status but does not provide the complete original AppSpec.</span>
 <span class="sd">            workspaces: |</span>
-<span class="sd">                If ``job_dir`` is specified the DirWorkspaceMixin will create a new</span>
-<span class="sd">                isolated directory with a snapshot of the workspace.</span>
+<span class="sd">                Two builders, picked with the ``workspace_type`` run option.</span>
+<span class="sd">                ``dir`` (the default) copies the workspace into ``job_dir`` when</span>
+<span class="sd">                that option is set. ``docker`` builds a patched image, pushes</span>
+<span class="sd">                it to ``image_repo`` and runs every replica through the</span>
+<span class="sd">                cluster&#39;s container plugin (``srun --container-image``).</span>
 <span class="sd">            mounts: false</span>
 <span class="sd">            elasticity: false</span>
 
@@ -862,9 +881,23 @@
 <span class="sd">    requests to workaround https://github.com/aws/aws-parallelcluster/issues/2198.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">docker_client</span><span class="p">:</span> <span class="s2">&quot;DockerClient | None&quot;</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># NOTE: make sure any new init options are supported in create_scheduler(...)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;slurm&quot;</span><span class="p">,</span> <span class="n">session_name</span><span class="p">)</span>
+        <span class="c1"># the first builder is the default, so `dir` keeps the job-dir</span>
+        <span class="c1"># behaviour every existing caller relies on</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_workspace_builders</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;dir&quot;</span><span class="p">:</span> <span class="n">DirWorkspaceMixin</span><span class="p">(),</span>
+            <span class="s2">&quot;docker&quot;</span><span class="p">:</span> <span class="n">DockerWorkspaceMixin</span><span class="p">(</span><span class="n">docker_client</span><span class="o">=</span><span class="n">docker_client</span><span class="p">),</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="SlurmScheduler.workspace_builders">
+<a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.workspace_builders">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_builders</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workspace_builders</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">SlurmOpts</span><span class="o">.</span><span class="n">as_runopts</span><span class="p">()</span>
@@ -873,7 +906,13 @@
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.schedule">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">,</span> <span class="n">SlurmOpts</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">req</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
+        <span class="k">if</span> <span class="n">req</span><span class="o">.</span><span class="n">images_to_push</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">push_images</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">images_to_push</span><span class="p">)</span>
         <span class="n">job_dir</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">job_dir</span>
+        <span class="k">if</span> <span class="n">job_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># the `dir` workspace builder creates it; any other builder, or no</span>
+            <span class="c1"># workspace at all, leaves that to us</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">job_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">job_dir</span> <span class="ow">or</span> <span class="n">tmpdir</span><span class="p">,</span> <span class="s2">&quot;torchx-sbatch.sh&quot;</span><span class="p">)</span>
             <span class="c1"># build the final argv locally; appending to `req.cmd` would make</span>
@@ -935,11 +974,18 @@
         <span class="n">memmb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_memmb</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span>
         <span class="n">nomem</span> <span class="o">=</span> <span class="n">memmb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">memmb</span> <span class="o">&lt;=</span> <span class="mi">1000</span>
 
+        <span class="c1"># with the `docker` builder every role&#39;s image is a container image:</span>
+        <span class="c1"># local builds are pushed first and each replica runs inside its image</span>
+        <span class="c1"># through the cluster&#39;s container plugin</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workspace_builder</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">containerized</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="n">DockerWorkspaceMixin</span><span class="p">)</span>
+        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+
         <span class="n">replicas</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">replica_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">num_replicas</span><span class="p">):</span>
                 <span class="n">values</span> <span class="o">=</span> <span class="n">macros</span><span class="o">.</span><span class="n">Values</span><span class="p">(</span>
-                    <span class="n">img_root</span><span class="o">=</span><span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span>
+                    <span class="n">img_root</span><span class="o">=</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">containerized</span> <span class="k">else</span> <span class="n">role</span><span class="o">.</span><span class="n">image</span><span class="p">,</span>
                     <span class="n">app_id</span><span class="o">=</span><span class="n">macros</span><span class="o">.</span><span class="n">app_id</span><span class="p">,</span>
                     <span class="n">replica_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">replica_id</span><span class="p">),</span>
                     <span class="n">rank0_env</span><span class="o">=</span><span class="s2">&quot;SLURM_JOB_NODELIST_HET_GROUP_0&quot;</span><span class="p">,</span>
@@ -951,6 +997,7 @@
                     <span class="n">replica_role</span><span class="p">,</span>
                     <span class="n">cfg</span><span class="p">,</span>
                     <span class="n">nomem</span><span class="o">=</span><span class="n">nomem</span><span class="p">,</span>
+                    <span class="n">container_image</span><span class="o">=</span><span class="n">replica_role</span><span class="o">.</span><span class="n">image</span> <span class="k">if</span> <span class="n">containerized</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sbatch&quot;</span><span class="p">,</span> <span class="s2">&quot;--parsable&quot;</span><span class="p">]</span>
 
@@ -970,6 +1017,7 @@
             <span class="n">replicas</span><span class="o">=</span><span class="n">replicas</span><span class="p">,</span>
             <span class="n">job_dir</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">job_dir</span><span class="p">,</span>
             <span class="n">max_retries</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">max_retries</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">),</span>
+            <span class="n">images_to_push</span><span class="o">=</span><span class="n">images_to_push</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">AppDryRunInfo</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
@@ -1338,9 +1386,14 @@
 
 <div class="viewcode-block" id="create_scheduler">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.create_scheduler">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SlurmScheduler</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_scheduler</span><span class="p">(</span>
+    <span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">docker_client</span><span class="p">:</span> <span class="s2">&quot;DockerClient | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SlurmScheduler</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">SlurmScheduler</span><span class="p">(</span>
         <span class="n">session_name</span><span class="o">=</span><span class="n">session_name</span><span class="p">,</span>
+        <span class="n">docker_client</span><span class="o">=</span><span class="n">docker_client</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 

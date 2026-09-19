@@ -617,7 +617,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dry-run the image push: updates *app* with final image names.</span>
 
 <span class="sd">        Only called for remote jobs. :py:meth:`push_images` must be called</span>
-<span class="sd">        with the return value before scheduling.</span>
+<span class="sd">        with the return value before scheduling. Leave this method</span>
+<span class="sd">        unoverridden when the builder has no push step (its build already</span>
+<span class="sd">        put the artifact where the job reads it); :py:class:`MultiWorkspaceMixin`</span>
+<span class="sd">        then pushes nothing for it.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;dryrun_push is not implemented&quot;</span><span class="p">)</span></div>
 
@@ -627,6 +630,157 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pushes images (returned by :py:meth:`dryrun_push_images`) to the remote repo.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;push is not implemented&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_push_step</span><span class="p">(</span><span class="n">builder</span><span class="p">:</span> <span class="n">WorkspaceMixin</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="c1"># A builder that leaves the base ``dryrun_push_images`` in place has no</span>
+    <span class="c1"># separate push step: its build already put the artifact where the job</span>
+    <span class="c1"># reads it (a shared directory, say).</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">builder</span><span class="p">)</span><span class="o">.</span><span class="n">dryrun_push_images</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">WorkspaceMixin</span><span class="o">.</span><span class="n">dryrun_push_images</span>
+
+
+<div class="viewcode-block" id="MultiWorkspaceMixin">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiWorkspaceMixin</span><span class="p">(</span><span class="n">WorkspaceMixin</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scheduler mix-in that offers several workspace builders; the</span>
+<span class="sd">    ``workspace_type`` run option picks one.</span>
+
+<span class="sd">    A scheduler whose backend accepts more than one kind of image (a shared</span>
+<span class="sd">    directory and a container image, say) returns one builder per kind from</span>
+<span class="sd">    :py:meth:`workspace_builders`. Every :py:class:`WorkspaceMixin` call is</span>
+<span class="sd">    forwarded to the builder the run config selects, and</span>
+<span class="sd">    :py:meth:`workspace_opts` is the union of the builders&#39; options plus the</span>
+<span class="sd">    selector, so ``torchx runopts &lt;scheduler&gt;`` lists them all.</span>
+
+<span class="sd">    .. doctest::</span>
+
+<span class="sd">        &gt;&gt;&gt; from typing import Any, Mapping</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.workspace import MultiWorkspaceMixin, WorkspaceMixin</span>
+<span class="sd">        &gt;&gt;&gt; from torchx.workspace.dir_workspace import DirWorkspaceMixin, TmpDirWorkspaceMixin</span>
+<span class="sd">        &gt;&gt;&gt; class TwoWaysMixin(MultiWorkspaceMixin):</span>
+<span class="sd">        ...     def __init__(self) -&gt; None:</span>
+<span class="sd">        ...         self.builders = {&quot;dir&quot;: DirWorkspaceMixin(), &quot;tmpdir&quot;: TmpDirWorkspaceMixin()}</span>
+<span class="sd">        ...     def workspace_builders(self) -&gt; Mapping[str, WorkspaceMixin[Any]]:</span>
+<span class="sd">        ...         return self.builders</span>
+<span class="sd">        &gt;&gt;&gt; mixin = TwoWaysMixin()</span>
+<span class="sd">        &gt;&gt;&gt; mixin.workspace_builder({})[0]              # the first builder is the default</span>
+<span class="sd">        &#39;dir&#39;</span>
+<span class="sd">        &gt;&gt;&gt; mixin.workspace_builder({&quot;workspace_type&quot;: &quot;tmpdir&quot;})[0]</span>
+<span class="sd">        &#39;tmpdir&#39;</span>
+<span class="sd">        &gt;&gt;&gt; sorted(mixin.workspace_opts()._opts)</span>
+<span class="sd">        [&#39;workspace_type&#39;]</span>
+
+<span class="sd">    The first builder is the default, so adding this mix-in to a scheduler</span>
+<span class="sd">    that used one builder changes nothing until a user sets</span>
+<span class="sd">    ``workspace_type``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: the run option that picks the builder</span>
+    <span class="n">WORKSPACE_TYPE_OPT</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;workspace_type&quot;</span>
+
+<div class="viewcode-block" id="MultiWorkspaceMixin.workspace_builders">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin.workspace_builders">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_builders</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns ``{name: builder}``. The first entry is the default.</span>
+
+<span class="sd">        Return the same builder instances on every call (build the mapping</span>
+<span class="sd">        once, in ``__init__``): the push step looks the builder up again by</span>
+<span class="sd">        name and expects the instance that ran the build.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="MultiWorkspaceMixin.workspace_opts">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin.workspace_opts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_opts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">runopts</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The selector plus the union of every builder&#39;s options.</span>
+
+<span class="sd">        Two builders declaring the same option name must mean the same thing</span>
+<span class="sd">        by it; the later builder&#39;s declaration wins.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">builders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workspace_builders</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">builders</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.workspace_builders() returned no builders&quot;</span>
+            <span class="p">)</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">builders</span><span class="p">)</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="n">runopts</span><span class="p">()</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">WORKSPACE_TYPE_OPT</span><span class="p">,</span>
+            <span class="n">type_</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;which workspace builder patches the image: one of </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">builder</span> <span class="ow">in</span> <span class="n">builders</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">workspace_opts</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">opts</span></div>
+
+
+<div class="viewcode-block" id="MultiWorkspaceMixin.workspace_builder">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin.workspace_builder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">workspace_builder</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns ``(name, builder)`` for ``cfg[&quot;workspace_type&quot;]``, or the</span>
+<span class="sd">        default builder when the option is unset.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: the requested type is not one this scheduler offers;</span>
+<span class="sd">                the message lists the names it does offer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">builders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workspace_builders</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">WORKSPACE_TYPE_OPT</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">builders</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">builders</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;unknown </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">WORKSPACE_TYPE_OPT</span><span class="si">}</span><span class="s2"> `</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">`;&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; this scheduler offers: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">builders</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">builders</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MultiWorkspaceMixin.caching_build_workspace_and_update_role">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin.caching_build_workspace_and_update_role">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">caching_build_workspace_and_update_role</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
+        <span class="n">build_cache</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds *role*&#39;s workspace with the selected builder.&quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workspace_builder</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">caching_build_workspace_and_update_role</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">build_cache</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiWorkspaceMixin.dryrun_push_images">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin.dryrun_push_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dryrun_push_images</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs the selected builder&#39;s push dry-run.</span>
+
+<span class="sd">        Returns ``(name, images)`` so :py:meth:`push_images` can find the</span>
+<span class="sd">        same builder again; *images* is ``None`` for a builder with no push</span>
+<span class="sd">        step, and :py:meth:`push_images` then pushes nothing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workspace_builder</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_has_push_step</span><span class="p">(</span><span class="n">builder</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">builder</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiWorkspaceMixin.push_images">
+<a class="viewcode-back" href="../../../workspace.html#torchx.workspace.MultiWorkspaceMixin.push_images">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">push_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images_to_push</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pushes with the builder named by :py:meth:`dryrun_push_images`.&quot;&quot;&quot;</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">images</span> <span class="o">=</span> <span class="n">images_to_push</span>
+        <span class="k">if</span> <span class="n">images</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workspace_builders</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">push_images</span><span class="p">(</span><span class="n">images</span><span class="p">)</span></div>
 </div>
 
 

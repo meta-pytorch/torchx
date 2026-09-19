@@ -1087,6 +1087,9 @@ full guide.</p>
 </pre></div>
 </div>
 <p>Mix into a scheduler: <code class="docutils literal notranslate"><span class="pre">class</span> <span class="pre">MyScheduler(MyWorkspaceMixin,</span> <span class="pre">Scheduler[...]):</span> <span class="pre">...</span></code></p>
+<p>To offer several builders on one scheduler, mix in
+<a class="reference internal" href="workspace.html#torchx.workspace.MultiWorkspaceMixin" title="torchx.workspace.MultiWorkspaceMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiWorkspaceMixin</span></code></a> instead and return them from
+<code class="docutils literal notranslate"><span class="pre">workspace_builders()</span></code>; the <code class="docutils literal notranslate"><span class="pre">workspace_type</span></code> run option picks one.</p>
 <p>See <a class="reference internal" href="workspace.html"><span class="doc">torchx.workspace</span></a> for the full API.</p>
 </section>
 <section id="tracker-plugin">

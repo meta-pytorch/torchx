@@ -561,8 +561,12 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role">caching_build_workspace_and_update_role() (torchx.workspace.WorkspaceMixin method)</a>
+      <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.caching_build_workspace_and_update_role">caching_build_workspace_and_update_role() (torchx.workspace.MultiWorkspaceMixin method)</a>
+
+      <ul>
+        <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.caching_build_workspace_and_update_role">(torchx.workspace.WorkspaceMixin method)</a>
 </li>
+      </ul></li>
       <li><a href="runner.html#torchx.runner.Runner.cancel">cancel() (torchx.runner.Runner method)</a>
 
       <ul>
@@ -688,6 +692,8 @@
       <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.dryrun_push_images">dryrun_push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 
       <ul>
+        <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.dryrun_push_images">(torchx.workspace.MultiWorkspaceMixin method)</a>
+</li>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.dryrun_push_images">(torchx.workspace.WorkspaceMixin method)</a>
 </li>
       </ul></li>
@@ -825,10 +831,12 @@
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.ImageProvider">ImageProvider (class in torchx.schedulers.local_scheduler)</a>
 </li>
-      <li><a href="plugins.html#torchx.plugins.PluginRegistry.info">info() (torchx.plugins.PluginRegistry method)</a>
+      <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmBatchRequest.images_to_push">images_to_push (torchx.schedulers.slurm_scheduler.SlurmBatchRequest attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="plugins.html#torchx.plugins.PluginRegistry.info">info() (torchx.plugins.PluginRegistry method)</a>
+</li>
       <li><a href="specs.html#torchx.specs.Resource.is_fractional">is_fractional() (torchx.specs.Resource method)</a>
 </li>
       <li><a href="specs.html#torchx.specs.runopts.is_type">is_type() (torchx.specs.runopts static method)</a>
@@ -999,6 +1007,10 @@
 </li>
       </ul></li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin">MultiWorkspaceMixin (class in torchx.workspace)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="N">N</h2>
@@ -1034,15 +1046,17 @@
 </li>
       <li><a href="schedulers/local.html#torchx.schedulers.local_scheduler.PopenRequest">PopenRequest (class in torchx.schedulers.local_scheduler)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="plugins.html#torchx.plugins.powers_of_two_gpus">powers_of_two_gpus() (in module torchx.plugins)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="specs.html#torchx.specs.Role.pre_proc">pre_proc() (torchx.specs.Role method)</a>
 </li>
       <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.push_images">push_images() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 
       <ul>
+        <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.push_images">(torchx.workspace.MultiWorkspaceMixin method)</a>
+</li>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.push_images">(torchx.workspace.WorkspaceMixin method)</a>
 </li>
       </ul></li>
@@ -1463,14 +1477,26 @@
         <li><a href="specs.html#torchx.specs.Workspace">(class in torchx.specs)</a>
 </li>
       </ul></li>
+      <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.workspace_builder">workspace_builder() (torchx.workspace.MultiWorkspaceMixin method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.workspace_builders">workspace_builders() (torchx.schedulers.slurm_scheduler.SlurmScheduler method)</a>
+
+      <ul>
+        <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.workspace_builders">(torchx.workspace.MultiWorkspaceMixin method)</a>
+</li>
+      </ul></li>
       <li><a href="workspaces/docker.html#torchx.workspace.docker_workspace.DockerWorkspaceMixin.workspace_opts">workspace_opts() (torchx.workspace.docker_workspace.DockerWorkspaceMixin method)</a>
 
       <ul>
+        <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.workspace_opts">(torchx.workspace.MultiWorkspaceMixin method)</a>
+</li>
         <li><a href="workspace.html#torchx.workspace.WorkspaceMixin.workspace_opts">(torchx.workspace.WorkspaceMixin method)</a>
 </li>
       </ul></li>
+      <li><a href="workspace.html#torchx.workspace.MultiWorkspaceMixin.WORKSPACE_TYPE_OPT">WORKSPACE_TYPE_OPT (torchx.workspace.MultiWorkspaceMixin attribute)</a>
+</li>
       <li><a href="workspace.html#torchx.workspace.WorkspaceMixin">WorkspaceMixin (class in torchx.workspace)</a>
 </li>
   </ul></td>
