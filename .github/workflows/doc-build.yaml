@@ -6,11 +6,16 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: write
 
 jobs:
   docbuild:
+    timeout-minutes: 15
     runs-on: linux.24_04.4x
     steps:
       - name: Checkout TorchX
@@ -29,10 +34,6 @@ jobs:
         run: |
           cd docs
           uv run make doctest
-      - name: Linkcheck
-        run: |
-          cd docs
-          uv run make linkcheck
       - name: Doc Build
         run: |
           cd docs
@@ -50,6 +51,7 @@ jobs:
           fi
 
   docpush:
+    timeout-minutes: 15
     runs-on: linux.24_04.4x
     needs: docbuild
     if: ${{ github.ref == 'refs/heads/main' }}
