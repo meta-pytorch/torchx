@@ -113,10 +113,6 @@ stored overlays, :py:func:`validate_overlay` to guard against user error, and
 
 :py:func:`apply_overlay` handles operator keys (:py:func:`PUT`, :py:func:`JOIN`,
 :py:func:`DEL`) automatically — the scheduler doesn't need to know about them.
-
-.. fbcode::
-
-    For MAST/MSL overlays, see :py:mod:`torchx.specs.fb.overlay_mast`.
 """
 
 from __future__ import annotations

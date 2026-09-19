@@ -8,18 +8,6 @@
     {% include "searchbox.html" %}
 {% endblock %}
 
-{%- block extrabody %}
-  {% if not fbcode %}
-    <div id="redirect-banner" style="display: none">
-      <p>
-        This is the public documentation. There's an internal wiki with extra
-        information for Meta employees at
-        <a href="https://fburl.com/torchx">https://fburl.com/torchx</a>
-      </p>
-    </div>
-  {% endif %}
-{%- endblock %}
-
 {%- block content %}
   {% if pagename.startswith("examples") %}
   <div class="pytorch-call-to-action-links">

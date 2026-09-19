@@ -128,14 +128,6 @@ Overlays
 .. automodule:: torchx.specs.overlays
    :members:
 
-.. fbcode::
-
-   MAST/MSL Overlays
-   ^^^^^^^^^^^^^^^^^^^^
-
-   .. automodule:: torchx.specs.fb.overlay_mast
-      :members:
-
 Capabilities
 --------------
 

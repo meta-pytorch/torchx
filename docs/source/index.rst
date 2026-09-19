@@ -131,35 +131,10 @@ Documentation
    runner.config
    tracker
 
-.. fbcode::
-
-   .. toctree::
-      :maxdepth: 1
-      :caption: Guides (Meta)
-
-      fb/quickstart
-      fb/setup
-      fb/images
-      fb/workspace
-      fb/cogwheel
-      fb/named_resources
-      fb/tracker_usage
-      fb/troubleshooting
-
-
 Works With
 ---------------
 
 .. _Schedulers:
-
-.. fbcode::
-
-   .. toctree::
-      :maxdepth: 1
-      :caption: Schedulers (Meta)
-      :glob:
-
-      schedulers/fb/*
 
 .. toctree::
    :maxdepth: 1
@@ -170,31 +145,11 @@ Works With
    schedulers/kubernetes
    schedulers/slurm
 
-.. fbcode::
-
-   .. toctree::
-      :maxdepth: 1
-      :caption: Workspaces (Meta)
-
-      workspaces/fb/sapling
-      workspaces/fb/conda_env
-      workspaces/fb/jetter
-
 .. toctree::
    :maxdepth: 1
    :caption: Workspaces
 
    workspaces/docker
-
-.. fbcode::
-
-   .. toctree::
-      :maxdepth: 1
-      :caption: Pipelines (Meta)
-      :glob:
-
-      pipelines/fb/*
-
 
 Runtime Library
 ----------------

@@ -8,8 +8,3 @@
 
 
 $(".pytorch-call-to-action-links").hide();
-
-const NETWORK_TEST_URL = 'https://staticdocs.thefacebook.com/ping';
-fetch(NETWORK_TEST_URL).then(() => {
-    $("#redirect-banner").prependTo("body").show();
-});
