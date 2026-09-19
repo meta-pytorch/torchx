@@ -12,6 +12,8 @@ from unittest.mock import MagicMock, patch
 
 from torchx.cli.argparse_util import torchxconfig
 from torchx.cli.cmd_list import CmdList
+from torchx.schedulers import DEFAULT_SCHEDULER_MODULES
+from torchx.schedulers.local_scheduler import create_scheduler as create_local_scheduler
 
 
 class CmdListTest(unittest.TestCase):
@@ -71,3 +73,24 @@ class CmdListTest(unittest.TestCase):
             scheduler="kubernetes", cfg={"cluster": "foo"}
         )
         list_mock.assert_called_with("kubernetes", {"cluster": "foo"})
+
+    @patch("torchx.schedulers.plugins")
+    def test_scheduler_choices_include_plugins_and_builtins(
+        self, plugins_mock: MagicMock
+    ) -> None:
+        plugins_mock.registry.return_value.get.return_value = {
+            "custom_sched": create_local_scheduler
+        }
+
+        parser = argparse.ArgumentParser()
+        CmdList().add_arguments(parser)
+        action = next(a for a in parser._actions if a.dest == "scheduler")
+
+        self.assertEqual(
+            {"custom_sched", *DEFAULT_SCHEDULER_MODULES},
+            set(action.choices or []),
+            "`torchx list -s` must offer the plugin and every built-in",
+        )
+        self.assertEqual(
+            "custom_sched", action.default, "the registered plugin is the default"
+        )

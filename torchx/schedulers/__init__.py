@@ -37,9 +37,13 @@ def get_scheduler_factories(
 ) -> dict[str, SchedulerFactory]:
     """
     get_scheduler_factories returns all the available schedulers names and the
-    method to instantiate them.
+    method to instantiate them: the built-ins plus everything registered
+    through :py:mod:`torchx.plugins`, which wins a name clash.
 
-    The first scheduler in the dictionary is used as the default scheduler.
+    The first scheduler in the dictionary is used as the default scheduler,
+    and registered plugins come first.
+
+    Pass ``skip_defaults=True`` for the registered plugins only.
     """
 
     if skip_defaults:
@@ -49,10 +53,12 @@ def get_scheduler_factories(
         for scheduler, path in DEFAULT_SCHEDULER_MODULES.items():
             default_schedulers[scheduler] = _defer_load_scheduler(path)
 
-    plugin_scheds = plugins.registry().get(plugins.PluginType.SCHEDULER)
-    if plugin_scheds:
-        return dict(plugin_scheds)
-    return default_schedulers
+    factories: dict[str, SchedulerFactory] = dict(
+        plugins.registry().get(plugins.PluginType.SCHEDULER)
+    )
+    for name, factory in default_schedulers.items():
+        factories.setdefault(name, factory)
+    return factories
 
 
 def get_default_scheduler_name() -> str:

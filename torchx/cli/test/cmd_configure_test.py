@@ -7,13 +7,17 @@
 
 
 import argparse
+import configparser
 import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from torchx.cli.cmd_configure import CmdConfigure
+from torchx.schedulers import DEFAULT_SCHEDULER_MODULES
+from torchx.schedulers.local_scheduler import create_scheduler as create_local_scheduler
 
 
 class CmdConfigureTest(unittest.TestCase):
@@ -51,3 +55,24 @@ class CmdConfigureTest(unittest.TestCase):
     def test_configure_local_cwd(self) -> None:
         self.cmd_configure.run(self._args(["--schedulers", "local_cwd"]))
         self.assertTrue((Path(self.test_dir) / ".torchxconfig").exists())
+
+    @patch("torchx.schedulers.plugins")
+    def test_configure_dumps_plugins_and_builtins(
+        self, plugins_mock: MagicMock
+    ) -> None:
+        plugins_mock.registry.return_value.get.return_value = {
+            "custom_sched": create_local_scheduler
+        }
+
+        self.cmd_configure.run(self._args([]))
+
+        config = configparser.ConfigParser()
+        config.read(Path(self.test_dir) / ".torchxconfig")
+
+        self.assertIn(
+            "custom_sched", config.sections(), "the plugin scheduler must be dumped"
+        )
+        for name in DEFAULT_SCHEDULER_MODULES:
+            self.assertIn(
+                name, config.sections(), f"built-in `{name}` must still be dumped"
+            )
