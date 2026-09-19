@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from io import StringIO
 from typing import Dict, Iterable, List, Mapping
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from torchx.runner.config import (
     apply,
@@ -386,7 +386,7 @@ image = foobar_custom
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_casts_like_cast_to_type(self, _) -> None:
+    def test_load_casts_like_cast_to_type(self, _: MagicMock) -> None:
         """load() must parse configfile values exactly like ``runopt.cast_to_type``."""
         config = """#
 [test]
@@ -420,7 +420,7 @@ l_typing = a;
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_ini_bool_vocabulary_round_trips(self, _) -> None:
+    def test_load_ini_bool_vocabulary_round_trips(self, _: MagicMock) -> None:
         """INI booleans written as yes/on/1 (getboolean vocabulary) load as True."""
         config = """#
 [test]
@@ -436,7 +436,7 @@ bFalse = off
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_canonicalizes_camelcase_keys(self, _) -> None:
+    def test_load_canonicalizes_camelcase_keys(self, _: MagicMock) -> None:
         """A camelCase spelling in the config file loads under the registered key."""
         config = """#
 [test]
@@ -451,7 +451,7 @@ lTyping = a;b
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_no_override_across_spellings(self, _) -> None:
+    def test_load_no_override_across_spellings(self, _: MagicMock) -> None:
         """A cfg value under the registered key is not overridden by a
         camelCase spelling of the same opt in the config file."""
         config = """#
@@ -467,7 +467,7 @@ lTyping = a;b
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_conflicting_spellings_raise(self, _) -> None:
+    def test_load_conflicting_spellings_raise(self, _: MagicMock) -> None:
         """Two spellings of one opt with different values must raise instead of
         letting file order decide which value wins."""
         config = """#
@@ -482,7 +482,7 @@ lTyping = c;d
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_agreeing_spellings_keep_first(self, _) -> None:
+    def test_load_agreeing_spellings_keep_first(self, _: MagicMock) -> None:
         """Two spellings of one opt with the same value load once, under the
         registered key (mirrors `runopts.resolve` conflict semantics)."""
         config = """#
@@ -499,7 +499,7 @@ lTyping = a;b
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_caller_value_moots_conflicting_spellings(self, _) -> None:
+    def test_load_caller_value_moots_conflicting_spellings(self, _: MagicMock) -> None:
         """A caller-supplied cfg value is never overridden, so two conflicting
         file spellings of that opt must not raise — both file values would
         have been discarded anyway."""
@@ -517,7 +517,7 @@ lTyping = c;d
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_unknown_opt_with_none_value_skipped(self, _) -> None:
+    def test_load_unknown_opt_with_none_value_skipped(self, _: MagicMock) -> None:
         """An unknown option is warned-and-skipped even when its value is
         ``None`` — it must not be inserted into cfg via the None mapping."""
         config = """#
@@ -545,7 +545,7 @@ unknown_opt = None
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_apply_default(self, _) -> None:
+    def test_apply_default(self, _: MagicMock) -> None:
         with patch(
             TORCHX_DEFAULT_CONFIG_DIRS,
             [str(self.tmpdir / "home"), str(self.tmpdir)],
@@ -563,7 +563,7 @@ unknown_opt = None
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_apply_dirs(self, _) -> None:
+    def test_apply_dirs(self, _: MagicMock) -> None:
         cfg: Dict[str, CfgVal] = {"s": "runtime_value"}
         apply(
             scheduler="test",
@@ -586,7 +586,7 @@ unknown_opt = None
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_dump_only_required(self, _) -> None:
+    def test_dump_only_required(self, _: MagicMock) -> None:
         sfile = StringIO()
 
         # test scheduler has no required options hence expect empty string
@@ -603,7 +603,7 @@ unknown_opt = None
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_load_invalid_runopt(self, _) -> None:
+    def test_load_invalid_runopt(self, _: MagicMock) -> None:
         cfg = {}
         load(
             scheduler="test",
@@ -654,7 +654,7 @@ a_run_opt_that = None
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"test": TestScheduler},
     )
-    def test_dump_and_load_all_runopt_types(self, _) -> None:
+    def test_dump_and_load_all_runopt_types(self, _: MagicMock) -> None:
         sfile = StringIO()
         dump(sfile)
 
@@ -761,7 +761,7 @@ class NestedConfigTest(TestWithTmpDir):
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"nested_test": NestedTestScheduler},
     )
-    def test_load_and_from_cfg(self, _) -> None:
+    def test_load_and_from_cfg(self, _: MagicMock) -> None:
         cfg: dict[str, CfgVal] = {}
         load(scheduler="nested_test", f=StringIO(_NESTED_CONFIG), cfg=cfg)
         self.assertEqual("foo", cfg.get("name"))
@@ -777,7 +777,7 @@ class NestedConfigTest(TestWithTmpDir):
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"nested_test": NestedTestScheduler},
     )
-    def test_load_no_override_and_partial(self, _) -> None:
+    def test_load_no_override_and_partial(self, _: MagicMock) -> None:
         cfg: dict[str, CfgVal] = {"b.x": "cli-value"}
         load(scheduler="nested_test", f=StringIO(_NESTED_CONFIG), cfg=cfg)
         self.assertEqual("cli-value", cfg.get("b.x"))
