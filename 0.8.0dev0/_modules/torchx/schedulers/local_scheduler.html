@@ -1324,10 +1324,8 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_cuda_device_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="c1"># this method deliberately does not use ``torch.cuda.device_count()``</span>
-        <span class="c1"># to avoid taking a dependency on pytorch</span>
-        <span class="c1"># this makes it possible to avoid a BUCK dependency (internally at Meta)</span>
-        <span class="c1"># on //caffe2:torch which slows down builds of //torchx:* rules</span>
+        <span class="c1"># deliberately not ``torch.cuda.device_count()``: torchx must not</span>
+        <span class="c1"># take a dependency on pytorch</span>
         <span class="n">gpu_cmd</span> <span class="o">=</span> <span class="s2">&quot;nvidia-smi -L&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;running `</span><span class="si">%s</span><span class="s2">`&quot;</span><span class="p">,</span> <span class="n">gpu_cmd</span><span class="p">)</span>
