@@ -8,14 +8,10 @@ updates:
       - "dependencies"
     open-pull-requests-limit: 10
     ignore:
-      # Formatter toolchain is company-controlled: torchx mirrors the shared
-      # tools/lint/pyfmt/reqs/requirements-fmt.txt. Do not let dependabot bump
-      # these — divergence breaks pyfmt company-wide (see fmt-requirements.txt).
-      - dependency-name: "black"
-      - dependency-name: "ruff-api"
-      - dependency-name: "ufmt"
-      - dependency-name: "usort"
-      - dependency-name: "stdlibs"
+      # ruff is version-pinned in pyproject.toml because it formats the whole
+      # tree and CI runs `ruff format --check`: a bump reformats files and
+      # fails every open pull request, so it is upgraded deliberately.
+      - dependency-name: "ruff"
 
   # Dependabot classifies this repo's Python security updates under the `uv`
   # ecosystem (uv.lock is present; PR branches are `dependabot/uv/...`), and
@@ -32,11 +28,7 @@ updates:
     open-pull-requests-limit: 0
     ignore:
       # Keep in sync with the pip entry above (same rationale).
-      - dependency-name: "black"
-      - dependency-name: "ruff-api"
-      - dependency-name: "ufmt"
-      - dependency-name: "usort"
-      - dependency-name: "stdlibs"
+      - dependency-name: "ruff"
 
   - package-ecosystem: "github-actions"
     directory: "/"
