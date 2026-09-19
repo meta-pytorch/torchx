@@ -13,12 +13,17 @@ import unittest
 from typing import cast
 from unittest.mock import MagicMock, patch
 
+from torchx.plugins import registry
+from torchx.runner import events
 from torchx.runner.events import (
     _get_or_create_logger,
     log_event,
+    record,
     SourceType,
     TorchxEvent,
 )
+from torchx.runner.events.handlers import get_logging_handler
+from torchx.util import entrypoints
 
 SESSION_ID = "123"
 
@@ -109,6 +114,63 @@ class TorchxEventLibTest(unittest.TestCase):
             TypeError, msg="non str/TorchxEvent input must raise TypeError"
         ):
             TorchxEvent.deserialize(cast(str, 123))
+
+
+class _RecordingHandler(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.messages: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.messages.append(record.getMessage())
+
+
+class GetLoggingHandlerTest(unittest.TestCase):
+    def setUp(self) -> None:
+        registry.cache_clear()
+        events._events_loggers.clear()
+        self.addCleanup(registry.cache_clear)
+        self.addCleanup(events._events_loggers.clear)
+
+    def test_builtin_destinations(self) -> None:
+        self.assertIsInstance(get_logging_handler("null"), logging.NullHandler)
+        self.assertIsInstance(get_logging_handler("console"), logging.StreamHandler)
+
+    def test_unregistered_destination_raises(self) -> None:
+        with self.assertRaises(KeyError):
+            get_logging_handler("no_such_destination")
+
+    def test_plugin_shadows_builtin_of_the_same_name(self) -> None:
+        handler = _RecordingHandler()
+        with patch.object(
+            entrypoints, "load_group", return_value={"null": lambda: handler}
+        ):
+            self.assertIs(
+                get_logging_handler("null"),
+                handler,
+                "a `torchx.event_handlers` plugin must win over the built-in"
+                " handler registered under the same destination",
+            )
+
+    def test_recorded_events_reach_the_registered_plugin(self) -> None:
+        handler = _RecordingHandler()
+        destination = "plugin_sink"
+        events_logger = logging.getLogger(f"torchx-events-{destination}")
+        events_logger.setLevel(logging.INFO)
+        self.addCleanup(lambda: events_logger.removeHandler(handler))
+        with patch.object(
+            entrypoints, "load_group", return_value={destination: lambda: handler}
+        ):
+            record(
+                TorchxEvent(session=SESSION_ID, scheduler="local", api="test_api"),
+                destination=destination,
+            )
+
+        self.assertEqual(
+            [SESSION_ID],
+            [TorchxEvent.deserialize(m).session for m in handler.messages],
+            "the event must be emitted to the plugin handler, not a built-in one",
+        )
 
 
 @patch("torchx.runner.events.record")
