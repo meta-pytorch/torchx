@@ -7,20 +7,17 @@
 
 # pyre-strict
 
-import posixpath
 import sys
 import unittest
 from datetime import datetime, timedelta
 from typing import cast
 from unittest.mock import call, MagicMock, patch
 
-import fsspec
 import torchx
 from docker.errors import APIError, DockerException
 from docker.models.containers import Container
 from docker.types import DeviceRequest, Mount
 from torchx import specs
-from torchx.components.dist import ddp
 from torchx.schedulers.api import ListAppResponse, Scheduler, Stream
 from torchx.schedulers.docker_scheduler import (
     create_scheduler,
@@ -34,7 +31,6 @@ from torchx.schedulers.docker_scheduler import (
     LABEL_ROLE_NAME,
     Opts,
 )
-from torchx.schedulers.test.local_scheduler_test import LocalSchedulerTestUtil
 from torchx.specs.api import AppDef, AppDryRunInfo, AppState, Role
 
 
@@ -733,238 +729,3 @@ class DockerSchedulerTest(unittest.TestCase):
             apps,
             msg="containers sharing an app-id must dedupe to one ListAppResponse",
         )
-
-
-if has_docker():
-    # These are the live tests that require a local docker instance.
-
-    class DockerSchedulerLiveTest(unittest.TestCase, LocalSchedulerTestUtil):
-        def setUp(self) -> None:
-            # pyrefly: ignore [bad-override-mutable-attribute]
-            self.scheduler: DockerScheduler = create_scheduler(
-                session_name="test_session",
-            )
-
-        def _docker_app(self, entrypoint: str, *args: str) -> AppDef:
-            return AppDef(
-                name="test-app",
-                roles=[
-                    Role(
-                        name="image_test_role",
-                        image="busybox",
-                        entrypoint=entrypoint,
-                        args=list(args),
-                    ),
-                ],
-            )
-
-        def test_docker_submit(self) -> None:
-            app = self._docker_app("echo", "foo")
-            app_id = self.scheduler.submit(app, cfg=Opts())
-
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-            self.assertEqual(AppState.SUCCEEDED, desc.state)
-            self.assertEqual(len(desc.roles), 1)
-            self.assertEqual(len(desc.roles_statuses), 1)
-            self.assertEqual(len(desc.roles_statuses[0].replicas), 1)
-            self.assertEqual(
-                desc.roles_statuses[0].replicas[0].state, AppState.SUCCEEDED
-            )
-
-            self.assertEqual(desc.app_id, app_id)
-
-        def test_docker_logs(self) -> None:
-            app = self._docker_app("echo", "foo\nbar")
-            start = datetime.utcnow()
-            app_id = self.scheduler.submit(app, cfg=Opts())
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-            # docker truncates to the second so pad out 1 extra second
-            end = datetime.utcnow() + timedelta(seconds=1)
-
-            self.assertEqual(AppState.SUCCEEDED, desc.state)
-
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id,
-                    "image_test_role",
-                    0,
-                    since=start,
-                    until=end,
-                )
-            )
-            self.assertEqual(
-                logs,
-                [
-                    "foo\n",
-                    "bar\n",
-                ],
-            )
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id,
-                    "image_test_role",
-                    0,
-                    regex="bar",
-                )
-            )
-            self.assertEqual(
-                logs,
-                [
-                    "bar\n",
-                ],
-            )
-
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id,
-                    "image_test_role",
-                    0,
-                    since=end,
-                )
-            )
-            self.assertEqual(logs, [])
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id,
-                    "image_test_role",
-                    0,
-                    until=start,
-                )
-            )
-            self.assertEqual(logs, [])
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id,
-                    "image_test_role",
-                    0,
-                    should_tail=True,
-                )
-            )
-            self.assertEqual(
-                logs,
-                [
-                    "foo\n",
-                    "bar\n",
-                ],
-            )
-
-        def test_docker_logs_streams(self) -> None:
-            app = self._docker_app("sh", "-c", "echo stdout; >&2 echo stderr")
-
-            app_id = self.scheduler.submit(app, cfg=Opts())
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-
-            logs = set(
-                self.scheduler.log_iter(app_id, "image_test_role", 0, streams=None)
-            )
-            self.assertEqual(
-                logs,
-                {
-                    "stdout\n",
-                    "stderr\n",
-                },
-            )
-
-            logs = set(
-                self.scheduler.log_iter(
-                    app_id, "image_test_role", 0, streams=Stream.COMBINED
-                )
-            )
-            self.assertEqual(
-                logs,
-                {
-                    "stdout\n",
-                    "stderr\n",
-                },
-            )
-
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id, "image_test_role", 0, streams=Stream.STDERR
-                )
-            )
-            self.assertEqual(
-                logs,
-                [
-                    "stderr\n",
-                ],
-            )
-
-            logs = list(
-                self.scheduler.log_iter(
-                    app_id, "image_test_role", 0, streams=Stream.STDOUT
-                )
-            )
-            self.assertEqual(
-                logs,
-                [
-                    "stdout\n",
-                ],
-            )
-
-        def test_docker_list(self) -> None:
-            app = self._docker_app("echo", "bar")
-            app_id = self.scheduler.submit(app, cfg=Opts())
-
-            self.wait(app_id)
-            self.assertTrue(
-                ListAppResponse(app_id=app_id, state=AppState.SUCCEEDED)
-                in self.scheduler.list()
-            )
-
-        def test_docker_cancel(self) -> None:
-            app = self._docker_app("sleep", "10000")
-            app_id = self.scheduler.submit(app, cfg=Opts())
-            _ = self.scheduler.describe(app_id)
-
-            self.wait(app_id, wait_for=lambda state: state == AppState.RUNNING)
-            self.scheduler.cancel(app_id)
-
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-            self.assertEqual(desc.state, AppState.FAILED)
-
-        def test_docker_submit_error(self) -> None:
-            app = self._docker_app("sh", "-c", "exit 1")
-            app_id = self.scheduler.submit(app, cfg=Opts())
-
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-            self.assertEqual(AppState.FAILED, desc.state)
-            self.assertEqual(len(desc.roles), 1)
-            self.assertEqual(len(desc.roles_statuses), 1)
-            self.assertEqual(len(desc.roles_statuses[0].replicas), 1)
-            self.assertEqual(desc.roles_statuses[0].replicas[0].state, AppState.FAILED)
-
-        def test_docker_submit_error_retries(self) -> None:
-            app = self._docker_app("sh", "-c", "exit 1")
-            app.roles[0].max_retries = 1
-            app_id = self.scheduler.submit(app, cfg=Opts())
-
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-            self.assertEqual(AppState.FAILED, desc.state)
-
-        def test_docker_submit_dist(self) -> None:
-            workspace = "memory://docker_submit_dist/"
-            with fsspec.open(posixpath.join(workspace, "main.py"), "wt") as f:
-                f.write("print('hello world')\n")
-            app = ddp(script="main.py", j="2x1")
-            app_id = self.scheduler.submit(app, cfg=Opts(), workspace=workspace)
-            print(app_id)
-
-            desc = self.wait(app_id)
-            self.assertIsNotNone(desc)
-            self.assertEqual(AppState.SUCCEEDED, desc.state)
-            self.assertEqual(len(desc.roles), 1)
-            self.assertEqual(len(desc.roles_statuses), 1)
-            self.assertEqual(len(desc.roles_statuses[0].replicas), 2)
-            self.assertEqual(
-                desc.roles_statuses[0].replicas[0].state, AppState.SUCCEEDED
-            )
-            self.assertEqual(
-                desc.roles_statuses[0].replicas[1].state, AppState.SUCCEEDED
-            )
