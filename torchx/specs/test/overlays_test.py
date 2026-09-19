@@ -918,14 +918,12 @@ class OverlayUsageExamplesTest(unittest.TestCase):
             },
         )
 
-        # Accumulated: [{"name": "main", "cpu": "1"}, {"name": "main", "memory": "1Gi"}]
         overlay = get_overlay(role, "k8s", "Pod")
         base: dict[str, Any] = {
             "spec": {"containers": [{"name": "main", "image": "v1"}]},
         }
         apply_overlay(base, overlay)
 
-        # Both accumulated items match "main" and merge into the same base item
         self.assertEqual(
             len(base["spec"]["containers"]),
             1,
@@ -934,3 +932,54 @@ class OverlayUsageExamplesTest(unittest.TestCase):
         self.assertEqual(base["spec"]["containers"][0]["cpu"], "1")
         self.assertEqual(base["spec"]["containers"][0]["memory"], "1Gi")
         self.assertEqual(base["spec"]["containers"][0]["image"], "v1")
+
+    def test_join_with_same_merge_key_stores_one_item(self) -> None:
+        """Repeated JOINs on the same key collapse into one stored item."""
+        role = Role(name="w", image="img", entrypoint="e")
+        for overlay_value in ({"name": "main", "cpu": "1"}, {"name": "main", "gpu": 2}):
+            set_overlay(
+                role, "k8s", "Pod", {JOIN("containers", on="name"): [overlay_value]}
+            )
+
+        overlay = get_overlay(role, "k8s", "Pod")
+        self.assertEqual(
+            [{"name": "main", "cpu": "1", "gpu": 2}],
+            overlay[JOIN("containers", on="name")],
+            "both JOIN writes must fold into a single item",
+        )
+
+        base: dict[str, Any] = {}
+        apply_overlay(base, overlay)
+        self.assertEqual(
+            [{"name": "main", "cpu": "1", "gpu": 2}],
+            base["containers"],
+            "a base without the field must not receive duplicate items",
+        )
+
+    def test_join_merges_into_a_plain_list_written_earlier(self) -> None:
+        """A JOIN keeps the items an earlier plain set_overlay call wrote."""
+        role = Role(name="w", image="img", entrypoint="e")
+        set_overlay(role, "mast", "Job", {"bindMounts": [{"dstPath": "/a"}]})
+        set_overlay(
+            role, "mast", "Job", {JOIN("bindMounts", on="dstPath"): [{"dstPath": "/b"}]}
+        )
+
+        base: dict[str, Any] = {"bindMounts": [{"dstPath": "/base"}]}
+        apply_overlay(base, get_overlay(role, "mast", "Job"))
+        self.assertEqual(
+            [{"dstPath": "/base"}, {"dstPath": "/a"}, {"dstPath": "/b"}],
+            base["bindMounts"],
+            "the plain write must not be dropped by the later JOIN",
+        )
+
+    def test_join_after_put_keeps_last_call_wins(self) -> None:
+        """A JOIN after a PUT on the same field still replaces the PUT."""
+        role = Role(name="w", image="img", entrypoint="e")
+        set_overlay(role, "mast", "Job", {PUT("bindMounts"): [{"dstPath": "/a"}]})
+        set_overlay(
+            role, "mast", "Job", {JOIN("bindMounts", on="dstPath"): [{"dstPath": "/b"}]}
+        )
+
+        overlay = get_overlay(role, "mast", "Job")
+        self.assertEqual([JOIN("bindMounts", on="dstPath")], list(overlay))
+        self.assertEqual([{"dstPath": "/b"}], overlay[JOIN("bindMounts", on="dstPath")])
