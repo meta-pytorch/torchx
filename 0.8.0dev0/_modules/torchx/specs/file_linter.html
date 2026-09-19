@@ -559,9 +559,9 @@
     <span class="c1"># in this validator&#39;s context, this is the generic type of a container type</span>
     <span class="c1"># e.g. for Optional[str] returns the expr for str</span>
 
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-        <span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span>
-    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;expected a subscripted type (C[T]), got </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">Subscript</span><span class="p">),</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;expected a subscripted type (C[T]), got </span><span class="si">{</span><span class="n">ast</span><span class="o">.</span><span class="n">unparse</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">arg</span><span class="o">.</span><span class="n">slice</span>
 

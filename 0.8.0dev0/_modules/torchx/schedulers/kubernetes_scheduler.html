@@ -1268,14 +1268,14 @@
         <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="n">cfg</span><span class="p">))</span>
 
         <span class="n">service_account</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service_account&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">service_account</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">service_account</span><span class="p">,</span> <span class="nb">str</span>
-        <span class="p">),</span> <span class="s2">&quot;service_account must be a str&quot;</span>
+        <span class="k">assert</span> <span class="n">service_account</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_account</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">&quot;service_account must be a str&quot;</span>
+        <span class="p">)</span>
 
         <span class="n">priority_class</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority_class&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">priority_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">priority_class</span><span class="p">,</span> <span class="nb">str</span>
-        <span class="p">),</span> <span class="s2">&quot;priority_class must be a str&quot;</span>
+        <span class="k">assert</span> <span class="n">priority_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority_class</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">&quot;priority_class must be a str&quot;</span>
+        <span class="p">)</span>
 
         <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">reserved_millicpu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1288,9 +1288,9 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_memmb</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_memmb must be an int&quot;</span>
 
         <span class="n">efa_device_count</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;efa_device_count&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">efa_device_count</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">efa_device_count</span><span class="p">,</span> <span class="nb">int</span>
-        <span class="p">),</span> <span class="s2">&quot;efa_device_count must be an int or None&quot;</span>
+        <span class="k">assert</span> <span class="n">efa_device_count</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">efa_device_count</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">&quot;efa_device_count must be an int or None&quot;</span>
+        <span class="p">)</span>
 
         <span class="n">resource</span> <span class="o">=</span> <span class="n">app_to_resource</span><span class="p">(</span>
             <span class="n">app</span><span class="p">,</span>
@@ -1596,7 +1596,6 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">pod_labels</span><span class="p">(</span>
     <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">role_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="n">Role</span><span class="p">,</span> <span class="n">replica_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="n">label_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="c1"># cleans the provided `label_value` to make it compliant</span>
         <span class="c1"># to pod label specs as described in</span>

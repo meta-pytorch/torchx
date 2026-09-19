@@ -503,9 +503,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">:</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">AbstractFileSystem</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">fs</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span>
-            <span class="n">root_dir</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Expects FSSpec tracker directory &#39;</span><span class="si">{</span><span class="n">root_dir</span><span class="si">}</span><span class="s2">&#39; to exist.&quot;</span>
+        <span class="k">assert</span> <span class="n">fs</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">root_dir</span><span class="p">),</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expects FSSpec tracker directory &#39;</span><span class="si">{</span><span class="n">root_dir</span><span class="si">}</span><span class="s2">&#39; to exist.&quot;</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="o">=</span> <span class="n">fs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path_builder</span> <span class="o">=</span> <span class="n">_FsspecTrackerPathBuilder</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span>
 

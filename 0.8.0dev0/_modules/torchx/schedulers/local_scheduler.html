@@ -1290,9 +1290,9 @@
         <span class="n">request</span><span class="p">:</span> <span class="n">PopenRequest</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
         <span class="n">app_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">app_id</span>
         <span class="n">app_log_dir</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">log_dir</span>
-        <span class="k">assert</span> <span class="p">(</span>
-            <span class="n">app_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span>
-        <span class="p">),</span> <span class="s2">&quot;no app_id collisions expected since uuid4 suffix is used&quot;</span>
+        <span class="k">assert</span> <span class="n">app_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;no app_id collisions expected since uuid4 suffix is used&quot;</span>
+        <span class="p">)</span>
 
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">app_log_dir</span><span class="p">)</span>
         <span class="n">local_app</span> <span class="o">=</span> <span class="n">_LocalAppDef</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">app_log_dir</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">)</span>
