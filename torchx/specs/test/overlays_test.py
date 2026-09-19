@@ -16,13 +16,13 @@ from typing import Any
 from torchx.specs import AppDef, Role
 from torchx.specs.overlays import (
     _FORMAT_KEY,
+    DEL,
+    JOIN,
+    PUT,
+    OverlaySpec,
     _load_overlay_file,
     apply_overlay,
-    DEL,
     get_overlay,
-    JOIN,
-    OverlaySpec,
-    PUT,
     set_overlay,
     validate_overlay,
 )

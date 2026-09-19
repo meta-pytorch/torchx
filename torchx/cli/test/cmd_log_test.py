@@ -14,10 +14,10 @@ from datetime import datetime
 from typing import Iterator
 from unittest.mock import MagicMock, patch
 
-from torchx.cli.cmd_log import _prefix_line, ENDC, get_logs, GREEN, validate
+from torchx.cli.cmd_log import ENDC, GREEN, _prefix_line, get_logs, validate
 from torchx.runner.api import Runner
 from torchx.schedulers.api import Stream
-from torchx.specs import AppDef, AppHandle, AppState, AppStatus, parse_app_handle, Role
+from torchx.specs import AppDef, AppHandle, AppState, AppStatus, Role, parse_app_handle
 
 
 class SentinelError(Exception):

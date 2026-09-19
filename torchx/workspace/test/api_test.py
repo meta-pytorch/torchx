@@ -11,10 +11,11 @@ import unittest
 from pathlib import Path
 from typing import Mapping
 
+from typing_extensions import override
+
 from torchx.specs import AppDef, CfgVal, Role, Workspace
 from torchx.testing.fixtures import TestWithTmpDir
-from torchx.workspace.api import pin_workspace_images, WorkspaceMixin
-from typing_extensions import override
+from torchx.workspace.api import WorkspaceMixin, pin_workspace_images
 
 IGNORED = "__IGNORED__"
 

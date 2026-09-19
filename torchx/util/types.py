@@ -9,7 +9,7 @@
 import inspect
 import re
 from types import UnionType
-from typing import Annotated, Any, Callable, get_args, get_origin, TypeVar, Union
+from typing import Annotated, Any, Callable, TypeVar, Union, get_args, get_origin
 
 
 def to_list(arg: str) -> list[str]:

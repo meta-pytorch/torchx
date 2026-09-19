@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from hydra.core.global_hydra import GlobalHydra
+
 from torchx.components.utils import hydra
 from torchx.specs import AppDef
 

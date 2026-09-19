@@ -35,13 +35,13 @@ Discover plugins and print a diagnostic report::
 from torchx.plugins._registration import (
     EIGHTH,
     HALF,
-    halve_mem_down_to,
-    powers_of_two_gpus,
     QUARTER,
-    register,
-    resource_tags,
     SIXTEENTH,
     WHOLE,
+    halve_mem_down_to,
+    powers_of_two_gpus,
+    register,
+    resource_tags,
 )
 from torchx.plugins._registry import (
     PluginRegistry,

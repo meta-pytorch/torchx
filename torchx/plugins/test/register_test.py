@@ -585,6 +585,8 @@ class PowersOfTwoGpusTest(unittest.TestCase):
         """``powers_of_two_gpus`` and ``halve_mem_down_to`` are importable from ``torchx.plugins``."""
         from torchx.plugins import (
             halve_mem_down_to as pkg_halve,
+        )
+        from torchx.plugins import (
             powers_of_two_gpus as pkg_pot,
         )
 

@@ -15,7 +15,7 @@ help show the logs of the job within your CLI, just like
 import logging
 import threading
 from queue import Queue
-from typing import TextIO, TYPE_CHECKING
+from typing import TYPE_CHECKING, TextIO
 
 from torchx.util.types import none_throws
 

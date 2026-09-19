@@ -14,8 +14,9 @@ from tempfile import mkdtemp
 from typing import Mapping
 
 import fsspec
+
 from torchx.specs import CfgVal, Role
-from torchx.workspace.api import walk_workspace, WorkspaceMixin
+from torchx.workspace.api import WorkspaceMixin, walk_workspace
 
 
 class TmpDirWorkspaceMixin(WorkspaceMixin[None]):

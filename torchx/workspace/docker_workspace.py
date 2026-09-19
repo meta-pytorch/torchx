@@ -13,13 +13,14 @@ import stat
 import sys
 import tarfile
 import tempfile
-from typing import IO, Iterable, Mapping, TextIO, TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Iterable, Mapping, TextIO
 
 import fsspec
-import torchx
 from docker.errors import BuildError
+
+import torchx
 from torchx.specs import AppDef, CfgVal, Role, runopts
-from torchx.workspace.api import walk_workspace, WorkspaceMixin
+from torchx.workspace.api import WorkspaceMixin, walk_workspace
 
 if TYPE_CHECKING:
     from docker import DockerClient

@@ -14,12 +14,14 @@ import sys
 import threading
 from collections import Counter
 from dataclasses import (
+    MISSING as DATACLASS_MISSING,
+)
+from dataclasses import (
     asdict,
     dataclass,
     field,
     fields,
     is_dataclass,
-    MISSING as DATACLASS_MISSING,
 )
 from itertools import groupby
 from pathlib import Path
@@ -30,14 +32,14 @@ import torchx.specs as specs
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig_run
 from torchx.cli.cmd_base import SubCommand
 from torchx.cli.cmd_log import get_logs
-from torchx.runner import config, get_runner, Runner
+from torchx.runner import Runner, config, get_runner
 from torchx.runner.config import load_sections
 from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
-from torchx.specs import CfgVal, TORCHX_CONTEXT_NAME, Workspace
+from torchx.specs import TORCHX_CONTEXT_NAME, CfgVal, Workspace
 from torchx.specs.finder import (
-    _Component,
     ComponentNotFoundException,
     ComponentValidationException,
+    _Component,
     get_builtin_source,
     get_components,
 )

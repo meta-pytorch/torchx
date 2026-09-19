@@ -16,16 +16,16 @@ from unittest.mock import patch
 
 from torchx.specs.api import AppDef, Resource, Role
 from torchx.specs.builders import (
-    _create_args_parser,
     BindMount,
-    component_args_from_str,
     ComponentArgs,
     DeviceMount,
+    VolumeMount,
+    _create_args_parser,
+    component_args_from_str,
     make_app_handle,
     materialize_appdef,
     parse_args,
     parse_mounts,
-    VolumeMount,
 )
 from torchx.util.types import none_throws
 

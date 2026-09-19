@@ -8,7 +8,7 @@
 
 import inspect
 import unittest
-from typing import Annotated, cast, Optional, Union
+from typing import Annotated, Optional, Union, cast
 
 from torchx.util.types import (
     decode,

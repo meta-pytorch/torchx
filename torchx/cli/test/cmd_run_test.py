@@ -24,13 +24,13 @@ from unittest.mock import MagicMock, patch
 
 from torchx.cli.argparse_util import torchxconfig
 from torchx.cli.cmd_run import (
-    _parse_component_name_and_args,
+    LOCAL_SCHEDULER_WARNING_MSG,
     CmdBuiltins,
     CmdRun,
-    LOCAL_SCHEDULER_WARNING_MSG,
+    TorchXRunArgs,
+    _parse_component_name_and_args,
     torchx_run_args_from_argparse,
     torchx_run_args_from_json,
-    TorchXRunArgs,
 )
 from torchx.schedulers.local_scheduler import SignalException
 from torchx.settings import ENV_TORCHXCONFIG

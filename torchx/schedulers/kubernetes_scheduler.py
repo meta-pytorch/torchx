@@ -105,18 +105,19 @@ import re
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, cast, Iterable, Mapping, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, cast
+
+import yaml
 
 import torchx
-import yaml
 from torchx.schedulers.api import (
     DescribeAppResponse,
-    filter_regex,
     ListAppResponse,
     Scheduler,
-    split_lines,
     Stream,
     StructuredOpts,
+    filter_regex,
+    split_lines,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
@@ -126,14 +127,14 @@ from torchx.specs.api import (
     BindMount,
     CfgVal,
     DeviceMount,
-    macros,
     ReplicaState,
     ReplicaStatus,
     RetryPolicy,
     Role,
     RoleStatus,
-    runopts,
     VolumeMount,
+    macros,
+    runopts,
 )
 from torchx.specs.overlays import apply_overlay, get_overlay
 from torchx.util.colors import BLUE, ENDC

@@ -23,7 +23,7 @@ from torchx.runner.config import (
     load,
     load_sections,
 )
-from torchx.schedulers import get_scheduler_factories, Scheduler
+from torchx.schedulers import Scheduler, get_scheduler_factories
 from torchx.schedulers.api import (
     DescribeAppResponse,
     ListAppResponse,
@@ -36,8 +36,8 @@ from torchx.specs import (
     AppDryRunInfo,
     CfgVal,
     InvalidRunConfigException,
-    runopts,
     Workspace,
+    runopts,
 )
 from torchx.testing.fixtures import TestWithTmpDir
 

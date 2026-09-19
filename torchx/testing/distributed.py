@@ -12,7 +12,8 @@ Test fixtures for code that runs under ``torch.distributed``.
 
 from typing import Callable, TypeVar
 
-from torch.distributed.launcher import elastic_launch, LaunchConfig
+from torch.distributed.launcher import LaunchConfig, elastic_launch
+
 from torchx.testing.fixtures import TestWithTmpDir
 
 Ret = TypeVar("Ret")

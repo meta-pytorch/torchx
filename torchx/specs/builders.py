@@ -13,7 +13,7 @@ from argparse import Namespace
 from typing import Any, Callable, Mapping, NamedTuple
 
 from torchx.specs.api import BindMount, MountType, VolumeMount
-from torchx.specs.file_linter import get_fn_docstring, TorchXArgumentHelpFormatter
+from torchx.specs.file_linter import TorchXArgumentHelpFormatter, get_fn_docstring
 from torchx.util.types import decode, decode_optional, get_argparse_param_type, is_bool
 
 from .api import AppDef, DeviceMount

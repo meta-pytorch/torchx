@@ -33,24 +33,24 @@ from typing import Any, BinaryIO, Callable, Iterable, Mapping, Protocol, TextIO
 
 from torchx.schedulers.api import (
     DescribeAppResponse,
-    filter_regex,
     ListAppResponse,
     Scheduler,
-    split_lines_iterator,
     Stream,
     StructuredOpts,
+    filter_regex,
+    split_lines_iterator,
 )
 from torchx.schedulers.ids import make_unique
 from torchx.schedulers.streams import Tee
 from torchx.specs import AppDryRunInfo
 from torchx.specs.api import (
+    NONE,
     AppDef,
     AppState,
     CfgVal,
+    Role,
     is_terminal,
     macros,
-    NONE,
-    Role,
     runopts,
 )
 from torchx.util.types import none_throws

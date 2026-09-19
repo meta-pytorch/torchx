@@ -13,36 +13,37 @@ import inspect
 import re
 import types
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass, field, fields, MISSING
+from dataclasses import MISSING, dataclass, field, fields
 from datetime import datetime
 from enum import Enum
 from typing import (
     Generic,
-    get_args,
-    get_type_hints,
     Iterable,
     List,
     Optional,
     TypeVar,
     Union,
+    get_args,
+    get_type_hints,
 )
 
+from typing_extensions import Self
+
 from torchx.specs import (
+    NONE,
+    NULL_RESOURCE,
     AppDef,
     AppDryRunInfo,
     AppState,
-    cases,
     CfgVal,
     InvalidRunConfigException,
-    NONE,
-    NULL_RESOURCE,
     Role,
     RoleStatus,
-    runopts,
     Workspace,
+    cases,
+    runopts,
 )
 from torchx.workspace import WorkspaceMixin
-from typing_extensions import Self
 
 DAYS_IN_2_WEEKS = 14
 

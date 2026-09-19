@@ -17,13 +17,15 @@ from queue import Queue
 from typing import TextIO
 
 from torchx.cli.cmd_base import SubCommand
-from torchx.runner import get_runner, Runner
+from torchx.runner import Runner, get_runner
 from torchx.schedulers.api import Stream
 from torchx.specs.api import is_started
 from torchx.specs.builders import make_app_handle
 from torchx.util.colors import ENDC, GREEN
 from torchx.util.log_tee_helpers import (
     _find_role_replicas as find_role_replicas,
+)
+from torchx.util.log_tee_helpers import (
     _prefix_line,
 )
 from torchx.util.types import none_throws

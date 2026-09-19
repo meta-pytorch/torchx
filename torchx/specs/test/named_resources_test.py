@@ -21,12 +21,12 @@ from unittest.mock import MagicMock, patch
 
 from torchx import plugins
 from torchx.specs import (
+    NULL_RESOURCE,
+    Resource,
     _NamedResourcesLibrary,
     get_named_resources,
     named_resources,
-    NULL_RESOURCE,
     resource,
-    Resource,
 )
 
 # A namespace plugin package whose module imports torchx.specs at top-level.

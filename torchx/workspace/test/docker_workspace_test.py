@@ -18,10 +18,11 @@ from unittest.mock import MagicMock, patch
 
 import fsspec
 from docker.errors import BuildError
+
 from torchx.specs import AppDef, Role
 from torchx.workspace.docker_workspace import (
-    _build_context,
     DockerWorkspaceMixin,
+    _build_context,
     print_push_events,
 )
 

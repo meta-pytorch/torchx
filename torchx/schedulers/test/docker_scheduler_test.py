@@ -11,25 +11,26 @@ import sys
 import unittest
 from datetime import datetime, timedelta
 from typing import cast
-from unittest.mock import call, MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
-import torchx
 from docker.errors import APIError, DockerException
 from docker.models.containers import Container
 from docker.types import DeviceRequest, Mount
+
+import torchx
 from torchx import specs
 from torchx.schedulers.api import ListAppResponse, Scheduler, Stream
 from torchx.schedulers.docker_scheduler import (
-    create_scheduler,
-    DockerContainer,
-    DockerJob,
-    DockerScheduler,
-    ensure_network,
-    has_docker,
     LABEL_APP_ID,
     LABEL_REPLICA_ID,
     LABEL_ROLE_NAME,
+    DockerContainer,
+    DockerJob,
+    DockerScheduler,
     Opts,
+    create_scheduler,
+    ensure_network,
+    has_docker,
 )
 from torchx.specs.api import AppDef, AppDryRunInfo, AppState, Role
 

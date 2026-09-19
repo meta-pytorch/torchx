@@ -18,7 +18,6 @@ import unittest
 from pathlib import Path
 from typing import Iterable
 
-
 IS_CI: bool = os.getenv("CI", "false").lower() == "true"
 IS_MACOS: bool = sys.platform == "darwin"
 

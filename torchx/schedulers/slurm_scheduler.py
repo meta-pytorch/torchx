@@ -23,31 +23,31 @@ import tempfile
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
-from subprocess import CalledProcessError, PIPE
+from subprocess import PIPE, CalledProcessError
 from typing import Any, Iterable, List, Mapping
 
 import torchx
 from torchx.schedulers.api import (
     DescribeAppResponse,
-    filter_regex,
     ListAppResponse,
     Scheduler,
-    split_lines_iterator,
     Stream,
     StructuredOpts,
+    filter_regex,
+    split_lines_iterator,
 )
 from torchx.schedulers.local_scheduler import LogIterator
 from torchx.specs import (
+    NONE,
     AppDef,
     AppDryRunInfo,
     AppState,
     CfgVal,
-    macros,
-    NONE,
     ReplicaStatus,
     Resource,
     Role,
     RoleStatus,
+    macros,
     runopts,
 )
 from torchx.workspace.dir_workspace import DirWorkspaceMixin

@@ -13,12 +13,13 @@ from pathlib import Path
 from typing import List
 
 import fsspec
+
 from torchx.tracker.backend.fsspec import (
+    FsspecTracker,
     _decode_torchx_run_id,
     _encode_torchx_run_id,
     _read_config,
     create,
-    FsspecTracker,
     generate_filename,
 )
 

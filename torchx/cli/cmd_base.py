@@ -12,7 +12,7 @@ import logging
 import sys
 from typing import NoReturn
 
-from torchx.runner import get_runner, Runner
+from torchx.runner import Runner, get_runner
 from torchx.specs.api import parse_app_handle
 
 logger: logging.Logger = logging.getLogger(__name__)
