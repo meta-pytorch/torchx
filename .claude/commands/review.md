@@ -77,7 +77,7 @@ Tests are reference usage documentation — each test case should read like an e
 
 #### Conventions
 
-- File headers: BSD license + `# pyre-strict`
+- File headers: BSD license
 - Every `assert` statement must have a message explaining the invariant
 - Dead code: if something is unused, delete it completely — no `_var` renames, no `# removed` comments, no stale re-exports
 - Component signatures must accept both `Dict`/`List` and `dict`/`list` (validated by `specs/file_linter.py`)
@@ -94,7 +94,7 @@ Tests are reference usage documentation — each test case should read like an e
 
 Organize review feedback by severity:
 
-- **Blocking**: Must fix before landing (lint/format/pyre failures, missing tests, correctness bugs, security issues)
+- **Blocking**: Must fix before landing (ruff or pyrefly failures, missing tests, correctness bugs, security issues)
 - **Suggestion**: Should fix, improves quality (missing docstrings, convention violations, test gaps)
 - **Nit**: Optional polish (style preferences, minor naming)
 
