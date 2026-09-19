@@ -440,37 +440,38 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
-    <span class="n">filter_regex</span><span class="p">,</span>
     <span class="n">ListAppResponse</span><span class="p">,</span>
     <span class="n">Scheduler</span><span class="p">,</span>
-    <span class="n">split_lines</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
     <span class="n">StructuredOpts</span><span class="p">,</span>
+    <span class="n">filter_regex</span><span class="p">,</span>
+    <span class="n">split_lines</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.devices</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_mounts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.ids</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_unique</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">UNKNOWN</span><span class="p">,</span>
     <span class="n">AppDef</span><span class="p">,</span>
     <span class="n">AppDryRunInfo</span><span class="p">,</span>
     <span class="n">AppState</span><span class="p">,</span>
     <span class="n">BindMount</span><span class="p">,</span>
     <span class="n">CfgVal</span><span class="p">,</span>
     <span class="n">DeviceMount</span><span class="p">,</span>
-    <span class="n">is_terminal</span><span class="p">,</span>
-    <span class="n">macros</span><span class="p">,</span>
     <span class="n">ReplicaStatus</span><span class="p">,</span>
     <span class="n">Role</span><span class="p">,</span>
     <span class="n">RoleStatus</span><span class="p">,</span>
-    <span class="n">runopts</span><span class="p">,</span>
-    <span class="n">UNKNOWN</span><span class="p">,</span>
     <span class="n">VolumeMount</span><span class="p">,</span>
+    <span class="n">is_terminal</span><span class="p">,</span>
+    <span class="n">macros</span><span class="p">,</span>
+    <span class="n">runopts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.docker_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DockerWorkspaceMixin</span>
 

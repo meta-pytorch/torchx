@@ -460,24 +460,21 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401</span>
     <span class="n">ALL</span><span class="p">,</span>
+    <span class="n">MISSING</span><span class="p">,</span>
+    <span class="n">NONE</span><span class="p">,</span>
+    <span class="n">NULL_RESOURCE</span><span class="p">,</span>
+    <span class="n">TORCHX_HOME</span><span class="p">,</span>
+    <span class="n">UNKNOWN</span><span class="p">,</span>
     <span class="n">AppDef</span><span class="p">,</span>
     <span class="n">AppDryRunInfo</span><span class="p">,</span>
     <span class="n">AppHandle</span><span class="p">,</span>
     <span class="n">AppState</span><span class="p">,</span>
     <span class="n">AppStatus</span><span class="p">,</span>
     <span class="n">BindMount</span><span class="p">,</span>
-    <span class="n">cases</span><span class="p">,</span>
     <span class="n">CfgVal</span><span class="p">,</span>
     <span class="n">DeviceMount</span><span class="p">,</span>
-    <span class="n">get_type_name</span><span class="p">,</span>
     <span class="n">InvalidRunConfigException</span><span class="p">,</span>
-    <span class="n">is_terminal</span><span class="p">,</span>
-    <span class="n">macros</span><span class="p">,</span>
     <span class="n">MalformedAppHandleException</span><span class="p">,</span>
-    <span class="n">MISSING</span><span class="p">,</span>
-    <span class="n">NONE</span><span class="p">,</span>
-    <span class="n">NULL_RESOURCE</span><span class="p">,</span>
-    <span class="n">parse_app_handle</span><span class="p">,</span>
     <span class="n">ParsedAppHandle</span><span class="p">,</span>
     <span class="n">ReplicaState</span><span class="p">,</span>
     <span class="n">ReplicaStatus</span><span class="p">,</span>
@@ -485,18 +482,21 @@
     <span class="n">RetryPolicy</span><span class="p">,</span>
     <span class="n">Role</span><span class="p">,</span>
     <span class="n">RoleStatus</span><span class="p">,</span>
-    <span class="n">runopt</span><span class="p">,</span>
-    <span class="n">runopts</span><span class="p">,</span>
-    <span class="n">TORCHX_HOME</span><span class="p">,</span>
-    <span class="n">UNKNOWN</span><span class="p">,</span>
     <span class="n">UnknownAppException</span><span class="p">,</span>
     <span class="n">UnknownSchedulerException</span><span class="p">,</span>
     <span class="n">VolumeMount</span><span class="p">,</span>
     <span class="n">Workspace</span><span class="p">,</span>
+    <span class="n">cases</span><span class="p">,</span>
+    <span class="n">get_type_name</span><span class="p">,</span>
+    <span class="n">is_terminal</span><span class="p">,</span>
+    <span class="n">macros</span><span class="p">,</span>
+    <span class="n">parse_app_handle</span><span class="p">,</span>
+    <span class="n">runopt</span><span class="p">,</span>
+    <span class="n">runopts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.builders</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_app_handle</span><span class="p">,</span> <span class="n">materialize_appdef</span><span class="p">,</span> <span class="n">parse_mounts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.capabilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">CapabilityKey</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.metadata_keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">app_metadata</span><span class="p">,</span> <span class="n">NA</span><span class="p">,</span> <span class="n">TORCHX_CONTEXT_NAME</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.metadata_keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">NA</span><span class="p">,</span> <span class="n">TORCHX_CONTEXT_NAME</span><span class="p">,</span> <span class="n">app_metadata</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.modules</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_attr</span>
 
 <span class="n">GiB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>

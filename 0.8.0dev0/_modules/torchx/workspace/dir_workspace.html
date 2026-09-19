@@ -439,8 +439,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">CfgVal</span><span class="p">,</span> <span class="n">Role</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">walk_workspace</span><span class="p">,</span> <span class="n">WorkspaceMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkspaceMixin</span><span class="p">,</span> <span class="n">walk_workspace</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">TmpDirWorkspaceMixin</span><span class="p">(</span><span class="n">WorkspaceMixin</span><span class="p">[</span><span class="kc">None</span><span class="p">]):</span>

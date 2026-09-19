@@ -450,31 +450,31 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">subprocess</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalledProcessError</span><span class="p">,</span> <span class="n">PIPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">subprocess</span><span class="w"> </span><span class="kn">import</span> <span class="n">PIPE</span><span class="p">,</span> <span class="n">CalledProcessError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torchx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.api</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DescribeAppResponse</span><span class="p">,</span>
-    <span class="n">filter_regex</span><span class="p">,</span>
     <span class="n">ListAppResponse</span><span class="p">,</span>
     <span class="n">Scheduler</span><span class="p">,</span>
-    <span class="n">split_lines_iterator</span><span class="p">,</span>
     <span class="n">Stream</span><span class="p">,</span>
     <span class="n">StructuredOpts</span><span class="p">,</span>
+    <span class="n">filter_regex</span><span class="p">,</span>
+    <span class="n">split_lines_iterator</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.schedulers.local_scheduler</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogIterator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">NONE</span><span class="p">,</span>
     <span class="n">AppDef</span><span class="p">,</span>
     <span class="n">AppDryRunInfo</span><span class="p">,</span>
     <span class="n">AppState</span><span class="p">,</span>
     <span class="n">CfgVal</span><span class="p">,</span>
-    <span class="n">macros</span><span class="p">,</span>
-    <span class="n">NONE</span><span class="p">,</span>
     <span class="n">ReplicaStatus</span><span class="p">,</span>
     <span class="n">Resource</span><span class="p">,</span>
     <span class="n">Role</span><span class="p">,</span>
     <span class="n">RoleStatus</span><span class="p">,</span>
+    <span class="n">macros</span><span class="p">,</span>
     <span class="n">runopts</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.workspace.dir_workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">DirWorkspaceMixin</span>
