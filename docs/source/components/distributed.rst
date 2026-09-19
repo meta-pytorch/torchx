@@ -4,11 +4,15 @@ Distributed
 .. automodule:: torchx.components.dist
 .. currentmodule:: torchx.components.dist
 
+.. autofunction:: torchx.components.dist.torchrun
+
+Deprecated aliases
+------------------
+
+``dist.ddp`` and ``dist.spmd`` emit a ``UserWarning`` and forward to
+``dist.torchrun`` while retaining their existing signatures and defaults.
+See :doc:`/deprecations` for migration details.
+
 .. autofunction:: torchx.components.dist.ddp
-
-.. note::
-
-   **SPMD** stands for Single Program, Multiple Data -- a paradigm where every
-   worker runs the same code but on different data partitions.
 
 .. autofunction:: torchx.components.dist.spmd

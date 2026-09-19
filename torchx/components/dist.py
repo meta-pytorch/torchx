@@ -24,33 +24,33 @@ You can specify different entrypoint (executable), num replicas, resource requir
 and more for each role.
 
 
-DDP Builtin
+Torchrun Builtin
 ----------------
 
 DDP-style trainers are common and easy to templetize since they are homogeneous
-single role AppDefs, so there is a builtin: ``dist.ddp``. Assuming your DDP
+single role AppDefs, so there is a builtin: ``dist.torchrun``. Assuming your DDP
 training script is called ``main.py``, launch it as:
 
 .. code:: shell-session
 
     # locally, 1 node x 4 workers
-    $ torchx run -s local_cwd dist.ddp -j 1x4 --script main.py
+    $ torchx run -s local_cwd dist.torchrun -j 1x4 --script main.py
 
     # locally, 2 node x 4 workers (8 total)
-    $ torchx run -s local_cwd dist.ddp -j 2x4 --script main.py
+    $ torchx run -s local_cwd dist.torchrun -j 2x4 --script main.py
 
     # remote (optionally pass --rdzv_port to use a different master port than the default 29500)
-    $ torchx run -s kubernetes -cfg queue=default dist.ddp \\
+    $ torchx run -s kubernetes -cfg queue=default dist.torchrun \\
         -j 2x4 \\
         --script main.py
 
     # remote -- elastic/autoscaling with 2 minimum and max 5 nodes with 8
     # workers each
-    $ torchx run -s kubernetes dist.ddp -j 2:5x8 --script main.py
+    $ torchx run -s kubernetes dist.torchrun -j 2:5x8 --script main.py
 
 
 Note that the only difference compared to the local launch is the scheduler (``-s``).
-The ``dist.ddp`` builtin uses ``torchelastic`` (more specifically ``torch.distributed.run``)
+The ``dist.torchrun`` builtin uses ``torchelastic`` (more specifically ``torch.distributed.run``)
 under the hood. Read more about torchelastic `here <https://pytorch.org/docs/stable/elastic/run.html>`_.
 
 Components APIs
@@ -60,6 +60,7 @@ Components APIs
 import os
 import re
 import shlex
+import warnings
 from pathlib import Path
 from typing import Iterable
 
@@ -98,33 +99,16 @@ def spmd(
     mounts: list[str] | None = None,
     debug: bool = False,
 ) -> specs.AppDef:
-    """
-    Usage (by script): torchx run spmd -j 2x8 -h aws_p4d.24xlarge --name my_experiment/trial_1 --script path/to/my/trainer.py -foo bar
+    """Deprecated alias for :func:`torchrun`, preserving its original defaults.
 
-    Usage (by module): torchx run spmd -j 2x8 -h aws_p4d.24xlarge --name my_experiment/trial_1 -m path.to.my.trainer -foo bar
-
-    Usage (infer GPU count): torchx run spmd -j 2 -h p4d.24xlarge ... (same as -j 2x8)
-
-    Creates a torchx.specs.AppDef (Job Definition) for a Single-Process-Multiple-Data (SPMD)
-    style application. See: https://en.wikipedia.org/wiki/Single_program,_multiple_data.
-
-    SPMD launches `n x m` (set via the `-j nxm` option) copies of the same program,
-    where `n` is the number of nodes (hosts) and `m` is the number of processes on each node.
-
-    If you have a distributed PyTorch script (DDP, FSDP, RPC) use this component to launch
-    the distributed application. You can also use `-j 1x1` to launch a single process application
-    which would be equivalent to launching with regular `python` except that your application
-    can safely call `torch.distributed.init_process_group(backend)`.
-
-    Note: For multi-node distributed runs, the hosts MUST have a network route to each other
-          AND port 29500 should be open on all hosts. Please check your security group settings.
-
+    Defaults to ``h="gpu.small"`` and ``j="1x1"``. A bare ``j`` is the node
+    count and infers processes from the named host's GPU count.
 
     Args:
         args: the arguments to the main module or script (e.g. my/trainer.py -foo bar)
             (for docker based runs) the script path must be relative to the WORKDIR of the image
         script:
-        m: the main module name (e.g. my.module.trainer). When this option is used, the `script_args` are passed
+        m: the main module name (e.g. my.module.trainer). When this option is used, the `args` are passed
            as the arguments to the main module). Invoking my module is useful when the relative/absolute path
            of the main script is unknown w.r.t the WORKDIR of the image. Use this option when it makes sense to
            invoke the main script via `python -m <MAIN.MODULE>`.
@@ -138,13 +122,13 @@ def spmd(
         mounts: (for docker based runs only) mounts to mount into the worker environment/container
                 (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
         debug: whether to run with preset debug flags enabled
-
     """
-
-    if env is None:
-        env = {}
-
-    return ddp(
+    warnings.warn(
+        "[Deprecated] dist.spmd is deprecated; use dist.torchrun instead.",
+        UserWarning,
+        stacklevel=2,
+    )
+    return torchrun(
         *args,
         script=script,
         m=m,
@@ -160,7 +144,7 @@ def spmd(
     )
 
 
-def ddp(
+def torchrun(
     *script_args: str,
     script: str | None = None,
     m: str | None = None,
@@ -182,7 +166,9 @@ def ddp(
     tee: int = 3,
 ) -> specs.AppDef:
     """
-    Distributed data parallel style application (one role, multi-replica).
+    Usage: torchx run dist.torchrun -j 2x4 --script train.py
+
+    Launch a distributed PyTorch application with torchrun (one role, multi-replica).
     Uses `torch.distributed.run <https://pytorch.org/docs/stable/distributed.elastic.html>`_
     to launch and coordinate PyTorch worker processes. Defaults to using ``c10d`` rendezvous backend
     on rendezvous_endpoint ``$rank_0_host:$rdzv_port``. Note that ``rdzv_port`` parameter is ignored
@@ -204,8 +190,10 @@ def ddp(
         gpu: number of gpus per replica
         memMB: cpu memory in MB per replica
         h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)
-        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts, nproc_per_node must not exceed num gpus
-        env: environment varibles to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)
+        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}. With a named host, a bare
+            integer is the node count and infers processes from its GPU count.
+            Without a named host, a bare integer is the process count on one node.
+        env: environment variables to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)
         metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)
         max_retries: the number of scheduler retries allowed
         rdzv_port: the port on rank0's host to use for hosting the c10d store used for rendezvous.
@@ -221,6 +209,9 @@ def ddp(
 
     if (script is None) == (m is None):
         raise ValueError("exactly one of --script and -m must be specified")
+
+    if h is not None and j.isdigit():
+        j = str(StructuredJArgument.parse_from(h, j))
 
     # nnodes: number of nodes or minimum nodes for elastic launch
     # max_nnodes: maximum number of nodes for elastic launch
@@ -305,6 +296,85 @@ def ddp(
             )
         ],
         metadata=metadata,
+    )
+
+
+def ddp(
+    *script_args: str,
+    script: str | None = None,
+    m: str | None = None,
+    image: str = torchx.IMAGE,
+    name: str = "/",
+    h: str | None = None,
+    cpu: int = 2,
+    gpu: int = 0,
+    memMB: int = 1024,
+    j: str = "1x2",
+    env: dict[str, str] | None = None,
+    metadata: dict[str, str] | None = None,
+    max_retries: int = 0,
+    rdzv_port: int = 29500,
+    rdzv_backend: str = "c10d",
+    rdzv_conf: str | None = None,
+    mounts: list[str] | None = None,
+    debug: bool = False,
+    tee: int = 3,
+) -> specs.AppDef:
+    """Deprecated alias for :func:`torchrun`, preserving its original defaults.
+
+    A bare ``j`` remains the process count on one node, even with a named host.
+    Use an explicit topology such as ``j="1x4"`` when migrating to ``torchrun``.
+
+    Args:
+        script_args: arguments to the main module
+        script: script or binary to run within the image
+        m: the python module path to run
+        image: image (e.g. docker)
+        name: job name override in the following format: ``{experimentname}/{runname}`` or ``{experimentname}/`` or ``/{runname}`` or ``{runname}``.
+            Uses the script or module name if ``{runname}`` not specified.
+        cpu: number of cpus per replica
+        gpu: number of gpus per replica
+        memMB: cpu memory in MB per replica
+        h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)
+        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts, nproc_per_node must not exceed num gpus
+        env: environment variables to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)
+        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)
+        max_retries: the number of scheduler retries allowed
+        rdzv_port: the port on rank0's host to use for hosting the c10d store used for rendezvous.
+                   Only takes effect when running multi-node. When running single node, this parameter
+                   is ignored and a random free port is chosen.
+        rdzv_backend: the rendezvous backend to use. Only takes effect when running multi-node.
+        rdzv_conf: the additional rendezvous configuration to use (ex. join_timeout=600,close_timeout=600,timeout=600).
+        mounts: mounts to mount into the worker environment/container (ex. type=<bind/volume>,src=/host,dst=/job[,readonly]).
+                See scheduler documentation for more info.
+        debug: whether to run with preset debug flags enabled
+        tee: tees the specified std stream(s) to console + file. 0: none, 1: stdout, 2: stderr, 3: both
+    """
+    warnings.warn(
+        "[Deprecated] dist.ddp is deprecated; use dist.torchrun instead.",
+        UserWarning,
+        stacklevel=2,
+    )
+    return torchrun(
+        *script_args,
+        script=script,
+        m=m,
+        image=image,
+        name=name,
+        h=h,
+        cpu=cpu,
+        gpu=gpu,
+        memMB=memMB,
+        j=f"1x{j}" if j.isdigit() else j,
+        env=env,
+        metadata=metadata,
+        max_retries=max_retries,
+        rdzv_port=rdzv_port,
+        rdzv_backend=rdzv_backend,
+        rdzv_conf=rdzv_conf,
+        mounts=mounts,
+        debug=debug,
+        tee=tee,
     )
 
 

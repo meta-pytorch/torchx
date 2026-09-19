@@ -66,7 +66,7 @@ rules:
    is not picked up by torchx at all.
 
 Below is an example component that launches DDP scripts, it is a simplified version of
-the :py:func:`torchx.components.dist.ddp` builtin.
+the :py:func:`torchx.components.dist.torchrun` builtin.
 
 .. doctest:: [component_example]
 

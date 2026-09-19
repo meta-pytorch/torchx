@@ -313,7 +313,7 @@ class RetryPolicy(str, Enum):
               on the retry policies they support and behavior caveats (if any).
 
     1. REPLICA: Replaces the replica instance. Surviving replicas are untouched.
-                Use with ``dist.ddp`` component to have torchelastic coordinate
+                Use with ``dist.torchrun`` component to have torchelastic coordinate
                 restarts and membership changes. Otherwise, it is up to the
                 application to deal with failed replica departures and
                 replacement replica admittance.

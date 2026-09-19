@@ -102,7 +102,7 @@ Start from base component definitions rather than building ``AppDef`` from
 scratch:
 
 * :doc:`custom_components` for simple single-node components.
-* :py:func:`torchx.components.dist.ddp` for distributed components.
+* :py:func:`torchx.components.dist.torchrun` for distributed components.
 
 You can also merge roles from multiple components to run sidecars alongside
 the main job.
@@ -110,8 +110,8 @@ the main job.
 Distributed Components
 ------------------------
 
-Use :py:func:`torchx.components.dist.ddp` for distributed training. Extend it
-by writing a wrapper that calls ``ddp`` with your configuration.
+Use :py:func:`torchx.components.dist.torchrun` for distributed training. Extend
+it by writing a wrapper that calls ``torchrun`` with your configuration.
 
 Define All Arguments
 ----------------------
