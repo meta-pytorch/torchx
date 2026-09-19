@@ -143,7 +143,7 @@ class DistributedTest(DistributedTestCase):
         self.assertEqual(0, dist.get_rank())
         self.assertEqual(1, dist.get_world_size())
 
-    @unittest.skipIf(IS_CI and IS_MACOS, "no localhost on osx CI")  # pyre-ignore[56]
+    @unittest.skipIf(IS_CI and IS_MACOS, "no localhost on osx CI")
     def test_init_process_group_distributed(self) -> None:
         self.run_ddp(world_size=4, fn=DistributedTest.init_pg_and_check_rank)()
 
@@ -183,13 +183,13 @@ class DistributedTest(DistributedTestCase):
             self.assertEqual(torch.device("cpu"), device)
             init_pg_mock.assert_called_once_with(backend="gloo", rank=0, world_size=1)
 
-    @unittest.skipIf(IS_CI and IS_MACOS, "no localhost on osx CI")  # pyre-ignore[56]
+    @unittest.skipIf(IS_CI and IS_MACOS, "no localhost on osx CI")
     def test_on_rank0_first(self) -> None:
         self.run_ddp(world_size=8, fn=check_touch_file_rank0_first)(
             self.tmpdir / "sentinel"
         )
 
-    @unittest.skipIf(IS_CI and IS_MACOS, "no localhost on osx CI")  # pyre-ignore[56]
+    @unittest.skipIf(IS_CI and IS_MACOS, "no localhost on osx CI")
     def test_on_local_rank0_first(self) -> None:
         self.run_ddp(world_size=8, fn=check_touch_file_local_rank0_first)(
             self.tmpdir / "sentinel"

@@ -319,7 +319,7 @@ class TrackerFactoryMethodsTest(TestCase):
             trackers = list(trackers)
             self.assertEqual(1, len(trackers))
             tracker = trackers[0]
-            self.assertEqual(tracker.config_path, "myconfig.txt")  # pyre-ignore[16]
+            self.assertEqual(tracker.config_path, "myconfig.txt")
 
     @mock.patch.dict(os.environ, {}, clear=True)
     def test_run_from_env_not_launched_with_torchx(self) -> None:

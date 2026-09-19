@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 import shutil
 import tempfile
 import unittest
@@ -201,7 +200,7 @@ class FsspecTest(unittest.TestCase):
         tracker = create(f"file://{str(configfile)}")
         self.assertEqual(
             tracker._path_builder.root_dir,
-            tracker_root_path,  # pyre-ignore
+            tracker_root_path,
         )
 
     def test_create_missing_required_keys(self) -> None:

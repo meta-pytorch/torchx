@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 from __future__ import annotations
 
@@ -125,7 +124,7 @@ class FsspecTracker(TrackerBase):
             name = str(entry["name"])
             path = str(entry["path"])
             metadata = entry["metadata"]
-            artifact = TrackerArtifact(name, path, metadata)  # pyre-ignore
+            artifact = TrackerArtifact(name, path, metadata)
             artifacts[name] = artifact
         return artifacts
 
@@ -138,7 +137,7 @@ class FsspecTracker(TrackerBase):
         entries = self._load(run_id, "metadata")
         for entry in entries:
             stored_metadata = entry["metadata"]
-            for k, v in stored_metadata.items():  # pyre-ignore
+            for k, v in stored_metadata.items():
                 metadata[k] = v
         return metadata
 
@@ -223,7 +222,6 @@ class FsspecTracker(TrackerBase):
 
         return entries
 
-    # pyre-ignore[14]:
     def run_ids(self, parent_run_id: str | None = None) -> Iterable[str]:
         all_sources = []
         root_dir = self._path_builder.path()

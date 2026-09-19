@@ -5,7 +5,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 """
 Status: Beta
@@ -191,7 +190,6 @@ def _configparser() -> configparser.ConfigParser:
     # which are expected to be parsed case insensitive.
     # override since torchx's runopts are case-sensitive
     # see: https://stackoverflow.com/questions/19359556/configparser-reads-capital-keys-and-make-them-lower-case
-    # pyre-ignore[8]
     config.optionxform = lambda option: option
 
     return config
@@ -281,14 +279,12 @@ def dump(
                 if opt.is_type_list_of_str:
                     # deal with empty or None default lists
                     if opt.default:
-                        # pyre-ignore[6] opt.default type checked already as List[str]
                         val = ";".join(opt.default)
                     else:
                         val = _NONE
                 elif opt.is_type_dict_of_str:
                     # deal with empty or None default lists
                     if opt.default:
-                        # pyre-ignore[16] opt.default type checked already as Dict[str, str]
                         val = ";".join([f"{k}:{v}" for k, v in opt.default.items()])
                     else:
                         val = _NONE

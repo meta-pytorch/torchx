@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import contextlib
 import copy
@@ -161,7 +160,6 @@ class Runner:
             **(self._get_scheduler_params_from_env()),
             **(scheduler_params or {}),
         }
-        # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
         self._scheduler_instances: dict[str, Scheduler] = {}
         self._apps: dict[AppHandle, AppDef] = {}
 
@@ -855,7 +853,6 @@ class Runner:
                 app.app_handle = make_app_handle(scheduler, self._name, app.app_id)
             return apps
 
-    # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
     def _scheduler(self, scheduler: str) -> Scheduler:
         sched = self._scheduler_instances.get(scheduler)
         if not sched:
@@ -871,7 +868,6 @@ class Runner:
         self,
         app_handle: AppHandle,
         check_session: bool = True,
-        # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
     ) -> tuple[Scheduler, str, str]:
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
         scheduler = self._scheduler(scheduler_backend)

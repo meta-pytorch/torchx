@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 """Re-entrancy fixture: a namespace plugin that LOOKS UP a named resource at
 module top-level. Discovery is triggered from inside

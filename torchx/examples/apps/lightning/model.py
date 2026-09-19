@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 """
 Tiny ImageNet Model
@@ -45,17 +44,14 @@ class TinyImageNetModel(pl.LightningModule):
         self.train_acc = MulticlassAccuracy(num_classes=m.fc.out_features)
         self.val_acc = MulticlassAccuracy(num_classes=m.fc.out_features)
 
-    # pyre-fixme[14]
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    # pyre-fixme[14]
     def training_step(
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         return self._step("train", self.train_acc, batch, batch_idx)
 
-    # pyre-fixme[14]
     def validation_step(
         self, val_batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
@@ -76,7 +72,6 @@ class TinyImageNetModel(pl.LightningModule):
         self.log(f"{step_name}_acc", acc_metric.compute())
         return loss
 
-    # pyre-fixme[3]: TODO(aivanou): Figure out why oss pyre can identify type but fb cannot.
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.lr)
 

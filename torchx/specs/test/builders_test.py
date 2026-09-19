@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import argparse
 import sys
@@ -545,7 +544,6 @@ class AppDefLoadTest(unittest.TestCase):
             "arg2",
         )
 
-    # pyre-ignore[3]
     def _get_argument_help(
         self, parser: argparse.ArgumentParser, name: str
     ) -> Optional[Tuple[str, Any]]:

@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import inspect
 import re
@@ -128,11 +127,9 @@ def to_dict(arg: str) -> dict[str, str]:
     return arg_map
 
 
-# pyre-ignore-all-errors[3, 2]
 def _decode_string_to_dict(
     encoded_value: str, param_type: type[dict[Any, Any]]
 ) -> dict[Any, Any]:
-    # pyre-ignore[16]
     if not hasattr(param_type, "__args__") or len(param_type.__args__) != 2:
         raise ValueError(f"param_type must be a `dict` type, but was `{param_type}`")
 
@@ -146,7 +143,6 @@ def _decode_string_to_dict(
 def _decode_string_to_list(
     encoded_value: str, param_type: type[list[Any]]
 ) -> list[Any]:
-    # pyre-ignore[16]
     if not hasattr(param_type, "__args__") or len(param_type.__args__) != 1:
         raise ValueError(f"param_type must be a `list` type, but was `{param_type}`")
     value_type = param_type.__args__[0]

@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import base64
 import importlib
@@ -2090,7 +2089,7 @@ class KubernetesSchedulerNoImportTest(unittest.TestCase):
         # make all kubernetes modules unable to be imported
         for mod in list(sys.modules.keys()) + ["kubernetes"]:
             if mod.startswith("kubernetes"):
-                sys.modules[mod] = None  # pyre-ignore
+                sys.modules[mod] = None
 
         # reload to ensure kubernetes_scheduler doesn't depend on them at import
         # time

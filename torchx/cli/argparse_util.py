@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import logging
 import sys
@@ -58,7 +57,6 @@ class torchxconfig(Action):
         dest: str,
         option_strings: Sequence[str],
         required: bool = False,
-        # pyre-ignore[2] declared as Any in superclass Action
         default: Any = None,
         **kwargs: Any,
     ) -> None:
@@ -92,7 +90,7 @@ class torchxconfig(Action):
         self,
         parser: ArgumentParser,
         namespace: Namespace,
-        values: Any,  # pyre-ignore[2] declared as Any in superclass Action
+        values: Any,
         option_string: str | None = None,
     ) -> None:
         _check_specified_once(namespace, option_string)
@@ -112,7 +110,6 @@ class torchxconfig_run(torchxconfig):
         dest: str,
         option_strings: Sequence[str],
         required: bool = False,
-        # pyre-ignore[2] declared as Any in superclass Action
         default: Any = None,
         **kwargs: Any,
     ) -> None:
@@ -136,7 +133,6 @@ class torchxconfig_list(torchxconfig):
         dest: str,
         option_strings: Sequence[str],
         required: bool = False,
-        # pyre-ignore[2] declared as Any in superclass Action
         default: Any = None,
         **kwargs: Any,
     ) -> None:

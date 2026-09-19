@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
 
 import argparse
 import os
@@ -72,7 +71,6 @@ def train(
                 "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                     epoch,
                     batch_idx * len(data),
-                    # pyre-ignore
                     len(train_loader.dataset),
                     100.0 * batch_idx / len(train_loader),
                     loss.item(),
@@ -97,7 +95,6 @@ def test(
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            # pyre-fixme[58]: `+` is not supported for operand types `int` and
             #  `Union[bool, float, int]`.
             test_loss += F.nll_loss(
                 output, target, reduction="sum"
@@ -106,15 +103,14 @@ def test(
                 dim=1, keepdim=True
             )  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
-    # pyre-ignore
     test_loss /= len(test_loader.dataset)
 
     print(
         "\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
             test_loss,
             correct,
-            len(test_loader.dataset),  # pyre-ignore
-            100.0 * correct / len(test_loader.dataset),  # pyre-ignore
+            len(test_loader.dataset),
+            100.0 * correct / len(test_loader.dataset),
         )
     )
 
