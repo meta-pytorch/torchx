@@ -454,6 +454,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">difflib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">KeysView</span><span class="p">,</span> <span class="n">Mapping</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx</span><span class="w"> </span><span class="kn">import</span> <span class="n">plugins</span>
@@ -517,7 +518,10 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_NamedResourcesLibrary</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lazily-loaded named-resource lookup.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lazily-loaded registry of the named resources, for enumeration.</span>
+
+<span class="sd">    Look a resource up with :py:func:`resource(h=name) &lt;resource&gt;`; the</span>
+<span class="sd">    ``[name]`` subscript here is deprecated and forwards to it.</span>
 
 <span class="sd">    ``import torchx.specs`` performs no resource-module import or plugin</span>
 <span class="sd">    discovery — the AWS/generic/custom resource modules and the plugin</span>
@@ -591,25 +595,54 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_factories</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fold</span><span class="p">(</span><span class="n">factories</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResourceFactory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">folded</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">factories</span><span class="p">:</span>
+            <span class="n">folded</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">folded</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
         <span class="n">factories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">factories</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">factories</span><span class="p">[</span><span class="n">key</span><span class="p">]()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">matches</span> <span class="o">=</span> <span class="n">difflib</span><span class="o">.</span><span class="n">get_close_matches</span><span class="p">(</span>
-                <span class="n">key</span><span class="p">,</span>
-                <span class="n">factories</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
-                <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Did you mean `</span><span class="si">{</span><span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">`?&quot;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Registered named resources: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">factories</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
 
-            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No named resource found for `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`. </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">folded</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fold</span><span class="p">(</span><span class="n">factories</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">folded</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">factories</span><span class="p">[</span><span class="n">folded</span><span class="p">[</span><span class="mi">0</span><span class="p">]]()</span>
+        <span class="k">if</span> <span class="n">folded</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` matches more than one registered named resource,&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; ignoring case: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">folded</span><span class="p">)</span><span class="si">}</span><span class="s2">. Use one of those names exactly.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">difflib</span><span class="o">.</span><span class="n">get_close_matches</span><span class="p">(</span>
+            <span class="n">key</span><span class="p">,</span>
+            <span class="n">factories</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+            <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Did you mean `</span><span class="si">{</span><span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">`?&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Registered named resources: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">factories</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No named resource found for `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">`. </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. deprecated::</span>
+<span class="sd">            Use :py:func:`resource(h=name) &lt;resource&gt;` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;`named_resources[name]` is deprecated, use `resource(h=name)` instead&quot;</span><span class="p">,</span>
+            <span class="ne">FutureWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lookup</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
+        <span class="n">factories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">factories</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fold</span><span class="p">(</span><span class="n">factories</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterates through the names of the registered named_resources.</span>
@@ -661,19 +694,23 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a :py:class:`Resource` from raw specs or a named resource.</span>
 
-<span class="sd">    When ``h`` is set, it takes precedence (raw specs are ignored). See</span>
-<span class="sd">    :ref:`advanced:Registering Named Resources` for custom named resources.</span>
+<span class="sd">    This is the one way to look a named resource up. When ``h`` is set, it</span>
+<span class="sd">    takes precedence (raw specs are ignored) and the name is matched ignoring</span>
+<span class="sd">    case. See :ref:`advanced:Registering Named Resources` for custom named</span>
+<span class="sd">    resources.</span>
 
 <span class="sd">    .. doctest::</span>
 
 <span class="sd">        &gt;&gt;&gt; from torchx.specs import resource</span>
 <span class="sd">        &gt;&gt;&gt; resource(cpu=4, gpu=1, memMB=8192)</span>
 <span class="sd">        Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})</span>
+<span class="sd">        &gt;&gt;&gt; resource(h=&quot;AWS_T3.Medium&quot;) == resource(h=&quot;aws_t3.medium&quot;)</span>
+<span class="sd">        True</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">h</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">named_resources</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">named_resources</span><span class="o">.</span><span class="n">_lookup</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># could make these defaults customizable via entrypoint</span>
         <span class="c1"># not doing that now since its not a requested feature and may just over complicate things</span>
@@ -695,14 +732,12 @@
 <span class="sd">    .. deprecated::</span>
 <span class="sd">        Use :py:func:`resource(h=name) &lt;resource&gt;` instead.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
         <span class="s2">&quot;`get_named_resources()` is deprecated, use `resource(h=name)` instead&quot;</span><span class="p">,</span>
         <span class="ne">FutureWarning</span><span class="p">,</span>
         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">named_resources</span><span class="p">[</span><span class="n">res</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">resource</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">res</span><span class="p">)</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
