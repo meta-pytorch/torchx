@@ -56,43 +56,6 @@ Every scheduler accepts the same ``AppDef``; only the ``--scheduler`` flag
      - Traditional HPC environments. Uses the shared filesystem as the
        workspace (no container build needed).
 
-.. fbcode::
-
-   **Meta-Internal Schedulers**
-
-   .. list-table::
-      :header-rows: 1
-      :widths: 18 20 22 40
-
-      * - Scheduler
-        - Environment
-        - What it produces
-        - Best for
-      * - ``hpc`` **(Recommended)**
-        - Meta GPU clusters (MAST / MSL)
-        - MAST or MSL job (auto-routed)
-        - **All Meta-internal GPU workloads.** Delegates between MAST and MSL
-          backends based on the cluster UUID. Supports Jetter, Conda, and Sapling
-          workspaces.
-      * - ``quickflow`` / ``quickflow_msl``
-        - FBLearner QuickFlow
-        - QuickApp job (MAST or MSL)
-        - Submitting via the QuickFlow/QuickApp API.
-      * - ``rmuc``
-        - RMUC Kubernetes clusters
-        - Volcano ``Job`` resource
-        - RL/Robotics workloads on Meta's Kubernetes infrastructure. Uses
-          Volcano for gang scheduling.
-      * - ``msl`` / ``msl_conda``
-        - MSL Scheduler (direct)
-        - MSL job
-        - Direct submission to MSL. Experimental — prefer ``hpc`` for
-          production.
-      * - ``local`` / ``local_penv``
-        - Devserver (Meta-internal)
-        - Local process with Jetter/penv
-        - Local iteration with Meta-internal workspace support.
-
 .. _implementing-scheduler:
 
 Implementing a Custom Scheduler
@@ -420,14 +383,6 @@ All Schedulers
    :glob:
 
    schedulers/*
-
-.. fbcode::
-
-   .. toctree::
-      :maxdepth: 1
-      :glob:
-
-      schedulers/fb/*
 
 Scheduler Functions
 --------------------

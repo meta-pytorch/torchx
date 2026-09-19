@@ -37,13 +37,6 @@ if True:  # stop isort from reordering
     sys.path.append(os.path.abspath("../.."))
     import torchx
 
-FBCODE = os.environ.get(
-    "TORCHX_DOCS_FBCODE", str("fbcode" in os.getcwd())
-).lower() not in (
-    "0",
-    "false",
-)
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -64,18 +57,13 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.intersphinx",
+    "sphinxcontrib.katex",
     "compatibility",
     "runopts",
-    "fbcode",
 ]
-if not FBCODE:
-    extensions += [
-        "sphinx.ext.intersphinx",
-        "sphinxcontrib.katex",
-    ]
 
 html_context = {
-    "fbcode": FBCODE,
     # Sphinx 7.2 removed the `style` template variable, but
     # pytorch_sphinx_theme's layout.html still references it. Inject the
     # value Sphinx < 7.2 derived from the theme's `stylesheet` setting.
@@ -144,18 +132,6 @@ language = "en"
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
-if not FBCODE:
-    # fb/ dirs contain Meta-internal docs only available in the fbcode build.
-    # These reference `torchx.*.fb.*` modules that are stripped from the OSS
-    # export, so autodoc'ing them fails. Exclude both the top-level `fb/` tree
-    # and nested `<section>/fb/` trees (e.g. `schedulers/fb/`, `workspaces/fb/`).
-    exclude_patterns += ["fb/**", "**/fb/**"]
-    # The ``.. fbcode::`` directive (docs/source/ext/fbcode.py) hides the
-    # Meta-internal ``torchx.specs.fb`` / ``torchx.workspace.fb`` automodule
-    # blocks from the OSS build, but autosummary's pre-parse source scan still
-    # tries to import those modules, emitting fatal warnings under ``-W``. Mock
-    # them so the import succeeds without the fb sources being present.
-    autodoc_mock_imports += ["torchx.specs.fb", "torchx.workspace.fb"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"

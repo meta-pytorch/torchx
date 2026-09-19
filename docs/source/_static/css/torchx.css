@@ -42,11 +42,3 @@ article.pytorch-article .py dt span.pre {
   font: inherit;
   color: inherit;
 }
-
-#redirect-banner {
-  border-bottom: 1px solid #e2e2e2;
-}
-#redirect-banner > p {
-  margin: 0.8rem;
-  text-align: center;
-}

@@ -252,41 +252,6 @@ torchx.workspace.dir_workspace
   :members:
   :show-inheritance:
 
-.. fbcode::
-
-   torchx.workspace.fb.jetter_workspace
-   ---------------------------------------
-
-   .. automodule:: torchx.workspace.fb.jetter_workspace
-   .. currentmodule:: torchx.workspace.fb.jetter_workspace
-
-   .. autoclass:: JetterWorkspaceMixin
-     :members:
-     :show-inheritance:
-     :noindex:
-
-   torchx.workspace.fb.conda_env_workspace
-   ------------------------------------------
-
-   .. automodule:: torchx.workspace.fb.conda_env_workspace
-   .. currentmodule:: torchx.workspace.fb.conda_env_workspace
-
-   .. autoclass:: CondaEnvWorkspace
-     :members:
-     :show-inheritance:
-     :noindex:
-
-   torchx.workspace.fb.sapling_workspace
-   ----------------------------------------
-
-   .. automodule:: torchx.workspace.fb.sapling_workspace
-   .. currentmodule:: torchx.workspace.fb.sapling_workspace
-
-   .. autoclass:: SaplingWorkspace
-     :members:
-     :show-inheritance:
-     :noindex:
-
 .. seealso::
 
    :doc:`schedulers`

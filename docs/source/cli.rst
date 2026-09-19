@@ -154,15 +154,6 @@ COMPONENT --help`` to see the arguments for a specific component.
    components/distributed
    components/utils
 
-.. fbcode::
-
-   .. toctree::
-      :maxdepth: 1
-      :caption: Components (Meta)
-      :glob:
-
-      components/fb/*
-
 API Reference
 ---------------
 
