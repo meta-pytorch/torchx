@@ -925,7 +925,7 @@ primitives and list[str] as CfgVal but dict[str,str] was added in <a class="refe
 <h3>Structured Opts<a class="headerlink" href="#structured-opts" title="Link to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">StructuredOpts</span></span><a class="reference internal" href="_modules/torchx/schedulers/api.html#StructuredOpts"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchx.schedulers.api.</span></span><span class="sig-name descname"><span class="pre">StructuredOpts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_extra_cfg:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">float</span> <span class="pre">|</span> <span class="pre">bool</span> <span class="pre">|</span> <span class="pre">list[str]</span> <span class="pre">|</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">|</span> <span class="pre">None]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchx/schedulers/api.html#StructuredOpts"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Base class for typed scheduler configuration options.</p>
 <p>Provides a type-safe way to define scheduler run options as dataclass fields
 instead of manually building <a class="reference internal" href="#torchx.specs.runopts" title="torchx.specs.runopts"><code class="xref py py-class docutils literal notranslate"><span class="pre">runopts</span></code></a>. Subclasses
@@ -1062,10 +1062,13 @@ leaving the caller’s own untouched; via
 <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun" title="torchx.schedulers.api.Scheduler.submit_dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun</span></code></a> directly it is the
 very object passed in, with neither step applied.</p></li>
 <li><p><strong>cfg</strong> – The resolved run config (defaults applied). Empty until set
-alongside <code class="docutils literal notranslate"><span class="pre">app</span></code>. Not a copy either: it is the same mapping the
+alongside <code class="docutils literal notranslate"><span class="pre">app</span></code>. Not a copy either: it is the same object the
 scheduler was handed, so mutating it in place reaches whatever the
-scheduler retained. The <code class="docutils literal notranslate"><span class="pre">Mapping</span></code> annotation is the only thing
-saying not to.</p></li>
+scheduler retained. The annotation is the only thing saying not to.
+Typed by the second type parameter, which defaults to
+<code class="docutils literal notranslate"><span class="pre">Mapping[str,</span> <span class="pre">CfgVal]</span></code>: a scheduler declaring <code class="docutils literal notranslate"><span class="pre">Scheduler[Opts]</span></code>
+yields <code class="docutils literal notranslate"><span class="pre">AppDryRunInfo[Request,</span> <span class="pre">Opts]</span></code>, read as <code class="docutils literal notranslate"><span class="pre">cfg.option</span></code>
+with no cast.</p></li>
 <li><p><strong>_scheduler</strong> – Name of the scheduler this <code class="docutils literal notranslate"><span class="pre">request</span></code> belongs to. Set on
 the way out of <a class="reference internal" href="runner.html#torchx.runner.Runner.dryrun" title="torchx.runner.Runner.dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Runner.dryrun</span></code></a> and <a class="reference internal" href="runner.html#torchx.runner.Runner.describe_native" title="torchx.runner.Runner.describe_native"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Runner.describe_native</span></code></a>. Stays <code class="docutils literal notranslate"><span class="pre">None</span></code> when
 <a class="reference internal" href="schedulers.html#torchx.schedulers.api.Scheduler.submit_dryrun" title="torchx.schedulers.api.Scheduler.submit_dryrun"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Scheduler.submit_dryrun</span></code></a> or

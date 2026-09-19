@@ -1227,10 +1227,10 @@
 
 <div class="viewcode-block" id="KubernetesScheduler.schedule">
 <a class="viewcode-back" href="../../../schedulers/kubernetes.html#torchx.schedulers.kubernetes_scheduler.KubernetesScheduler.schedule">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">,</span> <span class="n">Opts</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">kubernetes.client.rest</span><span class="w"> </span><span class="kn">import</span> <span class="n">ApiException</span>
 
-        <span class="n">namespace</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;namespace&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;default&quot;</span>
+        <span class="n">namespace</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">or</span> <span class="s2">&quot;default&quot;</span>
 
         <span class="n">images_to_push</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">images_to_push</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">push_images</span><span class="p">(</span><span class="n">images_to_push</span><span class="p">)</span>
@@ -1256,55 +1256,28 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">namespace</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">resp</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">]:</span>
-        <span class="n">queue</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;queue&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;config value &#39;queue&#39; must be a string, got </span><span class="si">{</span><span class="n">queue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
+    <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">KubernetesJob</span><span class="p">,</span> <span class="n">Opts</span><span class="p">]:</span>
         <span class="c1"># map any local images to the remote image</span>
-        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="n">cfg</span><span class="p">))</span>
-
-        <span class="n">service_account</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service_account&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">service_account</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_account</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
-            <span class="s2">&quot;service_account must be a str&quot;</span>
-        <span class="p">)</span>
-
-        <span class="n">priority_class</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority_class&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">priority_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority_class</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
-            <span class="s2">&quot;priority_class must be a str&quot;</span>
-        <span class="p">)</span>
-
-        <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_millicpu&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">reserved_millicpu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">reserved_millicpu</span> <span class="o">=</span> <span class="n">RESERVED_MILLICPU</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_millicpu</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_millicpu must be an int&quot;</span>
-
-        <span class="n">reserved_memmb</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reserved_memmb&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">reserved_memmb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">reserved_memmb</span> <span class="o">=</span> <span class="n">RESERVED_MEMMB</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reserved_memmb</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;reserved_memmb must be an int&quot;</span>
-
-        <span class="n">efa_device_count</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;efa_device_count&quot;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">efa_device_count</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">efa_device_count</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="p">(</span>
-            <span class="s2">&quot;efa_device_count must be an int or None&quot;</span>
-        <span class="p">)</span>
+        <span class="n">images_to_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dryrun_push_images</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
 
         <span class="n">resource</span> <span class="o">=</span> <span class="n">app_to_resource</span><span class="p">(</span>
             <span class="n">app</span><span class="p">,</span>
-            <span class="n">queue</span><span class="p">,</span>
-            <span class="n">service_account</span><span class="p">,</span>
-            <span class="n">priority_class</span><span class="p">,</span>
-            <span class="n">reserved_millicpu</span><span class="p">,</span>
-            <span class="n">reserved_memmb</span><span class="p">,</span>
-            <span class="n">efa_device_count</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">service_account</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">priority_class</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">reserved_millicpu</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">reserved_memmb</span><span class="p">,</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">efa_device_count</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;validate_spec&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">validate_spec</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_custom_objects_api</span><span class="p">()</span><span class="o">.</span><span class="n">create_namespaced_custom_object</span><span class="p">(</span>
                     <span class="n">group</span><span class="o">=</span><span class="s2">&quot;batch.volcano.sh&quot;</span><span class="p">,</span>
                     <span class="n">version</span><span class="o">=</span><span class="s2">&quot;v1alpha1&quot;</span><span class="p">,</span>
-                    <span class="n">namespace</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;namespace&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+                    <span class="n">namespace</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">namespace</span> <span class="ow">or</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
                     <span class="n">plural</span><span class="o">=</span><span class="s2">&quot;jobs&quot;</span><span class="p">,</span>
                     <span class="n">body</span><span class="o">=</span><span class="n">resource</span><span class="p">,</span>
                     <span class="n">dry_run</span><span class="o">=</span><span class="s2">&quot;All&quot;</span><span class="p">,</span>

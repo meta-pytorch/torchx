@@ -834,7 +834,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">dryrun_info</span><span class="p">:</span> <span class="s2">&quot;AppDryRunInfo[PopenRequest] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dryrun_info</span><span class="p">:</span> <span class="s2">&quot;AppDryRunInfo[PopenRequest, Opts] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
         <span class="c1"># opts.log_dir/&lt;session_name&gt;/&lt;app_id&gt; or /tmp/torchx/&lt;session_name&gt;/&lt;app_id&gt;</span>
@@ -1032,7 +1032,7 @@
 
 <div class="viewcode-block" id="LocalScheduler">
 <a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">LocalScheduler</span><span class="p">(</span><span class="n">Scheduler</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocalScheduler</span><span class="p">(</span><span class="n">Scheduler</span><span class="p">[</span><span class="n">Opts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Schedules on localhost. Containers are modeled as processes and</span>
 <span class="sd">    certain properties of the container that are either not relevant</span>
@@ -1279,7 +1279,7 @@
 
 <div class="viewcode-block" id="LocalScheduler.schedule">
 <a class="viewcode-back" href="../../../schedulers/local.html#torchx.schedulers.local_scheduler.LocalScheduler.schedule">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">PopenRequest</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">PopenRequest</span><span class="p">,</span> <span class="n">Opts</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_size</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evict_lru</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
@@ -1315,8 +1315,8 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">PopenRequest</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">PopenRequest</span><span class="p">,</span> <span class="n">Opts</span><span class="p">]:</span>
         <span class="n">request</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_popen_request</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">AppDryRunInfo</span><span class="p">(</span>
             <span class="n">request</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">asdict</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
@@ -1441,17 +1441,14 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_popen_request</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span>
-        <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span>
+        <span class="n">cfg</span><span class="p">:</span> <span class="n">Opts</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PopenRequest</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts the application and cfg into a ``PopenRequest``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Convert to typed Opts for attribute access; keep original cfg for image_provider</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">cfg</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">Opts</span><span class="p">)</span> <span class="k">else</span> <span class="n">Opts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-
         <span class="n">app_id</span> <span class="o">=</span> <span class="n">make_unique</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="n">image_provider</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image_provider_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-        <span class="n">app_log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_app_log_dir</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+        <span class="n">app_log_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_app_log_dir</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
 
         <span class="n">role_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReplicaParam</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">role_log_dirs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1473,7 +1470,7 @@
                 <span class="c1"># making binaries in cwd take precedence to those in PATH</span>
                 <span class="c1"># otherwise append cwd to PATH so that the binaries in PATH</span>
                 <span class="c1"># precede over those in cwd</span>
-                <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">prepend_cwd</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">prepend_cwd</span><span class="p">:</span>
                     <span class="n">path</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">path</span> <span class="o">=</span> <span class="n">_join_PATH</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cwd</span><span class="p">)</span>
@@ -1517,7 +1514,7 @@
                     <span class="p">)</span>
                 <span class="p">)</span>
                 <span class="n">replica_log_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">replica_log_dir</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_CUDA_VISIBLE_DEVICES</span><span class="p">(</span><span class="n">role_params</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_set_CUDA_VISIBLE_DEVICES</span><span class="p">(</span><span class="n">role_params</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">PopenRequest</span><span class="p">(</span><span class="n">app_id</span><span class="p">,</span> <span class="n">app_log_dir</span><span class="p">,</span> <span class="n">role_params</span><span class="p">,</span> <span class="n">role_log_dirs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LocalScheduler.describe">

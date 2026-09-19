@@ -461,8 +461,10 @@
     <span class="n">NamedTuple</span><span class="p">,</span>
     <span class="n">Pattern</span><span class="p">,</span>
     <span class="n">Type</span><span class="p">,</span>
-    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
 <span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.util.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_dict</span>
 
@@ -1540,10 +1542,12 @@
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
 
+<span class="n">CfgT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;CfgT&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">])</span>
+
 
 <div class="viewcode-block" id="AppDryRunInfo">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.AppDryRunInfo">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AppDryRunInfo</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">CfgT</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wraps a materialized scheduler ``request``.</span>
 
 <span class="sd">    Returned by :py:meth:`Scheduler.submit_dryrun</span>
@@ -1566,10 +1570,13 @@
 <span class="sd">            &lt;torchx.schedulers.api.Scheduler.submit_dryrun&gt;` directly it is the</span>
 <span class="sd">            very object passed in, with neither step applied.</span>
 <span class="sd">        cfg: The resolved run config (defaults applied). Empty until set</span>
-<span class="sd">            alongside ``app``. Not a copy either: it is the same mapping the</span>
+<span class="sd">            alongside ``app``. Not a copy either: it is the same object the</span>
 <span class="sd">            scheduler was handed, so mutating it in place reaches whatever the</span>
-<span class="sd">            scheduler retained. The ``Mapping`` annotation is the only thing</span>
-<span class="sd">            saying not to.</span>
+<span class="sd">            scheduler retained. The annotation is the only thing saying not to.</span>
+<span class="sd">            Typed by the second type parameter, which defaults to</span>
+<span class="sd">            ``Mapping[str, CfgVal]``: a scheduler declaring ``Scheduler[Opts]``</span>
+<span class="sd">            yields ``AppDryRunInfo[Request, Opts]``, read as ``cfg.option``</span>
+<span class="sd">            with no cast.</span>
 <span class="sd">        _scheduler: Name of the scheduler this ``request`` belongs to. Set on</span>
 <span class="sd">            the way out of :py:meth:`Runner.dryrun</span>
 <span class="sd">            &lt;torchx.runner.Runner.dryrun&gt;` and :py:meth:`Runner.describe_native</span>
@@ -1586,7 +1593,7 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">T</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">request</span> <span class="o">=</span> <span class="n">request</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">:</span> <span class="n">CfgT</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">CfgT</span><span class="p">,</span> <span class="p">{})</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_fmt</span> <span class="o">=</span> <span class="n">fmt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>

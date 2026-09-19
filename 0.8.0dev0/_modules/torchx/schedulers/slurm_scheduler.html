@@ -799,7 +799,7 @@
 
 <div class="viewcode-block" id="SlurmScheduler">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SlurmScheduler</span><span class="p">(</span><span class="n">DirWorkspaceMixin</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">[</span><span class="n">SlurmOpts</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects</span>
 <span class="sd">    that slurm CLI tools are locally installed and job accounting is enabled.</span>
@@ -871,7 +871,7 @@
 
 <div class="viewcode-block" id="SlurmScheduler.schedule">
 <a class="viewcode-back" href="../../../schedulers/slurm.html#torchx.schedulers.slurm_scheduler.SlurmScheduler.schedule">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dryrun_info</span><span class="p">:</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">,</span> <span class="n">SlurmOpts</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">req</span> <span class="o">=</span> <span class="n">dryrun_info</span><span class="o">.</span><span class="n">request</span>
         <span class="n">job_dir</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">job_dir</span>
         <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpdir</span><span class="p">:</span>
@@ -928,14 +928,11 @@
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit_dryrun</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">]:</span>
-        <span class="c1"># Convert to typed opts for attribute access (resolve() passes a raw dict)</span>
-        <span class="n">opts</span> <span class="o">=</span> <span class="n">cfg</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">SlurmOpts</span><span class="p">)</span> <span class="k">else</span> <span class="n">SlurmOpts</span><span class="o">.</span><span class="n">from_cfg</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">:</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">SlurmOpts</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AppDryRunInfo</span><span class="p">[</span><span class="n">SlurmBatchRequest</span><span class="p">,</span> <span class="n">SlurmOpts</span><span class="p">]:</span>
         <span class="c1"># check if the partition has at least 1GB memory, if we&#39;re not sure,</span>
         <span class="c1"># default to using memory allocations</span>
-        <span class="n">memmb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_memmb</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span>
+        <span class="n">memmb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_memmb</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">partition</span><span class="p">)</span>
         <span class="n">nomem</span> <span class="o">=</span> <span class="n">memmb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">memmb</span> <span class="o">&lt;=</span> <span class="mi">1000</span>
 
         <span class="n">replicas</span> <span class="o">=</span> <span class="p">{}</span>
@@ -952,17 +949,17 @@
                 <span class="n">replicas</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">SlurmReplicaRequest</span><span class="o">.</span><span class="n">from_role</span><span class="p">(</span>
                     <span class="n">name</span><span class="p">,</span>
                     <span class="n">replica_role</span><span class="p">,</span>
-                    <span class="n">opts</span><span class="p">,</span>
+                    <span class="n">cfg</span><span class="p">,</span>
                     <span class="n">nomem</span><span class="o">=</span><span class="n">nomem</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sbatch&quot;</span><span class="p">,</span> <span class="s2">&quot;--parsable&quot;</span><span class="p">]</span>
 
         <span class="c1"># sbatch options that apply once to the whole job</span>
         <span class="n">job_opts</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
-            <span class="s2">&quot;mail-user&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">mail_user</span><span class="p">,</span>
-            <span class="s2">&quot;mail-type&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">mail_type</span><span class="p">,</span>
-            <span class="s2">&quot;account&quot;</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">account</span><span class="p">,</span>
+            <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
+            <span class="s2">&quot;mail-user&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">mail_user</span><span class="p">,</span>
+            <span class="s2">&quot;mail-type&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">mail_type</span><span class="p">,</span>
+            <span class="s2">&quot;account&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">account</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">job_opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -971,7 +968,7 @@
         <span class="n">req</span> <span class="o">=</span> <span class="n">SlurmBatchRequest</span><span class="p">(</span>
             <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">,</span>
             <span class="n">replicas</span><span class="o">=</span><span class="n">replicas</span><span class="p">,</span>
-            <span class="n">job_dir</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">job_dir</span><span class="p">,</span>
+            <span class="n">job_dir</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">job_dir</span><span class="p">,</span>
             <span class="n">max_retries</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">role</span><span class="o">.</span><span class="n">max_retries</span> <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">),</span>
         <span class="p">)</span>
 
