@@ -23,12 +23,12 @@ Usage:
 
     ::
 
-     from torchx.specs import named_resources
-     print(named_resources["aws_t3.medium"])
-     print(named_resources["aws_m5.2xlarge"])
-     print(named_resources["aws_p3.2xlarge"])
-     print(named_resources["aws_p3.8xlarge"])
-     print(named_resources["aws_p6-b200.48xlarge"])
+     from torchx.specs import resource
+     print(resource(h="aws_t3.medium"))
+     print(resource(h="aws_m5.2xlarge"))
+     print(resource(h="aws_p3.2xlarge"))
+     print(resource(h="aws_p3.8xlarge"))
+     print(resource(h="aws_p6-b200.48xlarge"))
 
 """
 

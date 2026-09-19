@@ -583,7 +583,7 @@ class ResourceTest(unittest.TestCase):
             with self.subTest(name=name):
                 expected = factory()
                 expected.tags[resource_tags.RESOURCE_NAME] = name
-                self.assertEqual(expected, named_resources[name])
+                self.assertEqual(expected, resource(h=name))
 
     def test_named_resources_are_tagged_with_their_name(self) -> None:
         for name in ["gpu.small", "aws_p3.8xlarge"]:
@@ -608,8 +608,7 @@ class ResourceTest(unittest.TestCase):
         )
 
         h = "aws_t3.medium"
-        self.assertEqual(named_resources[h], resource(h=h))
-        self.assertEqual(named_resources[h], resource(cpu=16, gpu=4, h="aws_t3.medium"))
+        self.assertEqual(resource(h=h), resource(cpu=16, gpu=4, h=h))
 
 
 class SentinelsTest(unittest.TestCase):

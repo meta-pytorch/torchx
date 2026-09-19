@@ -29,6 +29,7 @@ import dataclasses
 import difflib
 import os
 import threading
+import warnings
 from typing import Callable, Iterator, KeysView, Mapping
 
 from torchx import plugins
@@ -92,7 +93,10 @@ def _tagged(name: str, factory: ResourceFactory) -> ResourceFactory:
 
 
 class _NamedResourcesLibrary:
-    """Lazily-loaded named-resource lookup.
+    """Lazily-loaded registry of the named resources, for enumeration.
+
+    Look a resource up with :py:func:`resource(h=name) <resource>`; the
+    ``[name]`` subscript here is deprecated and forwards to it.
 
     ``import torchx.specs`` performs no resource-module import or plugin
     discovery — the AWS/generic/custom resource modules and the plugin
@@ -166,25 +170,54 @@ class _NamedResourcesLibrary:
         with self._lock:
             self._factories = None
 
-    def __getitem__(self, key: str) -> Resource:
+    @staticmethod
+    def _fold(factories: Mapping[str, ResourceFactory]) -> dict[str, list[str]]:
+        folded: dict[str, list[str]] = {}
+        for name in factories:
+            folded.setdefault(name.lower(), []).append(name)
+        return folded
+
+    def _lookup(self, key: str) -> Resource:
         factories = self._load()
         if key in factories:
             return factories[key]()
-        else:
-            matches = difflib.get_close_matches(
-                key,
-                factories.keys(),
-                n=1,
-            )
-            if matches:
-                msg = f"Did you mean `{matches[0]}`?"
-            else:
-                msg = f"Registered named resources: {list(factories.keys())}"
 
-            raise KeyError(f"No named resource found for `{key}`. {msg}")
+        folded = self._fold(factories).get(key.lower(), [])
+        if len(folded) == 1:
+            return factories[folded[0]]()
+        if folded:
+            raise KeyError(
+                f"`{key}` matches more than one registered named resource,"
+                f" ignoring case: {sorted(folded)}. Use one of those names exactly."
+            )
+
+        matches = difflib.get_close_matches(
+            key,
+            factories.keys(),
+            n=1,
+        )
+        if matches:
+            msg = f"Did you mean `{matches[0]}`?"
+        else:
+            msg = f"Registered named resources: {list(factories.keys())}"
+
+        raise KeyError(f"No named resource found for `{key}`. {msg}")
+
+    def __getitem__(self, key: str) -> Resource:
+        """
+        .. deprecated::
+            Use :py:func:`resource(h=name) <resource>` instead.
+        """
+        warnings.warn(
+            "`named_resources[name]` is deprecated, use `resource(h=name)` instead",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self._lookup(key)
 
     def __contains__(self, key: str) -> bool:
-        return key in self._load()
+        factories = self._load()
+        return key in factories or key.lower() in self._fold(factories)
 
     def __iter__(self) -> Iterator[str]:
         """Iterates through the names of the registered named_resources.
@@ -234,19 +267,23 @@ def resource(
 ) -> Resource:
     """Creates a :py:class:`Resource` from raw specs or a named resource.
 
-    When ``h`` is set, it takes precedence (raw specs are ignored). See
-    :ref:`advanced:Registering Named Resources` for custom named resources.
+    This is the one way to look a named resource up. When ``h`` is set, it
+    takes precedence (raw specs are ignored) and the name is matched ignoring
+    case. See :ref:`advanced:Registering Named Resources` for custom named
+    resources.
 
     .. doctest::
 
         >>> from torchx.specs import resource
         >>> resource(cpu=4, gpu=1, memMB=8192)
         Resource(cpu=4, gpu=1, memMB=8192, capabilities={}, devices={}, tags={})
+        >>> resource(h="AWS_T3.Medium") == resource(h="aws_t3.medium")
+        True
 
     """
 
     if h:
-        return named_resources[h]
+        return named_resources._lookup(h)
     else:
         # could make these defaults customizable via entrypoint
         # not doing that now since its not a requested feature and may just over complicate things
@@ -267,14 +304,12 @@ def get_named_resources(res: str) -> Resource:
     .. deprecated::
         Use :py:func:`resource(h=name) <resource>` instead.
     """
-    import warnings
-
     warnings.warn(
         "`get_named_resources()` is deprecated, use `resource(h=name)` instead",
         FutureWarning,
         stacklevel=2,
     )
-    return named_resources[res]
+    return resource(h=res)
 
 
 __all__ = [
