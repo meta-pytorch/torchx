@@ -58,7 +58,7 @@ dev = [
     "lintrunner",
     "lintrunner-adapters",
     "pip", # pip required by lintrunner but not installed by default in a uv env
-    "pyre-check",
+    "pyrefly",
 ]
 
 [project.urls]

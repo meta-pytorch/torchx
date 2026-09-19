@@ -6,7 +6,7 @@ Job launcher and orchestration library for PyTorch. Core types in `specs/api.py`
 
 | Tests | Lint + Format | Type Check |
 |-------|---------------|------------|
-| `uv run pytest` | `uv run lintrunner -a` | `uv run pyre check` |
+| `uv run pytest` | `uv run lintrunner -a` | `uv run pyrefly check` |
 
 Setup: `uv sync --all-extras`.
 
