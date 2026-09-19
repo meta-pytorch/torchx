@@ -10,28 +10,20 @@ Senior engineer code review with TorchX-specific checks.
 
 ### Step 1: Identify changed files
 
-Detect the VCS and get changed files:
-- Sapling: `sl status --no-status`
-- Git: `git diff --name-only HEAD`
+Get the changed files with `git diff --name-only HEAD`.
 
 Filter to files under the `torchx/` tree.
 
 ### Step 2: Validate modified Python files
 
-Detect the environment and run the appropriate validation tools on each modified `.py` file. Collect all failures — these are **blocking** issues.
+Run the validation tools on each modified `.py` file. Collect all failures — these are **blocking** issues.
 
-**Sapling/fbsource** (has `arc` and `.hg/`):
-- `arc f <files>` (format)
-- `arc lint -a <files>` (lint + autofix)
-- `arc pyre check-owning-targets <files>` (type check)
-
-**Git checkout** (has `pyproject.toml` and `uv`):
 - `uv run lintrunner -a` (lint + format)
 - `uv run pyre check` (type check)
 
 ### Step 3: Review changes
 
-Spawn a subagent (Task tool, subagent_type="general-purpose") to review the diff. Pass the list of changed files and instruct it to read each file and the corresponding diff (`sl diff` or `git diff`), then evaluate against **all** of the following checklists.
+Spawn a subagent (Task tool, subagent_type="general-purpose") to review the diff. Pass the list of changed files and instruct it to read each file and the corresponding diff (`git diff`), then evaluate against **all** of the following checklists.
 
 #### Generic review
 
@@ -84,8 +76,7 @@ Tests are reference usage documentation — each test case should read like an e
 
 #### Conventions
 
-- File headers: BSD license + `# pyre-strict` for OSS files, `# (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.` for `fb/` files
-- **ShipIt boundary**: OSS code (outside `fb/` directories) must never import from `fb/` paths — this breaks the open-source build
+- File headers: BSD license + `# pyre-strict`
 - Every `assert` statement must have a message explaining the invariant
 - Dead code: if something is unused, delete it completely — no `_var` renames, no `# removed` comments, no stale re-exports
 - Component signatures must accept both `Dict`/`List` and `dict`/`list` (validated by `specs/file_linter.py`)
