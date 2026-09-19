@@ -630,9 +630,6 @@ class Opts(StructuredOpts):
     reserved_memmb: int = RESERVED_MEMMB
     """Amount of memory in MB to reserve for Kubernetes system overhead (default: 1024)."""
 
-    image_repo: str | None = None
-    """The image repository to use when pushing patched images, must have push access."""
-
     efa_device_count: int | None = None
     """EFA device count override: None/unset=use resource spec, 0=remove EFA, N>0=set EFA count to N."""
 

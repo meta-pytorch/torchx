@@ -16,6 +16,7 @@ from torchx.schedulers import (
 )
 from torchx.schedulers.docker_scheduler import DockerScheduler
 from torchx.schedulers.local_scheduler import LocalScheduler
+from torchx.workspace.api import WorkspaceMixin
 
 
 class SchedulersTest(unittest.TestCase):
@@ -90,3 +91,42 @@ class SchedulersTest(unittest.TestCase):
 
         for scheduler in schedulers.values():
             self.assertEqual("test_session", scheduler.session_name)
+
+    @patch("torchx.schedulers.plugins")
+    def test_workspace_opts_declared_once(self, plugins_mock: MagicMock) -> None:
+        plugins_mock.registry.return_value.get.return_value = {}
+
+        checked = []
+        for name, factory in get_scheduler_factories().items():
+            try:
+                scheduler = factory("test_session")
+            except ModuleNotFoundError:
+                continue
+            if not isinstance(scheduler, WorkspaceMixin):
+                continue
+            checked.append(name)
+
+            workspace_keys = set(scheduler.workspace_opts()._opts.keys())
+            own_keys = set(scheduler._run_opts()._opts.keys())
+
+            self.assertEqual(
+                set(),
+                workspace_keys & own_keys,
+                f"scheduler `{name}` redeclares workspace options"
+                f" {sorted(workspace_keys & own_keys)} that its workspace"
+                " already declares; run_opts() merges the workspace on top, so"
+                " the scheduler's help text and default are silently dropped."
+                " Delete the scheduler's copy and read the value from cfg.",
+            )
+            self.assertLessEqual(
+                workspace_keys,
+                set(scheduler.run_opts()._opts.keys()),
+                f"scheduler `{name}` does not expose every option its workspace"
+                " declares, so users cannot set them",
+            )
+
+        self.assertTrue(
+            checked,
+            "no scheduler with a workspace was instantiated, so this test"
+            " checked nothing",
+        )
