@@ -98,16 +98,16 @@ You can specify component defaults by adding a section prefixed with
 
 .. code-block:: ini
 
-    [component:dist.ddp]
+    [component:dist.torchrun]
     j=2x8
     cpu=4
 
-Now when you run the ``dist.ddp`` component those configs are automatically
+Now when you run the ``dist.torchrun`` component those configs are automatically
 picked up.
 
 .. code-block:: shell-session
 
-    $ torchx run -s local_cwd dist.ddp
+    $ torchx run -s local_cwd dist.torchrun
     ... runs with -j 2x8 --cpu 4
 
 
@@ -123,7 +123,7 @@ default component to run.
 .. code-block:: ini
 
     [cli:run]
-    component=dist.ddp
+    component=dist.torchrun
     scheduler=local_docker
     workspace=file://some_workspace
 
@@ -351,17 +351,17 @@ def load_sections(
     into a map. ``":"`` is used as the prefix delimiter.
 
     Example config format for specifying defaults for the builtin
-    component ``dist.ddp`` is shown below:
+    component ``dist.torchrun`` is shown below:
 
     ::
 
-     [component:dist.ddp]
+     [component:dist.torchrun]
      j = 1x2
      image = ghcr.io/foo:1
 
      # calling `load_sections(prefix="component")` returns
      #  {
-     #    "dist.ddp": {
+     #    "dist.torchrun": {
      #       "j":"1x2",
      #       "image":"ghcr.io/foo:1",
      #     },

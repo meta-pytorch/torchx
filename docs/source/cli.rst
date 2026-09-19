@@ -88,7 +88,7 @@ Usage examples:
 .. code-block:: shell-session
 
    $ torchx run --scheduler local_cwd utils.python --script my_app.py
-   $ torchx run --scheduler kubernetes -cfg namespace=default dist.ddp -j 2x2 --script train.py
+   $ torchx run --scheduler kubernetes -cfg namespace=default dist.torchrun -j 2x2 --script train.py
    $ torchx runopts kubernetes
    $ torchx status local_cwd://torchx/my_job_id
    $ torchx log local_cwd://torchx/my_job_id trainer/0

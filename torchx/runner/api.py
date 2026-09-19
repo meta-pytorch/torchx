@@ -214,7 +214,7 @@ class Runner:
         ``component`` resolution order (high → low):
 
         1. User-registered ``torchx.components`` entry points
-        2. Builtins relative to ``torchx.components`` (e.g. ``"dist.ddp"``)
+        2. Builtins relative to ``torchx.components`` (e.g. ``"dist.torchrun"``)
         3. File-based ``path/to/file.py:function_name``
         """
 

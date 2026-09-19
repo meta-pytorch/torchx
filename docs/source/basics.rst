@@ -116,7 +116,7 @@ the CLI **or** from Python -- both are first-class interfaces:
    with get_runner() as runner:
        # Option 1: run a named component (same resolution as the CLI)
        app_handle = runner.run_component(
-           "dist.ddp", ["--script", "train.py"], scheduler="kubernetes",
+           "dist.torchrun", ["--script", "train.py"], scheduler="kubernetes",
        )
 
        # Option 2: run an AppDef you built directly
@@ -188,7 +188,7 @@ registry -- integrate with Airflow, Kubeflow Pipelines, or MLflow for those.
    * - ``torchrun``
      - You only need distributed training on a **single cluster** and already
        have nodes allocated (e.g. via ``salloc`` or inside a Kubernetes pod).
-       TorchX's ``dist.ddp`` uses ``torchrun`` under the hood.
+       TorchX's ``dist.torchrun`` component uses it under the hood.
    * - Direct Kubernetes YAML
      - You are **Kubernetes-only** and prefer managing manifests directly.
    * - AWS SageMaker SDK

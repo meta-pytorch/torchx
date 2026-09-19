@@ -88,7 +88,7 @@ TorchX is part of the `PyTorch <https://pytorch.org>`_ ecosystem. It
 complements -- rather than replaces -- other PyTorch projects:
 
 * **TorchElastic** handles fault-tolerant distributed training *within* a job.
-  TorchX launches the job itself and the built-in ``dist.ddp`` component
+  TorchX launches the job itself and the built-in ``dist.torchrun`` component
   uses TorchElastic under the hood.
 * **TorchRec / TorchVision / TorchAudio** provide domain-specific libraries.
   TorchX launches training and inference jobs that use them.

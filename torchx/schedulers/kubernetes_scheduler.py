@@ -76,7 +76,7 @@ CLI usage with builtin components:
 
 .. code:: bash
 
-    $ torchx run --scheduler kubernetes dist.ddp \\
+    $ torchx run --scheduler kubernetes dist.torchrun \\
         --metadata kubernetes=file:///path/to/pod_overlay.yaml \\
         --script train.py
 

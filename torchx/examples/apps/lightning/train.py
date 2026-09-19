@@ -24,7 +24,7 @@ To run the trainer locally as a ddp application with 1 node and 2 workers-per-no
 
 .. code:: shell-session
 
-  $ torchx run -s local_cwd dist.ddp
+  $ torchx run -s local_cwd dist.torchrun
      -j 1x2
      --script ./lightning/train.py
      --
@@ -32,14 +32,14 @@ To run the trainer locally as a ddp application with 1 node and 2 workers-per-no
      --output_path=/tmp/torchx/train
      --log_path=/tmp/torchx/logs
 
-.. note:: ``--`` is used to delimit between component (``dist.ddp``) and
+.. note:: ``--`` is used to delimit between component (``dist.torchrun``) and
           application arguments.
 
 Use the ``--help`` option to see the full list of application options:
 
 .. code:: shell-session
 
-  $ torchx run -s local_cwd dist.ddp -j 1x1 --script ./lightning/train.py -- --help
+  $ torchx run -s local_cwd dist.torchrun -j 1x1 --script ./lightning/train.py -- --help
 
 Which is effectively the same as ``./train.py --help``. To run on a remote scheduler,
 specify the scheduler with the ``-s`` option. Depending on the type of remote scheduler

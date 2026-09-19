@@ -22,7 +22,7 @@ as a E2E test for workspace patching logic, which typically diff-patches a full 
 directory rather than a single file. This application also uses `Hydra <https://hydra.cc/docs/intro/>`_
 configs as an expository example of how to use Hydra configs in an application that launches with TorchX.
 
-Run it with the ``dist.ddp`` builtin component to use as a validation application
+Run it with the ``dist.torchrun`` builtin component to use as a validation application
 to ensure that the stack has been setup properly for more serious distributed training jobs.
 """
 

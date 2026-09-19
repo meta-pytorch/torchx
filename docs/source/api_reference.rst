@@ -122,7 +122,7 @@ Submit a Job
        # Method 1: run_component — resolves a component by name
        # Same resolution as `torchx run` CLI
        app_handle = runner.run_component(
-           "dist.ddp",                           # component name
+           "dist.torchrun",                      # component name
            ["--script", "train.py", "-j", "2x2"], # args (list[str])
            scheduler="kubernetes",                # scheduler backend
            cfg={"namespace": "default"},           # scheduler config (optional)
@@ -243,10 +243,10 @@ Single-Node Training
        status = runner.wait(app_handle, wait_interval=1)
        print(status)
 
-Distributed Training (DDP)
+Distributed Training
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use the built-in ``dist.ddp`` component:
+Use the built-in ``dist.torchrun`` component:
 
 .. code-block:: python
 
@@ -254,7 +254,7 @@ Use the built-in ``dist.ddp`` component:
 
    with get_runner() as runner:
        app_handle = runner.run_component(
-           "dist.ddp",
+           "dist.torchrun",
            [
                "--script", "train.py",
                "-j", "2x2",              # 2 nodes x 2 workers per node

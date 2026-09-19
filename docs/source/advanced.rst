@@ -126,7 +126,7 @@ Once installed, the scheduler is available everywhere:
    from torchx.runner import get_runner
 
    with get_runner() as runner:
-       runner.run_component("dist.ddp", ["--script", "train.py"], scheduler="my_scheduler")
+       runner.run_component("dist.torchrun", ["--script", "train.py"], scheduler="my_scheduler")
 
 
 
@@ -393,8 +393,8 @@ entry:
        ],
    }
 
-This adds back TorchX builtins with a ``torchx.*`` prefix (e.g. ``torchx.dist.ddp``
-instead of ``dist.ddp``).
+This adds back TorchX builtins with a ``torchx.*`` prefix (e.g. ``torchx.dist.torchrun``
+instead of ``dist.torchrun``).
 
 .. _advanced-overlapping-components:
 
@@ -443,7 +443,7 @@ builtins without the ``torchx.*`` prefix:
  $ torchx builtins
  Found 11 builtin components:
  1. baz.trainer
- 2. dist.ddp
+ 2. dist.torchrun
  3. utils.python
  4. ... <more builtins from torchx.components.* ...>
 
