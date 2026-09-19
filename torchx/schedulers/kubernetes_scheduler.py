@@ -784,10 +784,10 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         contexts, active_context = config.list_kube_config_contexts()
         return active_context
 
-    def schedule(self, dryrun_info: AppDryRunInfo[KubernetesJob]) -> str:
+    def schedule(self, dryrun_info: AppDryRunInfo[KubernetesJob, Opts]) -> str:
         from kubernetes.client.rest import ApiException
 
-        namespace = dryrun_info.cfg.get("namespace") or "default"
+        namespace = dryrun_info.cfg.namespace or "default"
 
         images_to_push = dryrun_info.request.images_to_push
         self.push_images(images_to_push)
@@ -812,55 +812,28 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
 
         return f"{namespace}:{resp['metadata']['name']}"
 
-    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[KubernetesJob]:
-        queue = cfg.get("queue")
-        if not isinstance(queue, str):
-            raise TypeError(f"config value 'queue' must be a string, got {queue}")
-
+    def _submit_dryrun(
+        self, app: AppDef, cfg: Opts
+    ) -> AppDryRunInfo[KubernetesJob, Opts]:
         # map any local images to the remote image
-        images_to_push = self.dryrun_push_images(app, cast(Mapping[str, CfgVal], cfg))
-
-        service_account = cfg.get("service_account")
-        assert service_account is None or isinstance(service_account, str), (
-            "service_account must be a str"
-        )
-
-        priority_class = cfg.get("priority_class")
-        assert priority_class is None or isinstance(priority_class, str), (
-            "priority_class must be a str"
-        )
-
-        reserved_millicpu = cfg.get("reserved_millicpu")
-        if reserved_millicpu is None:
-            reserved_millicpu = RESERVED_MILLICPU
-        assert isinstance(reserved_millicpu, int), "reserved_millicpu must be an int"
-
-        reserved_memmb = cfg.get("reserved_memmb")
-        if reserved_memmb is None:
-            reserved_memmb = RESERVED_MEMMB
-        assert isinstance(reserved_memmb, int), "reserved_memmb must be an int"
-
-        efa_device_count = cfg.get("efa_device_count")
-        assert efa_device_count is None or isinstance(efa_device_count, int), (
-            "efa_device_count must be an int or None"
-        )
+        images_to_push = self.dryrun_push_images(app, cfg)
 
         resource = app_to_resource(
             app,
-            queue,
-            service_account,
-            priority_class,
-            reserved_millicpu,
-            reserved_memmb,
-            efa_device_count,
+            cfg.queue,
+            cfg.service_account,
+            cfg.priority_class,
+            cfg.reserved_millicpu,
+            cfg.reserved_memmb,
+            cfg.efa_device_count,
         )
 
-        if cfg.get("validate_spec"):
+        if cfg.validate_spec:
             try:
                 self._custom_objects_api().create_namespaced_custom_object(
                     group="batch.volcano.sh",
                     version="v1alpha1",
-                    namespace=cfg.get("namespace") or "default",
+                    namespace=cfg.namespace or "default",
                     plural="jobs",
                     body=resource,
                     dry_run="All",

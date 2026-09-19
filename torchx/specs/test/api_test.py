@@ -17,7 +17,7 @@ import time
 import unittest
 from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, List, Mapping, Type, Union, cast
+from typing import Dict, List, Mapping, Type, Union, cast, get_origin
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -201,6 +201,13 @@ class AppDryRunInfoTest(unittest.TestCase):
 
         self.assertIs(app, info.app)
         self.assertEqual({"cluster": "foo", "priority": 1}, dict(info.cfg))
+
+    def test_subscript_with_one_and_two_parameters(self) -> None:
+        one = AppDryRunInfo[str]
+        two = AppDryRunInfo[str, Mapping[str, CfgVal]]
+
+        self.assertIs(AppDryRunInfo, get_origin(one))
+        self.assertIs(AppDryRunInfo, get_origin(two))
 
 
 class AppDefStatusTest(unittest.TestCase):

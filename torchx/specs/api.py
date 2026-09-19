@@ -34,8 +34,10 @@ from typing import (
     NamedTuple,
     Pattern,
     Type,
-    TypeVar,
+    cast,
 )
+
+from typing_extensions import TypeVar
 
 from torchx.util.types import to_dict
 
@@ -1041,8 +1043,10 @@ CfgVal = str | int | float | bool | list[str] | dict[str, str] | None
 
 T = TypeVar("T")
 
+CfgT = TypeVar("CfgT", bound=Mapping[str, CfgVal], default=Mapping[str, CfgVal])
 
-class AppDryRunInfo(Generic[T]):
+
+class AppDryRunInfo(Generic[T, CfgT]):
     """Wraps a materialized scheduler ``request``.
 
     Returned by :py:meth:`Scheduler.submit_dryrun
@@ -1065,10 +1069,13 @@ class AppDryRunInfo(Generic[T]):
             <torchx.schedulers.api.Scheduler.submit_dryrun>` directly it is the
             very object passed in, with neither step applied.
         cfg: The resolved run config (defaults applied). Empty until set
-            alongside ``app``. Not a copy either: it is the same mapping the
+            alongside ``app``. Not a copy either: it is the same object the
             scheduler was handed, so mutating it in place reaches whatever the
-            scheduler retained. The ``Mapping`` annotation is the only thing
-            saying not to.
+            scheduler retained. The annotation is the only thing saying not to.
+            Typed by the second type parameter, which defaults to
+            ``Mapping[str, CfgVal]``: a scheduler declaring ``Scheduler[Opts]``
+            yields ``AppDryRunInfo[Request, Opts]``, read as ``cfg.option``
+            with no cast.
         _scheduler: Name of the scheduler this ``request`` belongs to. Set on
             the way out of :py:meth:`Runner.dryrun
             <torchx.runner.Runner.dryrun>` and :py:meth:`Runner.describe_native
@@ -1085,7 +1092,7 @@ class AppDryRunInfo(Generic[T]):
     def __init__(self, request: T, fmt: Callable[[T], str]) -> None:
         self.request = request
         self.app: AppDef | None = None
-        self.cfg: Mapping[str, CfgVal] = {}
+        self.cfg: CfgT = cast(CfgT, {})
 
         self._fmt = fmt
         self._scheduler: str | None = None

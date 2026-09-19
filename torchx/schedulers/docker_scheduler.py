@@ -189,7 +189,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         # NOTE: make sure any new init options are supported in create_scheduler(...)
         super().__init__("docker", session_name)
 
-    def schedule(self, dryrun_info: AppDryRunInfo[DockerJob]) -> str:
+    def schedule(self, dryrun_info: AppDryRunInfo[DockerJob, Opts]) -> str:
         client = self._docker_client
 
         req = dryrun_info.request
@@ -220,25 +220,19 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
 
         return req.app_id
 
-    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[DockerJob]:
+    def _submit_dryrun(self, app: AppDef, cfg: Opts) -> AppDryRunInfo[DockerJob, Opts]:
         from docker.types import DeviceRequest, Mount
 
         default_env = {}
-        copy_env = cfg.get("copy_env")
-        if copy_env:
-            assert isinstance(copy_env, list), (
-                f"copy_env must be a list, got {copy_env}"
-            )
+        if cfg.copy_env:
             keys = set()
-            for pattern in copy_env:
+            for pattern in cfg.copy_env:
                 keys |= set(fnmatch.filter(os.environ.keys(), pattern))
             for k in keys:
                 default_env[k] = os.environ[k]
 
-        env = cfg.get("env")
-        if env:
-            assert isinstance(env, dict), f"env must be a dict, got {env}"
-            default_env.update(env)
+        if cfg.env:
+            default_env.update(cfg.env)
 
         app_id = make_unique(app.name)
         req = DockerJob(app_id=app_id, containers=[])
@@ -311,7 +305,7 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
                             LABEL_REPLICA_ID: str(replica_id),
                         },
                         "hostname": name,
-                        "privileged": cfg.get("privileged") or False,
+                        "privileged": cfg.privileged or False,
                         "network": NETWORK,
                         "mounts": mounts,
                         "devices": devices,

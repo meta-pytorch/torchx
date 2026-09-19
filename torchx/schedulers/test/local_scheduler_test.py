@@ -382,7 +382,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
                     Role(name="foo", image=self.test_dir, env={"PATH": "/home/bob"}),
                 ],
             ),
-            cfg={"prepend_cwd": False},
+            cfg=Opts(prepend_cwd=False),
         )
 
         # the test scheduler is hooked up with LocalDirectoryImageProvider
@@ -413,7 +413,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
                     Role(name="foo", image=self.test_dir, env={"PATH": "/home/bob"}),
                 ],
             ),
-            cfg={"prepend_cwd": True},
+            cfg=Opts(prepend_cwd=True),
         )
 
         # the test scheduler is hooked up with LocalDirectoryImageProvider
@@ -440,7 +440,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
                 name="_",
                 roles=[Role(name="foo", image=self.test_dir)],
             ),
-            cfg={},
+            cfg=Opts(),
         )
 
         # the test scheduler is hooked up with LocalDirectoryImageProvider
@@ -467,7 +467,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
         role = Role(name="foo", image=self.test_dir, env={"PATH": "/home/bob"})
         app = AppDef(name="_", roles=[role])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
 
         path_1 = scheduler._to_popen_request(app, cfg).role_params["foo"][0].env["PATH"]
         path_2 = scheduler._to_popen_request(app, cfg).role_params["foo"][0].env["PATH"]
@@ -486,7 +486,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
         )
         role = Role(name="foo", image=self.test_dir, env={"PATH": "/home/bob"})
         app = AppDef(name="_", roles=[role])
-        cfg = {"log_dir": self.test_dir}
+        cfg = Opts(log_dir=self.test_dir)
 
         path = scheduler._to_popen_request(app, cfg).role_params["foo"][0].env["PATH"]
 
@@ -1262,7 +1262,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             ],
         )
         popen_req = self.scheduler._to_popen_request(
-            appdef, {"auto_set_cuda_visible_devices": True}
+            appdef, Opts(auto_set_cuda_visible_devices=True)
         )
         role1_params = popen_req.role_params["role1"]
         self.assertEqual(2, len(role1_params))
@@ -1288,7 +1288,7 @@ class LocalDirectorySchedulerTest(unittest.TestCase, LocalSchedulerTestUtil):
             ],
         )
 
-        popen_req = self.scheduler._to_popen_request(trainer1, {})
+        popen_req = self.scheduler._to_popen_request(trainer1, Opts())
         role_params = popen_req.role_params["trainer1"]
         self.assertEqual(4, len(role_params))
         self.assertFalse(ENV_CUDA_VISIBLE_DEVICES in role_params[0].env)

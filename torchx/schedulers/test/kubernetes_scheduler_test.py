@@ -1385,7 +1385,10 @@ spec:
             resource={},
         )
 
-        out = scheduler.schedule(AppDryRunInfo(job, repr))
+        dryrun_info = AppDryRunInfo(job, repr)
+        dryrun_info.cfg = Opts(queue="testqueue")
+
+        out = scheduler.schedule(dryrun_info)
         self.assertTrue(out)
 
         self.assertEqual(client.images.get.call_count, 1)

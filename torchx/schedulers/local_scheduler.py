@@ -359,7 +359,7 @@ class _LocalAppDef:
         self,
         id: str,
         log_dir: str,
-        dryrun_info: "AppDryRunInfo[PopenRequest] | None" = None,
+        dryrun_info: "AppDryRunInfo[PopenRequest, Opts] | None" = None,
     ) -> None:
         self.id = id
         # opts.log_dir/<session_name>/<app_id> or /tmp/torchx/<session_name>/<app_id>
@@ -552,7 +552,7 @@ def _register_termination_signals() -> None:
         signal.signal(signal.SIGINT, _terminate_process_handler)
 
 
-class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
+class LocalScheduler(Scheduler[Opts]):
     """
     Schedules on localhost. Containers are modeled as processes and
     certain properties of the container that are either not relevant
@@ -797,7 +797,7 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         log.info("log directory is: `%s`", base_log_dir)
         return os.path.join(str(base_log_dir), self.session_name, app_id)
 
-    def schedule(self, dryrun_info: AppDryRunInfo[PopenRequest]) -> str:
+    def schedule(self, dryrun_info: AppDryRunInfo[PopenRequest, Opts]) -> str:
         if len(self._apps) == self._cache_size:
             if not self._evict_lru():
                 raise IndexError(
@@ -832,8 +832,8 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         return app_id
 
     def _submit_dryrun(
-        self, app: AppDef, cfg: Mapping[str, CfgVal]
-    ) -> AppDryRunInfo[PopenRequest]:
+        self, app: AppDef, cfg: Opts
+    ) -> AppDryRunInfo[PopenRequest, Opts]:
         request = self._to_popen_request(app, cfg)
         return AppDryRunInfo(
             request, lambda p: pprint.pformat(asdict(p), indent=2, width=80)
@@ -955,17 +955,14 @@ Reduce requested GPU resources or use a host with more GPUs
     def _to_popen_request(
         self,
         app: AppDef,
-        cfg: Mapping[str, CfgVal],
+        cfg: Opts,
     ) -> PopenRequest:
         """
         Converts the application and cfg into a ``PopenRequest``.
         """
-        # Convert to typed Opts for attribute access; keep original cfg for image_provider
-        opts = cfg if isinstance(cfg, Opts) else Opts.from_cfg(cfg)
-
         app_id = make_unique(app.name)
         image_provider = self._image_provider_class(cfg)
-        app_log_dir = self._get_app_log_dir(app_id, opts)
+        app_log_dir = self._get_app_log_dir(app_id, cfg)
 
         role_params: dict[str, list[ReplicaParam]] = {}
         role_log_dirs: dict[str, list[str]] = {}
@@ -987,7 +984,7 @@ Reduce requested GPU resources or use a host with more GPUs
                 # making binaries in cwd take precedence to those in PATH
                 # otherwise append cwd to PATH so that the binaries in PATH
                 # precede over those in cwd
-                if opts.prepend_cwd:
+                if cfg.prepend_cwd:
                     path = _join_PATH(cwd, path)
                 else:
                     path = _join_PATH(path, cwd)
@@ -1031,7 +1028,7 @@ Reduce requested GPU resources or use a host with more GPUs
                     )
                 )
                 replica_log_dirs.append(replica_log_dir)
-        self.auto_set_CUDA_VISIBLE_DEVICES(role_params, app, opts)
+        self.auto_set_CUDA_VISIBLE_DEVICES(role_params, app, cfg)
         return PopenRequest(app_id, app_log_dir, role_params, role_log_dirs)
 
     def describe(self, app_id: str) -> DescribeAppResponse | None:
