@@ -39,7 +39,7 @@ from torchx.specs import (
     runopts,
     Workspace,
 )
-from torchx.test.fixtures import TestWithTmpDir
+from torchx.testing.fixtures import TestWithTmpDir
 
 
 class TestScheduler(Scheduler):

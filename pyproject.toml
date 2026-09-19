@@ -79,7 +79,8 @@ include-package-data = true
 include = ["torchx*"]
 exclude = [
     "torchx.examples*",
-    "torchx*.test*",
+    "torchx*.test",
+    "torchx*.test.*",
     "torchx.github*",
     "torchx*.fb*",
 ]

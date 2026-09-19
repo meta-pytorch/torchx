@@ -11,7 +11,7 @@ from unittest import mock
 
 from torchx.cli import argparse_util
 from torchx.cli.argparse_util import ArgOnceAction, torchxconfig_list, torchxconfig_run
-from torchx.test.fixtures import TestWithTmpDir
+from torchx.testing.fixtures import TestWithTmpDir
 
 DEFAULT_CONFIG_DIRS = "torchx.runner.config.DEFAULT_CONFIG_DIRS"
 
