@@ -658,7 +658,8 @@
 <span class="sd">            ...</span>
 
 <span class="sd">    Each :py:class:`PluginType` has a corresponding classmethod:</span>
-<span class="sd">    :py:meth:`scheduler`, :py:meth:`tracker`, and :py:meth:`named_resource`.</span>
+<span class="sd">    :py:meth:`scheduler`, :py:meth:`tracker`, :py:meth:`named_resource`,</span>
+<span class="sd">    and :py:meth:`event_handler`.</span>
 
 <span class="sd">    The explicit constructor ``register(PluginType.SCHEDULER, name=...)``</span>
 <span class="sd">    is still supported for advanced use-cases.</span>
@@ -709,6 +710,14 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">tracker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">register</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a tracker factory.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">PluginType</span><span class="o">.</span><span class="n">TRACKER</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="register.event_handler">
+<a class="viewcode-back" href="../../../plugins.html#torchx.plugins.register.event_handler">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">event_handler</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">register</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register an event :py:class:`logging.Handler` factory, named after its ``destination``.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">PluginType</span><span class="o">.</span><span class="n">EVENT_HANDLER</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="register.named_resource">

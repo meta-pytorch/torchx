@@ -468,6 +468,7 @@ loading will be removed in a future release. See
 │  @register.scheduler()     Scheduler factory function        │
 │  @register.named_resource  Resource factory function         │
 │  @register.tracker()       Tracker factory function          │
+│  @register.event_handler() Event handler factory function    │
 │                                                              │
 │  Entry Points (not yet migrated to @register)                │
 │  ──────────────────────    ──────────────────────────────    │
@@ -884,8 +885,33 @@ and configure each in <code class="docutils literal notranslate"><span class="pr
 </dl>
 </div>
 </section>
+<section id="registering-custom-event-handlers">
+<span id="id2"></span><h2>Registering Custom Event Handlers<a class="headerlink" href="#registering-custom-event-handlers" title="Link to this heading">¶</a></h2>
+<p>TorchX records run events (see <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runner.events</span></code>) through a
+<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Handler" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">logging.Handler</span></code></a> chosen by the <code class="docutils literal notranslate"><span class="pre">destination</span></code> name passed to
+<code class="xref py py-func docutils literal notranslate"><span class="pre">record()</span></code>. Two are built in: <code class="docutils literal notranslate"><span class="pre">console</span></code> and
+<code class="docutils literal notranslate"><span class="pre">null</span></code>. Register your own to send events to a telemetry backend — a plugin
+takes precedence over a built-in of the same name, so registering <code class="docutils literal notranslate"><span class="pre">null</span></code>
+routes the default destination to your backend.</p>
+<p><strong>Recommended: ``&#64;register`` decorator</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># torchx_plugins/event_handlers/my_sink.py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchx.plugins</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
+
+<span class="nd">@register</span><span class="o">.</span><span class="n">event_handler</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;null&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_sink</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">MyTelemetryHandler</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Legacy: entry points</strong> <em>(deprecated)</em></p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project.entry-points.</span><span class="s2">&quot;torchx.event_handlers&quot;</span><span class="k">]</span>
+<span class="n">null</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_package.telemetry:create_handler&quot;</span>
+</pre></div>
+</div>
+</section>
 <section id="registering-custom-cli-commands">
-<span id="id2"></span><h2>Registering Custom CLI Commands<a class="headerlink" href="#registering-custom-cli-commands" title="Link to this heading">¶</a></h2>
+<span id="id3"></span><h2>Registering Custom CLI Commands<a class="headerlink" href="#registering-custom-cli-commands" title="Link to this heading">¶</a></h2>
 <p>Extend the <code class="docutils literal notranslate"><span class="pre">torchx</span></code> CLI by implementing
 <a class="reference internal" href="cli.html#torchx.cli.cmd_base.SubCommand" title="torchx.cli.cmd_base.SubCommand"><code class="xref py py-class docutils literal notranslate"><span class="pre">SubCommand</span></code></a>.</p>
 <p><strong>The SubCommand ABC</strong> defines two abstract methods:</p>
@@ -1084,6 +1110,7 @@ the bottom.</p>
 <li><a class="reference internal" href="#registering-named-resources">Registering Named Resources</a></li>
 <li><a class="reference internal" href="#registering-custom-components">Registering Custom Components</a></li>
 <li><a class="reference internal" href="#registering-custom-trackers">Registering Custom Trackers</a></li>
+<li><a class="reference internal" href="#registering-custom-event-handlers">Registering Custom Event Handlers</a></li>
 <li><a class="reference internal" href="#registering-custom-cli-commands">Registering Custom CLI Commands</a></li>
 <li><a class="reference internal" href="#packaging-a-plugin">Packaging a Plugin</a></li>
 <li><a class="reference internal" href="#diagnostics">Diagnostics</a></li>

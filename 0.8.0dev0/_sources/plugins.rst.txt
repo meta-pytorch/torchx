@@ -22,7 +22,7 @@ Registration
 -------------
 
 .. autoclass:: torchx.plugins.register
-   :members: scheduler, tracker, named_resource
+   :members: scheduler, tracker, named_resource, event_handler
 
 Fractional Helpers
 -------------------

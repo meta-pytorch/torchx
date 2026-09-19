@@ -36,6 +36,7 @@ sufficient.
    │  @register.scheduler()     Scheduler factory function        │
    │  @register.named_resource  Resource factory function         │
    │  @register.tracker()       Tracker factory function          │
+   │  @register.event_handler() Event handler factory function    │
    │                                                              │
    │  Entry Points (not yet migrated to @register)                │
    │  ──────────────────────    ──────────────────────────────    │
@@ -575,6 +576,38 @@ Environment variables take precedence over ``.torchxconfig`` values.
       Runtime tracking utilities for use within applications.
 
 
+
+.. _registering-custom-event-handlers:
+
+Registering Custom Event Handlers
+----------------------------------
+
+TorchX records run events (see :py:mod:`torchx.runner.events`) through a
+:py:class:`logging.Handler` chosen by the ``destination`` name passed to
+:py:func:`~torchx.runner.events.record`. Two are built in: ``console`` and
+``null``. Register your own to send events to a telemetry backend — a plugin
+takes precedence over a built-in of the same name, so registering ``null``
+routes the default destination to your backend.
+
+**Recommended: ``@register`` decorator**
+
+.. code-block:: python
+
+   # torchx_plugins/event_handlers/my_sink.py
+   import logging
+
+   from torchx.plugins import register
+
+   @register.event_handler(name="null")
+   def my_sink() -> logging.Handler:
+       return MyTelemetryHandler()
+
+**Legacy: entry points** *(deprecated)*
+
+.. code-block:: toml
+
+   [project.entry-points."torchx.event_handlers"]
+   null = "my_package.telemetry:create_handler"
 
 .. _registering-custom-cli-commands:
 
