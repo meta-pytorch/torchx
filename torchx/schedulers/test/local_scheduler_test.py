@@ -48,9 +48,8 @@ from torchx.specs.api import (
     Resource,
     Role,
 )
+from torchx.testing.fixtures import write_shell_script
 from torchx.util.types import none_throws
-
-from .test_util import write_shell_script
 
 LOCAL_SCHED_DEVICE_COUNT = (
     "torchx.schedulers.local_scheduler.LocalScheduler._cuda_device_count"

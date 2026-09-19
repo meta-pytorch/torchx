@@ -41,7 +41,7 @@ from torchx.specs import (
     Workspace,
 )
 from torchx.specs.finder import ComponentNotFoundException
-from torchx.test.fixtures import TestWithTmpDir
+from torchx.testing.fixtures import TestWithTmpDir
 from torchx.util.types import none_throws
 from torchx.workspace import pin_workspace_images, WorkspaceMixin
 

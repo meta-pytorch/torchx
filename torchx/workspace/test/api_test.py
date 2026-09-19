@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Mapping
 
 from torchx.specs import AppDef, CfgVal, Role, Workspace
-from torchx.test.fixtures import TestWithTmpDir
+from torchx.testing.fixtures import TestWithTmpDir
 from torchx.workspace.api import pin_workspace_images, WorkspaceMixin
 from typing_extensions import override
 

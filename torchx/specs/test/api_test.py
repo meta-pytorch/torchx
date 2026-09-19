@@ -54,7 +54,7 @@ from torchx.specs.api import (
     UNKNOWN,
     Workspace,
 )
-from torchx.test.fixtures import TestWithTmpDir
+from torchx.testing.fixtures import TestWithTmpDir
 
 
 class TorchXHomeTest(unittest.TestCase):

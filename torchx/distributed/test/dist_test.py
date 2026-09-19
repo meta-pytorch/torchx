@@ -23,7 +23,8 @@ from torchx.distributed import (
     rank,
     world_size,
 )
-from torchx.test.fixtures import DistributedTestCase, IS_CI, IS_MACOS
+from torchx.testing.distributed import DistributedTestCase
+from torchx.testing.fixtures import IS_CI, IS_MACOS
 
 TORCHX_DIST_LOCAL_RANK = "torchx.distributed.local_rank"
 

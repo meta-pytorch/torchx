@@ -16,14 +16,40 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Callable, Iterable, TypeVar
+from typing import Iterable
 
-from torch.distributed.elastic.multiprocessing import Std
-from torch.distributed.launcher import elastic_launch, LaunchConfig
-from torchx.schedulers.test import test_util
 
 IS_CI: bool = os.getenv("CI", "false").lower() == "true"
 IS_MACOS: bool = sys.platform == "darwin"
+
+
+def write_shell_script(dir: str, name: str, content: list[str]) -> str:
+    """
+    Creates and writes a bash script in the specified dir with the given name.
+    The contents of the script are taken from the ``content`` parameter
+    where each item in the list is written as a line in the script.
+
+    Example: ``write_shell_script("/tmp", "foobar", ["sleep 10", "echo hello world"])
+
+    ::
+
+    # creates /tmp/foobar with content below
+    #! bin/bash
+
+    sleep 10
+    echo hello world
+
+    """
+
+    script_path = os.path.join(dir, name)
+    with open(script_path, "w") as f:
+        f.write("#! /bin/bash\n")
+        for line in content:
+            f.write(f"{line}\n")
+        f.write("\n")
+
+    os.chmod(script_path, 0o755)
+    return script_path
 
 
 class TestWithTmpDir(unittest.TestCase):
@@ -122,9 +148,7 @@ class TestWithTmpDir(unittest.TestCase):
         Returns: The path to the written shell script.
 
         """
-        return Path(
-            test_util.write_shell_script(str(self.tmpdir), script_path, content)
-        )
+        return Path(write_shell_script(str(self.tmpdir), script_path, content))
 
     def read(self, filepath: str | Path) -> list[str]:
         """
@@ -246,61 +270,3 @@ class TestWithTmpDir(unittest.TestCase):
 
         _create_tree(d, tree)
         return d
-
-
-Ret = TypeVar("Ret")
-
-
-class DistributedTestCase(TestWithTmpDir):
-    """
-    A ``unittest.TestCase`` that has utility methods to run tests that need to be run in the context
-    of ``torch.distributed``.
-
-    Usage:
-
-    .. doctest::
-
-        >>> from torchx.test.fixtures import DistributedTestCase
-        >>> import torch.distributed as dist
-
-        >>> class MyDistributedTest(DistributedTestCase):
-        ...     @staticmethod
-        ...     def run_test(arg1) -> str:
-        ...         dist.init_process_group(backend="gloo")
-        ...         # run whatever needs to be tested
-        ...         return f"rank={dist.get_rank()}/{dist.get_world_size()} arg1={arg1}"
-        ...     def test_foo(self) -> None:
-        ...         ret = self.run_ddp(world_size=2, fn=MyDistributedTest.run_test)("hello-world")
-        ...         self.assertDictEqual(
-        ...           {
-        ...             0: "rank=0/2 arg1=hello-world",
-        ...             1: "rank=1/2 arg1=hello-world",
-        ...           },
-        ...           ret
-        ...         )
-        >>> MyDistributedTest().test_foo()
-    """
-
-    def run_ddp(
-        self, world_size: int, fn: Callable[..., Ret]
-    ) -> Callable[..., dict[int, Ret]]:
-        """
-        Runs ``world_size`` copies of ``fn`` (one on each sub-process) as a DDP job on the local host.
-
-        .. note::
-            You MUST initialize the default process group as ``ape.distributed.util.init_process_group()``
-            in your ``fn`` before running any distributed/collective operations.
-
-        See class docstring for usage example.
-        """
-        config = LaunchConfig(
-            min_nodes=1,
-            max_nodes=1,
-            nproc_per_node=world_size,
-            rdzv_backend="c10d",
-            rdzv_endpoint="localhost:0",
-            max_restarts=0,
-            monitor_interval=0.01,
-        )
-
-        return elastic_launch(config, entrypoint=fn)
