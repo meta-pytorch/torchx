@@ -144,7 +144,7 @@ class CmdRunTest(unittest.TestCase):
     def test_run_terminate_on_received_signal(
         self,
         mock_scheduler_close: MagicMock,
-        _,
+        _: MagicMock,
     ) -> None:
         with cwd(str(Path(__file__).parent)):
             args = self.parser.parse_args(
