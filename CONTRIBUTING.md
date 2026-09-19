@@ -47,10 +47,11 @@ uv run torchx --help
 
 ## Lint + type check
 
-Lint runs via `ruff`, type checking via `pyrefly`:
+Lint and format run via `ruff`, type checking via `pyrefly`:
 
 ```sh
 uv run ruff check --fix .
+uv run ruff format .
 uv run pyrefly check
 ```
 
@@ -59,6 +60,7 @@ Or activate the venv first:
 ```sh
 source .venv/bin/activate
 ruff check --fix .
+ruff format .
 pyrefly check
 ```
 

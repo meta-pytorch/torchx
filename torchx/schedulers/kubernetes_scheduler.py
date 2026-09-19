@@ -824,14 +824,14 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         images_to_push = self.dryrun_push_images(app, cast(Mapping[str, CfgVal], cfg))
 
         service_account = cfg.get("service_account")
-        assert service_account is None or isinstance(
-            service_account, str
-        ), "service_account must be a str"
+        assert service_account is None or isinstance(service_account, str), (
+            "service_account must be a str"
+        )
 
         priority_class = cfg.get("priority_class")
-        assert priority_class is None or isinstance(
-            priority_class, str
-        ), "priority_class must be a str"
+        assert priority_class is None or isinstance(priority_class, str), (
+            "priority_class must be a str"
+        )
 
         reserved_millicpu = cfg.get("reserved_millicpu")
         if reserved_millicpu is None:
@@ -844,9 +844,9 @@ class KubernetesScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         assert isinstance(reserved_memmb, int), "reserved_memmb must be an int"
 
         efa_device_count = cfg.get("efa_device_count")
-        assert efa_device_count is None or isinstance(
-            efa_device_count, int
-        ), "efa_device_count must be an int or None"
+        assert efa_device_count is None or isinstance(efa_device_count, int), (
+            "efa_device_count must be an int or None"
+        )
 
         resource = app_to_resource(
             app,
@@ -1134,7 +1134,6 @@ def create_scheduler(
 def pod_labels(
     app: AppDef, role_idx: int, role: Role, replica_id: int, app_id: str
 ) -> dict[str, str]:
-
     def clean(label_value: str) -> str:
         # cleans the provided `label_value` to make it compliant
         # to pod label specs as described in

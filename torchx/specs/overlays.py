@@ -275,7 +275,7 @@ def _resolve_join(
     parts = key[len(_JOIN_PREFIX) :].split(":", 1)
     if len(parts) != 2 or not parts[1]:
         raise ValueError(
-            f"malformed JOIN key: `{key}`, " f"expected format from JOIN(field, on=key)"
+            f"malformed JOIN key: `{key}`, expected format from JOIN(field, on=key)"
         )
     merge_key = parts[1]
     if not isinstance(overlay_value, list):
@@ -296,8 +296,7 @@ def _resolve_join(
             )
         if not all(isinstance(item, dict) for item in base[field]):
             raise TypeError(
-                f"JOIN requires a list of dicts, but `{field}` "
-                f"contains non-dict items"
+                f"JOIN requires a list of dicts, but `{field}` contains non-dict items"
             )
         _strategic_merge_by_key(base[field], overlay_value, merge_key=merge_key)
     else:
@@ -624,8 +623,7 @@ def get_overlay(
     if ns_value.get(_FORMAT_KEY):
         if available_kinds:
             logger.debug(
-                "overlay kind `%s` not found in namespace `%s` "
-                "(available kinds: %s)",
+                "overlay kind `%s` not found in namespace `%s` (available kinds: %s)",
                 kind,
                 namespace,
                 available_kinds,

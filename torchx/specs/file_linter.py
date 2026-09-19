@@ -126,9 +126,9 @@ def get_generic_type(arg: ast.expr) -> ast.expr:
     # in this validator's context, this is the generic type of a container type
     # e.g. for Optional[str] returns the expr for str
 
-    assert isinstance(
-        arg, ast.Subscript
-    ), f"expected a subscripted type (C[T]), got {ast.unparse(arg)!r}"
+    assert isinstance(arg, ast.Subscript), (
+        f"expected a subscripted type (C[T]), got {ast.unparse(arg)!r}"
+    )
 
     return arg.slice
 

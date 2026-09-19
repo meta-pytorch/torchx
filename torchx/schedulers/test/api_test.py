@@ -723,7 +723,6 @@ class DeepA(StructuredOpts):
 
 
 class NestedStructuredOptsTest(unittest.TestCase):
-
     def test_as_runopts(self) -> None:
         opts = OuterOpts.as_runopts()
         keys = [k for k, _ in opts]

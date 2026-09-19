@@ -76,9 +76,9 @@ class FsspecTracker(TrackerBase):
     """
 
     def __init__(self, fs: fsspec.AbstractFileSystem, root_dir: str) -> None:
-        assert fs.exists(
-            root_dir
-        ), f"Expects FSSpec tracker directory '{root_dir}' to exist."
+        assert fs.exists(root_dir), (
+            f"Expects FSSpec tracker directory '{root_dir}' to exist."
+        )
         self.fs = fs
         self._path_builder = _FsspecTrackerPathBuilder(root_dir)
 

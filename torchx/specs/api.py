@@ -895,9 +895,9 @@ class AppStatus:
             raise AppStatusError(self, f"job did not succeed: {self}")
 
     def _format_error_message(self, msg: str, header: str, width: int = 80) -> str:
-        assert (
-            len(header) < width
-        ), f"header {header!r} (len {len(header)}) must be shorter than width {width}"
+        assert len(header) < width, (
+            f"header {header!r} (len {len(header)}) must be shorter than width {width}"
+        )
 
         match = re.search(_RPC_ERROR_MESSAGE_RE, msg)
         if match:
@@ -912,7 +912,7 @@ class AppStatus:
         lines = []
         for i in range(len(msg) + 1):
             if (i == (len(msg))) or (msg[i] == " " and length >= width):
-                lines.append(f"{header}{msg[i - length: i]}")
+                lines.append(f"{header}{msg[i - length : i]}")
                 header = " " * len(header)
                 length = 0
             length += 1

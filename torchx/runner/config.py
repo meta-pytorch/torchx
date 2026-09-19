@@ -208,9 +208,9 @@ def _get_scheduler(name: str) -> Scheduler:
         )
     # pyrefly: ignore [not-callable]
     sched = schedulers[name](session_name="_")
-    assert isinstance(
-        sched, Scheduler
-    ), f"the factory registered for `{name}` must produce a Scheduler, got {type(sched).__name__}"
+    assert isinstance(sched, Scheduler), (
+        f"the factory registered for `{name}` must produce a Scheduler, got {type(sched).__name__}"
+    )
     return sched
 
 

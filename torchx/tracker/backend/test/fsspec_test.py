@@ -199,7 +199,8 @@ class FsspecTest(unittest.TestCase):
 
         tracker = create(f"file://{str(configfile)}")
         self.assertEqual(
-            tracker._path_builder.root_dir, tracker_root_path  # pyre-ignore
+            tracker._path_builder.root_dir,
+            tracker_root_path,  # pyre-ignore
         )
 
     def test_create_missing_required_keys(self) -> None:

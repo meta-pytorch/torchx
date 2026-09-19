@@ -348,7 +348,7 @@ fi
         return script
 
     def __repr__(self) -> str:
-        return f"""{' '.join(self.cmd + ['$SBATCH_SCRIPT'])}
+        return f"""{" ".join(self.cmd + ["$SBATCH_SCRIPT"])}
 
 #----------------
 # SBATCH_SCRIPT

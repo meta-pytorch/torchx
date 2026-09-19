@@ -85,7 +85,6 @@ class TorchXHomeTest(unittest.TestCase):
 
 
 class WorkspaceTest(TestWithTmpDir):
-
     def test_bool(self) -> None:
         self.assertFalse(Workspace(projects={}))
         self.assertFalse(Workspace.from_str(""))
@@ -955,7 +954,6 @@ class RoleBuilderTest(unittest.TestCase):
         asyncio.run(resolve_image())
 
     def test_concurrent_override_role(self) -> None:
-
         def delay(value: tuple[str, str], time_seconds: int) -> tuple[str, str]:
             time.sleep(time_seconds)
             return value

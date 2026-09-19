@@ -226,9 +226,9 @@ class DockerScheduler(DockerWorkspaceMixin, Scheduler[Opts]):
         default_env = {}
         copy_env = cfg.get("copy_env")
         if copy_env:
-            assert isinstance(
-                copy_env, list
-            ), f"copy_env must be a list, got {copy_env}"
+            assert isinstance(copy_env, list), (
+                f"copy_env must be a list, got {copy_env}"
+            )
             keys = set()
             for pattern in copy_env:
                 keys |= set(fnmatch.filter(os.environ.keys(), pattern))

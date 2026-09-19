@@ -370,8 +370,7 @@ class _register_named_resource(register):
         def _tag_and_register(reg_name: str, factory: Callable[..., Any]) -> None:
             if reg_name in bc_reg:
                 raise ValueError(
-                    f"duplicate named resource `{reg_name}` in module "
-                    f"`{mod.__name__}`"
+                    f"duplicate named resource `{reg_name}` in module `{mod.__name__}`"
                 )
             factory._plugin_type = PluginType.NAMED_RESOURCE  # type: ignore[attr-defined]
             factory._plugin_name = reg_name  # type: ignore[attr-defined]
