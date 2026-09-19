@@ -23,7 +23,7 @@ import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from subprocess import PIPE, CalledProcessError
-from typing import Any, Iterable, List, Mapping
+from typing import TYPE_CHECKING, Any, Iterable, List, Mapping
 
 import torchx
 from torchx.schedulers.api import (
@@ -49,7 +49,12 @@ from torchx.specs import (
     macros,
     runopts,
 )
+from torchx.workspace.api import MultiWorkspaceMixin, WorkspaceMixin
 from torchx.workspace.dir_workspace import DirWorkspaceMixin
+from torchx.workspace.docker_workspace import DockerWorkspaceMixin
+
+if TYPE_CHECKING:
+    from docker import DockerClient
 
 SLURM_JOB_DIRS = ".torchxslurmjobdirs"
 
@@ -179,9 +184,11 @@ class SlurmOpts(StructuredOpts):
     """What events to mail users on."""
 
     job_dir: str | None = None
-    """The directory to place the job code and outputs. The
-    directory must not exist and will be created. To enable log
-    iteration, jobs will be tracked in ``.torchxslurmjobdirs``."""
+    """The directory to place the job script, logs and, with the ``dir``
+    workspace builder (the default), the workspace copy; that builder
+    requires it not to exist yet, any other case creates it if missing.
+    To enable log iteration, jobs will be tracked in
+    ``.torchxslurmjobdirs``."""
 
     qos: str | None = None
     """Quality of Service (QoS) to assign to the job."""
@@ -207,10 +214,13 @@ class SlurmReplicaRequest:
         role: Role,
         cfg: SlurmOpts,
         nomem: bool,
+        container_image: str | None = None,
     ) -> "SlurmReplicaRequest":
         """
         ``from_role`` creates a SlurmReplicaRequest for the specific role and
-        name.
+        name. *container_image*, when given, is passed to ``srun`` as
+        ``--container-image`` so the cluster's container plugin runs the
+        replica inside it.
         """
         sbatch_opts: dict[str, str | None] = {
             "requeue": None,
@@ -249,6 +259,8 @@ class SlurmReplicaRequest:
             # kill workers after one exits with an error
             "kill-on-bad-exit": "1",
         }
+        if container_image is not None:
+            srun_opts["container-image"] = container_image
 
         return cls(
             name=name,
@@ -298,6 +310,10 @@ class SlurmBatchRequest:
     replicas: dict[str, SlurmReplicaRequest]
     job_dir: str | None
     max_retries: int
+    #: what :py:meth:`SlurmScheduler.schedule` pushes before ``sbatch``: the
+    #: ``docker`` workspace builder's ``(name, images)``; ``None`` when nothing
+    #: was built into an image
+    images_to_push: tuple[str, Any] | None = None
 
     def materialize(self) -> str:
         """
@@ -355,7 +371,7 @@ fi
 {self.materialize()}"""
 
 
-class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
+class SlurmScheduler(MultiWorkspaceMixin, Scheduler[SlurmOpts]):
     """
     SlurmScheduler is a TorchX scheduling interface to slurm. TorchX expects
     that slurm CLI tools are locally installed and job accounting is enabled.
@@ -409,8 +425,11 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
                 Partial support. SlurmScheduler will return job and replica
                 status but does not provide the complete original AppSpec.
             workspaces: |
-                If ``job_dir`` is specified the DirWorkspaceMixin will create a new
-                isolated directory with a snapshot of the workspace.
+                Two builders, picked with the ``workspace_type`` run option.
+                ``dir`` (the default) copies the workspace into ``job_dir`` when
+                that option is set. ``docker`` builds a patched image, pushes
+                it to ``image_repo`` and runs every replica through the
+                cluster's container plugin (``srun --container-image``).
             mounts: false
             elasticity: false
 
@@ -418,16 +437,33 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
     requests to workaround https://github.com/aws/aws-parallelcluster/issues/2198.
     """
 
-    def __init__(self, session_name: str) -> None:
+    def __init__(
+        self, session_name: str, docker_client: "DockerClient | None" = None
+    ) -> None:
         # NOTE: make sure any new init options are supported in create_scheduler(...)
         super().__init__("slurm", session_name)
+        # the first builder is the default, so `dir` keeps the job-dir
+        # behaviour every existing caller relies on
+        self._workspace_builders: dict[str, WorkspaceMixin[Any]] = {
+            "dir": DirWorkspaceMixin(),
+            "docker": DockerWorkspaceMixin(docker_client=docker_client),
+        }
+
+    def workspace_builders(self) -> Mapping[str, WorkspaceMixin[Any]]:
+        return self._workspace_builders
 
     def _run_opts(self) -> runopts:
         return SlurmOpts.as_runopts()
 
     def schedule(self, dryrun_info: AppDryRunInfo[SlurmBatchRequest, SlurmOpts]) -> str:
         req = dryrun_info.request
+        if req.images_to_push is not None:
+            self.push_images(req.images_to_push)
         job_dir = req.job_dir
+        if job_dir is not None:
+            # the `dir` workspace builder creates it; any other builder, or no
+            # workspace at all, leaves that to us
+            os.makedirs(job_dir, exist_ok=True)
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(job_dir or tmpdir, "torchx-sbatch.sh")
             # build the final argv locally; appending to `req.cmd` would make
@@ -488,11 +524,18 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
         memmb = self._partition_memmb(cfg.partition)
         nomem = memmb is not None and memmb <= 1000
 
+        # with the `docker` builder every role's image is a container image:
+        # local builds are pushed first and each replica runs inside its image
+        # through the cluster's container plugin
+        _, builder = self.workspace_builder(cfg)
+        containerized = isinstance(builder, DockerWorkspaceMixin)
+        images_to_push = self.dryrun_push_images(app, cfg)
+
         replicas = {}
         for role in app.roles:
             for replica_id in range(role.num_replicas):
                 values = macros.Values(
-                    img_root=role.image,
+                    img_root="" if containerized else role.image,
                     app_id=macros.app_id,
                     replica_id=str(replica_id),
                     rank0_env="SLURM_JOB_NODELIST_HET_GROUP_0",
@@ -504,6 +547,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
                     replica_role,
                     cfg,
                     nomem=nomem,
+                    container_image=replica_role.image if containerized else None,
                 )
         cmd = ["sbatch", "--parsable"]
 
@@ -523,6 +567,7 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
             replicas=replicas,
             job_dir=cfg.job_dir,
             max_retries=min(role.max_retries for role in app.roles),
+            images_to_push=images_to_push,
         )
 
         return AppDryRunInfo(req, repr)
@@ -879,9 +924,14 @@ class SlurmScheduler(DirWorkspaceMixin, Scheduler[SlurmOpts]):
         return out
 
 
-def create_scheduler(session_name: str, **kwargs: Any) -> SlurmScheduler:
+def create_scheduler(
+    session_name: str,
+    docker_client: "DockerClient | None" = None,
+    **kwargs: Any,
+) -> SlurmScheduler:
     return SlurmScheduler(
         session_name=session_name,
+        docker_client=docker_client,
     )
 
 

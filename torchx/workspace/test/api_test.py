@@ -8,13 +8,17 @@
 import shutil
 import unittest
 from pathlib import Path
-from typing import Mapping
+from typing import Any, Mapping
 
 from typing_extensions import override
 
-from torchx.specs import AppDef, CfgVal, Role, Workspace
+from torchx.specs import AppDef, CfgVal, Role, Workspace, runopts
 from torchx.testing.fixtures import TestWithTmpDir
-from torchx.workspace.api import WorkspaceMixin, pin_workspace_images
+from torchx.workspace.api import (
+    MultiWorkspaceMixin,
+    WorkspaceMixin,
+    pin_workspace_images,
+)
 
 IGNORED = "__IGNORED__"
 
@@ -242,3 +246,119 @@ class PinWorkspaceImagesTest(unittest.TestCase):
 
         self.assertEqual("other-base", app.roles[0].image)
         self.assertEqual(ws, app.roles[0].workspace)
+
+
+class RecordingBuilder(WorkspaceMixin[None]):
+    """Prefixes ``role.image`` with its tag, so a test can tell which builder ran."""
+
+    def __init__(self, tag: str) -> None:
+        self.tag = tag
+
+    @override
+    def workspace_opts(self) -> runopts:
+        opts = runopts()
+        opts.add(
+            f"{self.tag}_opt", type_=str, help=f"read only by the {self.tag} builder"
+        )
+        return opts
+
+    @override
+    def caching_build_workspace_and_update_role(
+        self,
+        role: Role,
+        cfg: Mapping[str, CfgVal],
+        build_cache: dict[object, object],
+    ) -> None:
+        role.image = f"{self.tag}:{role.image}"
+
+
+class PushingBuilder(RecordingBuilder):
+    """A builder with a push step; records what it was asked to push."""
+
+    def __init__(self, tag: str) -> None:
+        super().__init__(tag)
+        self.pushed: list[list[str]] = []
+
+    @override
+    def dryrun_push_images(self, app: AppDef, cfg: Mapping[str, CfgVal]) -> list[str]:
+        return [role.image for role in app.roles]
+
+    @override
+    def push_images(self, images_to_push: list[str]) -> None:
+        self.pushed.append(images_to_push)
+
+
+class TwoBuilders(MultiWorkspaceMixin):
+    def __init__(self) -> None:
+        self.local = RecordingBuilder("local")
+        self.remote = PushingBuilder("remote")
+
+    @override
+    def workspace_builders(self) -> Mapping[str, WorkspaceMixin[Any]]:
+        return {"local": self.local, "remote": self.remote}
+
+
+class MultiWorkspaceMixinTest(unittest.TestCase):
+    def test_default_is_the_first_builder(self) -> None:
+        mixin = TwoBuilders()
+        name, builder = mixin.workspace_builder({})
+        self.assertEqual(name, "local")
+        self.assertIs(builder, mixin.local)
+
+    def test_run_option_selects_a_builder(self) -> None:
+        mixin = TwoBuilders()
+        name, builder = mixin.workspace_builder({"workspace_type": "remote"})
+        self.assertEqual(name, "remote")
+        self.assertIs(builder, mixin.remote)
+
+    def test_unknown_type_names_the_offered_builders(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "unknown workspace_type `oci`; this scheduler offers: local, remote",
+        ):
+            TwoBuilders().workspace_builder({"workspace_type": "oci"})
+
+    def test_opts_are_the_selector_plus_every_builders_options(self) -> None:
+        opts = TwoBuilders().workspace_opts()
+        self.assertEqual(
+            sorted(opts._opts), ["local_opt", "remote_opt", "workspace_type"]
+        )
+        selector = opts.get("workspace_type")
+        self.assertIsNotNone(selector)
+        assert selector is not None  # for the type checker
+        self.assertEqual(selector.default, "local")
+
+    def test_build_workspaces_uses_the_selected_builder(self) -> None:
+        mixin = TwoBuilders()
+        roles = [
+            Role(name="a", image="base", workspace=Workspace({"/ws": ""})),
+            Role(name="b", image="prebuilt"),
+        ]
+        mixin.build_workspaces(roles, {"workspace_type": "remote"})
+        self.assertEqual(roles[0].image, "remote:base")
+        # a role without a workspace is left alone by every builder
+        self.assertEqual(roles[1].image, "prebuilt")
+
+    def test_push_goes_to_the_builder_that_built(self) -> None:
+        mixin = TwoBuilders()
+        app = AppDef(name="app", roles=[Role(name="a", image="img")])
+        images = mixin.dryrun_push_images(app, {"workspace_type": "remote"})
+        self.assertEqual(images, ("remote", ["img"]))
+        mixin.push_images(images)
+        self.assertEqual(mixin.remote.pushed, [["img"]])
+
+    def test_a_builder_without_a_push_step_pushes_nothing(self) -> None:
+        mixin = TwoBuilders()
+        app = AppDef(name="app", roles=[Role(name="a", image="img")])
+        images = mixin.dryrun_push_images(app, {})
+        self.assertEqual(images, ("local", None))
+        mixin.push_images(images)  # no NotImplementedError from the base class
+
+    def test_no_builders_is_an_error(self) -> None:
+        class NoBuilders(MultiWorkspaceMixin):
+            @override
+            def workspace_builders(self) -> Mapping[str, WorkspaceMixin[Any]]:
+                return {}
+
+        with self.assertRaisesRegex(ValueError, "returned no builders"):
+            NoBuilders().workspace_opts()
