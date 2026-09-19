@@ -308,6 +308,21 @@ def _resolve_join(
         base[field] = copy.deepcopy(overlay_value)
 
 
+def _accumulate_join(
+    base: _Overlay,
+    key: str,
+    overlay_value: object,
+    field: str,
+) -> None:
+    stored = base.get(key)
+    if stored is None and isinstance(base.get(field), list):
+        stored = base[field]
+    merged: _Overlay = {} if stored is None else {field: copy.deepcopy(stored)}
+    _resolve_join(merged, key, overlay_value, field)
+    _remove_field_keys(base, field)
+    base[key] = merged[field]
+
+
 def _check_type_equal(key: str, o1: object, o2: object) -> None:
     # Raise TypeError if o1 and o2 have different types.
     o1_type = type(o1)
@@ -379,7 +394,8 @@ def apply_overlay(
     6. :py:func:`DEL` → remove key from base
 
     During accumulation (multiple :py:func:`set_overlay` calls), operators for
-    the same field replace earlier operations — last call wins.
+    the same field replace earlier operations — last call wins, except
+    :py:func:`JOIN`, which strategic-merges into what the field already holds.
 
     .. doctest::
 
@@ -435,6 +451,10 @@ def apply_overlay(
             if key.startswith(_JOIN_PREFIX):
                 _resolve_join(base, key, overlay_value, field)
                 continue
+
+        elif key.startswith(_JOIN_PREFIX):
+            _accumulate_join(base, key, overlay_value, field)
+            continue
 
         # --- Conflict resolution: remove any existing keys for the same field
         # (accumulation mode for operators, always for plain keys)
