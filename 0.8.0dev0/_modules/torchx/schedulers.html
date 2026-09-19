@@ -464,9 +464,13 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SchedulerFactory</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    get_scheduler_factories returns all the available schedulers names and the</span>
-<span class="sd">    method to instantiate them.</span>
+<span class="sd">    method to instantiate them: the built-ins plus everything registered</span>
+<span class="sd">    through :py:mod:`torchx.plugins`, which wins a name clash.</span>
 
-<span class="sd">    The first scheduler in the dictionary is used as the default scheduler.</span>
+<span class="sd">    The first scheduler in the dictionary is used as the default scheduler,</span>
+<span class="sd">    and registered plugins come first.</span>
+
+<span class="sd">    Pass ``skip_defaults=True`` for the registered plugins only.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">skip_defaults</span><span class="p">:</span>
@@ -476,10 +480,12 @@
         <span class="k">for</span> <span class="n">scheduler</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">DEFAULT_SCHEDULER_MODULES</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">default_schedulers</span><span class="p">[</span><span class="n">scheduler</span><span class="p">]</span> <span class="o">=</span> <span class="n">_defer_load_scheduler</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-    <span class="n">plugin_scheds</span> <span class="o">=</span> <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">SCHEDULER</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">plugin_scheds</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">plugin_scheds</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">default_schedulers</span></div>
+    <span class="n">factories</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SchedulerFactory</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">SCHEDULER</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">factory</span> <span class="ow">in</span> <span class="n">default_schedulers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">factories</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">factories</span></div>
 
 
 

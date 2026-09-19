@@ -827,8 +827,11 @@ and a guide to implementing your own workspace mixin.</p>
 <dt class="sig sig-object py" id="torchx.schedulers.get_scheduler_factories">
 <span class="sig-prename descclassname"><span class="pre">torchx.schedulers.</span></span><span class="sig-name descname"><span class="pre">get_scheduler_factories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">SchedulerFactory</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/torchx/schedulers.html#get_scheduler_factories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchx.schedulers.get_scheduler_factories" title="Link to this definition">¶</a></dt>
 <dd><p>get_scheduler_factories returns all the available schedulers names and the
-method to instantiate them.</p>
-<p>The first scheduler in the dictionary is used as the default scheduler.</p>
+method to instantiate them: the built-ins plus everything registered
+through <a class="reference internal" href="plugins.html#module-torchx.plugins" title="torchx.plugins"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.plugins</span></code></a>, which wins a name clash.</p>
+<p>The first scheduler in the dictionary is used as the default scheduler,
+and registered plugins come first.</p>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">skip_defaults=True</span></code> for the registered plugins only.</p>
 </dd></dl>
 
 <dl class="py function">
