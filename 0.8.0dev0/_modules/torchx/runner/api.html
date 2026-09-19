@@ -429,7 +429,6 @@
 <span class="c1"># This source code is licensed under the BSD-style license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-strict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
@@ -588,7 +587,6 @@
             <span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_scheduler_params_from_env</span><span class="p">()),</span>
             <span class="o">**</span><span class="p">(</span><span class="n">scheduler_params</span> <span class="ow">or</span> <span class="p">{}),</span>
         <span class="p">}</span>
-        <span class="c1"># pyre-fixme[24]: SchedulerOpts is a generic, and we don&#39;t have access to the corresponding type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_instances</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Scheduler</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_apps</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">AppHandle</span><span class="p">,</span> <span class="n">AppDef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -1339,7 +1337,6 @@
             <span class="k">return</span> <span class="n">apps</span></div>
 
 
-    <span class="c1"># pyre-fixme[24]: SchedulerOpts is a generic, and we don&#39;t have access to the corresponding type</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Scheduler</span><span class="p">:</span>
         <span class="n">sched</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler_instances</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">sched</span><span class="p">:</span>
@@ -1355,7 +1352,6 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app_handle</span><span class="p">:</span> <span class="n">AppHandle</span><span class="p">,</span>
         <span class="n">check_session</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="c1"># pyre-fixme[24]: SchedulerOpts is a generic, and we don&#39;t have access to the corresponding type</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Scheduler</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
         <span class="n">scheduler_backend</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">app_id</span> <span class="o">=</span> <span class="n">parse_app_handle</span><span class="p">(</span><span class="n">app_handle</span><span class="p">)</span>
         <span class="n">scheduler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">(</span><span class="n">scheduler_backend</span><span class="p">)</span>

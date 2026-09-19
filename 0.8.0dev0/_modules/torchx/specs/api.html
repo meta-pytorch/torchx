@@ -431,7 +431,6 @@
 <span class="c1"># This source code is licensed under the BSD-style license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-strict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
@@ -1105,7 +1104,6 @@
     <span class="c1"># T237753541.</span>
     <span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 
-    <span class="c1"># pyre-ignore</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">attrname</span> <span class="o">==</span> <span class="s2">&quot;overrides&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attrname</span><span class="p">)</span>
@@ -1144,9 +1142,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">pre_proc</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="c1"># pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object</span>
         <span class="n">dryrun_info</span><span class="p">:</span> <span class="s2">&quot;AppDryRunInfo&quot;</span><span class="p">,</span>
-        <span class="c1"># pyre-fixme[24]: AppDryRunInfo was designed to work with Any request object</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AppDryRunInfo&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hook for role-specific scheduler request modifications.</span>
 
@@ -2015,7 +2011,6 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_opts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_opts</span><span class="p">)</span>
 
-    <span class="c1"># pyre-fixme[15]: Inconsistent override - __or__ returns runopts, not UnionType</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;runopts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;runopts&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge two runopts, returning a new runopts.</span>
 

@@ -432,7 +432,6 @@
 <span class="c1"># This source code is licensed under the BSD-style license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-strict</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">This contains the TorchX local scheduler which can be used to run TorchX</span>
@@ -1659,14 +1658,12 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">app_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">log_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="c1"># pyre-fixme: Scheduler opts</span>
         <span class="n">scheduler</span><span class="p">:</span> <span class="n">Scheduler</span><span class="p">,</span>
         <span class="n">should_tail</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_app_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">app_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">log_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_fp</span><span class="p">:</span> <span class="n">TextIO</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="c1"># pyre-fixme: Scheduler opts</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="p">:</span> <span class="n">Scheduler</span> <span class="o">=</span> <span class="n">scheduler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_app_finished</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">should_tail</span>
 

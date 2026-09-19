@@ -431,7 +431,6 @@
 <span class="c1"># This source code is licensed under the BSD-style license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-strict</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -480,7 +479,6 @@
 <span class="c1"># =============================================================================</span>
 
 
-<span class="c1"># pyre-fixme[24]: Generic type `type` expects 1 type parameter.</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_optional</span><span class="p">(</span><span class="n">tp</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Strip ``None`` from union types (e.g. ``str | None`` -&gt; ``str``).&quot;&quot;&quot;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">get_args</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">types</span><span class="o">.</span><span class="n">NoneType</span><span class="p">]</span>
@@ -490,7 +488,6 @@
     <span class="k">return</span> <span class="n">tp</span>
 
 
-<span class="c1"># pyre-fixme[24]: Generic type `type` expects 1 type parameter.</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_structured_opts</span><span class="p">(</span><span class="n">tp</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True if *tp* is a concrete ``StructuredOpts`` subclass.&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
@@ -651,7 +648,6 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">f</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cfg_key&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
-    <span class="c1"># pyre-fixme[14]: Inconsistent override - Mapping uses PyreReadOnly[object]</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
@@ -747,7 +743,6 @@
         <span class="k">return</span> <span class="n">opts</span></div>
 
 
-    <span class="c1"># pyre-fixme[15]: Inconsistent override - __or__ returns dict, not UnionType</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">StructuredOpts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CfgVal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge two StructuredOpts instances into a cfg dict.</span>
 
@@ -875,7 +870,6 @@
 <span class="sd">            ValueError: *workspace* was passed but this scheduler is not a</span>
 <span class="sd">                :py:class:`~torchx.workspace.WorkspaceMixin`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># pyre-fixme: Generic cfg type passed to resolve</span>
         <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">workspace</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">WorkspaceMixin</span><span class="p">):</span>
@@ -889,7 +883,6 @@
             <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">workspace</span> <span class="o">=</span> <span class="n">workspace</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">build_workspaces</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
 
-        <span class="c1"># pyre-fixme: submit_dryrun takes Generic type for resolved_cfg</span>
         <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">dryrun_info</span><span class="p">)</span></div>
 
@@ -918,9 +911,7 @@
 <span class="sd">        scheduler&#39;s :py:meth:`run_opts` defaults applied, so it is not</span>
 <span class="sd">        necessarily the mapping that was passed in.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># pyre-fixme: Generic cfg type passed to resolve</span>
         <span class="n">resolved_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_opts</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-        <span class="c1"># pyre-fixme: _submit_dryrun takes Generic type for resolved_cfg</span>
         <span class="n">dryrun_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submit_dryrun</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">resolved_cfg</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">app</span><span class="o">.</span><span class="n">roles</span><span class="p">:</span>

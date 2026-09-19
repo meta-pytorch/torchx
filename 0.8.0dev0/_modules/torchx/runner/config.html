@@ -430,7 +430,6 @@
 <span class="c1"># This source code is licensed under the BSD-style license found in the</span>
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
-<span class="c1"># pyre-strict</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Status: Beta</span>
@@ -616,7 +615,6 @@
     <span class="c1"># which are expected to be parsed case insensitive.</span>
     <span class="c1"># override since torchx&#39;s runopts are case-sensitive</span>
     <span class="c1"># see: https://stackoverflow.com/questions/19359556/configparser-reads-capital-keys-and-make-them-lower-case</span>
-    <span class="c1"># pyre-ignore[8]</span>
     <span class="n">config</span><span class="o">.</span><span class="n">optionxform</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">option</span><span class="p">:</span> <span class="n">option</span>
 
     <span class="k">return</span> <span class="n">config</span>
@@ -708,14 +706,12 @@
                 <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_list_of_str</span><span class="p">:</span>
                     <span class="c1"># deal with empty or None default lists</span>
                     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">default</span><span class="p">:</span>
-                        <span class="c1"># pyre-ignore[6] opt.default type checked already as List[str]</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">default</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="n">_NONE</span>
                 <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_type_dict_of_str</span><span class="p">:</span>
                     <span class="c1"># deal with empty or None default lists</span>
                     <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">default</span><span class="p">:</span>
-                        <span class="c1"># pyre-ignore[16] opt.default type checked already as Dict[str, str]</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">opt</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="n">_NONE</span>
