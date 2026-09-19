@@ -173,7 +173,7 @@ class RunnerTest(TestWithTmpDir):
         ) as runner:
             yield runner
 
-    def test_unknown_scheduler(self, _) -> None:
+    def test_unknown_scheduler(self, _: MagicMock) -> None:
         with self.get_runner() as runner:
             role = Role(
                 name="sleep",
