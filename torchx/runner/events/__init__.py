@@ -62,6 +62,9 @@ def _get_or_create_logger(destination: str = "null") -> logging.Logger:
             logging_handler = get_logging_handler(destination)
             logging_handler.setLevel(logging.DEBUG)
             events_logger = logging.getLogger(f"torchx-events-{destination}")
+            # without its own level the logger inherits the root's WARNING
+            # default and drops every event `record` emits
+            events_logger.setLevel(logging.INFO)
             # Do not propagate message to the root logger
             events_logger.propagate = False
             events_logger.addHandler(logging_handler)

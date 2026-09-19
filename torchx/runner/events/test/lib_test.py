@@ -156,7 +156,6 @@ class GetLoggingHandlerTest(unittest.TestCase):
         handler = _RecordingHandler()
         destination = "plugin_sink"
         events_logger = logging.getLogger(f"torchx-events-{destination}")
-        events_logger.setLevel(logging.INFO)
         self.addCleanup(lambda: events_logger.removeHandler(handler))
         with patch.object(
             entrypoints, "load_group", return_value={destination: lambda: handler}
@@ -170,6 +169,31 @@ class GetLoggingHandlerTest(unittest.TestCase):
             [SESSION_ID],
             [TorchxEvent.deserialize(m).session for m in handler.messages],
             "the event must be emitted to the plugin handler, not a built-in one",
+        )
+
+    def test_recorded_events_survive_a_warning_root_logger(self) -> None:
+        handler = _RecordingHandler()
+        destination = "warning_root_sink"
+        events_logger = logging.getLogger(f"torchx-events-{destination}")
+        self.addCleanup(lambda: events_logger.removeHandler(handler))
+        root_level = logging.getLogger().level
+        logging.getLogger().setLevel(logging.WARNING)
+        self.addCleanup(lambda: logging.getLogger().setLevel(root_level))
+
+        with patch.object(
+            entrypoints, "load_group", return_value={destination: lambda: handler}
+        ):
+            record(
+                TorchxEvent(session=SESSION_ID, scheduler="local", api="test_api"),
+                destination=destination,
+            )
+
+        self.assertEqual(
+            [SESSION_ID],
+            [TorchxEvent.deserialize(m).session for m in handler.messages],
+            "an app that never configures logging leaves the root logger at"
+            " WARNING; the events logger must carry its own INFO level so"
+            " `record` is not dropped before the handler",
         )
 
 
