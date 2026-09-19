@@ -634,7 +634,7 @@ spec:
         scheduler = create_scheduler("test")
         app = _test_app()
         app.roles[0].image = "sha256:testhash"
-        cfg = Opts(queue="testqueue", image_repo="example.com/some/repo")
+        cfg = {"queue": "testqueue", "image_repo": "example.com/some/repo"}
         with patch(
             "torchx.schedulers.kubernetes_scheduler.make_unique"
         ) as make_unique_ctx:
