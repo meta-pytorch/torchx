@@ -14,6 +14,7 @@ import sys
 import threading
 import time
 import unittest
+import warnings
 from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock, patch
@@ -21,8 +22,10 @@ from unittest.mock import MagicMock, patch
 from torchx import plugins
 from torchx.specs import (
     _NamedResourcesLibrary,
+    get_named_resources,
     named_resources,
     NULL_RESOURCE,
+    resource,
     Resource,
 )
 
@@ -52,17 +55,17 @@ class NamedResourcesTest(unittest.TestCase):
             KeyError,
             "No named resource found for `foo`. Registered named resources:.*",
         ):
-            _ = lib["foo"]
+            lib._lookup("foo")
 
         with self.assertRaisesRegex(
             KeyError,
             "No named resource found for `p316xl`. Did you mean `p3.16xlarge`?",
         ):
-            _ = lib["p316xl"]
+            lib._lookup("p316xl")
 
     def test_null_and_missing_named_resources(self) -> None:
-        self.assertEqual(named_resources["NULL"], NULL_RESOURCE)
-        self.assertEqual(named_resources["MISSING"], NULL_RESOURCE)
+        self.assertEqual(resource(h="NULL"), NULL_RESOURCE)
+        self.assertEqual(resource(h="MISSING"), NULL_RESOURCE)
 
     def test_keys_and_items(self) -> None:
         lib = _NamedResourcesLibrary()
@@ -95,6 +98,96 @@ class NamedResourcesTest(unittest.TestCase):
             ):
                 lib = _NamedResourcesLibrary()
                 self.assertIn("test_resource", lib)
+
+
+class OneLookupPathTest(unittest.TestCase):
+    def test_lookup_is_case_insensitive(self) -> None:
+        expected = resource(h="aws_t3.medium")
+        for name in ["aws_t3.medium", "AWS_T3.MEDIUM", "Aws_T3.Medium"]:
+            with self.subTest(name=name):
+                self.assertEqual(expected, resource(h=name))
+
+    def test_exact_name_wins_over_a_case_insensitive_match(self) -> None:
+        shouty = Resource(cpu=9, gpu=9, memMB=9)
+        lib = _NamedResourcesLibrary()
+        lib._factories = {"gpu_x2": mock_resource, "GPU_X2": lambda: shouty}
+
+        self.assertEqual(mock_resource(), lib._lookup("gpu_x2"))
+        self.assertEqual(shouty, lib._lookup("GPU_X2"))
+
+    def test_ambiguous_case_insensitive_match_is_an_error(self) -> None:
+        lib = _NamedResourcesLibrary()
+        lib._factories = {"gpu_x2": mock_resource, "GPU_X2": mock_resource}
+
+        with self.assertRaisesRegex(
+            KeyError,
+            r"`Gpu_X2` matches more than one registered named resource,"
+            r" ignoring case: \['GPU_X2', 'gpu_x2'\]",
+        ):
+            lib._lookup("Gpu_X2")
+
+    def test_contains_is_case_insensitive(self) -> None:
+        lib = _NamedResourcesLibrary()
+        lib._factories = {"gpu_x2": mock_resource}
+
+        self.assertIn("GPU_X2", lib)
+        self.assertNotIn("gpu_x4", lib)
+
+    def test_subscript_warns_and_forwards(self) -> None:
+        with self.assertWarnsRegex(
+            FutureWarning, r"`named_resources\[name\]` is deprecated"
+        ):
+            got = named_resources["AWS_T3.MEDIUM"]
+
+        self.assertEqual(resource(h="aws_t3.medium"), got)
+
+    def test_get_named_resources_warns_and_forwards(self) -> None:
+        with self.assertWarnsRegex(
+            FutureWarning, r"`get_named_resources\(\)` is deprecated"
+        ):
+            got = get_named_resources("AWS_T3.MEDIUM")
+
+        self.assertEqual(resource(h="aws_t3.medium"), got)
+
+    def test_resource_is_not_deprecated(self) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            resource(h="aws_t3.medium")
+
+
+class PluginRoundTripTest(unittest.TestCase):
+    def tearDown(self) -> None:
+        for k in [k for k in sys.modules if k.startswith("torchx_plugins")]:
+            del sys.modules[k]
+
+    def test_registered_names_round_trip_through_resource(self) -> None:
+        with patch("sys.path", [_LAZY_FIXTURE_DIR, *sys.path]):
+            plugins.registry().clear()
+            named_resources.reset()
+            try:
+                names = list(named_resources.keys())
+                self.assertIn(
+                    "reentrant_gpu",
+                    names,
+                    "the plugin-registered resource must be listed",
+                )
+                for name in names:
+                    if name in ("NULL", "MISSING"):
+                        continue
+                    with self.subTest(name=name):
+                        self.assertEqual(
+                            name,
+                            resource(h=name).get_resource_name(),
+                            "every registered name must resolve to its own resource",
+                        )
+                self.assertEqual(
+                    resource(h="reentrant_gpu"),
+                    resource(h="REENTRANT_GPU"),
+                    "a plugin name must resolve ignoring case too",
+                )
+            finally:
+                plugins.registry().clear()
+                named_resources.reset()
 
 
 class LazyDiscoveryTest(unittest.TestCase):
@@ -185,7 +278,7 @@ class LazyDiscoveryTest(unittest.TestCase):
                 )
                 self.assertEqual(
                     NULL_RESOURCE,
-                    named_resources["NULL"],
+                    resource(h="NULL"),
                     "the outer scan must complete despite the broken plugin",
                 )
             finally:

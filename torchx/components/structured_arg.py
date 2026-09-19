@@ -202,7 +202,7 @@ class StructuredJArgument:
 
         """
         nums = j.split("x")
-        num_gpus = specs.named_resources[h].gpu
+        num_gpus = specs.resource(h=h).gpu
         if len(nums) == 1:  # -j 1
             nnodes = int(nums[0])
             # infer nproc_per_node from # of gpus in host

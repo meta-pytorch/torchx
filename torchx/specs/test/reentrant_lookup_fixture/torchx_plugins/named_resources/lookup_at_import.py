@@ -14,11 +14,11 @@ raises ``RuntimeError`` and the scanner records this module as a plugin
 load error."""
 
 from torchx.plugins import register
-from torchx.specs import named_resources
+from torchx.specs import resource
 from torchx.specs.api import Resource
 
 # the re-entrant lookup IS the fixture: raises RuntimeError mid-scan
-_NULL: Resource = named_resources["NULL"]
+_NULL: Resource = resource(h="NULL")
 
 
 @register.named_resource()
