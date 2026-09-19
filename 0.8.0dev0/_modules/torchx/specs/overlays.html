@@ -753,21 +753,6 @@
         <span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">overlay_value</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_accumulate_join</span><span class="p">(</span>
-    <span class="n">base</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
-    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">overlay_value</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
-    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">stored</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">stored</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="n">stored</span> <span class="o">=</span> <span class="n">base</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
-    <span class="n">merged</span><span class="p">:</span> <span class="n">_Overlay</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">stored</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">stored</span><span class="p">)}</span>
-    <span class="n">_resolve_join</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
-    <span class="n">_remove_field_keys</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
-    <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_type_equal</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">o1</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">o2</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="c1"># Raise TypeError if o1 and o2 have different types.</span>
     <span class="n">o1_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">o1</span><span class="p">)</span>
@@ -841,8 +826,7 @@
 <span class="sd">    6. :py:func:`DEL` → remove key from base</span>
 
 <span class="sd">    During accumulation (multiple :py:func:`set_overlay` calls), operators for</span>
-<span class="sd">    the same field replace earlier operations — last call wins, except</span>
-<span class="sd">    :py:func:`JOIN`, which strategic-merges into what the field already holds.</span>
+<span class="sd">    the same field replace earlier operations — last call wins.</span>
 
 <span class="sd">    .. doctest::</span>
 
@@ -898,10 +882,6 @@
             <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">):</span>
                 <span class="n">_resolve_join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
                 <span class="k">continue</span>
-
-        <span class="k">elif</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_JOIN_PREFIX</span><span class="p">):</span>
-            <span class="n">_accumulate_join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">overlay_value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
-            <span class="k">continue</span>
 
         <span class="c1"># --- Conflict resolution: remove any existing keys for the same field</span>
         <span class="c1"># (accumulation mode for operators, always for plain keys)</span>

@@ -1397,8 +1397,7 @@ for dicts this replaces instead of recursive merge.</p>
 <li><p><a class="reference internal" href="#torchx.specs.overlays.DEL" title="torchx.specs.overlays.DEL"><code class="xref py py-func docutils literal notranslate"><span class="pre">DEL()</span></code></a> → remove key from base</p></li>
 </ol>
 <p>During accumulation (multiple <a class="reference internal" href="#torchx.specs.overlays.set_overlay" title="torchx.specs.overlays.set_overlay"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_overlay()</span></code></a> calls), operators for
-the same field replace earlier operations — last call wins, except
-<a class="reference internal" href="#torchx.specs.overlays.JOIN" title="torchx.specs.overlays.JOIN"><code class="xref py py-func docutils literal notranslate"><span class="pre">JOIN()</span></code></a>, which strategic-merges into what the field already holds.</p>
+the same field replace earlier operations — last call wins.</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs.overlays</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_overlay</span><span class="p">,</span> <span class="n">PUT</span><span class="p">,</span> <span class="n">JOIN</span><span class="p">,</span> <span class="n">DEL</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Dicts merge recursively, lists append, primitives overwrite</span>
