@@ -124,7 +124,7 @@ def _should_use_gpus_per_node_from_version() -> bool:
     """
     Determine whether to use gpus-per-node based on automatically detected slurm version.
 
-    Change Reference: https://fburl.com/sqwqzxn6
+    Change Reference: https://github.com/SchedMD/slurm/blob/master/CHANGELOG/slurm-24.11.md
     > select/linear - Reject jobs asking for GRES per job|socket|task or cpus|mem per GRES.
 
     Returns:
