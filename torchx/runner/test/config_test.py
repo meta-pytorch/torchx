@@ -756,7 +756,6 @@ b.y = baz
 
 
 class NestedConfigTest(TestWithTmpDir):
-
     @patch(
         TORCHX_GET_SCHEDULER_FACTORIES,
         return_value={"nested_test": NestedTestScheduler},

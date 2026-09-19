@@ -110,9 +110,9 @@ class EntryPointsTest(unittest.TestCase):
 
         eps = load_group("ep.grp.mod.test")
         module = eps["baz"]()
-        assert isinstance(
-            module, ModuleType
-        ), "module entry point must load as a module"
+        assert isinstance(module, ModuleType), (
+            "module entry point must load as a module"
+        )
         self.assertEqual("torchx.util.test.entrypoints_test", module.__name__)
 
         # module's deferred load function should ignore *args and **kwargs

@@ -808,9 +808,9 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         request: PopenRequest = dryrun_info.request
         app_id = request.app_id
         app_log_dir = request.log_dir
-        assert (
-            app_id not in self._apps
-        ), "no app_id collisions expected since uuid4 suffix is used"
+        assert app_id not in self._apps, (
+            "no app_id collisions expected since uuid4 suffix is used"
+        )
 
         os.makedirs(app_log_dir)
         local_app = _LocalAppDef(app_id, app_log_dir, dryrun_info)

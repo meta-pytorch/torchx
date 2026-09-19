@@ -133,9 +133,9 @@ class _ExtraFieldWritingScheduler(_BuildRecordingScheduler):
         build_cache: dict[object, object],
     ) -> None:
         super().caching_build_workspace_and_update_role(role, cfg, build_cache)
-        assert isinstance(
-            role, _RoleWithExtraField
-        ), f"this scheduler only builds `_RoleWithExtraField`, got `{type(role)}`"
+        assert isinstance(role, _RoleWithExtraField), (
+            f"this scheduler only builds `_RoleWithExtraField`, got `{type(role)}`"
+        )
         role.extra = "written-by-the-build"
 
 
@@ -745,12 +745,10 @@ class RunnerTest(TestWithTmpDir):
                 "writes-env": lambda session_name, **kwargs: _EnvWritingScheduler(
                     builds
                 ),
-                "writes-env-for-b": lambda session_name, **kwargs: _EnvWritingForOneRoleScheduler(
-                    builds
-                ),
-                "writes-extra": lambda session_name, **kwargs: _ExtraFieldWritingScheduler(
-                    builds
-                ),
+                "writes-env-for-b": lambda session_name,
+                **kwargs: _EnvWritingForOneRoleScheduler(builds),
+                "writes-extra": lambda session_name,
+                **kwargs: _ExtraFieldWritingScheduler(builds),
                 "no-workspace": lambda session_name, **kwargs: _NoopScheduler(
                     backend="ignored", session_name="ignored"
                 ),

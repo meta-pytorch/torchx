@@ -873,7 +873,6 @@ class Runner:
         check_session: bool = True,
         # pyre-fixme[24]: SchedulerOpts is a generic, and we don't have access to the corresponding type
     ) -> tuple[Scheduler, str, str]:
-
         scheduler_backend, _, app_id = parse_app_handle(app_handle)
         scheduler = self._scheduler(scheduler_backend)
         return scheduler, scheduler_backend, app_id

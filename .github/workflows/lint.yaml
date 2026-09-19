@@ -27,4 +27,7 @@ jobs:
           set -eux
           uv sync --frozen --extra dev
       - name: Run Lint
-        run: uv run ruff check --output-format=github .
+        run: |
+          set -eux
+          uv run ruff check --output-format=github .
+          uv run ruff format --check .

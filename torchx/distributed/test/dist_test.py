@@ -46,9 +46,9 @@ def check_touch_file_rank0_first(filepath: Path) -> None:
     with on_rank0_first():
         if is_rank0():
             # make sure it doesn't exist first
-            assert (
-                not filepath.exists()
-            ), f"On rank: {rank()} {filepath} is not expected to exist"
+            assert not filepath.exists(), (
+                f"On rank: {rank()} {filepath} is not expected to exist"
+            )
             filepath.touch()
 
         assert filepath.exists(), f"{filepath} is expected to exist here"
@@ -59,9 +59,9 @@ def check_touch_file_local_rank0_first(filepath: Path) -> None:
     with on_local_rank0_first():
         if is_local_rank0():
             # make sure it doesn't exist first
-            assert (
-                not filepath.exists()
-            ), f"On rank: {local_rank()} {filepath} is not expected to exist"
+            assert not filepath.exists(), (
+                f"On rank: {local_rank()} {filepath} is not expected to exist"
+            )
             filepath.touch()
 
         assert filepath.exists(), f"{filepath} is expected to exist here"

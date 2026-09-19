@@ -295,8 +295,7 @@ class CmdRun(SubCommand):
             "--dryrun",
             action="store_true",
             default=False,
-            help="Does not actually submit the app,"
-            " just prints the scheduler request",
+            help="Does not actually submit the app, just prints the scheduler request",
         )
         subparser.add_argument(
             "--wait",
@@ -412,7 +411,7 @@ class CmdRun(SubCommand):
                 f"{pformat(asdict(dryrun_info.app), indent=2, width=80)}"
             )
 
-            print("\n=== SCHEDULER REQUEST ===\n" f"{dryrun_info}")
+            print(f"\n=== SCHEDULER REQUEST ===\n{dryrun_info}")
 
     def _submit(
         self,

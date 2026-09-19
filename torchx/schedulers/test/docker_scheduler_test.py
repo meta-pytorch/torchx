@@ -612,9 +612,9 @@ class DockerSchedulerTest(unittest.TestCase):
                 client.containers.list.return_value = [container]
                 with patch.object(DockerScheduler, "_docker_client", client):
                     desc = self.scheduler.describe("app_id_1")
-                assert (
-                    desc is not None
-                ), "an app with containers must have a description"
+                assert desc is not None, (
+                    "an app with containers must have a description"
+                )
                 self.assertEqual(want, desc.roles[0].image, msg=why)
 
     def test_describe_all_replicas_succeeded(self) -> None:
