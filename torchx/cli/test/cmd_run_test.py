@@ -364,23 +364,23 @@ class CmdRunTest(unittest.TestCase):
 
         self.assertEqual(
             (
-                "fb.python.binary",
+                "my.python.binary",
                 [
                     "--img",
-                    "lex_ig_o3_package",
+                    "my_image",
                     "-m",
-                    "dper_lib.instagram.pyper_v2.teams.stories.train",
+                    "my_lib.my_project.train",
                     "--",
                     "-m",
                 ],
             ),
             _parse_component_name_and_args(
                 [
-                    "fb.python.binary",
+                    "my.python.binary",
                     "--img",
-                    "lex_ig_o3_package",
+                    "my_image",
                     "-m",
-                    "dper_lib.instagram.pyper_v2.teams.stories.train",
+                    "my_lib.my_project.train",
                     "--",
                     "-m",
                 ],

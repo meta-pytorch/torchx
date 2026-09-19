@@ -841,10 +841,8 @@ class LocalScheduler(Scheduler[Mapping[str, CfgVal]]):
         )
 
     def _cuda_device_count(self) -> int:
-        # this method deliberately does not use ``torch.cuda.device_count()``
-        # to avoid taking a dependency on pytorch
-        # this makes it possible to avoid a BUCK dependency (internally at Meta)
-        # on //caffe2:torch which slows down builds of //torchx:* rules
+        # deliberately not ``torch.cuda.device_count()``: torchx must not
+        # take a dependency on pytorch
         gpu_cmd = "nvidia-smi -L"
         try:
             log.debug("running `%s`", gpu_cmd)

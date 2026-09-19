@@ -685,13 +685,7 @@ class GetBuiltinSourceTest(unittest.TestCase):
 
         self.test_dir = Path(tempfile.mkdtemp("torchx_specs_finder_test"))
 
-        # this is so that the test can pick up penv python (fb-only)
-        # which is added as a test resource
-        self.orig_cwd = os.getcwd()
-        os.chdir(os.path.dirname(__file__))
-
     def tearDown(self) -> None:
-        os.chdir(self.orig_cwd)
         shutil.rmtree(self.test_dir)
 
     def test_get_builtin_source_with_echo(self) -> None:
