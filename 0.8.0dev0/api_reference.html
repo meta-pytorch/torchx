@@ -533,7 +533,7 @@ page. For detailed API docs see <a class="reference internal" href="specs.html">
     <span class="c1"># Method 1: run_component — resolves a component by name</span>
     <span class="c1"># Same resolution as `torchx run` CLI</span>
     <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span>
-        <span class="s2">&quot;dist.ddp&quot;</span><span class="p">,</span>                           <span class="c1"># component name</span>
+        <span class="s2">&quot;dist.torchrun&quot;</span><span class="p">,</span>                      <span class="c1"># component name</span>
         <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">,</span> <span class="s2">&quot;-j&quot;</span><span class="p">,</span> <span class="s2">&quot;2x2&quot;</span><span class="p">],</span> <span class="c1"># args (list[str])</span>
         <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span>                <span class="c1"># scheduler backend</span>
         <span class="n">cfg</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;namespace&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">},</span>           <span class="c1"># scheduler config (optional)</span>
@@ -664,14 +664,14 @@ page. For detailed API docs see <a class="reference internal" href="specs.html">
 </pre></div>
 </div>
 </section>
-<section id="distributed-training-ddp">
-<h3>Distributed Training (DDP)<a class="headerlink" href="#distributed-training-ddp" title="Link to this heading">¶</a></h3>
-<p>Use the built-in <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component:</p>
+<section id="distributed-training">
+<h3>Distributed Training<a class="headerlink" href="#distributed-training" title="Link to this heading">¶</a></h3>
+<p>Use the built-in <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> component:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
 
 <span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
     <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span>
-        <span class="s2">&quot;dist.ddp&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dist.torchrun&quot;</span><span class="p">,</span>
         <span class="p">[</span>
             <span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">,</span>
             <span class="s2">&quot;-j&quot;</span><span class="p">,</span> <span class="s2">&quot;2x2&quot;</span><span class="p">,</span>              <span class="c1"># 2 nodes x 2 workers per node</span>
@@ -1281,7 +1281,7 @@ packaging and diagnostics.</p>
 </li>
 <li><a class="reference internal" href="#common-recipes">Common Recipes</a><ul>
 <li><a class="reference internal" href="#single-node-training">Single-Node Training</a></li>
-<li><a class="reference internal" href="#distributed-training-ddp">Distributed Training (DDP)</a></li>
+<li><a class="reference internal" href="#distributed-training">Distributed Training</a></li>
 <li><a class="reference internal" href="#custom-component">Custom Component</a></li>
 <li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
 <li><a class="reference internal" href="#mounts">Mounts</a></li>

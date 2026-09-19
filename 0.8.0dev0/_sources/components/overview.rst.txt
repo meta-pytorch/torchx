@@ -37,7 +37,7 @@ TorchX ships the following component categories out of the box:
      - Example use case
    * - :doc:`distributed`
      - Multi-node / multi-GPU training via TorchElastic
-     - Large-scale distributed training (``dist.ddp``)
+     - Large-scale distributed training (``dist.torchrun``)
    * - :doc:`utils`
      - General-purpose utilities
      - Running an arbitrary Python script (``utils.python``)

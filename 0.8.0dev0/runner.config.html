@@ -519,14 +519,14 @@ This config file will get overlaid on top of the one defined at the project root
 <p><strong>Component Config</strong></p>
 <p>You can specify component defaults by adding a section prefixed with
 <code class="docutils literal notranslate"><span class="pre">component:</span></code>.</p>
-<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[component:dist.ddp]</span>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[component:dist.torchrun]</span>
 <span class="na">j</span><span class="o">=</span><span class="s">2x8</span>
 <span class="na">cpu</span><span class="o">=</span><span class="s">4</span>
 </pre></div>
 </div>
-<p>Now when you run the <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component those configs are automatically
+<p>Now when you run the <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> component those configs are automatically
 picked up.</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>-s<span class="w"> </span>local_cwd<span class="w"> </span>dist.ddp
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>-s<span class="w"> </span>local_cwd<span class="w"> </span>dist.torchrun
 <span class="go">... runs with -j 2x8 --cpu 4</span>
 </pre></div>
 </div>
@@ -537,7 +537,7 @@ block.</p>
 <p>For the <code class="docutils literal notranslate"><span class="pre">run</span></code> command you can additionally set <code class="docutils literal notranslate"><span class="pre">component</span></code> to set the
 default component to run.</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[cli:run]</span>
-<span class="na">component</span><span class="o">=</span><span class="s">dist.ddp</span>
+<span class="na">component</span><span class="o">=</span><span class="s">dist.torchrun</span>
 <span class="na">scheduler</span><span class="o">=</span><span class="s">local_docker</span>
 <span class="na">workspace</span><span class="o">=</span><span class="s">file://some_workspace</span>
 </pre></div>
@@ -686,14 +686,14 @@ that start with the specified prefix. Returns a map of maps of the
 section name WITHOUT the prefix with the contents of the section loaded
 into a map. <code class="docutils literal notranslate"><span class="pre">&quot;:&quot;</span></code> is used as the prefix delimiter.</p>
 <p>Example config format for specifying defaults for the builtin
-component <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> is shown below:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">component</span><span class="p">:</span><span class="n">dist</span><span class="o">.</span><span class="n">ddp</span><span class="p">]</span>
+component <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> is shown below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">component</span><span class="p">:</span><span class="n">dist</span><span class="o">.</span><span class="n">torchrun</span><span class="p">]</span>
 <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="n">x2</span>
 <span class="n">image</span> <span class="o">=</span> <span class="n">ghcr</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">foo</span><span class="p">:</span><span class="mi">1</span>
 
 <span class="c1"># calling `load_sections(prefix=&quot;component&quot;)` returns</span>
 <span class="c1">#  {</span>
-<span class="c1">#    &quot;dist.ddp&quot;: {</span>
+<span class="c1">#    &quot;dist.torchrun&quot;: {</span>
 <span class="c1">#       &quot;j&quot;:&quot;1x2&quot;,</span>
 <span class="c1">#       &quot;image&quot;:&quot;ghcr.io/foo:1&quot;,</span>
 <span class="c1">#     },</span>

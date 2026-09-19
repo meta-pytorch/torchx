@@ -511,15 +511,15 @@ resources.</p>
 scratch:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="custom_components.html"><span class="doc">Custom Components</span></a> for simple single-node components.</p></li>
-<li><p><a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> for distributed components.</p></li>
+<li><p><a class="reference internal" href="components/distributed.html#torchx.components.dist.torchrun" title="torchx.components.dist.torchrun"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.torchrun()</span></code></a> for distributed components.</p></li>
 </ul>
 <p>You can also merge roles from multiple components to run sidecars alongside
 the main job.</p>
 </section>
 <section id="distributed-components">
 <h2>Distributed Components<a class="headerlink" href="#distributed-components" title="Link to this heading">¶</a></h2>
-<p>Use <a class="reference internal" href="components/distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> for distributed training. Extend it
-by writing a wrapper that calls <code class="docutils literal notranslate"><span class="pre">ddp</span></code> with your configuration.</p>
+<p>Use <a class="reference internal" href="components/distributed.html#torchx.components.dist.torchrun" title="torchx.components.dist.torchrun"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.torchrun()</span></code></a> for distributed training. Extend
+it by writing a wrapper that calls <code class="docutils literal notranslate"><span class="pre">torchrun</span></code> with your configuration.</p>
 </section>
 <section id="define-all-arguments">
 <h2>Define All Arguments<a class="headerlink" href="#define-all-arguments" title="Link to this heading">¶</a></h2>

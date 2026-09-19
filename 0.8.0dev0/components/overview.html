@@ -467,7 +467,7 @@ TorchX handles the rest.</p>
 <tbody>
 <tr class="row-even"><td><p><a class="reference internal" href="distributed.html"><span class="doc">Distributed</span></a></p></td>
 <td><p>Multi-node / multi-GPU training via TorchElastic</p></td>
-<td><p>Large-scale distributed training (<code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code>)</p></td>
+<td><p>Large-scale distributed training (<code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code>)</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="utils.html"><span class="doc">Utils</span></a></p></td>
 <td><p>General-purpose utilities</p></td>
@@ -542,7 +542,7 @@ Note that when running components programmatically via <a class="reference inter
 is not picked up by torchx at all.</p></li>
 </ol>
 <p>Below is an example component that launches DDP scripts, it is a simplified version of
-the <a class="reference internal" href="distributed.html#torchx.components.dist.ddp" title="torchx.components.dist.ddp"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.ddp()</span></code></a> builtin.</p>
+the <a class="reference internal" href="distributed.html#torchx.components.dist.torchrun" title="torchx.components.dist.torchrun"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.torchrun()</span></code></a> builtin.</p>
 <div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="go">import os</span>
 <span class="go">import torchx.specs as specs</span>
 

@@ -487,6 +487,25 @@ on each call.</p>
 </dl>
 </dd></dl>
 
+<section id="distributed-components">
+<h2>Distributed components<a class="headerlink" href="#distributed-components" title="Link to this heading">¶</a></h2>
+<p>Use <a class="reference internal" href="components/distributed.html#torchx.components.dist.torchrun" title="torchx.components.dist.torchrun"><code class="xref py py-func docutils literal notranslate"><span class="pre">torchx.components.dist.torchrun()</span></code></a> to launch distributed PyTorch
+applications. <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> and <code class="docutils literal notranslate"><span class="pre">dist.spmd</span></code> remain available as deprecated
+aliases and emit a <code class="docutils literal notranslate"><span class="pre">UserWarning</span></code> on each call.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> retains the <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> defaults: <code class="docutils literal notranslate"><span class="pre">j=&quot;1x2&quot;</span></code>, no named
+host, two CPUs, no GPUs, and 1024 MB of memory per replica.</p></li>
+<li><p>To preserve <code class="docutils literal notranslate"><span class="pre">dist.spmd</span></code> defaults, pass <code class="docutils literal notranslate"><span class="pre">h=&quot;gpu.small&quot;,</span> <span class="pre">j=&quot;1x1&quot;</span></code>.</p></li>
+<li><p>With a named host, <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> treats a bare <code class="docutils literal notranslate"><span class="pre">j</span></code> as the node count
+and infers processes per node from the host’s GPU count, as <code class="docutils literal notranslate"><span class="pre">dist.spmd</span></code>
+does. Specify <code class="docutils literal notranslate"><span class="pre">NxP</span></code> for a host without GPUs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> retains its original bare-<code class="docutils literal notranslate"><span class="pre">j</span></code> meaning: processes on one
+node. When migrating <code class="docutils literal notranslate"><span class="pre">dist.ddp(h=&quot;gpu.small&quot;,</span> <span class="pre">j=&quot;2&quot;,</span> <span class="pre">...)</span></code>, use
+<code class="docutils literal notranslate"><span class="pre">dist.torchrun(h=&quot;gpu.small&quot;,</span> <span class="pre">j=&quot;1x2&quot;,</span> <span class="pre">...)</span></code> to keep the same topology.</p></li>
+<li><p>Explicit <code class="docutils literal notranslate"><span class="pre">NxP</span></code> and elastic <code class="docutils literal notranslate"><span class="pre">MIN:MAXxP</span></code> topologies are unchanged when
+migrating from <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code>.</p></li>
+</ul>
+</section>
 </section>
 
 
@@ -535,6 +554,7 @@ on each call.</p>
 <li><a class="reference internal" href="#">torchx.deprecations</a><ul>
 <li><a class="reference internal" href="#torchx.deprecations.deprecated_module"><code class="docutils literal notranslate"><span class="pre">deprecated_module()</span></code></a></li>
 <li><a class="reference internal" href="#torchx.deprecations.deprecated"><code class="docutils literal notranslate"><span class="pre">deprecated()</span></code></a></li>
+<li><a class="reference internal" href="#distributed-components">Distributed components</a></li>
 </ul>
 </li>
 </ul>

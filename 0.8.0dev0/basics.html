@@ -541,7 +541,7 @@ the CLI <strong>or</strong> from Python – both are first-class interfaces:</p>
 <span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
     <span class="c1"># Option 1: run a named component (same resolution as the CLI)</span>
     <span class="n">app_handle</span> <span class="o">=</span> <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span>
-        <span class="s2">&quot;dist.ddp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dist.torchrun&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;kubernetes&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Option 2: run an AppDef you built directly</span>
@@ -612,7 +612,7 @@ registry – integrate with Airflow, Kubeflow Pipelines, or MLflow for those.</p
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">torchrun</span></code></p></td>
 <td><p>You only need distributed training on a <strong>single cluster</strong> and already
 have nodes allocated (e.g. via <code class="docutils literal notranslate"><span class="pre">salloc</span></code> or inside a Kubernetes pod).
-TorchX’s <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> uses <code class="docutils literal notranslate"><span class="pre">torchrun</span></code> under the hood.</p></td>
+TorchX’s <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> component uses it under the hood.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Direct Kubernetes YAML</p></td>
 <td><p>You are <strong>Kubernetes-only</strong> and prefer managing manifests directly.</p></td>

@@ -533,7 +533,7 @@ and decorate it:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchx.runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_runner</span>
 
 <span class="k">with</span> <span class="n">get_runner</span><span class="p">()</span> <span class="k">as</span> <span class="n">runner</span><span class="p">:</span>
-    <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span><span class="s2">&quot;dist.ddp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;my_scheduler&quot;</span><span class="p">)</span>
+    <span class="n">runner</span><span class="o">.</span><span class="n">run_component</span><span class="p">(</span><span class="s2">&quot;dist.torchrun&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;--script&quot;</span><span class="p">,</span> <span class="s2">&quot;train.py&quot;</span><span class="p">],</span> <span class="n">scheduler</span><span class="o">=</span><span class="s2">&quot;my_scheduler&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -725,8 +725,8 @@ entry:</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>This adds back TorchX builtins with a <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">torchx.dist.ddp</span></code>
-instead of <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code>).</p>
+<p>This adds back TorchX builtins with a <code class="docutils literal notranslate"><span class="pre">torchx.*</span></code> prefix (e.g. <code class="docutils literal notranslate"><span class="pre">torchx.dist.torchrun</span></code>
+instead of <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code>).</p>
 <p id="advanced-overlapping-components">If there are two registry entries pointing to the same component, for instance</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># setup.py</span>
 <span class="o">...</span>
@@ -762,7 +762,7 @@ builtins without the <code class="docutils literal notranslate"><span class="pre
 <div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>builtins
 <span class="go">Found 11 builtin components:</span>
 <span class="go">1. baz.trainer</span>
-<span class="go">2. dist.ddp</span>
+<span class="go">2. dist.torchrun</span>
 <span class="go">3. utils.python</span>
 <span class="go">4. ... &lt;more builtins from torchx.components.* ...&gt;</span>
 </pre></div>

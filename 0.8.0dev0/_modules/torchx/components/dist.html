@@ -449,33 +449,33 @@
 <span class="sd">and more for each role.</span>
 
 
-<span class="sd">DDP Builtin</span>
+<span class="sd">Torchrun Builtin</span>
 <span class="sd">----------------</span>
 
 <span class="sd">DDP-style trainers are common and easy to templetize since they are homogeneous</span>
-<span class="sd">single role AppDefs, so there is a builtin: ``dist.ddp``. Assuming your DDP</span>
+<span class="sd">single role AppDefs, so there is a builtin: ``dist.torchrun``. Assuming your DDP</span>
 <span class="sd">training script is called ``main.py``, launch it as:</span>
 
 <span class="sd">.. code:: shell-session</span>
 
 <span class="sd">    # locally, 1 node x 4 workers</span>
-<span class="sd">    $ torchx run -s local_cwd dist.ddp -j 1x4 --script main.py</span>
+<span class="sd">    $ torchx run -s local_cwd dist.torchrun -j 1x4 --script main.py</span>
 
 <span class="sd">    # locally, 2 node x 4 workers (8 total)</span>
-<span class="sd">    $ torchx run -s local_cwd dist.ddp -j 2x4 --script main.py</span>
+<span class="sd">    $ torchx run -s local_cwd dist.torchrun -j 2x4 --script main.py</span>
 
 <span class="sd">    # remote (optionally pass --rdzv_port to use a different master port than the default 29500)</span>
-<span class="sd">    $ torchx run -s kubernetes -cfg queue=default dist.ddp \\</span>
+<span class="sd">    $ torchx run -s kubernetes -cfg queue=default dist.torchrun \\</span>
 <span class="sd">        -j 2x4 \\</span>
 <span class="sd">        --script main.py</span>
 
 <span class="sd">    # remote -- elastic/autoscaling with 2 minimum and max 5 nodes with 8</span>
 <span class="sd">    # workers each</span>
-<span class="sd">    $ torchx run -s kubernetes dist.ddp -j 2:5x8 --script main.py</span>
+<span class="sd">    $ torchx run -s kubernetes dist.torchrun -j 2:5x8 --script main.py</span>
 
 
 <span class="sd">Note that the only difference compared to the local launch is the scheduler (``-s``).</span>
-<span class="sd">The ``dist.ddp`` builtin uses ``torchelastic`` (more specifically ``torch.distributed.run``)</span>
+<span class="sd">The ``dist.torchrun`` builtin uses ``torchelastic`` (more specifically ``torch.distributed.run``)</span>
 <span class="sd">under the hood. Read more about torchelastic `here &lt;https://pytorch.org/docs/stable/elastic/run.html&gt;`_.</span>
 
 <span class="sd">Components APIs</span>
@@ -485,6 +485,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
 
@@ -525,33 +526,16 @@
     <span class="n">mounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Usage (by script): torchx run spmd -j 2x8 -h aws_p4d.24xlarge --name my_experiment/trial_1 --script path/to/my/trainer.py -foo bar</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deprecated alias for :func:`torchrun`, preserving its original defaults.</span>
 
-<span class="sd">    Usage (by module): torchx run spmd -j 2x8 -h aws_p4d.24xlarge --name my_experiment/trial_1 -m path.to.my.trainer -foo bar</span>
-
-<span class="sd">    Usage (infer GPU count): torchx run spmd -j 2 -h p4d.24xlarge ... (same as -j 2x8)</span>
-
-<span class="sd">    Creates a torchx.specs.AppDef (Job Definition) for a Single-Process-Multiple-Data (SPMD)</span>
-<span class="sd">    style application. See: https://en.wikipedia.org/wiki/Single_program,_multiple_data.</span>
-
-<span class="sd">    SPMD launches `n x m` (set via the `-j nxm` option) copies of the same program,</span>
-<span class="sd">    where `n` is the number of nodes (hosts) and `m` is the number of processes on each node.</span>
-
-<span class="sd">    If you have a distributed PyTorch script (DDP, FSDP, RPC) use this component to launch</span>
-<span class="sd">    the distributed application. You can also use `-j 1x1` to launch a single process application</span>
-<span class="sd">    which would be equivalent to launching with regular `python` except that your application</span>
-<span class="sd">    can safely call `torch.distributed.init_process_group(backend)`.</span>
-
-<span class="sd">    Note: For multi-node distributed runs, the hosts MUST have a network route to each other</span>
-<span class="sd">          AND port 29500 should be open on all hosts. Please check your security group settings.</span>
-
+<span class="sd">    Defaults to ``h=&quot;gpu.small&quot;`` and ``j=&quot;1x1&quot;``. A bare ``j`` is the node</span>
+<span class="sd">    count and infers processes from the named host&#39;s GPU count.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        args: the arguments to the main module or script (e.g. my/trainer.py -foo bar)</span>
 <span class="sd">            (for docker based runs) the script path must be relative to the WORKDIR of the image</span>
 <span class="sd">        script:</span>
-<span class="sd">        m: the main module name (e.g. my.module.trainer). When this option is used, the `script_args` are passed</span>
+<span class="sd">        m: the main module name (e.g. my.module.trainer). When this option is used, the `args` are passed</span>
 <span class="sd">           as the arguments to the main module). Invoking my module is useful when the relative/absolute path</span>
 <span class="sd">           of the main script is unknown w.r.t the WORKDIR of the image. Use this option when it makes sense to</span>
 <span class="sd">           invoke the main script via `python -m &lt;MAIN.MODULE&gt;`.</span>
@@ -565,13 +549,13 @@
 <span class="sd">        mounts: (for docker based runs only) mounts to mount into the worker environment/container</span>
 <span class="sd">                (ex. type=&lt;bind/volume&gt;,src=/host,dst=/job[,readonly]).</span>
 <span class="sd">        debug: whether to run with preset debug flags enabled</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">env</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">return</span> <span class="n">ddp</span><span class="p">(</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;[Deprecated] dist.spmd is deprecated; use dist.torchrun instead.&quot;</span><span class="p">,</span>
+        <span class="ne">UserWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">torchrun</span><span class="p">(</span>
         <span class="o">*</span><span class="n">args</span><span class="p">,</span>
         <span class="n">script</span><span class="o">=</span><span class="n">script</span><span class="p">,</span>
         <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span>
@@ -588,9 +572,9 @@
 
 
 
-<div class="viewcode-block" id="ddp">
-<a class="viewcode-back" href="../../../components/distributed.html#torchx.components.dist.ddp">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">ddp</span><span class="p">(</span>
+<div class="viewcode-block" id="torchrun">
+<a class="viewcode-back" href="../../../components/distributed.html#torchx.components.dist.torchrun">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">torchrun</span><span class="p">(</span>
     <span class="o">*</span><span class="n">script_args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">script</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">m</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -612,7 +596,9 @@
     <span class="n">tee</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Distributed data parallel style application (one role, multi-replica).</span>
+<span class="sd">    Usage: torchx run dist.torchrun -j 2x4 --script train.py</span>
+
+<span class="sd">    Launch a distributed PyTorch application with torchrun (one role, multi-replica).</span>
 <span class="sd">    Uses `torch.distributed.run &lt;https://pytorch.org/docs/stable/distributed.elastic.html&gt;`_</span>
 <span class="sd">    to launch and coordinate PyTorch worker processes. Defaults to using ``c10d`` rendezvous backend</span>
 <span class="sd">    on rendezvous_endpoint ``$rank_0_host:$rdzv_port``. Note that ``rdzv_port`` parameter is ignored</span>
@@ -634,8 +620,10 @@
 <span class="sd">        gpu: number of gpus per replica</span>
 <span class="sd">        memMB: cpu memory in MB per replica</span>
 <span class="sd">        h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)</span>
-<span class="sd">        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts, nproc_per_node must not exceed num gpus</span>
-<span class="sd">        env: environment varibles to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)</span>
+<span class="sd">        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}. With a named host, a bare</span>
+<span class="sd">            integer is the node count and infers processes from its GPU count.</span>
+<span class="sd">            Without a named host, a bare integer is the process count on one node.</span>
+<span class="sd">        env: environment variables to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)</span>
 <span class="sd">        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)</span>
 <span class="sd">        max_retries: the number of scheduler retries allowed</span>
 <span class="sd">        rdzv_port: the port on rank0&#39;s host to use for hosting the c10d store used for rendezvous.</span>
@@ -651,6 +639,9 @@
 
     <span class="k">if</span> <span class="p">(</span><span class="n">script</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;exactly one of --script and -m must be specified&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">j</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">StructuredJArgument</span><span class="o">.</span><span class="n">parse_from</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span>
 
     <span class="c1"># nnodes: number of nodes or minimum nodes for elastic launch</span>
     <span class="c1"># max_nnodes: maximum number of nodes for elastic launch</span>
@@ -735,6 +726,88 @@
             <span class="p">)</span>
         <span class="p">],</span>
         <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ddp">
+<a class="viewcode-back" href="../../../components/distributed.html#torchx.components.dist.ddp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ddp</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">script_args</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">script</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">m</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">torchx</span><span class="o">.</span><span class="n">IMAGE</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span>
+    <span class="n">h</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">gpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">memMB</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
+    <span class="n">j</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1x2&quot;</span><span class="p">,</span>
+    <span class="n">env</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">rdzv_port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">29500</span><span class="p">,</span>
+    <span class="n">rdzv_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;c10d&quot;</span><span class="p">,</span>
+    <span class="n">rdzv_conf</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">tee</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">specs</span><span class="o">.</span><span class="n">AppDef</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deprecated alias for :func:`torchrun`, preserving its original defaults.</span>
+
+<span class="sd">    A bare ``j`` remains the process count on one node, even with a named host.</span>
+<span class="sd">    Use an explicit topology such as ``j=&quot;1x4&quot;`` when migrating to ``torchrun``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        script_args: arguments to the main module</span>
+<span class="sd">        script: script or binary to run within the image</span>
+<span class="sd">        m: the python module path to run</span>
+<span class="sd">        image: image (e.g. docker)</span>
+<span class="sd">        name: job name override in the following format: ``{experimentname}/{runname}`` or ``{experimentname}/`` or ``/{runname}`` or ``{runname}``.</span>
+<span class="sd">            Uses the script or module name if ``{runname}`` not specified.</span>
+<span class="sd">        cpu: number of cpus per replica</span>
+<span class="sd">        gpu: number of gpus per replica</span>
+<span class="sd">        memMB: cpu memory in MB per replica</span>
+<span class="sd">        h: a registered named resource (if specified takes precedence over cpu, gpu, memMB)</span>
+<span class="sd">        j: [{min_nnodes}:]{nnodes}x{nproc_per_node}, for gpu hosts, nproc_per_node must not exceed num gpus</span>
+<span class="sd">        env: environment variables to be passed to the run (e.g. ENV1=v1,ENV2=v2,ENV3=v3)</span>
+<span class="sd">        metadata: metadata to be passed to the scheduler (e.g. KEY1=v1,KEY2=v2,KEY3=v3)</span>
+<span class="sd">        max_retries: the number of scheduler retries allowed</span>
+<span class="sd">        rdzv_port: the port on rank0&#39;s host to use for hosting the c10d store used for rendezvous.</span>
+<span class="sd">                   Only takes effect when running multi-node. When running single node, this parameter</span>
+<span class="sd">                   is ignored and a random free port is chosen.</span>
+<span class="sd">        rdzv_backend: the rendezvous backend to use. Only takes effect when running multi-node.</span>
+<span class="sd">        rdzv_conf: the additional rendezvous configuration to use (ex. join_timeout=600,close_timeout=600,timeout=600).</span>
+<span class="sd">        mounts: mounts to mount into the worker environment/container (ex. type=&lt;bind/volume&gt;,src=/host,dst=/job[,readonly]).</span>
+<span class="sd">                See scheduler documentation for more info.</span>
+<span class="sd">        debug: whether to run with preset debug flags enabled</span>
+<span class="sd">        tee: tees the specified std stream(s) to console + file. 0: none, 1: stdout, 2: stderr, 3: both</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;[Deprecated] dist.ddp is deprecated; use dist.torchrun instead.&quot;</span><span class="p">,</span>
+        <span class="ne">UserWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">torchrun</span><span class="p">(</span>
+        <span class="o">*</span><span class="n">script_args</span><span class="p">,</span>
+        <span class="n">script</span><span class="o">=</span><span class="n">script</span><span class="p">,</span>
+        <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span>
+        <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span>
+        <span class="n">cpu</span><span class="o">=</span><span class="n">cpu</span><span class="p">,</span>
+        <span class="n">gpu</span><span class="o">=</span><span class="n">gpu</span><span class="p">,</span>
+        <span class="n">memMB</span><span class="o">=</span><span class="n">memMB</span><span class="p">,</span>
+        <span class="n">j</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;1x</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">else</span> <span class="n">j</span><span class="p">,</span>
+        <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+        <span class="n">max_retries</span><span class="o">=</span><span class="n">max_retries</span><span class="p">,</span>
+        <span class="n">rdzv_port</span><span class="o">=</span><span class="n">rdzv_port</span><span class="p">,</span>
+        <span class="n">rdzv_backend</span><span class="o">=</span><span class="n">rdzv_backend</span><span class="p">,</span>
+        <span class="n">rdzv_conf</span><span class="o">=</span><span class="n">rdzv_conf</span><span class="p">,</span>
+        <span class="n">mounts</span><span class="o">=</span><span class="n">mounts</span><span class="p">,</span>
+        <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span>
+        <span class="n">tee</span><span class="o">=</span><span class="n">tee</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 

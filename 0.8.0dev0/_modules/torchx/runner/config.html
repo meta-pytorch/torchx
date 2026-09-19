@@ -523,16 +523,16 @@
 
 <span class="sd">.. code-block:: ini</span>
 
-<span class="sd">    [component:dist.ddp]</span>
+<span class="sd">    [component:dist.torchrun]</span>
 <span class="sd">    j=2x8</span>
 <span class="sd">    cpu=4</span>
 
-<span class="sd">Now when you run the ``dist.ddp`` component those configs are automatically</span>
+<span class="sd">Now when you run the ``dist.torchrun`` component those configs are automatically</span>
 <span class="sd">picked up.</span>
 
 <span class="sd">.. code-block:: shell-session</span>
 
-<span class="sd">    $ torchx run -s local_cwd dist.ddp</span>
+<span class="sd">    $ torchx run -s local_cwd dist.torchrun</span>
 <span class="sd">    ... runs with -j 2x8 --cpu 4</span>
 
 
@@ -548,7 +548,7 @@
 <span class="sd">.. code-block:: ini</span>
 
 <span class="sd">    [cli:run]</span>
-<span class="sd">    component=dist.ddp</span>
+<span class="sd">    component=dist.torchrun</span>
 <span class="sd">    scheduler=local_docker</span>
 <span class="sd">    workspace=file://some_workspace</span>
 
@@ -784,17 +784,17 @@
 <span class="sd">    into a map. ``&quot;:&quot;`` is used as the prefix delimiter.</span>
 
 <span class="sd">    Example config format for specifying defaults for the builtin</span>
-<span class="sd">    component ``dist.ddp`` is shown below:</span>
+<span class="sd">    component ``dist.torchrun`` is shown below:</span>
 
 <span class="sd">    ::</span>
 
-<span class="sd">     [component:dist.ddp]</span>
+<span class="sd">     [component:dist.torchrun]</span>
 <span class="sd">     j = 1x2</span>
 <span class="sd">     image = ghcr.io/foo:1</span>
 
 <span class="sd">     # calling `load_sections(prefix=&quot;component&quot;)` returns</span>
 <span class="sd">     #  {</span>
-<span class="sd">     #    &quot;dist.ddp&quot;: {</span>
+<span class="sd">     #    &quot;dist.torchrun&quot;: {</span>
 <span class="sd">     #       &quot;j&quot;:&quot;1x2&quot;,</span>
 <span class="sd">     #       &quot;image&quot;:&quot;ghcr.io/foo:1&quot;,</span>
 <span class="sd">     #     },</span>

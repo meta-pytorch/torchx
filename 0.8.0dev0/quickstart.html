@@ -527,10 +527,10 @@ which contains the PyTorch libraries, TorchX and related dependencies.</p>
 </section>
 <section id="distributed">
 <h2>Distributed<a class="headerlink" href="#distributed" title="Link to this heading">¶</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">dist.ddp</span></code> component (DDP = Distributed Data Parallel) uses
+<p>The <code class="docutils literal notranslate"><span class="pre">dist.torchrun</span></code> component uses
 <a class="reference external" href="https://pytorch.org/docs/stable/distributed.elastic.html">TorchElastic</a>
 to manage workers, enabling multi-node jobs on all supported schedulers.</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>--help
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.torchrun<span class="w"> </span>--help
 </pre></div>
 </div>
 <p>Create <code class="docutils literal notranslate"><span class="pre">dist_app.py</span></code>:</p>
@@ -546,7 +546,7 @@ to manage workers, enabling multi-node jobs on all supported schedulers.</p>
 </pre></div>
 </div>
 <p>Launch with 2 nodes and 2 workers per node (<code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">2x2</span></code> = <code class="docutils literal notranslate"><span class="pre">&lt;nodes&gt;x&lt;workers_per_node&gt;</span></code>):</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>local_docker<span class="w"> </span>dist.torchrun<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
 </div>
 </section>
@@ -573,8 +573,8 @@ every code change. See <a class="reference internal" href="workspace.html"><span
 <h2>Remote Schedulers<a class="headerlink" href="#remote-schedulers" title="Link to this heading">¶</a></h2>
 <p>The same <code class="docutils literal notranslate"><span class="pre">torchx</span> <span class="pre">run</span></code> command works on remote schedulers – only the
 <code class="docutils literal notranslate"><span class="pre">--scheduler</span></code> flag changes.</p>
-<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>slurm<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
-<span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.ddp<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>slurm<span class="w"> </span>dist.torchrun<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
+<span class="gp">$ </span>torchx<span class="w"> </span>run<span class="w"> </span>--scheduler<span class="w"> </span>kubernetes<span class="w"> </span>dist.torchrun<span class="w"> </span>-j<span class="w"> </span>2x2<span class="w"> </span>--script<span class="w"> </span>dist_app.py
 </pre></div>
 </div>
 <p>List all scheduler-specific options:</p>

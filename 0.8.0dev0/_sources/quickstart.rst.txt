@@ -117,13 +117,13 @@ which contains the PyTorch libraries, TorchX and related dependencies.
 Distributed
 -----------
 
-The ``dist.ddp`` component (DDP = Distributed Data Parallel) uses
+The ``dist.torchrun`` component uses
 `TorchElastic <https://pytorch.org/docs/stable/distributed.elastic.html>`_
 to manage workers, enabling multi-node jobs on all supported schedulers.
 
 .. code:: shell-session
 
-    $ torchx run --scheduler local_docker dist.ddp --help
+    $ torchx run --scheduler local_docker dist.torchrun --help
 
 Create ``dist_app.py``:
 
@@ -143,7 +143,7 @@ Launch with 2 nodes and 2 workers per node (``-j 2x2`` = ``<nodes>x<workers_per_
 
 .. code:: shell-session
 
-    $ torchx run --scheduler local_docker dist.ddp -j 2x2 --script dist_app.py
+    $ torchx run --scheduler local_docker dist.torchrun -j 2x2 --script dist_app.py
 
 Workspaces / Patching
 ---------------------
@@ -175,8 +175,8 @@ The same ``torchx run`` command works on remote schedulers -- only the
 
 .. code:: shell-session
 
-    $ torchx run --scheduler slurm dist.ddp -j 2x2 --script dist_app.py
-    $ torchx run --scheduler kubernetes dist.ddp -j 2x2 --script dist_app.py
+    $ torchx run --scheduler slurm dist.torchrun -j 2x2 --script dist_app.py
+    $ torchx run --scheduler kubernetes dist.torchrun -j 2x2 --script dist_app.py
 
 List all scheduler-specific options:
 
