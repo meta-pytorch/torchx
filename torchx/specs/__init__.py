@@ -25,6 +25,7 @@ via a :py:class:`~torchx.schedulers.api.Scheduler`.
 
 """
 
+import dataclasses
 import difflib
 import os
 import threading
@@ -76,6 +77,18 @@ GiB: int = 1024
 
 
 ResourceFactory = Callable[[], Resource]
+
+
+def _tagged(name: str, factory: ResourceFactory) -> ResourceFactory:
+    def tagged_factory() -> Resource:
+        res = factory()
+        if plugins.resource_tags.RESOURCE_NAME in res.tags:
+            return res
+        return dataclasses.replace(
+            res, tags={**res.tags, plugins.resource_tags.RESOURCE_NAME: name}
+        )
+
+    return tagged_factory
 
 
 class _NamedResourcesLibrary:
@@ -142,10 +155,13 @@ class _NamedResourcesLibrary:
                     # cannot resolve its fbcode-only deps there — treat as absent
                     custom = {}
                 factories = {
-                    **generic,
-                    **aws,
-                    **custom,
-                    **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
+                    name: _tagged(name, factory)
+                    for name, factory in {
+                        **generic,
+                        **aws,
+                        **custom,
+                        **plugins.registry().get(plugins.PluginType.NAMED_RESOURCE),
+                    }.items()
                 }
                 factories["NULL"] = lambda: NULL_RESOURCE
                 factories["MISSING"] = lambda: NULL_RESOURCE

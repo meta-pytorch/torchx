@@ -23,6 +23,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 from torchx import specs
+from torchx.plugins import resource_tags
 from torchx.specs import named_resources, named_resources_aws, resource
 from torchx.specs.api import (
     _OVERRIDES_LOCK_KEY,
@@ -573,18 +574,26 @@ class ResourceTest(unittest.TestCase):
         self.assertTrue(registered_named_resources)
 
     def test_named_resources(self) -> None:
-        self.assertEqual(
-            named_resources_aws.aws_m5_2xlarge(), named_resources["aws_m5.2xlarge"]
-        )
-        self.assertEqual(
-            named_resources_aws.aws_t3_medium(), named_resources["aws_t3.medium"]
-        )
-        self.assertEqual(
-            named_resources_aws.aws_p3_2xlarge(), named_resources["aws_p3.2xlarge"]
-        )
-        self.assertEqual(
-            named_resources_aws.aws_p3_8xlarge(), named_resources["aws_p3.8xlarge"]
-        )
+        for name, factory in [
+            ("aws_m5.2xlarge", named_resources_aws.aws_m5_2xlarge),
+            ("aws_t3.medium", named_resources_aws.aws_t3_medium),
+            ("aws_p3.2xlarge", named_resources_aws.aws_p3_2xlarge),
+            ("aws_p3.8xlarge", named_resources_aws.aws_p3_8xlarge),
+        ]:
+            with self.subTest(name=name):
+                expected = factory()
+                expected.tags[resource_tags.RESOURCE_NAME] = name
+                self.assertEqual(expected, named_resources[name])
+
+    def test_named_resources_are_tagged_with_their_name(self) -> None:
+        for name in ["gpu.small", "aws_p3.8xlarge"]:
+            with self.subTest(name=name):
+                self.assertEqual(name, resource(h=name).get_resource_name())
+
+    def test_null_resource_is_not_tagged(self) -> None:
+        for name in ["NULL", "MISSING"]:
+            with self.subTest(name=name):
+                self.assertEqual(NULL_RESOURCE, resource(h=name))
 
     def test_named_resources_contains(self) -> None:
         self.assertTrue("aws_p3.8xlarge" in named_resources)
