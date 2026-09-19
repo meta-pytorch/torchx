@@ -9,27 +9,69 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from torchx.schedulers import get_default_scheduler_name, get_scheduler_factories
+from torchx.schedulers import (
+    DEFAULT_SCHEDULER_MODULES,
+    get_default_scheduler_name,
+    get_scheduler_factories,
+)
 from torchx.schedulers.docker_scheduler import DockerScheduler
 from torchx.schedulers.local_scheduler import LocalScheduler
 
 
 class SchedulersTest(unittest.TestCase):
     @patch("torchx.schedulers.plugins")
-    def test_plugins_override_defaults(self, plugins_mock: MagicMock) -> None:
-        """When plugins return non-empty dict, defaults are not used."""
+    def test_plugins_add_to_defaults(self, plugins_mock: MagicMock) -> None:
         sentinel = MagicMock()
         plugins_mock.registry.return_value.get.return_value = {"custom_sched": sentinel}
+
         result = get_scheduler_factories()
+
         self.assertEqual(
-            result,
-            {"custom_sched": sentinel},
-            "should return plugin result when non-empty",
+            sentinel, result["custom_sched"], "the registered plugin must be present"
         )
-        self.assertNotIn(
-            "local_cwd",
-            result,
-            "defaults should be skipped when plugins return non-empty",
+        self.assertEqual(
+            set(DEFAULT_SCHEDULER_MODULES),
+            set(result) - {"custom_sched"},
+            "registering a plugin must not drop any built-in scheduler",
+        )
+
+    @patch("torchx.schedulers.plugins")
+    def test_plugin_wins_a_name_clash_with_a_builtin(
+        self, plugins_mock: MagicMock
+    ) -> None:
+        sentinel = MagicMock()
+        plugins_mock.registry.return_value.get.return_value = {"local_docker": sentinel}
+
+        result = get_scheduler_factories()
+
+        self.assertEqual(
+            sentinel,
+            result["local_docker"],
+            "a plugin registered under a built-in name must replace it",
+        )
+        self.assertEqual(
+            set(DEFAULT_SCHEDULER_MODULES),
+            set(result),
+            "overriding a built-in must not add or drop a name",
+        )
+
+    @patch("torchx.schedulers.plugins")
+    def test_registered_plugin_becomes_the_default(
+        self, plugins_mock: MagicMock
+    ) -> None:
+        plugins_mock.registry.return_value.get.return_value = {
+            "custom_sched": MagicMock()
+        }
+
+        self.assertEqual("custom_sched", get_default_scheduler_name())
+
+    @patch("torchx.schedulers.plugins")
+    def test_skip_defaults_returns_plugins_only(self, plugins_mock: MagicMock) -> None:
+        sentinel = MagicMock()
+        plugins_mock.registry.return_value.get.return_value = {"custom_sched": sentinel}
+
+        self.assertEqual(
+            {"custom_sched": sentinel}, get_scheduler_factories(skip_defaults=True)
         )
 
     @patch("torchx.schedulers.plugins")
