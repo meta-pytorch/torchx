@@ -459,6 +459,7 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">difflib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
@@ -510,6 +511,18 @@
 
 
 <span class="n">ResourceFactory</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Resource</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_tagged</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">factory</span><span class="p">:</span> <span class="n">ResourceFactory</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResourceFactory</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tagged_factory</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Resource</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">factory</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">plugins</span><span class="o">.</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">RESOURCE_NAME</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">tags</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">res</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">res</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span> <span class="n">plugins</span><span class="o">.</span><span class="n">resource_tags</span><span class="o">.</span><span class="n">RESOURCE_NAME</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tagged_factory</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_NamedResourcesLibrary</span><span class="p">:</span>
@@ -576,10 +589,13 @@
                     <span class="c1"># cannot resolve its fbcode-only deps there — treat as absent</span>
                     <span class="n">custom</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="n">factories</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="o">**</span><span class="n">generic</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">aws</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">custom</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">NAMED_RESOURCE</span><span class="p">),</span>
+                    <span class="n">name</span><span class="p">:</span> <span class="n">_tagged</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">factory</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">factory</span> <span class="ow">in</span> <span class="p">{</span>
+                        <span class="o">**</span><span class="n">generic</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">aws</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">custom</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">plugins</span><span class="o">.</span><span class="n">registry</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginType</span><span class="o">.</span><span class="n">NAMED_RESOURCE</span><span class="p">),</span>
+                    <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                 <span class="p">}</span>
                 <span class="n">factories</span><span class="p">[</span><span class="s2">&quot;NULL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">NULL_RESOURCE</span>
                 <span class="n">factories</span><span class="p">[</span><span class="s2">&quot;MISSING&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">NULL_RESOURCE</span>
