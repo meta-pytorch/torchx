@@ -26,9 +26,5 @@ jobs:
         run: |
           set -eux
           uv sync --frozen --extra dev
-          uv run lintrunner init
       - name: Run Lint
-        run: |
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-
-          uv run lintrunner --force-color --all-files
+        run: uv run ruff check --output-format=github .

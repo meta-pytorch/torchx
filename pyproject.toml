@@ -54,10 +54,8 @@ dev = [
     "torchmetrics",
     "torchtext",
     "torchvision",
-    # -- lintrunner deps
-    "lintrunner",
-    "lintrunner-adapters",
-    "pip", # pip required by lintrunner but not installed by default in a uv env
+    # -- lint and type deps
+    "ruff==0.14.14",
     "pyrefly",
 ]
 
@@ -91,14 +89,8 @@ torchx = ["version.txt"]
 [tool.setuptools.dynamic]
 version = { file = "torchx/version.txt" }
 
-[tool.usort]
-first_party_detection = false
-
-[tool.black]
-target-version = ["py311", "py312"]
-
 [tool.ruff]
-line-length = 120
+line-length = 88
 exclude = [
     ".git",
     "docs",
@@ -106,6 +98,7 @@ exclude = [
     "scripts",
     "venv",
     ".venv",
+    "torchx/github",
 ]
 
 [tool.ruff.lint]

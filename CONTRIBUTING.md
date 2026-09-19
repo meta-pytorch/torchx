@@ -47,11 +47,10 @@ uv run torchx --help
 
 ## Lint + type check
 
-Lint runs via `lintrunner`, type checking via `pyrefly`:
+Lint runs via `ruff`, type checking via `pyrefly`:
 
 ```sh
-uv run lintrunner init
-uv run lintrunner -a
+uv run ruff check --fix .
 uv run pyrefly check
 ```
 
@@ -59,8 +58,7 @@ Or activate the venv first:
 
 ```sh
 source .venv/bin/activate
-lintrunner init
-lintrunner -a
+ruff check --fix .
 pyrefly check
 ```
 
