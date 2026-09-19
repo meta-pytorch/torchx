@@ -19,7 +19,7 @@ index ``capabilities`` directly keep working.
 """
 
 from dataclasses import dataclass
-from typing import Generic, overload, TypeVar
+from typing import Generic, TypeVar, overload
 
 from torchx.specs.api import Resource
 

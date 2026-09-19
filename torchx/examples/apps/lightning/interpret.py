@@ -51,10 +51,11 @@ import tempfile
 
 import fsspec
 import torch
+
 from torchx.examples.apps.lightning.data import (
+    TinyImageNetDataModule,
     create_random_data,
     download_data,
-    TinyImageNetDataModule,
 )
 from torchx.examples.apps.lightning.model import TinyImageNetModel
 
@@ -65,7 +66,8 @@ sys.path.append(".")
 # FIXME: captum must be imported after torch otherwise it causes python to crash
 if True:
     import numpy as np
-    from captum.attr import IntegratedGradients, visualization as viz
+    from captum.attr import IntegratedGradients
+    from captum.attr import visualization as viz
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

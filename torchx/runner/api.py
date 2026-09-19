@@ -17,20 +17,20 @@ import warnings
 from datetime import datetime
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Iterable,
     Iterator,
     Literal,
     Mapping,
-    overload,
     Type,
-    TYPE_CHECKING,
     TypeVar,
+    overload,
 )
 
 from torchx import settings
 from torchx.runner.events import log_event
-from torchx.schedulers import get_scheduler_factories, SchedulerFactory
+from torchx.schedulers import SchedulerFactory, get_scheduler_factories
 from torchx.schedulers.api import ListAppResponse, Scheduler, Stream
 from torchx.specs import (
     AppDef,
@@ -38,15 +38,15 @@ from torchx.specs import (
     AppHandle,
     AppStatus,
     CfgVal,
+    Role,
+    UnknownAppException,
+    UnknownSchedulerException,
+    Workspace,
     macros,
     make_app_handle,
     materialize_appdef,
     parse_app_handle,
-    Role,
     runopts,
-    UnknownAppException,
-    UnknownSchedulerException,
-    Workspace,
 )
 from torchx.specs.finder import get_component
 from torchx.tracker.api import tracker_config_env_var_name

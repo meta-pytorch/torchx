@@ -15,15 +15,15 @@ import dataclasses
 import datetime
 import os
 from contextlib import contextmanager
-from typing import cast, Generator, Mapping
+from typing import Generator, Mapping, cast
 from unittest.mock import MagicMock, patch
 
-from torchx.runner import get_runner, Runner
+from torchx.runner import Runner, get_runner
 from torchx.schedulers import SchedulerFactory
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Scheduler
 from torchx.schedulers.local_scheduler import (
-    create_scheduler,
     LocalDirectoryImageProvider,
+    create_scheduler,
 )
 from torchx.settings import ENV_TORCHX_JOB_ID, ENV_TORCHX_PARENT_RUN_ID
 from torchx.specs import (
@@ -32,18 +32,18 @@ from torchx.specs import (
     AppHandle,
     AppState,
     CfgVal,
-    parse_app_handle,
     Resource,
     Role,
-    runopts,
     UnknownAppException,
     UnknownSchedulerException,
     Workspace,
+    parse_app_handle,
+    runopts,
 )
 from torchx.specs.finder import ComponentNotFoundException
 from torchx.testing.fixtures import TestWithTmpDir
 from torchx.util.types import none_throws
-from torchx.workspace import pin_workspace_images, WorkspaceMixin
+from torchx.workspace import WorkspaceMixin, pin_workspace_images
 
 GET_SCHEDULER_FACTORIES = "torchx.runner.api.get_scheduler_factories"
 

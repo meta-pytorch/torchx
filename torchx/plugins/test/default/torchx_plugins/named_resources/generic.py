@@ -9,7 +9,7 @@
 
 """Generic named resources for testing namespace package discovery."""
 
-from torchx.plugins import halve_mem_down_to, powers_of_two_gpus, register, WHOLE
+from torchx.plugins import WHOLE, halve_mem_down_to, powers_of_two_gpus, register
 from torchx.specs.api import Resource
 
 GiB: int = 1024

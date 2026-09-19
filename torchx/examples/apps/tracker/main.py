@@ -15,12 +15,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torchx.tracker as tracker
 from torch import Tensor
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from torchvision.datasets import VisionDataset
+
+import torchx.tracker as tracker
 
 
 class Net(nn.Module):

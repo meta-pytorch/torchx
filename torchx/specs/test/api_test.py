@@ -18,7 +18,7 @@ import time
 import unittest
 from dataclasses import asdict
 from pathlib import Path
-from typing import cast, Dict, List, Mapping, Type, Union
+from typing import Dict, List, Mapping, Type, Union, cast
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -27,32 +27,32 @@ from torchx.plugins import resource_tags
 from torchx.specs import named_resources, named_resources_aws, resource
 from torchx.specs.api import (
     _OVERRIDES_LOCK_KEY,
-    _OverridesLock,
     _TERMINAL_STATES,
+    MISSING,
+    NULL_RESOURCE,
+    TORCHX_HOME,
+    UNKNOWN,
     AppDef,
     AppDryRunInfo,
     AppState,
     AppStatus,
     AppStatusError,
-    cases,
     CfgVal,
-    get_type_name,
     InvalidRunConfigException,
-    macros,
     MalformedAppHandleException,
-    MISSING,
-    NULL_RESOURCE,
-    parse_app_handle,
     ReplicaStatus,
     Resource,
     RetryPolicy,
     Role,
     RoleStatus,
+    Workspace,
+    _OverridesLock,
+    cases,
+    get_type_name,
+    macros,
+    parse_app_handle,
     runopt,
     runopts,
-    TORCHX_HOME,
-    UNKNOWN,
-    Workspace,
 )
 from torchx.testing.fixtures import TestWithTmpDir
 

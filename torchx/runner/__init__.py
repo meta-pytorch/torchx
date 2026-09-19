@@ -24,4 +24,4 @@ along with a scheduler name and run config, and submits it as a job.
 
 """
 
-from torchx.runner.api import get_runner, Runner  # noqa: F401 F403
+from torchx.runner.api import Runner, get_runner  # noqa: F401 F403

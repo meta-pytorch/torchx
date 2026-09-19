@@ -9,7 +9,7 @@
 
 import unittest
 
-from torchx.specs import app_metadata, NA, TORCHX_CONTEXT_NAME
+from torchx.specs import NA, TORCHX_CONTEXT_NAME, app_metadata
 
 
 class MetadataKeysGoldenSpellingTest(unittest.TestCase):

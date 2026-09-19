@@ -22,7 +22,7 @@ from dataclasses import dataclass, replace
 from inspect import getmembers, isfunction
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, cast, Generator, Protocol
+from typing import Callable, Generator, Protocol, cast
 
 from torchx.specs import AppDef
 from torchx.specs.file_linter import (

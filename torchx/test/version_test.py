@@ -18,7 +18,7 @@ class VersionTest(unittest.TestCase):
         self.assertIsNotNone(torchx.IMAGE)
 
     def test_images(self) -> None:
-        from torchx.version import __version__, TORCHX_IMAGE
+        from torchx.version import TORCHX_IMAGE, __version__
 
         self.assertEqual(TORCHX_IMAGE, f"ghcr.io/pytorch/torchx:{__version__}")
 

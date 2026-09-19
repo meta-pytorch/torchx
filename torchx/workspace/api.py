@@ -13,9 +13,9 @@ import posixpath
 import tempfile
 import warnings
 from dataclasses import dataclass
-from typing import Any, Generic, Iterable, Mapping, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Iterable, Mapping, TypeVar
 
-from torchx.specs import AppDef, CfgVal, Role, runopts, Workspace
+from torchx.specs import AppDef, CfgVal, Role, Workspace, runopts
 
 logger: logging.Logger = logging.getLogger(__name__)
 

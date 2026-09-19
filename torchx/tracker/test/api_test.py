@@ -7,8 +7,8 @@
 
 import os
 from collections import defaultdict
-from typing import cast, DefaultDict, Iterable, Mapping
-from unittest import mock, TestCase
+from typing import DefaultDict, Iterable, Mapping, cast
+from unittest import TestCase, mock
 from unittest.mock import MagicMock, patch
 
 from torchx.settings import (
@@ -18,15 +18,15 @@ from torchx.settings import (
 )
 from torchx.tracker import app_run_from_env
 from torchx.tracker.api import (
-    _extract_tracker_name_and_config_from_environ,
     AppRun,
-    build_trackers,
     Lineage,
-    tracker_config_env_var_name,
     TrackerArtifact,
     TrackerBase,
-    trackers_from_environ,
     TrackerSource,
+    _extract_tracker_name_and_config_from_environ,
+    build_trackers,
+    tracker_config_env_var_name,
+    trackers_from_environ,
 )
 
 RunId = str

@@ -16,11 +16,11 @@ from unittest.mock import MagicMock, patch
 from torchx.plugins import registry
 from torchx.runner import events
 from torchx.runner.events import (
+    SourceType,
+    TorchxEvent,
     _get_or_create_logger,
     log_event,
     record,
-    SourceType,
-    TorchxEvent,
 )
 from torchx.runner.events.handlers import get_logging_handler
 from torchx.util import entrypoints

@@ -15,19 +15,19 @@ import unittest
 from contextlib import contextmanager
 from importlib import resources
 from typing import Generator
-from unittest.mock import call, MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import torchx
 from torchx import specs
 from torchx.schedulers.api import DescribeAppResponse, ListAppResponse, Stream
 from torchx.schedulers.slurm_scheduler import (
-    _get_job_dirs,
-    _save_job_dir,
-    create_scheduler,
     SlurmBatchRequest,
     SlurmOpts,
     SlurmReplicaRequest,
     SlurmScheduler,
+    _get_job_dirs,
+    _save_job_dir,
+    create_scheduler,
 )
 from torchx.specs import AppState
 

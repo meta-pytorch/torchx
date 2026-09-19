@@ -13,11 +13,12 @@ import tempfile
 import unittest
 
 import fsspec
+
 from torchx.specs import Role
 from torchx.workspace.dir_workspace import (
-    _copy_to_dir,
     DirWorkspaceMixin,
     TmpDirWorkspaceMixin,
+    _copy_to_dir,
 )
 
 

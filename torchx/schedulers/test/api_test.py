@@ -19,20 +19,20 @@ from torchx.schedulers.api import (
     DescribeAppResponse,
     ListAppResponse,
     Scheduler,
-    split_lines,
-    split_lines_iterator,
     Stream,
     StructuredOpts,
+    split_lines,
+    split_lines_iterator,
 )
 from torchx.specs.api import (
+    NULL_RESOURCE,
     AppDef,
     AppDryRunInfo,
     CfgVal,
     InvalidRunConfigException,
-    macros,
-    NULL_RESOURCE,
     Resource,
     Role,
+    macros,
     runopts,
 )
 from torchx.util.types import none_throws

@@ -13,6 +13,7 @@ import tempfile
 import unittest
 
 import fsspec
+
 from torchx.apps.utils.copy_main import main
 
 

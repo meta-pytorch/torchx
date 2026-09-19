@@ -23,10 +23,6 @@ from torchx.schedulers.api import DescribeAppResponse, ListAppResponse
 from torchx.schedulers.docker_scheduler import has_docker
 from torchx.schedulers.ids import make_unique
 from torchx.schedulers.kubernetes_scheduler import (
-    app_to_resource,
-    create_scheduler,
-    KubernetesJob,
-    KubernetesScheduler,
     LABEL_APP_NAME,
     LABEL_INSTANCE_TYPE,
     LABEL_KUBE_APP_NAME,
@@ -36,8 +32,12 @@ from torchx.schedulers.kubernetes_scheduler import (
     LABEL_ROLE_NAME,
     LABEL_UNIQUE_NAME,
     LABEL_VERSION,
-    Opts,
     PLACEHOLDER_FIELD_PATH,
+    KubernetesJob,
+    KubernetesScheduler,
+    Opts,
+    app_to_resource,
+    create_scheduler,
     role_to_pod,
 )
 from torchx.specs import AppDryRunInfo, AppState
@@ -1456,6 +1456,7 @@ spec:
     def test_apply_pod_overlay_dict_merge(self) -> None:
         """Overlay merges nodeSelector, adds tolerations and affinity."""
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1577,6 +1578,7 @@ spec:
             V1PodSpec,
             V1Toleration,
         )
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1607,6 +1609,7 @@ spec:
             V1PodSpec,
             V1Toleration,
         )
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1630,6 +1633,7 @@ spec:
 
     def test_apply_pod_overlay_container_new_name_appends(self) -> None:
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1663,6 +1667,7 @@ spec:
         import copy
 
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1697,6 +1702,7 @@ spec:
 
     def test_apply_pod_overlay_container_replace_tuple(self) -> None:
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1725,6 +1731,7 @@ spec:
 
     def test_apply_pod_overlay_init_container_merge_by_name(self) -> None:
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1755,6 +1762,7 @@ spec:
 
     def test_apply_pod_overlay_container_mixed_match_and_append(self) -> None:
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1799,6 +1807,7 @@ spec:
 
     def test_apply_pod_overlay_container_empty_list(self) -> None:
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1822,6 +1831,7 @@ spec:
     def test_apply_pod_overlay_put_replaces_containers(self) -> None:
         """PUT replaces containers list entirely."""
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
@@ -1853,6 +1863,7 @@ spec:
     def test_apply_pod_overlay_no_join_appends(self) -> None:
         """Without JOIN, container lists are appended (not merged)."""
         from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(

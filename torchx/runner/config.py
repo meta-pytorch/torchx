@@ -165,8 +165,8 @@ from pathlib import Path
 from typing import Iterable, TextIO
 
 from torchx import settings
-from torchx.schedulers import get_scheduler_factories, Scheduler
-from torchx.specs import CfgVal, get_type_name, InvalidRunConfigException
+from torchx.schedulers import Scheduler, get_scheduler_factories
+from torchx.specs import CfgVal, InvalidRunConfigException, get_type_name
 from torchx.specs.api import runopt
 from torchx.util import entrypoints
 

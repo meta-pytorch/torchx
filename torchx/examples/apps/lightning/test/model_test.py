@@ -9,6 +9,7 @@
 import unittest
 
 import torch
+
 from torchx.examples.apps.lightning.model import TinyImageNetModel
 
 

@@ -8,7 +8,7 @@
 
 from importlib import metadata
 from importlib.metadata import EntryPoint
-from typing import Callable, cast, overload, TypeVar
+from typing import Callable, TypeVar, cast, overload
 
 T = TypeVar("T")
 

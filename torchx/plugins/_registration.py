@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import sys
 from types import ModuleType
-from typing import Any, Callable, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 if TYPE_CHECKING:
     from torchx.specs.api import Resource  # @manual

@@ -59,10 +59,11 @@ import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.distributed.elastic.multiprocessing import errors
+
 from torchx.examples.apps.lightning.data import (
+    TinyImageNetDataModule,
     create_random_data,
     download_data,
-    TinyImageNetDataModule,
 )
 from torchx.examples.apps.lightning.model import TinyImageNetModel
 from torchx.examples.apps.lightning.profiler import SimpleLoggingProfiler

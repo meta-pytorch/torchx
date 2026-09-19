@@ -23,7 +23,7 @@ Example workspace paths:
 """
 
 from torchx.workspace.api import (  # noqa: F401
+    WorkspaceMixin,
     pin_workspace_images,
     walk_workspace,
-    WorkspaceMixin,
 )

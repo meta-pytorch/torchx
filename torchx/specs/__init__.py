@@ -35,24 +35,21 @@ from typing import Callable, Iterator, KeysView, Mapping
 from torchx import plugins
 from torchx.specs.api import (  # noqa: F401
     ALL,
+    MISSING,
+    NONE,
+    NULL_RESOURCE,
+    TORCHX_HOME,
+    UNKNOWN,
     AppDef,
     AppDryRunInfo,
     AppHandle,
     AppState,
     AppStatus,
     BindMount,
-    cases,
     CfgVal,
     DeviceMount,
-    get_type_name,
     InvalidRunConfigException,
-    is_terminal,
-    macros,
     MalformedAppHandleException,
-    MISSING,
-    NONE,
-    NULL_RESOURCE,
-    parse_app_handle,
     ParsedAppHandle,
     ReplicaState,
     ReplicaStatus,
@@ -60,18 +57,21 @@ from torchx.specs.api import (  # noqa: F401
     RetryPolicy,
     Role,
     RoleStatus,
-    runopt,
-    runopts,
-    TORCHX_HOME,
-    UNKNOWN,
     UnknownAppException,
     UnknownSchedulerException,
     VolumeMount,
     Workspace,
+    cases,
+    get_type_name,
+    is_terminal,
+    macros,
+    parse_app_handle,
+    runopt,
+    runopts,
 )
 from torchx.specs.builders import make_app_handle, materialize_appdef, parse_mounts
 from torchx.specs.capabilities import CapabilityKey
-from torchx.specs.metadata_keys import app_metadata, NA, TORCHX_CONTEXT_NAME
+from torchx.specs.metadata_keys import NA, TORCHX_CONTEXT_NAME, app_metadata
 from torchx.util.modules import import_attr
 
 GiB: int = 1024

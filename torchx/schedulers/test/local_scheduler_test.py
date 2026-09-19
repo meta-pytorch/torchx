@@ -28,25 +28,25 @@ from unittest.mock import MagicMock, patch
 
 from torchx.schedulers.api import DescribeAppResponse
 from torchx.schedulers.local_scheduler import (
+    ENV_CUDA_VISIBLE_DEVICES,
+    CWDImageProvider,
+    LocalDirectoryImageProvider,
+    LocalScheduler,
+    Opts,
+    PopenRequest,
     _join_PATH,
     _LocalAppDef,
     create_scheduler,
-    CWDImageProvider,
-    ENV_CUDA_VISIBLE_DEVICES,
-    LocalDirectoryImageProvider,
-    LocalScheduler,
     make_unique,
-    Opts,
-    PopenRequest,
 )
 from torchx.specs.api import (
     AppDef,
     AppDryRunInfo,
     AppState,
-    is_terminal,
-    macros,
     Resource,
     Role,
+    is_terminal,
+    macros,
 )
 from torchx.testing.fixtures import write_shell_script
 from torchx.util.types import none_throws

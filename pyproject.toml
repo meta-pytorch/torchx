@@ -107,6 +107,7 @@ select = [
     "C4",   # flake8-comprehensions
     "E",    # pycodestyle errors
     "F",    # pyflakes
+    "I",    # isort
     "W",    # pycodestyle warnings
 ]
 ignore = [

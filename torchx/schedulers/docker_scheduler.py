@@ -13,37 +13,38 @@ import re
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Iterable, Mapping, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable, Mapping
+
+import yaml
 
 import torchx
-import yaml
 from torchx import settings
 from torchx.schedulers.api import (
     DescribeAppResponse,
-    filter_regex,
     ListAppResponse,
     Scheduler,
-    split_lines,
     Stream,
     StructuredOpts,
+    filter_regex,
+    split_lines,
 )
 from torchx.schedulers.devices import get_device_mounts
 from torchx.schedulers.ids import make_unique
 from torchx.specs.api import (
+    UNKNOWN,
     AppDef,
     AppDryRunInfo,
     AppState,
     BindMount,
     CfgVal,
     DeviceMount,
-    is_terminal,
-    macros,
     ReplicaStatus,
     Role,
     RoleStatus,
-    runopts,
-    UNKNOWN,
     VolumeMount,
+    is_terminal,
+    macros,
+    runopts,
 )
 from torchx.workspace.docker_workspace import DockerWorkspaceMixin
 
