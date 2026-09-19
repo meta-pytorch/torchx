@@ -4,18 +4,17 @@ Job launcher and orchestration library for PyTorch. Core types in `specs/api.py`
 
 ## Development
 
-| Environment | Tests | Lint + Format | Type Check |
-|-------------|-------|---------------|------------|
-| OSS (`github/`) | `uv run pytest` | `uv run lintrunner -a` | `uv run pyre check` |
-| fbsource | `buck2 test //torchx/...` | `arc lint -a` / `arc f` | `arc pyre check-changed-targets` |
+| Tests | Lint + Format | Type Check |
+|-------|---------------|------------|
+| `uv run pytest` | `uv run lintrunner -a` | `uv run pyre check` |
 
-OSS repo root is `github/`. Setup: `cd github && uv sync --all-extras`.
+Setup: `uv sync --all-extras`.
 
 Run `uv lock` after changing `pyproject.toml`. Commit both together.
 
 ## Conventions
 
-**Headers**: OSS: `# Copyright (c) Meta Platforms, Inc. and affiliates.` + BSD license + `# pyre-strict`. fb/: `# (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.`
+**Headers**: `# Copyright (c) Meta Platforms, Inc. and affiliates.` + BSD license + `# pyre-strict`.
 
 **Docstrings**: Google Style, Sphinx/Napoleon compatible. Succinct — skip Args/Returns when obvious. Prefer `.. doctest::` over code blocks. Components lead with CLI examples. Dataclasses use `Args:`. Use `:py:class:`/`:py:func:` cross-references.
 
