@@ -1,0 +1,35 @@
+project-includes = ["torchx", "scripts"]
+project-excludes = [
+    "**/.venv/**",
+    "**/build/**",
+    "**/docs/**",
+    "**/node_modules/**",
+    "setup.py",
+    "torchx/examples/apps/compute_world_size/**",
+    "torchx/github/**",
+    "torchx/plugins/test/broken_root/**",
+]
+
+python-version = "3.10"
+
+# Everything below is debt, listed with the count it had when pyrefly replaced
+# pyre. Deleting a line and fixing what it reveals is how the list shrinks; it
+# is not a statement about which checks this project wants.
+[errors]
+bad-argument-type = false      # 26
+missing-attribute = false      # 10
+no-matching-overload = false   #  3
+bad-index = false              #  3
+bad-override = false           #  2
+bad-assignment = false         #  1
+bad-return = false             #  1
+invalid-annotation = false     #  1
+unsupported-operation = false  #  1
+
+# Tests patch attributes onto mocks and modules by design: 59 of the 69
+# missing-attribute hits are in test files, and none of them is a defect.
+[[sub-config]]
+matches = "**/test/**"
+
+[sub-config.errors]
+missing-attribute = false

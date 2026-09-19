@@ -19,7 +19,7 @@ Filter to files under the `torchx/` tree.
 Run the validation tools on each modified `.py` file. Collect all failures — these are **blocking** issues.
 
 - `uv run lintrunner -a` (lint + format)
-- `uv run pyre check` (type check)
+- `uv run pyrefly check` (type check)
 
 ### Step 3: Review changes
 

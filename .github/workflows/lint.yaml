@@ -26,11 +26,9 @@ jobs:
         run: |
           set -eux
           uv sync --frozen --extra dev
-          uv run lintrunner init --skip PYRE
+          uv run lintrunner init
       - name: Run Lint
-        # PYRE is skipped here because it has its own workflow (pyre.yaml) that
-        # runs pyre directly for cleaner output and better error handling.
         run: |
           git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 
-          uv run lintrunner --skip PYRE --force-color --all-files
+          uv run lintrunner --force-color --all-files

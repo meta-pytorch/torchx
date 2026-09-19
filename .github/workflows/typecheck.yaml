@@ -1,4 +1,4 @@
-name: Pyre
+name: Type Check
 
 on:
   push:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  pyre:
+  pyrefly:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -26,10 +26,5 @@ jobs:
         run: |
           set -eux
           uv sync --frozen --extra dev
-      - name: Init Lint Runner
-        run: uv run lintrunner init
-      - name: Run Pyre
-        # Run pyre directly instead of via lintrunner to check the entire codebase.
-        # lintrunner's PYRE linter only checks files passed via PATHSFILE, but CI
-        # needs a full type check. See also: lint.yaml which skips PYRE.
-        run: uv run scripts/pyre.sh
+      - name: Run Pyrefly
+        run: uv run pyrefly check

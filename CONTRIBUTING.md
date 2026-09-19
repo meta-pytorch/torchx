@@ -12,7 +12,7 @@ We actively welcome your pull requests.
 2. If you've added code that should be tested, add tests.
 3. If you've changed APIs, update the documentation.
 4. Ensure the test suite passes.
-5. Make sure your code lints (see [Lint + Pyre](#lint--pyre) section below).
+5. Make sure your code lints (see [Lint + type check](#lint--type-check) section below).
 6. If you haven't already, complete the Contributor License Agreement ("CLA").
 
 ## Contributor License Agreement ("CLA")
@@ -45,13 +45,14 @@ uv run pytest
 uv run torchx --help
 ```
 
-## Lint + Pyre
+## Lint + type check
 
-Lint and type checking can be run via `lintrunner`:
+Lint runs via `lintrunner`, type checking via `pyrefly`:
 
 ```sh
-uv run lintrunner init  # Sets up pyre
+uv run lintrunner init
 uv run lintrunner -a
+uv run pyrefly check
 ```
 
 Or activate the venv first:
@@ -60,6 +61,7 @@ Or activate the venv first:
 source .venv/bin/activate
 lintrunner init
 lintrunner -a
+pyrefly check
 ```
 
 ## License
