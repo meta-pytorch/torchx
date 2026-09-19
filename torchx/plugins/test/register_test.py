@@ -468,7 +468,7 @@ class NamedResourceRegisterTest(unittest.TestCase):
                 "alias should inherit IS_FRACTIONAL=False from base factory",
             )
 
-    def test_tags_match_fbcode_named_resource_behavior(self) -> None:
+    def test_tags_match_named_resource_behavior(self) -> None:
         """Verify tag behavior across all factory types.
 
         - base factory: RESOURCE_NAME=name, IS_FRACTIONAL=False
