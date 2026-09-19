@@ -6,8 +6,13 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout TorchX
@@ -21,7 +26,7 @@ jobs:
         run: |
           set -eux
           uv sync --frozen --extra dev
-          uv run lintrunner init
+          uv run lintrunner init --skip PYRE
       - name: Run Lint
         # PYRE is skipped here because it has its own workflow (pyre.yaml) that
         # runs pyre directly for cleaner output and better error handling.
