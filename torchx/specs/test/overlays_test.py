@@ -5,11 +5,14 @@
 # LICENSE file in the root directory of this source tree.
 
 import copy
+import enum
+import io
 import json
 import logging
 import os
 import tempfile
 import unittest
+from dataclasses import dataclass, field
 from typing import Any
 
 from torchx.specs import AppDef, Role
@@ -25,6 +28,148 @@ from torchx.specs.overlays import (
     set_overlay,
     validate_overlay,
 )
+
+
+class DataclassOverlayTest(unittest.TestCase):
+    def test_nested_dataclasses_enums_and_defaults(self) -> None:
+        class Scope(enum.IntEnum):
+            ZONE = 7
+
+        class Mode(enum.Enum):
+            FAST = "fast-mode"
+
+        @dataclass(frozen=True)
+        class Affinity:
+            scope: Scope = Scope.ZONE
+            mode: Mode = Mode.FAST
+            optional: str | None = None
+
+        @dataclass
+        class Settings:
+            affinity: Affinity = field(default_factory=Affinity)
+            count: int = 0
+            enabled: bool = False
+            command: str = ""
+            entries: list[Affinity] = field(default_factory=lambda: [Affinity()])
+
+        role = Role(name="trainer", image="image")
+        settings = Settings()
+        set_overlay(role, "scheduler", "Settings", settings)
+        actual = get_overlay(role, "scheduler", "Settings")
+        affinity = {"scope": 7, "mode": "fast-mode"}
+        self.assertEqual(
+            actual,
+            {
+                "affinity": affinity,
+                "count": 0,
+                "enabled": False,
+                "command": "",
+                "entries": [affinity],
+            },
+        )
+        self.assertIs(type(actual["affinity"]["scope"]), int)
+        self.assertEqual(json.loads(json.dumps(actual)), actual)
+        settings.entries.clear()
+        self.assertEqual(actual["entries"], [affinity])
+        base = {"command": "train.py", "unrelated": 1}
+        apply_overlay(base, actual)
+        self.assertEqual(base["command"], "")
+        self.assertEqual(base["unrelated"], 1)
+
+    def test_dataclasses_inside_operator_values(self) -> None:
+        @dataclass
+        class Container:
+            name: str
+            image: str
+
+        role = Role(name="trainer", image="image")
+        set_overlay(
+            role,
+            "scheduler",
+            "Settings",
+            {
+                JOIN("containers", on="name"): [Container("main", "v2")],
+                PUT("replacement"): Container("only", "v3"),
+                "legacy": (Container("new", "v4"),),
+                "nullable": None,
+            },
+        )
+        base = {
+            "containers": [{"name": "main", "image": "v1", "cpu": 1}],
+            "replacement": {"old": 1},
+            "legacy": [{"name": "old"}],
+            "nullable": "old",
+        }
+        apply_overlay(base, get_overlay(role, "scheduler", "Settings"))
+        self.assertEqual(
+            base,
+            {
+                "containers": [{"name": "main", "image": "v2", "cpu": 1}],
+                "replacement": {"name": "only", "image": "v3"},
+                "legacy": [{"name": "old"}, {"name": "new", "image": "v4"}],
+                "nullable": None,
+            },
+        )
+
+    def test_overlay_spec_accepts_and_validates_dataclasses(self) -> None:
+        @dataclass
+        class Settings:
+            replicas: int
+            command: str | None = None
+
+        spec = OverlaySpec("scheduler", "Settings", blocklist=("command",))
+        app = AppDef(name="test", roles=[])
+        spec.set(app, Settings(replicas=2))
+        self.assertEqual(spec.get(app), {"replicas": 2})
+        before = copy.deepcopy(app.metadata)
+        with self.assertRaisesRegex(ValueError, "command"):
+            spec.set(app, Settings(replicas=3, command="train.py"))
+        self.assertEqual(app.metadata, before)
+
+    def test_invalid_leaves_fail_before_metadata_changes(self) -> None:
+        @dataclass
+        class Settings:
+            payload: Any
+
+        class Unsupported(enum.Enum):
+            STREAM = io.StringIO()
+
+        role = Role(name="trainer", image="image")
+        set_overlay(role, "scheduler", "Settings", {"keep": 1})
+        before = copy.deepcopy(role.metadata)
+        for value in [io.StringIO(), b"bytes", {1}, Unsupported.STREAM]:
+            with self.subTest(value=type(value).__name__):
+                with self.assertRaisesRegex(
+                    TypeError, r"overlay.payload\['items'\]\[0\]"
+                ):
+                    set_overlay(
+                        role,
+                        "scheduler",
+                        "Settings",
+                        Settings(payload={"items": [value]}),
+                    )
+                self.assertEqual(role.metadata, before)
+
+    def test_non_string_mapping_keys_are_rejected(self) -> None:
+        @dataclass
+        class Settings:
+            mapping: dict[int, str]
+
+        role = Role(name="trainer", image="image")
+        with self.assertRaisesRegex(TypeError, "overlay.mapping.*keys must be strings"):
+            set_overlay(role, "scheduler", "Settings", Settings(mapping={1: "value"}))
+        self.assertEqual(role.metadata, {})
+
+    def test_dataclass_type_is_not_an_instance(self) -> None:
+        @dataclass
+        class Settings:
+            replicas: int = 1
+
+        role = Role(name="trainer", image="image")
+        with self.assertRaisesRegex(TypeError, "dict or dataclass instance"):
+            set_overlay(role, "scheduler", "Settings", Settings)
+        self.assertEqual(role.metadata, {})
+
 
 # =============================================================================
 # apply_overlay: default merge semantics

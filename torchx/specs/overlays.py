@@ -36,6 +36,22 @@ Use :py:func:`set_overlay` to attach scheduler-specific fields to a
     >>> get_overlay(role, "kubernetes", "V1Pod")
     {'spec': {'nodeSelector': {'accelerator': 'a100'}, 'tolerations': [{'key': 'gpu', 'operator': 'Exists'}]}}
 
+Dataclasses can supply typed overlay values:
+
+.. doctest::
+
+    >>> from dataclasses import dataclass
+    >>> from enum import IntEnum
+    >>> class Priority(IntEnum):
+    ...     HIGH = 7
+    >>> @dataclass
+    ... class JobOptions:
+    ...     priority: Priority = Priority.HIGH
+    ...     queue: str | None = None
+    >>> set_overlay(role, "scheduler", "JobOptions", JobOptions())
+    >>> get_overlay(role, "scheduler", "JobOptions")
+    {'priority': 7}
+
 Operators
 ~~~~~~~~~
 
@@ -117,9 +133,11 @@ stored overlays, :py:func:`validate_overlay` to guard against user error, and
 from __future__ import annotations
 
 import copy
+import dataclasses
+import enum
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 if TYPE_CHECKING:
     from torchx.specs import AppDef, Role
@@ -127,6 +145,51 @@ if TYPE_CHECKING:
 logger: logging.Logger = logging.getLogger(__name__)
 
 _Overlay = dict[str, Any]
+
+
+class _Dataclass(Protocol):
+    __dataclass_fields__: ClassVar[dict[str, Any]]
+
+
+def _serialize_overlay(value: Any, path: str, *, strict: bool = False) -> Any:
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _serialize_overlay(item, f"{path}.{field.name}", strict=True)
+            for field in dataclasses.fields(value)
+            if (item := getattr(value, field.name)) is not None
+        }
+    if isinstance(value, enum.Enum):
+        return _serialize_overlay(value.value, path, strict=strict)
+    if isinstance(value, dict):
+        result = {}
+        for key, item in value.items():
+            if strict and not isinstance(key, str):
+                raise TypeError(
+                    f"{path}: dataclass overlay mapping keys must be strings"
+                )
+            result[key] = _serialize_overlay(item, f"{path}[{key!r}]", strict=strict)
+        return result
+    if isinstance(value, (list, tuple)):
+        items = [
+            _serialize_overlay(item, f"{path}[{index}]", strict=strict)
+            for index, item in enumerate(value)
+        ]
+        return tuple(items) if isinstance(value, tuple) else items
+    if strict and value is not None and not isinstance(value, (str, int, float, bool)):
+        raise TypeError(
+            f"{path}: unsupported dataclass overlay value {type(value).__name__}; "
+            "expected a primitive, enum, dataclass, dict, list, or tuple"
+        )
+    return value
+
+
+def _as_overlay(overlay: _Overlay | _Dataclass) -> _Overlay:
+    if not isinstance(overlay, dict) and (
+        not dataclasses.is_dataclass(overlay) or isinstance(overlay, type)
+    ):
+        raise TypeError("overlay must be a dict or dataclass instance")
+    return _serialize_overlay(overlay, "overlay")
+
 
 # Format marker stamped into ``metadata[namespace]`` by :py:func:`set_overlay`.
 # Its presence means the namespace dict is in the nested ``{kind: overlay}``
@@ -509,7 +572,7 @@ def set_overlay(
     target: AppDef | Role,
     namespace: str,
     kind: str,
-    overlay: _Overlay,
+    overlay: _Overlay | _Dataclass,
 ) -> None:
     """Store an overlay in ``target.metadata[namespace][kind]``.
 
@@ -518,6 +581,16 @@ def set_overlay(
     :py:func:`JOIN`, and :py:func:`DEL` operators in the overlay dict to
     control per-field behavior.
 
+    Dataclass instances are accepted directly or inside dicts, lists and tuples.
+    Dataclass fields containing ``None`` are omitted; other defaults are included.
+    Enums become their values. Dataclass contents must use string-keyed dicts,
+    lists, tuples and primitive leaves (strings, numbers, booleans or ``None``).
+    Dictionary ``None`` values and overlay operators keep their existing semantics.
+    Conversion finishes before metadata is modified.
+
+    A dataclass includes its non-``None`` defaults even if the caller omitted
+    those arguments. Use a partial dict to leave those fields untouched.
+
     Args:
         namespace: Scheduler namespace (e.g., ``"kubernetes"``, ``"mast"``).
         kind: Scheduler struct type (e.g., ``"V1Pod"``,
@@ -525,11 +598,15 @@ def set_overlay(
 
     Raises:
         ValueError: if ``kind`` is the reserved nested-format marker key.
+        TypeError: if a dataclass contains an unsupported value or mapping key,
+            or ``overlay`` is neither a dict nor a dataclass instance.
     """
     if kind == _FORMAT_KEY:
         raise ValueError(
             f"overlay kind `{kind}` is reserved for the nested-format marker"
         )
+
+    overlay = _as_overlay(overlay)
 
     # Cast metadata to allow nested dicts
     # Note: AppDef.metadata is typed as dict[str, str] but overlays require nested dicts
@@ -752,12 +829,14 @@ class OverlaySpec:
     kind: str
     blocklist: tuple[str, ...] = ()
 
-    def set(self, target: AppDef | Role, overlay: _Overlay) -> None:
+    def set(self, target: AppDef | Role, overlay: _Overlay | _Dataclass) -> None:
         """Store *overlay* via :py:func:`set_overlay` (accumulates).
 
         Validates against ``blocklist`` so a disallowed key fails at write
         time (at the call site that supplied it), not at read time.
+        Dataclasses follow the serialization rules of :py:func:`set_overlay`.
         """
+        overlay = _as_overlay(overlay)
         validate_overlay(
             overlay,
             blocklist=list(self.blocklist),
