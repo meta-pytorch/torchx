@@ -463,6 +463,22 @@
 <span class="sd">    &gt;&gt;&gt; get_overlay(role, &quot;kubernetes&quot;, &quot;V1Pod&quot;)</span>
 <span class="sd">    {&#39;spec&#39;: {&#39;nodeSelector&#39;: {&#39;accelerator&#39;: &#39;a100&#39;}, &#39;tolerations&#39;: [{&#39;key&#39;: &#39;gpu&#39;, &#39;operator&#39;: &#39;Exists&#39;}]}}</span>
 
+<span class="sd">Dataclasses can supply typed overlay values:</span>
+
+<span class="sd">.. doctest::</span>
+
+<span class="sd">    &gt;&gt;&gt; from dataclasses import dataclass</span>
+<span class="sd">    &gt;&gt;&gt; from enum import IntEnum</span>
+<span class="sd">    &gt;&gt;&gt; class Priority(IntEnum):</span>
+<span class="sd">    ...     HIGH = 7</span>
+<span class="sd">    &gt;&gt;&gt; @dataclass</span>
+<span class="sd">    ... class JobOptions:</span>
+<span class="sd">    ...     priority: Priority = Priority.HIGH</span>
+<span class="sd">    ...     queue: str | None = None</span>
+<span class="sd">    &gt;&gt;&gt; set_overlay(role, &quot;scheduler&quot;, &quot;JobOptions&quot;, JobOptions())</span>
+<span class="sd">    &gt;&gt;&gt; get_overlay(role, &quot;scheduler&quot;, &quot;JobOptions&quot;)</span>
+<span class="sd">    {&#39;priority&#39;: 7}</span>
+
 <span class="sd">Operators</span>
 <span class="sd">~~~~~~~~~</span>
 
@@ -544,9 +560,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">cast</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">torchx.specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">AppDef</span><span class="p">,</span> <span class="n">Role</span>
@@ -554,6 +572,51 @@
 <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">_Overlay</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Dataclass</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">__dataclass_fields__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_serialize_overlay</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">_serialize_overlay</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="o">:=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_serialize_overlay</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: dataclass overlay mapping keys must be strings&quot;</span>
+                <span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_serialize_overlay</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">_serialize_overlay</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">[</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">items</span>
+    <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: unsupported dataclass overlay value </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">; &quot;</span>
+            <span class="s2">&quot;expected a primitive, enum, dataclass, dict, list, or tuple&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_as_overlay</span><span class="p">(</span><span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span> <span class="o">|</span> <span class="n">_Dataclass</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Overlay</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">overlay</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;overlay must be a dict or dataclass instance&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_serialize_overlay</span><span class="p">(</span><span class="n">overlay</span><span class="p">,</span> <span class="s2">&quot;overlay&quot;</span><span class="p">)</span>
+
 
 <span class="c1"># Format marker stamped into ``metadata[namespace]`` by :py:func:`set_overlay`.</span>
 <span class="c1"># Its presence means the namespace dict is in the nested ``{kind: overlay}``</span>
@@ -950,7 +1013,7 @@
     <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span>
     <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">,</span>
+    <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span> <span class="o">|</span> <span class="n">_Dataclass</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Store an overlay in ``target.metadata[namespace][kind]``.</span>
 
@@ -959,6 +1022,16 @@
 <span class="sd">    :py:func:`JOIN`, and :py:func:`DEL` operators in the overlay dict to</span>
 <span class="sd">    control per-field behavior.</span>
 
+<span class="sd">    Dataclass instances are accepted directly or inside dicts, lists and tuples.</span>
+<span class="sd">    Dataclass fields containing ``None`` are omitted; other defaults are included.</span>
+<span class="sd">    Enums become their values. Dataclass contents must use string-keyed dicts,</span>
+<span class="sd">    lists, tuples and primitive leaves (strings, numbers, booleans or ``None``).</span>
+<span class="sd">    Dictionary ``None`` values and overlay operators keep their existing semantics.</span>
+<span class="sd">    Conversion finishes before metadata is modified.</span>
+
+<span class="sd">    A dataclass includes its non-``None`` defaults even if the caller omitted</span>
+<span class="sd">    those arguments. Use a partial dict to leave those fields untouched.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        namespace: Scheduler namespace (e.g., ``&quot;kubernetes&quot;``, ``&quot;mast&quot;``).</span>
 <span class="sd">        kind: Scheduler struct type (e.g., ``&quot;V1Pod&quot;``,</span>
@@ -966,11 +1039,15 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: if ``kind`` is the reserved nested-format marker key.</span>
+<span class="sd">        TypeError: if a dataclass contains an unsupported value or mapping key,</span>
+<span class="sd">            or ``overlay`` is neither a dict nor a dataclass instance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="n">_FORMAT_KEY</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;overlay kind `</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">` is reserved for the nested-format marker&quot;</span>
         <span class="p">)</span>
+
+    <span class="n">overlay</span> <span class="o">=</span> <span class="n">_as_overlay</span><span class="p">(</span><span class="n">overlay</span><span class="p">)</span>
 
     <span class="c1"># Cast metadata to allow nested dicts</span>
     <span class="c1"># Note: AppDef.metadata is typed as dict[str, str] but overlays require nested dicts</span>
@@ -1204,12 +1281,14 @@
 
 <div class="viewcode-block" id="OverlaySpec.set">
 <a class="viewcode-back" href="../../../specs.html#torchx.specs.overlays.OverlaySpec.set">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span> <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">AppDef</span> <span class="o">|</span> <span class="n">Role</span><span class="p">,</span> <span class="n">overlay</span><span class="p">:</span> <span class="n">_Overlay</span> <span class="o">|</span> <span class="n">_Dataclass</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store *overlay* via :py:func:`set_overlay` (accumulates).</span>
 
 <span class="sd">        Validates against ``blocklist`` so a disallowed key fails at write</span>
 <span class="sd">        time (at the call site that supplied it), not at read time.</span>
+<span class="sd">        Dataclasses follow the serialization rules of :py:func:`set_overlay`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">_as_overlay</span><span class="p">(</span><span class="n">overlay</span><span class="p">)</span>
         <span class="n">validate_overlay</span><span class="p">(</span>
             <span class="n">overlay</span><span class="p">,</span>
             <span class="n">blocklist</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocklist</span><span class="p">),</span>
