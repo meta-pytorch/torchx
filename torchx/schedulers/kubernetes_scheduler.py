@@ -492,6 +492,18 @@ def role_to_pod(
     )
 
 
+def _volcano_task_hosts_env(task_name: str) -> str:
+    """
+    Returns the env var that Volcano's ``svc`` plugin populates with the hosts
+    of the task ``task_name`` (e.g. ``ray-head-0`` -> ``VC_RAY_HEAD_0_HOSTS``).
+
+    Mirrors Volcano's naming rule (``-`` -> ``_``, then upper-case) so that the
+    name matches what Volcano actually sets in the pod. See ``EnvTaskHostFmt``
+    in https://github.com/volcano-sh/volcano/tree/master/pkg/controllers/job/plugins/svc
+    """
+    return f"VC_{task_name.replace('-', '_').upper()}_HOSTS"
+
+
 def app_to_resource(
     app: AppDef,
     queue: str,
@@ -516,13 +528,14 @@ def app_to_resource(
     """
     tasks = []
     unique_app_id = normalize_str(make_unique(app.name))
+    rank0_env = _volcano_task_hosts_env(normalize_str(f"{app.roles[0].name}-0"))
     for role_idx, role in enumerate(app.roles):
         for replica_id in range(role.num_replicas):
             values = macros.Values(
                 img_root="",
                 app_id=unique_app_id,
                 replica_id=str(replica_id),
-                rank0_env=f"VC_{normalize_str(app.roles[0].name)}_0_HOSTS".upper(),
+                rank0_env=rank0_env,
             )
             if role_idx == 0 and replica_id == 0:
                 values.rank0_env = "TORCHX_RANK0_HOST"
