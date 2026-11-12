@@ -630,6 +630,30 @@ spec:
         self.assertEqual(call_kwargs["dry_run"], "All")
         self.assertEqual(call_kwargs["namespace"], "default")
 
+    def test_rank0_env_hyphenated_role_name(self) -> None:
+        scheduler = create_scheduler("test")
+        cfg = Opts(queue="testqueue")
+
+        # volcano replaces "-" with "_" in the task name to form the env var
+        for role_name, rank0_task, rank0_env in [
+            ("ray-head", "ray-head-0", "VC_RAY_HEAD_0_HOSTS"),
+            ("a-b-c", "a-b-c-0", "VC_A_B_C_0_HOSTS"),
+            ("Ray_Head", "rayhead-0", "VC_RAYHEAD_0_HOSTS"),
+        ]:
+            with self.subTest(role_name=role_name):
+                app = _test_app(num_replicas=2)
+                app.roles[0].name = role_name
+                info = scheduler.submit_dryrun(app, cfg)
+
+                tasks = info.request.resource["spec"]["tasks"]
+                self.assertEqual(rank0_task, tasks[0]["name"])
+                self.assertIn(
+                    rank0_env,
+                    tasks[1]["template"].spec.containers[0].command,
+                    "non-rank0 replicas must reference the env var volcano sets"
+                    f" for task `{rank0_task}`",
+                )
+
     def test_submit_dryrun_patch(self) -> None:
         scheduler = create_scheduler("test")
         app = _test_app()
