@@ -1116,13 +1116,10 @@ def pod_labels(
 
         # Replace invalid characters (allow: alphanum, -, _, .) with "."
         label_value = re.sub(r"[^A-Za-z0-9\-_.]", ".", label_value)
-        # Replace leading non-alphanumeric with "."
-        label_value = re.sub(r"^[^A-Za-z0-9]+", ".", label_value)
-        # Replace trailing non-alphanumeric with "."
-        label_value = re.sub(r"[^A-Za-z0-9]+$", ".", label_value)
 
-        # Trim to 63 characters
-        return label_value[:63]
+        # Trim to 63 characters, then strip the leading and trailing
+        # non-alphanumerics (trimming may leave one at the end)
+        return label_value[:63].strip("-_.")
 
     return {
         LABEL_VERSION: clean(torchx.__version__),
