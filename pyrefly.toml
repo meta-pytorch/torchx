@@ -10,7 +10,7 @@ project-excludes = [
     "torchx/plugins/test/broken_root/**",
 ]
 
-python-version = "3.10"
+python-version = "3.11"
 
 # Everything below is debt, listed with the count it had when pyrefly replaced
 # pyre. Deleting a line and fixing what it reveals is how the list shrinks; it
