@@ -7,6 +7,7 @@
 
 import base64
 import importlib
+import re
 import sys
 import unittest
 from datetime import datetime
@@ -2080,6 +2081,36 @@ spec:
                 LABEL_UNIQUE_NAME: app_id,
             },
         )
+
+        # a label value must begin and end with an alphanumeric character, so
+        # leading/trailing non-alphanumerics (including the ones left at the
+        # end after truncating to 63 characters) are dropped
+        label_value_re = re.compile(r"(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?")
+        for app_name, role_name, expected_app_name, expected_role_name in [
+            ("bert-ft-", "_worker", "bert-ft", "worker"),
+            ("__main__", "__main__", "main", "main"),
+            ("a" * 62 + "_b", "__", "a" * 62, ""),
+        ]:
+            app = specs.AppDef(
+                name=app_name,
+                roles=[specs.Role(name=role_name, image=_UNUSED)],
+            )
+            labels = kubernetes_scheduler.pod_labels(
+                app=app,
+                role_idx=0,
+                role=app.roles[0],
+                replica_id=0,
+                app_id=normalize_str(make_unique(app.name)),
+            )
+            self.assertEqual(expected_app_name, labels[LABEL_APP_NAME])
+            self.assertEqual(expected_app_name, labels[LABEL_KUBE_APP_NAME])
+            self.assertEqual(expected_role_name, labels[LABEL_ROLE_NAME])
+            for key, value in labels.items():
+                self.assertLessEqual(len(value), 63, f"{key}={value!r}")
+                self.assertIsNotNone(
+                    label_value_re.fullmatch(value),
+                    f"invalid label value {key}={value!r}",
+                )
 
 
 class KubernetesSchedulerNoImportTest(unittest.TestCase):
