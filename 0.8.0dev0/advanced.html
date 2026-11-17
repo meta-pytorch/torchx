@@ -879,7 +879,7 @@ and configure each in <code class="docutils literal notranslate"><span class="pr
 <section id="registering-custom-event-handlers">
 <span id="id2"></span><h2>Registering Custom Event Handlers<a class="headerlink" href="#registering-custom-event-handlers" title="Link to this heading">¶</a></h2>
 <p>TorchX records run events (see <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchx.runner.events</span></code>) through a
-<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Handler" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">logging.Handler</span></code></a> chosen by the <code class="docutils literal notranslate"><span class="pre">destination</span></code> name passed to
+<a class="reference external" href="https://docs.python.org/3/library/logging.html#logging.Handler" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">logging.Handler</span></code></a> chosen by the <code class="docutils literal notranslate"><span class="pre">destination</span></code> name passed to
 <code class="xref py py-func docutils literal notranslate"><span class="pre">record()</span></code>. Two are built in: <code class="docutils literal notranslate"><span class="pre">console</span></code> and
 <code class="docutils literal notranslate"><span class="pre">null</span></code>. Register your own to send events to a telemetry backend — a plugin
 takes precedence over a built-in of the same name, so registering <code class="docutils literal notranslate"><span class="pre">null</span></code>
