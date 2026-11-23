@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
 ]
 dependencies = [
     "docstring-parser>=0.8.1",
@@ -83,7 +84,7 @@ exclude = [
 ]
 
 [tool.setuptools.package-data]
-torchx = ["version.txt"]
+torchx = ["py.typed", "version.txt"]
 
 [tool.setuptools.dynamic]
 version = { file = "torchx/version.txt" }
