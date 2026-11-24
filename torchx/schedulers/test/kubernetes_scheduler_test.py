@@ -1862,35 +1862,420 @@ spec:
         self.assertEqual(pod.spec.containers[0].name, "only-one")
         self.assertEqual(pod.spec.containers[0].image, "new:latest")
 
-    def test_apply_pod_overlay_no_join_appends(self) -> None:
-        """Without JOIN, container lists are appended (not merged)."""
-        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+    def test_apply_pod_overlay_probes_merge_preserves_image_and_args(self) -> None:
+        """1. Merge livenessProbe and readinessProbe into default worker container while preserving image and args."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
 
         from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
 
         pod = V1Pod(
             spec=V1PodSpec(
-                containers=[V1Container(name="trainer-0", image="pytorch:latest")],
-            ),
-            metadata=V1ObjectMeta(name="test-pod"),
+                containers=[
+                    V1Container(
+                        name="worker",
+                        image="busybox:1.0",
+                        args=["sleep", "3600"],
+                    )
+                ]
+            )
         )
-
-        # No JOIN -> append semantics (even for same name)
         overlay = {
             "spec": {
                 "containers": [
-                    {"name": "trainer-0", "memory": "1Gi"},
-                ],
+                    {
+                        "name": "worker",
+                        "livenessProbe": {"exec": {"command": ["echo", "ok"]}},
+                        "readinessProbe": {"httpGet": {"path": "/ready", "port": 8080}},
+                    }
+                ]
             }
         }
+        _apply_pod_overlay(pod, overlay)
 
+        self.assertEqual(len(pod.spec.containers), 1)
+        worker = pod.spec.containers[0]
+        self.assertEqual(worker.name, "worker")
+        self.assertEqual(worker.image, "busybox:1.0")
+        self.assertEqual(worker.args, ["sleep", "3600"])
+        self.assertIsNotNone(worker.liveness_probe)
+        exec_probe = getattr(worker.liveness_probe, "_exec", None) or getattr(
+            worker.liveness_probe, "exec", None
+        )
+        self.assertIsNotNone(exec_probe)
+        self.assertEqual(exec_probe.command, ["echo", "ok"])
+        self.assertIsNotNone(worker.readiness_probe)
+        self.assertEqual(worker.readiness_probe.http_get.path, "/ready")
+        self.assertEqual(worker.readiness_probe.http_get.port, 8080)
+
+    def test_apply_pod_overlay_deep_merges_nested_resources(self) -> None:
+        """2. Deep merge nested resources.limits without wiping existing resources.requests."""
+        from kubernetes.client.models import (
+            V1Container,
+            V1Pod,
+            V1PodSpec,
+            V1ResourceRequirements,
+        )
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[
+                    V1Container(
+                        name="worker",
+                        image="busybox",
+                        resources=V1ResourceRequirements(
+                            requests={"cpu": "100m", "memory": "256Mi"}
+                        ),
+                    )
+                ]
+            )
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {
+                        "name": "worker",
+                        "resources": {"limits": {"cpu": "500m"}},
+                    }
+                ]
+            }
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.containers), 1)
+        worker = pod.spec.containers[0]
+        self.assertEqual(
+            worker.resources.requests,
+            {"cpu": "100m", "memory": "256Mi"},
+        )
+        self.assertEqual(worker.resources.limits, {"cpu": "500m"})
+
+    def test_apply_pod_overlay_merge_and_append_sidecar(self) -> None:
+        """3. Merge into worker while appending a new sidecar container in the same overlay."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox:1.0")])
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {"name": "worker", "image": "busybox:2.0"},
+                    {"name": "sidecar", "image": "nginx:latest"},
+                ]
+            }
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.containers), 2)
+        self.assertEqual(pod.spec.containers[0].name, "worker")
+        self.assertEqual(pod.spec.containers[0].image, "busybox:2.0")
+        self.assertEqual(pod.spec.containers[1].name, "sidecar")
+        self.assertEqual(pod.spec.containers[1].image, "nginx:latest")
+
+    def test_apply_pod_overlay_out_of_order_containers_merge(self) -> None:
+        """4. Merge multiple existing containers when listed out of order in the overlay."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[
+                    V1Container(name="app", image="app:1.0"),
+                    V1Container(name="log", image="log:1.0"),
+                ]
+            )
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {"name": "log", "image": "log:2.0"},
+                    {"name": "app", "image": "app:2.0"},
+                ]
+            }
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.containers), 2)
+        self.assertEqual(pod.spec.containers[0].name, "app")
+        self.assertEqual(pod.spec.containers[0].image, "app:2.0")
+        self.assertEqual(pod.spec.containers[1].name, "log")
+        self.assertEqual(pod.spec.containers[1].image, "log:2.0")
+
+    def test_apply_pod_overlay_init_containers_merge_and_append(self) -> None:
+        """5. Merge and append initContainers by name."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="worker", image="busybox")],
+                init_containers=[V1Container(name="init-1", image="alpine:1.0")],
+            )
+        )
+        overlay = {
+            "spec": {
+                "initContainers": [
+                    {"name": "init-1", "command": ["setup.sh"]},
+                    {"name": "init-2", "image": "busybox:latest"},
+                ]
+            }
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.init_containers), 2)
+        self.assertEqual(pod.spec.init_containers[0].name, "init-1")
+        self.assertEqual(pod.spec.init_containers[0].image, "alpine:1.0")
+        self.assertEqual(pod.spec.init_containers[0].command, ["setup.sh"])
+        self.assertEqual(pod.spec.init_containers[1].name, "init-2")
+        self.assertEqual(pod.spec.init_containers[1].image, "busybox:latest")
+
+    def test_apply_pod_overlay_update_containers_and_init_containers(self) -> None:
+        """6. Update both containers and initContainers in a single overlay."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(
+                containers=[V1Container(name="app", image="app:1.0")],
+                init_containers=[V1Container(name="init", image="init:1.0")],
+            )
+        )
+        overlay = {
+            "spec": {
+                "containers": [{"name": "app", "image": "app:2.0"}],
+                "initContainers": [{"name": "init", "image": "init:2.0"}],
+            }
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(pod.spec.containers[0].image, "app:2.0")
+        self.assertEqual(pod.spec.init_containers[0].image, "init:2.0")
+
+    def test_apply_pod_overlay_fallback_unnamed_container(self) -> None:
+        """7. Fallback to append when an overlay container omits 'name'."""
+        from unittest.mock import patch
+
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox")])
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {"image": "nginx"},
+                ]
+            }
+        }
+        with patch("kubernetes.client.ApiClient._ApiClient__deserialize") as mock_deser:
+            mock_deser.return_value = V1Pod(spec=V1PodSpec(containers=[]))
+            _apply_pod_overlay(pod, overlay)
+            pod_dict = mock_deser.call_args[0][0]
+            containers = pod_dict["spec"]["containers"]
+            self.assertEqual(len(containers), 2)
+            self.assertEqual(containers[0]["name"], "worker")
+            self.assertEqual(containers[1]["image"], "nginx")
+
+    def test_apply_pod_overlay_fallback_mixed_named_and_unnamed_containers(
+        self,
+    ) -> None:
+        """8. Fallback to append when an overlay mixes named and unnamed containers."""
+        from unittest.mock import patch
+
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox")])
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {"name": "worker", "image": "updated"},
+                    {"image": "nginx"},
+                ]
+            }
+        }
+        with patch("kubernetes.client.ApiClient._ApiClient__deserialize") as mock_deser:
+            mock_deser.return_value = V1Pod(spec=V1PodSpec(containers=[]))
+            _apply_pod_overlay(pod, overlay)
+            pod_dict = mock_deser.call_args[0][0]
+            containers = pod_dict["spec"]["containers"]
+            self.assertEqual(len(containers), 3)
+            self.assertEqual(containers[0]["name"], "worker")
+            self.assertEqual(containers[0]["image"], "busybox")
+            self.assertEqual(containers[1]["name"], "worker")
+            self.assertEqual(containers[1]["image"], "updated")
+            self.assertEqual(containers[2]["image"], "nginx")
+
+    def test_apply_pod_overlay_empty_containers_noop(self) -> None:
+        """9. Empty containers: [] list is a safe no-op."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox")])
+        )
+        overlay = {"spec": {"containers": []}}
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.containers), 1)
+        self.assertEqual(pod.spec.containers[0].name, "worker")
+        self.assertEqual(pod.spec.containers[0].image, "busybox")
+
+    def test_apply_pod_overlay_without_spec(self) -> None:
+        """10. Overlay without spec (e.g., metadata-only) works without error."""
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            metadata=V1ObjectMeta(labels={"env": "dev"}),
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox")]),
+        )
+        overlay = {"metadata": {"labels": {"team": "ml"}}}
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(pod.metadata.labels, {"env": "dev", "team": "ml"})
+        self.assertEqual(len(pod.spec.containers), 1)
+
+    def test_apply_pod_overlay_caller_dict_unmutated(self) -> None:
+        """11. Caller's overlay dict is completely unmutated after _apply_pod_overlay runs."""
+        import copy
+
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox")])
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {
+                        "name": "worker",
+                        "resources": {"limits": {"cpu": "1"}},
+                    }
+                ],
+                "initContainers": [{"name": "init", "image": "alpine"}],
+            }
+        }
+        overlay_before = copy.deepcopy(overlay)
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(overlay, overlay_before)
+
+    def test_apply_pod_overlay_reused_across_multiple_pods(self) -> None:
+        """12. Reusing the exact same overlay dict across multiple pods works identically on every pod."""
+        import copy
+
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod1 = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox")])
+        )
+        pod2 = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="alpine")])
+        )
+        overlay = {
+            "spec": {
+                "containers": [
+                    {
+                        "name": "worker",
+                        "livenessProbe": {"exec": {"command": ["echo", "ok"]}},
+                    }
+                ]
+            }
+        }
+        overlay_before = copy.deepcopy(overlay)
+
+        _apply_pod_overlay(pod1, overlay)
+        _apply_pod_overlay(pod2, overlay)
+
+        self.assertEqual(overlay, overlay_before)
+        self.assertIsNotNone(pod1.spec.containers[0].liveness_probe)
+        self.assertIsNotNone(pod2.spec.containers[0].liveness_probe)
+        self.assertEqual(pod1.spec.containers[0].image, "busybox")
+        self.assertEqual(pod2.spec.containers[0].image, "alpine")
+
+    def test_apply_pod_overlay_explicit_join_operator_still_works(self) -> None:
+        """13. Explicit JOIN("containers", on="name") keys passed by the caller still work."""
+        from kubernetes.client.models import V1Container, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+        from torchx.specs.overlays import JOIN
+
+        pod = V1Pod(
+            spec=V1PodSpec(containers=[V1Container(name="worker", image="busybox:1.0")])
+        )
+        overlay = {
+            "spec": {
+                JOIN("containers", on="name"): [
+                    {"name": "worker", "image": "busybox:2.0"}
+                ]
+            }
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.containers), 1)
+        self.assertEqual(pod.spec.containers[0].name, "worker")
+        self.assertEqual(pod.spec.containers[0].image, "busybox:2.0")
+
+    def test_apply_pod_overlay_empty_initial_containers_accepts_named_overlay(
+        self,
+    ) -> None:
+        """14. Pod starting with an empty containers=[] list accepts named overlay containers cleanly."""
+        from kubernetes.client.models import V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(spec=V1PodSpec(containers=[]))
+        overlay = {
+            "spec": {"containers": [{"name": "worker", "image": "busybox:latest"}]}
+        }
+        _apply_pod_overlay(pod, overlay)
+
+        self.assertEqual(len(pod.spec.containers), 1)
+        self.assertEqual(pod.spec.containers[0].name, "worker")
+        self.assertEqual(pod.spec.containers[0].image, "busybox:latest")
+
+    def test_apply_pod_overlay_combined_metadata_and_containers(self) -> None:
+        """15. Combined metadata annotations and container property merge in one overlay."""
+        from kubernetes.client.models import V1Container, V1ObjectMeta, V1Pod, V1PodSpec
+
+        from torchx.schedulers.kubernetes_scheduler import _apply_pod_overlay
+
+        pod = V1Pod(
+            metadata=V1ObjectMeta(annotations={"version": "1.0"}),
+            spec=V1PodSpec(
+                containers=[V1Container(name="worker", image="busybox:1.0")]
+            ),
+        )
+        overlay = {
+            "metadata": {"annotations": {"version": "2.0", "author": "torchx"}},
+            "spec": {"containers": [{"name": "worker", "image": "busybox:2.0"}]},
+        }
         _apply_pod_overlay(pod, overlay)
 
         self.assertEqual(
-            len(pod.spec.containers),
-            2,
-            "without JOIN, containers should be appended, not merged",
+            pod.metadata.annotations,
+            {"version": "2.0", "author": "torchx"},
         )
+        self.assertEqual(pod.spec.containers[0].image, "busybox:2.0")
 
     def test_submit_dryrun_with_pod_overlay_yaml_replace_tag(self) -> None:
         import tempfile

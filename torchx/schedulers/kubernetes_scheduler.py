@@ -98,6 +98,7 @@ The overlay is deep-merged with the generated pod, preserving existing fields
 and adding or overriding specified ones.
 """
 
+import copy
 import json
 import logging
 import re
@@ -161,6 +162,51 @@ RESERVED_MILLICPU = 100
 RESERVED_MEMMB = 1024
 
 
+def _merge_containers(
+    base_list: list[dict[str, Any]],
+    overlay_list: list[dict[str, Any]],
+) -> None:
+    base_by_name = {
+        item["name"]: item
+        for item in base_list
+        if isinstance(item, dict) and "name" in item
+    }
+    for item in overlay_list:
+        name = item.get("name")
+        if name in base_by_name:
+            apply_overlay(
+                base_by_name[name],
+                {k: v for k, v in item.items() if k != "name"},
+            )
+        else:
+            base_list.append(copy.deepcopy(item))
+
+
+def _normalize_pod_overlay(overlay: dict[str, Any]) -> dict[str, Any]:
+    """Rewrite name-keyed container lists to strategic JOIN overlays without mutating input."""
+    from torchx.specs.overlays import JOIN
+
+    spec = overlay.get("spec")
+    if not isinstance(spec, dict):
+        return overlay
+
+    updated_spec: dict[str, Any] | None = None
+    for field in ("containers", "initContainers"):
+        items = spec.get(field)
+        if (
+            isinstance(items, list)
+            and items
+            and all(isinstance(item, dict) and "name" in item for item in items)
+        ):
+            if updated_spec is None:
+                updated_spec = dict(spec)
+            updated_spec[JOIN(field, on="name")] = updated_spec.pop(field)
+
+    if updated_spec is None:
+        return overlay
+    return {**overlay, "spec": updated_spec}
+
+
 def _apply_pod_overlay(
     pod: "V1Pod",
     overlay: dict[str, Any],
@@ -170,6 +216,8 @@ def _apply_pod_overlay(
     Uses :py:func:`~torchx.specs.overlays.apply_overlay` with operator support:
 
     - Default: dicts merge recursively, lists append, primitives overwrite.
+    - Name-keyed container and initContainer lists are automatically merged
+      by container name, recursively merging nested fields (e.g. resources).
     - Use :py:func:`~torchx.specs.overlays.PUT` to replace a value entirely.
     - Use :py:func:`~torchx.specs.overlays.JOIN` for strategic merge of list
       items by key field.
@@ -185,7 +233,36 @@ def _apply_pod_overlay(
     api = client.ApiClient()
     pod_dict = api.sanitize_for_serialization(pod)
 
-    apply_overlay(pod_dict, overlay)
+    spec = overlay.get("spec") if isinstance(overlay, dict) else None
+    named_lists: dict[str, list[dict[str, Any]]] = {}
+    remaining_overlay = overlay
+
+    if isinstance(spec, dict):
+        updated_spec: dict[str, Any] | None = None
+        for field in ("containers", "initContainers"):
+            items = spec.get(field)
+            if (
+                isinstance(items, list)
+                and items
+                and all(isinstance(item, dict) and "name" in item for item in items)
+            ):
+                if updated_spec is None:
+                    updated_spec = dict(spec)
+                named_lists[field] = updated_spec.pop(field)
+
+        if updated_spec is not None:
+            remaining_overlay = {**overlay, "spec": updated_spec}
+
+    apply_overlay(pod_dict, remaining_overlay)
+
+    if named_lists:
+        pod_spec = pod_dict.setdefault("spec", {})
+        for field, items in named_lists.items():
+            base_list = pod_spec.get(field)
+            if base_list is None:
+                pod_spec[field] = copy.deepcopy(items)
+            else:
+                _merge_containers(base_list, items)
 
     # pyrefly: ignore [missing-attribute]
     merged_pod = api._ApiClient__deserialize(pod_dict, "V1Pod")
